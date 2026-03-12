@@ -1,10 +1,11 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 1.1.0
+Version change: 1.1.0 → 1.2.0
 Modified principles: None renamed
 Added sections:
-  - Security Requirements: Bitwarden Normative Standards (external ref + client ID requirement)
+  - Core Principles > III: sdk-swift as canonical crypto/vault dependency
+  - External Dependencies: new section documenting sdk-swift
 Removed sections: N/A
 Templates reviewed:
   - .specify/templates/plan-template.md        ✅ Compatible
@@ -13,6 +14,8 @@ Templates reviewed:
 Follow-up TODOs:
   - Register for a Bitwarden client identifier before connecting to live servers.
     See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
+  - Verify sdk-swift XCFramework contains a macOS slice (currently declares iOS only).
+    File issue or fork if macOS slice is missing.
 -->
 
 # Bitwarden MacOS Constitution
@@ -55,9 +58,16 @@ This is a credential vault. Security is not a feature — it is the foundation.
 
 - Plaintext secrets (passwords, master key, session tokens) MUST NOT persist in memory
   beyond the minimum required lifetime; zero them on scope exit.
-- All cryptographic operations MUST use Apple CryptoKit or Security framework APIs.
-  Custom crypto implementations are PROHIBITED without an explicit security review and
-  documented justification.
+- All cryptographic operations and vault entity handling MUST use the official
+  `BitwardenSdk` Swift package (https://github.com/bitwarden/sdk-swift) as the
+  canonical implementation. Direct use of Apple CryptoKit for Bitwarden-protocol
+  crypto is PROHIBITED — defer to the SDK.
+- `BitwardenSdk` MUST be wrapped entirely within the Data layer. Domain and
+  Presentation layers MUST NOT import `BitwardenSdk` directly; all SDK types
+  are translated to internal Domain entities at the Data layer boundary.
+- Custom Bitwarden crypto implementations are PROHIBITED. If the SDK does not
+  cover a required operation, file an issue upstream before attempting a local
+  implementation.
 - All vault-touching code paths require a mandatory security review before merge.
 - The app MUST support macOS App Sandbox and Hardened Runtime.
 - Bitwarden API communication MUST use HTTPS/TLS only; certificate pinning SHOULD be
@@ -153,6 +163,30 @@ Before connecting to live Bitwarden servers, this client MUST be registered:
   client has been certified/tested against.
 - **TODO**: Register client identifier before first production API connection.
 
+## External Dependencies
+
+### BitwardenSdk (Canonical — REQUIRED)
+
+- **Repository**: https://github.com/bitwarden/sdk-swift
+- **Purpose**: Official Bitwarden Rust core SDK wrapped as a Swift Package via UniFFI FFI.
+  Provides all Bitwarden-protocol crypto, vault entity models, password/passphrase
+  generation, FIDO2/WebAuthn, Send, and export functionality.
+- **Modules in use**:
+  - `BitwardenCore` — auth flows, client settings, key initialization
+  - `BitwardenCrypto` — KDF (PBKDF2/Argon2), RSA, hash operations
+  - `BitwardenVault` — cipher/vault entity models
+  - `BitwardenGenerators` — password and passphrase generation
+  - `BitwardenFido` — FIDO2/WebAuthn credential operations
+  - `BitwardenSend` — Bitwarden Send feature
+  - `BitwardenExporters` — vault export formats
+- **Architecture rule**: Consumed exclusively in the Data layer. MUST be wrapped behind
+  internal Domain protocols; never leaks into Domain or Presentation.
+- **Known risk**: `Package.swift` declares iOS-only platform (`.iOS(.v13)`).
+  TODO: Verify the XCFramework contains a macOS slice before integration;
+  open upstream issue or fork if absent.
+- **Supply-chain note**: Distributed as a binary XCFramework from Azure blob storage.
+  Pin the checksum in `Package.swift` and review on every SDK version bump.
+
 ## Development Workflow
 
 Standards governing how features are built and shipped:
@@ -190,4 +224,4 @@ Standards governing how features are built and shipped:
 - **Runtime guidance**: Use CLAUDE.md (agent-context file) for session-level
   development guidance; the Constitution governs long-term architectural rules.
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-12
+**Version**: 1.2.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-12
