@@ -1,11 +1,10 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.1.0 → 1.2.0
+Version change: 1.2.0 → 1.3.0
 Modified principles: None renamed
 Added sections:
-  - Core Principles > III: sdk-swift as canonical crypto/vault dependency
-  - External Dependencies: new section documenting sdk-swift
+  - External Dependencies: Bitwarden iOS App as reference implementation
 Removed sections: N/A
 Templates reviewed:
   - .specify/templates/plan-template.md        ✅ Compatible
@@ -165,6 +164,20 @@ Before connecting to live Bitwarden servers, this client MUST be registered:
 
 ## External Dependencies
 
+### Bitwarden iOS App (Reference Implementation)
+
+- **Repository**: https://github.com/bitwarden/ios
+- **Purpose**: Official Bitwarden Swift/SwiftUI client for iOS — the closest production
+  reference available for architecture, `sdk-swift` integration patterns, API usage,
+  and XCTest/XCUITest setup.
+- **How to use**: Study only — do not copy code verbatim. Use as a reference for:
+  - How `BitwardenSdk` modules are integrated in a real Swift project
+  - Bitwarden API request/response patterns in Swift
+  - Clean Architecture layer separation in an Apple-platform Bitwarden client
+  - Test structure and coverage patterns
+- **Note**: iOS-specific UI and lifecycle code does not apply directly; adapt patterns
+  to macOS/SwiftUI conventions.
+
 ### BitwardenSdk (Canonical — REQUIRED)
 
 - **Repository**: https://github.com/bitwarden/sdk-swift
@@ -224,4 +237,4 @@ Standards governing how features are built and shipped:
 - **Runtime guidance**: Use CLAUDE.md (agent-context file) for session-level
   development guidance; the Constitution governs long-term architectural rules.
 
-**Version**: 1.2.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-12
+**Version**: 1.3.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-13
