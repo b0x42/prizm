@@ -1,13 +1,14 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.2.0 → 1.3.0
-Modified principles: None renamed
-Added sections:
-  - External Dependencies: Bitwarden iOS App as reference implementation
+Version change: 1.3.0 → 1.4.0
+Modified principles:
+  - VI: "Simplicity & YAGNI" → "Simplicity, YAGNI & Thin Layer"
+    Added: thin integration layer mandate + tiered trusted-source reuse hierarchy
+Added sections: N/A
 Removed sections: N/A
 Templates reviewed:
-  - .specify/templates/plan-template.md        ✅ Compatible
+  - .specify/templates/plan-template.md        ✅ Updated (version ref + Principle III wording, prior session)
   - .specify/templates/spec-template.md        ✅ Compatible
   - .specify/templates/tasks-template.md       ✅ Compatible
 Follow-up TODOs:
@@ -101,9 +102,11 @@ Silent failures are prohibited in vault and sync operations.
 - All async operations that can fail MUST surface errors to the Presentation layer
   via typed `Error` values; no swallowed `catch {}` blocks.
 
-### VI. Simplicity & YAGNI
+### VI. Simplicity, YAGNI & Thin Layer
 
-Build what is needed now. Complexity must be earned, not anticipated.
+Build what is needed now. Complexity must be earned, not anticipated. The client MUST
+be a thin integration layer — delegate to existing trusted APIs and libraries wherever
+available.
 
 - No premature abstractions: three similar call sites are acceptable before extracting
   a shared helper.
@@ -111,6 +114,14 @@ Build what is needed now. Complexity must be earned, not anticipated.
 - Every non-obvious architectural decision MUST be documented in the relevant plan's
   Complexity Tracking table with a justification and rejected simpler alternative.
 - Over-engineering is a defect, treated the same as a functional bug.
+- **Reuse over rebuild**: Custom implementations are only permitted when no suitable
+  trusted library exists. Trusted sources, in order of preference:
+  1. Apple first-party frameworks (SwiftUI, Foundation, CryptoKit, AuthenticationServices…)
+  2. Bitwarden official SDK (`BitwardenSdk` / sdk-swift)
+  3. Well-maintained, open-source Swift community packages (actively maintained,
+     significant adopter base, auditable source)
+  When a custom implementation is unavoidable, justify it in the Complexity Tracking
+  table and file an upstream issue where applicable.
 
 ## Security Requirements
 
@@ -124,6 +135,8 @@ Mandatory security constraints binding all contributors:
   minimum entitlements; MUST NOT retain secrets beyond the autofill request lifecycle.
 - **Dependency vetting**: All third-party Swift packages MUST be reviewed for supply-
   chain risk before inclusion. Prefer Apple-first APIs; minimize external dependencies.
+  When Apple provides no equivalent, use a trusted library (Bitwarden SDK or a
+  well-maintained Swift community package) rather than building a custom implementation.
 - **App Transport Security**: ATS MUST remain enabled. No `NSAllowsArbitraryLoads`.
 - **Memory hardening**: Use `SecureBytes` or equivalent zeroing wrappers for all
   in-memory secret buffers.
@@ -237,4 +250,4 @@ Standards governing how features are built and shipped:
 - **Runtime guidance**: Use CLAUDE.md (agent-context file) for session-level
   development guidance; the Constitution governs long-term architectural rules.
 
-**Version**: 1.3.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-13
+**Version**: 1.4.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-13
