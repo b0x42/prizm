@@ -24,7 +24,7 @@ No `sdk-swift` dependency. OI-001 is closed.
 **Approach**:
 - `BitwardenCryptoService` protocol + `BitwardenCryptoServiceImpl` actor in the Data layer.
 - `EncString` value type parses and decrypts Bitwarden's `{type}.{iv}|{ct}|{mac}` format.
-- KDF: `CCKeyDerivationPBKDF` (CommonCrypto) for PBKDF2-SHA256; Argon2id via `swift-argon2` package.
+- KDF: `CCKeyDerivationPBKDF` (CommonCrypto) for PBKDF2-SHA256; Argon2id via `Argon2Swift` package.
 - HKDF: `HKDF<SHA256>` (CryptoKit) for key stretching.
 - AES-256-CBC: `kCCAlgorithmAES` (CommonCrypto).
 - HMAC-SHA256: `HMAC<SHA256>` (CryptoKit).
@@ -69,7 +69,7 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
 | Operation | Algorithm | Apple framework |
 |-----------|-----------|-----------------|
 | Master key derivation (PBKDF2) | PBKDF2-SHA256 | CommonCrypto `CCKeyDerivationPBKDF` |
-| Master key derivation (Argon2id) | Argon2id | `swift-argon2` SPM package |
+| Master key derivation (Argon2id) | Argon2id | `Argon2Swift` SPM package |
 | Key stretching | HKDF-SHA256 | CryptoKit `HKDF<SHA256>` |
 | Symmetric decrypt | AES-256-CBC + HMAC-SHA256 | CommonCrypto `kCCAlgorithmAES` + CryptoKit `HMAC<SHA256>` |
 | RSA key unwrap | RSA-OAEP-SHA1 | Security.framework `SecKeyCreateDecryptedData` |
@@ -117,7 +117,7 @@ initializeUserCrypto(masterPassword, email, kdfParams, encUserKey, encPrivateKey
 **Notes**:
 - KDF params (`kdfParams`) are stored in Keychain at login time (`bw.macos:{userId}:kdfParams`)
   so unlock works offline without a network preLogin call.
-- Most Bitwarden accounts use PBKDF2-SHA256. Argon2id accounts are supported via `swift-argon2`.
+- Most Bitwarden accounts use PBKDF2-SHA256. Argon2id accounts are supported via `Argon2Swift`.
 - The `encPrivateKey` (RSA private key) is decrypted from Keychain but not actively used in v1
   since org ciphers are excluded. It is decrypted as part of `initializeUserCrypto` for
   completeness and forward-compat; the result is held in memory and discarded on lock.

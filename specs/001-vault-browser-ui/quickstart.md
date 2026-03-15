@@ -18,25 +18,24 @@
 
 2. **Open the Xcode project**
    ```bash
-   open Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj
+   open "Bitwarden MacOS/Bitwarden MacOS.xcodeproj"
    ```
-   Xcode will resolve the `swift-argon2` SPM package (`https://github.com/tmthecoder/swift-argon2`)
-   automatically on first open. No SDK XCFramework is needed — crypto is implemented natively
-   via CommonCrypto + CryptoKit.
+   `Argon2Swift` is vendored locally at `LocalPackages/Argon2Swift/` and referenced as an
+   `XCLocalSwiftPackageReference` — no internet access or package resolution needed.
+   No SDK XCFramework is needed — crypto is implemented natively via CommonCrypto + CryptoKit.
 
-3. **Verify swift-argon2 resolved**
+3. **Verify the build compiles**
    ```bash
-   xcodebuild -resolvePackageDependencies \
-     -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj
+   xcodebuild -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
+     -scheme "Bitwarden MacOS" -configuration Debug build
    ```
-   Expected: `Build input file cannot be found` warnings are normal on a fresh checkout;
-   the important line is `resolved source packages` completing without error.
+   Expected: `BUILD SUCCEEDED`.
 
 4. **Client identifier** (self-hosted only — no registration needed)
    - v1 targets self-hosted Bitwarden and Vaultwarden only. Self-hosted servers do not
      enforce a client whitelist.
    - Set `Config.clientName = "desktop"` and `Config.deviceType = 7` in
-     `Sources/App/Config.swift` — these are accepted by all self-hosted instances.
+     `Bitwarden_MacOS/App/Config.swift` — these are accepted by all self-hosted instances.
    - Note: `Config.swift` holds only the static client identifier and device type. The
      **server URL** is entered by the user at login time and persisted in the Keychain
      per-user (`bw.macos:{userId}:serverEnvironment`) — it is not in `Config.swift`.
@@ -48,7 +47,7 @@
 ```bash
 # From Xcode: ⌘R
 # Or from command line:
-xcodebuild -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj \
+xcodebuild -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
            -scheme "Bitwarden MacOS" \
            -configuration Debug \
            build
@@ -58,7 +57,7 @@ xcodebuild -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj \
 
 ```bash
 xcodebuild test \
-  -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj \
+  -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
   -scheme "Bitwarden MacOS" \
   -destination "platform=macOS"
 ```
@@ -134,7 +133,7 @@ Bitwarden_MacOS/
 ## Architecture Rules (enforced at PR review)
 
 1. **Domain layer**: `import Foundation` only. No crypto, no SwiftUI, no AppKit.
-2. **Data layer**: Only place that imports CommonCrypto, CryptoKit, Security, or swift-argon2.
+2. **Data layer**: Only place that imports CommonCrypto, CryptoKit, Security, or Argon2Swift.
    All crypto behind `BitwardenCryptoService` protocol. RawCipher types translated to
    Domain entities at the boundary via `CipherMapper`.
 3. **Presentation layer**: Only place that imports `SwiftUI`. Uses Domain use cases; never

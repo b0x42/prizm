@@ -24,7 +24,7 @@ layer — no custom algorithm implementations.
 **UI Framework**: SwiftUI with `NavigationSplitView` (macOS 13+)
 **Concurrency**: Swift async/await + Structured Concurrency
 **Primary Dependencies**:
-- `swift-argon2` — Argon2id KDF support (SPM; required for Argon2id vault accounts)
+- `Argon2Swift` — Argon2id KDF support (SPM; required for Argon2id vault accounts)
 - No other external dependencies in v1. All Bitwarden crypto implemented natively (CommonCrypto + CryptoKit + Security.framework).
 
 **Storage**:
@@ -50,7 +50,7 @@ layer — no custom algorithm implementations.
 |---|-----------|--------|-------|
 | I | Native-First: Swift + SwiftUI + async/await only | ✅ | `NavigationSplitView` for three-pane; AppKit not needed |
 | II | Clean Architecture: Presentation → Domain ← Data (no layer bypass) | ✅ | See Project Structure; enforced via import rules |
-| III | Security-First: All Bitwarden-protocol crypto implemented with vetted Apple frameworks (CommonCrypto, CryptoKit, Security.framework) + swift-argon2. No custom algorithm implementations. | ✅ | `BitwardenCryptoServiceImpl` wraps all KDF, cipher decrypt. sdk-swift has no macOS slice; sdk-internal is not accessible. |
+| III | Security-First: All Bitwarden-protocol crypto implemented with vetted Apple frameworks (CommonCrypto, CryptoKit, Security.framework) + Argon2Swift. No custom algorithm implementations. | ✅ | `BitwardenCryptoServiceImpl` wraps all KDF, cipher decrypt. sdk-swift has no macOS slice; sdk-internal is not accessible. |
 | IV | TDD: tests written & failing before implementation | ✅ | Domain use cases + Data mappers: test-first; UI: snapshot tests |
 | V | Observability: structured os.Logger, no swallowed errors | ✅ | Auth, sync, and cipher errors all surface via typed `Error` |
 | VI | Simplicity, YAGNI & Thin Layer: no custom code when a trusted library exists | ✅ | Bitwarden crypto via vetted Apple frameworks (standard algorithms, not custom); NavigationSplitView for three-pane; URLSession for networking |
@@ -182,7 +182,7 @@ the source tree. A second target (autofill extension) may be added in a future v
 
 | Topic | Decision |
 |-------|----------|
-| BitwardenSdk macOS support | **sdk-swift iOS-only; sdk-internal not accessible.** Native crypto adopted: `BitwardenCryptoServiceImpl` (CommonCrypto + CryptoKit + Security.framework + swift-argon2). OI-001 closed. |
+| BitwardenSdk macOS support | **sdk-swift iOS-only; sdk-internal not accessible.** Native crypto adopted: `BitwardenCryptoServiceImpl` (CommonCrypto + CryptoKit + Security.framework + Argon2Swift). OI-001 closed. |
 | Auth API shape | App makes all HTTP calls; `BitwardenCryptoServiceImpl` handles local crypto only. Flow: `preLogin` HTTP → `hashPassword()` → `/connect/token` HTTP → `initializeUserCrypto()` (no org crypto in v1) |
 | Vault decrypt | Two-phase: `BitwardenCryptoServiceImpl.decryptList()` on sync for personal ciphers only (list view), `decrypt(cipher:)` on selection (detail view) |
 | Reprompt | Deferred to future version. Not implemented in v1. |
@@ -217,7 +217,7 @@ The feature is implemented in strict vertical slices, ordered by user story prio
 
 ### Slice 1 — Xcode Project Scaffold (no user-facing code)
 
-Create the Xcode project, add `swift-argon2` as an SPM dependency, create directory structure,
+Create the Xcode project, add `Argon2Swift` as an SPM dependency, create directory structure,
 add `Config.swift` with placeholder client identifier.
 
 **Gate**: Build succeeds. Empty test suite passes.
@@ -295,7 +295,7 @@ code paths. Final constitution check.
 
 | ID | Priority | Item |
 |----|----------|------|
-| OI-001 | ~~CLOSED~~ | Native crypto adopted. `BitwardenCryptoServiceImpl` (CommonCrypto + CryptoKit + swift-argon2) replaces sdk-swift. No XCFramework required. |
+| OI-001 | ~~CLOSED~~ | Native crypto adopted. `BitwardenCryptoServiceImpl` (CommonCrypto + CryptoKit + Argon2Swift) replaces sdk-swift. No XCFramework required. |
 | OI-002 | FUTURE | Client registration with Bitwarden required when cloud (US/EU) support is added in a future version. Not needed for v1 (self-hosted only). |
 | OI-003 | FUTURE | EU cloud icons base URL needs verification when cloud support is added. Not applicable for v1. |
 | OI-004 | SHOULD | Evaluate TLS certificate pinning for `api.bitwarden.com` and `identity.bitwarden.com`. |

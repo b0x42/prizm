@@ -11,7 +11,7 @@
 > ships an iOS-only XCFramework with no macOS slice.
 >
 > **Current approach**: Native Bitwarden crypto implemented using CommonCrypto + CryptoKit
-> + Security.framework + `swift-argon2` (Argon2id only), wrapped behind a
+> + Security.framework + `Argon2Swift` (Argon2id only), wrapped behind a
 > `BitwardenCryptoService` protocol in the Data layer. See `research.md §1` and
 > `CONSTITUTION.md §III`.
 >

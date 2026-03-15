@@ -1,32 +1,23 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.3.0 → 1.4.0
-Bump type: MINOR — §III materially revised (native crypto replaces sdk-swift mandate);
-           §VII added (Radical Transparency, new principle).
-Modified principles:
-  - §III Security-First / Zero-Trust: removed sdk-swift mandate (sdk-internal inaccessible,
-    sdk-swift iOS-only); replaced with native Apple framework crypto wrapped behind a
-    BitwardenCryptoService protocol. Direct CryptoKit prohibition replaced with
-    "no hand-rolled algorithms" rule.
-  - External Dependencies: BitwardenSdk section updated from REQUIRED to ARCHIVED status;
-    Argon2Swift added as the only approved external crypto dependency.
+Version change: 1.2.0 → 1.3.0
+Modified principles: None renamed
 Added sections:
-  - §VII Radical Transparency (new principle)
+  - External Dependencies: Bitwarden iOS App as reference implementation
 Removed sections: N/A
-Templates requiring updates:
-  - specs/001-vault-browser-ui/plan.md        ✅ updated (§III constitution check)
-  - specs/001-vault-browser-ui/research.md    ✅ updated (OI-001 closed, native crypto)
-  - specs/001-vault-browser-ui/data-model.md  ✅ updated (crypto flow)
-  - specs/001-vault-browser-ui/tasks.md       ✅ updated (Phase 1 + Phase 3)
-  - CLAUDE.md                                 ⚠ pending — §III reference needs update
+Templates reviewed:
+  - .specify/templates/plan-template.md        ✅ Compatible
+  - .specify/templates/spec-template.md        ✅ Compatible
+  - .specify/templates/tasks-template.md       ✅ Compatible
 Follow-up TODOs:
-  - Update CLAUDE.md §III reference to reflect native crypto approach.
   - Register for a Bitwarden client identifier before connecting to live servers.
     See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
+  - Verify sdk-swift XCFramework contains a macOS slice (currently declares iOS only).
+    File issue or fork if macOS slice is missing.
 -->
 
-# Bitwarden macOS Constitution
+# Bitwarden MacOS Constitution
 
 ## Core Principles
 
@@ -54,7 +45,7 @@ Presentation  →  Domain  →  Data
 - **Domain layer**: Pure Swift. No UIKit/AppKit/SwiftUI imports. No network/storage
   imports. Contains entities, use cases, and repository protocols only.
 - **Data layer**: Implements Domain protocols. Owns all Bitwarden API calls, Keychain
-  access, CoreData/SQLite, sync logic, and all cryptographic operations.
+  access, CoreData/SQLite, and sync logic.
 - **Presentation layer**: Owns ViewModels and SwiftUI Views. MUST NOT import Data
   layer directly; all data access flows through Domain use cases.
 - Dependencies MUST only point inward (Presentation → Domain ← Data).
@@ -66,18 +57,16 @@ This is a credential vault. Security is not a feature — it is the foundation.
 
 - Plaintext secrets (passwords, master key, session tokens) MUST NOT persist in memory
   beyond the minimum required lifetime; zero them on scope exit.
-- All cryptographic operations MUST use vetted, well-understood implementations:
-  - **Preferred**: Apple system frameworks — CommonCrypto, CryptoKit, Security.framework.
-    These are audited, maintained, and hardware-accelerated on Apple silicon.
-  - **Permitted exception**: `Argon2Swift` (thin Swift wrapper around the reference
-    C implementation) for Argon2id KDF, which is not provided by Apple frameworks.
-  - **All other third-party crypto libraries are PROHIBITED** without a formal
-    constitution amendment documenting the rationale and supply-chain review.
-- Hand-rolled implementations of cryptographic algorithms (AES, HMAC, KDF, RSA) are
-  PROHIBITED regardless of the source. Always use a vetted library.
-- All crypto operations MUST be wrapped entirely within the Data layer behind a
-  `BitwardenCryptoService` protocol. Domain and Presentation layers MUST NOT import
-  crypto modules directly; all types are translated to Domain entities at the boundary.
+- All cryptographic operations and vault entity handling MUST use the official
+  `BitwardenSdk` Swift package (https://github.com/bitwarden/sdk-swift) as the
+  canonical implementation. Direct use of Apple CryptoKit for Bitwarden-protocol
+  crypto is PROHIBITED — defer to the SDK.
+- `BitwardenSdk` MUST be wrapped entirely within the Data layer. Domain and
+  Presentation layers MUST NOT import `BitwardenSdk` directly; all SDK types
+  are translated to internal Domain entities at the Data layer boundary.
+- Custom Bitwarden crypto implementations are PROHIBITED. If the SDK does not
+  cover a required operation, file an issue upstream before attempting a local
+  implementation.
 - All vault-touching code paths require a mandatory security review before merge.
 - The app MUST support macOS App Sandbox and Hardened Runtime.
 - Bitwarden API communication MUST use HTTPS/TLS only; certificate pinning SHOULD be
@@ -92,8 +81,6 @@ Red → Green → Refactor. No exceptions.
 - Tests MUST be written and reviewed before implementation begins.
 - Tests MUST fail before the implementation is written (Red phase verified).
 - No PR may be merged if it introduces untested code paths in Domain or Data layers.
-- Crypto implementations MUST include known-answer tests (KATs) against published
-  test vectors from the relevant standard (NIST, RFC, Bitwarden Security Whitepaper).
 - Test pyramid:
   - **Unit tests**: All Domain use cases and Data layer transformations
   - **Integration tests**: Bitwarden API contracts, Keychain access, sync flows
@@ -125,32 +112,6 @@ Build what is needed now. Complexity must be earned, not anticipated.
   Complexity Tracking table with a justification and rejected simpler alternative.
 - Over-engineering is a defect, treated the same as a functional bug.
 
-### VII. Radical Transparency (NON-NEGOTIABLE)
-
-This project is a password manager. Users must be able to verify that it is safe.
-Every security-critical implementation decision MUST be documented for public auditability.
-
-- Crypto code MUST include inline comments explaining:
-  - **What** each step does (e.g. "derive 64-byte stretched key via HKDF-SHA256")
-  - **Why** it exists (e.g. "MAC verified before decrypt to prevent padding oracle attacks")
-  - **Which standard** it implements, cited by name and section
-    (e.g. "Bitwarden Security Whitepaper §4.1", "RFC 5869 §2", "NIST SP 800-132")
-- Non-obvious algorithm choices (key stretching rationale, HKDF label values,
-  MAC-then-verify ordering, EncString type selection) MUST have a comment explaining
-  the security property they provide.
-- Each Data layer file touching cryptography MUST open with a doc comment block
-  summarising its purpose, the standards it follows, and any known limitations.
-- A `SECURITY.md` at the repo root MUST document in plain language:
-  - What data is encrypted and with what algorithm
-  - Where keys are stored and under what conditions they are accessible
-  - What threat model the app defends against
-  - What the app explicitly does NOT protect against
-- The goal: any developer — or technically literate user — MUST be able to read the
-  source and independently verify that the implementation is correct and safe.
-  **No black boxes. No "trust us".**
-
----
-
 ## Security Requirements
 
 Mandatory security constraints binding all contributors:
@@ -164,8 +125,8 @@ Mandatory security constraints binding all contributors:
 - **Dependency vetting**: All third-party Swift packages MUST be reviewed for supply-
   chain risk before inclusion. Prefer Apple-first APIs; minimize external dependencies.
 - **App Transport Security**: ATS MUST remain enabled. No `NSAllowsArbitraryLoads`.
-- **Memory hardening**: Use zeroing wrappers for all in-memory secret buffers;
-  secrets MUST NOT be stored in Swift `String` longer than necessary.
+- **Memory hardening**: Use `SecureBytes` or equivalent zeroing wrappers for all
+  in-memory secret buffers.
 
 ### Bitwarden Normative Standards
 
@@ -201,48 +162,43 @@ Before connecting to live Bitwarden servers, this client MUST be registered:
   client has been certified/tested against.
 - **TODO**: Register client identifier before first production API connection.
 
----
-
 ## External Dependencies
 
-### Argon2Swift (Approved — Narrow Scope)
-
-- **Repository**: https://github.com/tmthecoder/Argon2Swift
-- **Purpose**: Argon2id KDF support. Bitwarden made Argon2id the default KDF for new
-  accounts in 2023. Most new accounts require it; PBKDF2-only support would block a
-  large portion of users.
-- **Why not Apple frameworks**: Argon2id is not available in CommonCrypto or CryptoKit.
-  This is the only approved exception to the Apple-frameworks-first rule for crypto.
-- **Implementation**: Thin Swift wrapper around the reference C implementation of Argon2
-  (same code used in the official Argon2 reference library). No custom algorithm.
-- **Scope**: Used exclusively in `BitwardenCryptoServiceImpl` for KDF only.
-  MUST NOT be used for any purpose other than Argon2id key derivation.
-- **Supply-chain note**: Pin the exact version and review on every bump.
-
-### Bitwarden iOS App (Reference — Study Only)
+### Bitwarden iOS App (Reference Implementation)
 
 - **Repository**: https://github.com/bitwarden/ios
 - **Purpose**: Official Bitwarden Swift/SwiftUI client for iOS — the closest production
-  reference available for architecture, API usage, and XCTest/XCUITest setup.
+  reference available for architecture, `sdk-swift` integration patterns, API usage,
+  and XCTest/XCUITest setup.
 - **How to use**: Study only — do not copy code verbatim. Use as a reference for:
+  - How `BitwardenSdk` modules are integrated in a real Swift project
   - Bitwarden API request/response patterns in Swift
   - Clean Architecture layer separation in an Apple-platform Bitwarden client
   - Test structure and coverage patterns
 - **Note**: iOS-specific UI and lifecycle code does not apply directly; adapt patterns
   to macOS/SwiftUI conventions.
 
-### BitwardenSdk / sdk-swift (ARCHIVED — Not Used)
+### BitwardenSdk (Canonical — REQUIRED)
 
 - **Repository**: https://github.com/bitwarden/sdk-swift
-- **Status**: Evaluated and rejected for v1. `sdk-swift` distributes an iOS-only
-  XCFramework (`ios-arm64`, `ios-arm64_x86_64-simulator`); no macOS slice exists in
-  any release. `sdk-internal` (which contains the UniFFI Swift bindings and macOS
-  build scripts) is a private Bitwarden repository and is not accessible.
-- **Revisit**: If Bitwarden officially packages a macOS slice of `BitwardenFFI.xcframework`
-  in a future release, migrating to `sdk-swift` SHOULD be evaluated. The
-  `BitwardenCryptoService` protocol boundary makes this swap straightforward.
-
----
+- **Purpose**: Official Bitwarden Rust core SDK wrapped as a Swift Package via UniFFI FFI.
+  Provides all Bitwarden-protocol crypto, vault entity models, password/passphrase
+  generation, FIDO2/WebAuthn, Send, and export functionality.
+- **Modules in use**:
+  - `BitwardenCore` — auth flows, client settings, key initialization
+  - `BitwardenCrypto` — KDF (PBKDF2/Argon2), RSA, hash operations
+  - `BitwardenVault` — cipher/vault entity models
+  - `BitwardenGenerators` — password and passphrase generation
+  - `BitwardenFido` — FIDO2/WebAuthn credential operations
+  - `BitwardenSend` — Bitwarden Send feature
+  - `BitwardenExporters` — vault export formats
+- **Architecture rule**: Consumed exclusively in the Data layer. MUST be wrapped behind
+  internal Domain protocols; never leaks into Domain or Presentation.
+- **Known risk**: `Package.swift` declares iOS-only platform (`.iOS(.v13)`).
+  TODO: Verify the XCFramework contains a macOS slice before integration;
+  open upstream issue or fork if absent.
+- **Supply-chain note**: Distributed as a binary XCFramework from Azure blob storage.
+  Pin the checksum in `Package.swift` and review on every SDK version bump.
 
 ## Development Workflow
 
@@ -261,8 +217,6 @@ Standards governing how features are built and shipped:
 - **Changelog**: Every merged PR that changes user-visible behavior MUST include a
   changelog entry.
 
----
-
 ## Governance
 
 - This Constitution supersedes all other development practices, guidelines, and
@@ -280,9 +234,7 @@ Standards governing how features are built and shipped:
   - PATCH: Clarifications, wording fixes, non-semantic refinements.
 - **Compliance review**: Every PR review MUST include a Constitution Check — confirm
   the changes do not violate any principle. Violations are blocking.
-- **Runtime guidance**: Use `CLAUDE.md` (agent-context file) for session-level
+- **Runtime guidance**: Use CLAUDE.md (agent-context file) for session-level
   development guidance; the Constitution governs long-term architectural rules.
 
----
-
-**Version**: 1.4.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-15
+**Version**: 1.3.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-13

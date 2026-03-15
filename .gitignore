@@ -38,3 +38,4 @@ fastlane/test_output
 .env
 *.p12
 *.mobileprovision
+.claude/worktrees/
