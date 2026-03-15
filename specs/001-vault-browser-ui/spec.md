@@ -52,6 +52,7 @@ screen requires the user to supply a server URL; there is no default cloud serve
 - Q: SSH Key subtitle when fingerprint is absent? → A: Show "[No fingerprint]".
 - Q: Clipboard cleared immediately on vault lock/quit? → A: No — let the 30-second timer run to completion on vault lock. On app quit, the OS may cancel the timer; this is acceptable behaviour — the timer is best-effort on quit only.
 - Q: TOTP two-factor retry limits? → A: Deferred to server — the server enforces account lockout; the app makes no independent limit.
+- Q: TOTP appears in two places — login 2FA and vault item fields. What is in scope? → A: **TOTP login 2FA is in scope** (FR-016): when the server requires a second factor during the `/connect/token` login flow, the app shows a TOTP code prompt. **TOTP code generation and display on vault items is deferred** (FR-038): if a login item stores a TOTP seed, that seed is stored but never displayed in v1. These are two distinct features sharing the "TOTP" name.
 - Q: Item in multiple collections — shown in all? → A: Deferred to future version. Collections are not supported in v1.
 - Q: Sync failure after initial login (mid-session) — what UI? → A: Show a non-blocking error banner in the vault browser. Stale data remains visible.
 - Q: Item list sort order? → A: Alphabetical by item name, case-insensitive. Applied to all sidebar selections including search results.
@@ -480,8 +481,9 @@ appear instantly. Value delivered: user can locate any item in seconds.
   under 60 seconds on a standard broadband connection.
 - **SC-002**: A returning user can unlock the vault and view their items in under
   5 seconds from app launch.
-- **SC-003**: Selecting any sidebar entry or item updates the corresponding pane with
-  no perceptible delay (subjectively instant for vaults up to 1,000 items).
+- **SC-003**: Selecting any sidebar entry updates the item list in ≤200ms; selecting
+  any item updates the detail pane in ≤200ms. Measured: user action → pane fully renders.
+  Target applies to vaults up to 1,000 items on standard Mac hardware.
 - **SC-004**: 100% of copyable secret fields auto-clear from the clipboard within
   30 seconds of copying.
 - **SC-005**: The app remains responsive (no spinning cursor, no freeze) during vault

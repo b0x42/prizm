@@ -4,6 +4,19 @@
 **Branch**: `001-vault-browser-ui`
 **TDD**: Tests are written first and must fail before implementation begins (constitution §IV)
 
+## Terminology
+
+| Term | Layer | Meaning |
+|------|-------|---------|
+| `VaultItem` | Domain | Decrypted domain entity (Swift type) |
+| `RawCipher` | Data | Encrypted API model (Codable); input to CipherMapper |
+| "item" | UI | User-facing label for a vault entry |
+| "cipher" | API/docs | Bitwarden API term for an encrypted vault record; maps to `RawCipher` in code |
+
+Use `VaultItem` in domain/presentation context. Use `RawCipher` / "cipher" only in Data layer (network models, mapper, crypto service).
+
+---
+
 ## Format: `[ID] [P?] [Story?] Description — file path`
 
 - **[P]**: Can run in parallel (different files, no shared dependencies)
@@ -14,11 +27,11 @@
 
 ## Phase 1: Setup (Slice 1 — no user-facing code)
 
-**Purpose**: Xcode project, swift-argon2 SPM dependency, directory structure.
+**Purpose**: Xcode project, Argon2Swift dependency, directory structure.
 No XCFramework required — crypto implemented natively via CommonCrypto + CryptoKit.
 
-- [ ] T001 Create Xcode project with App Sandbox + Hardened Runtime — `Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj`
-- [ ] T002 Add swift-argon2 as SPM package dependency in Xcode (`https://github.com/tmthecoder/swift-argon2`) — project Package Dependencies
+- [ ] T001 Create Xcode project with App Sandbox + Hardened Runtime — `Bitwarden MacOS/Bitwarden MacOS.xcodeproj`
+- [ ] T002 Add Argon2Swift as vendored local SPM package (`LocalPackages/Argon2Swift/`) via `XCLocalSwiftPackageReference` in Xcode — `LocalPackages/Argon2Swift/Package.swift`
 - [ ] T003 [P] Create App layer files — `Bitwarden_MacOS/App/BitwardenMacOSApp.swift`, `AppContainer.swift`, `Config.swift`
 - [ ] T004 [P] Create directory structure — `Domain/`, `Data/Crypto/`, `Data/Network/Models/`, `Data/Keychain/`, `Data/Mappers/`, `Data/Repositories/`, `Presentation/`, `Tests/DomainTests/`, `Tests/DataTests/Crypto/`, `Tests/PresentationTests/Components/`, `Tests/UITests/` groups in Xcode
 
@@ -58,7 +71,7 @@ Blocks all repository implementations. No external SDK dependency.
 - [ ] T018 Implement KeychainService (SecItem read/write/delete, userId-namespaced keys, kSecAttrAccessibleWhenUnlockedThisDeviceOnly) — `Data/Keychain/KeychainService.swift`
 - [ ] T019 Implement EncString (parser for types 0, 2, 4, 6; AES-CBC-256 decrypt + HMAC-SHA256 verify; RSA-OAEP decrypt; each function MUST have doc comment citing Bitwarden Security Whitepaper section + RFC/NIST ref per §VII) — `Data/Crypto/EncString.swift`, `Data/Crypto/CryptoKeys.swift`
 - [ ] T020 Implement RawCipher + SyncResponse Codable models — `Data/Network/Models/RawCipher.swift`, `Data/Network/Models/SyncResponse.swift`
-- [ ] T021 Implement CipherMapper (RawCipher → VaultItem; personal ciphers only — skip organizationId != nil; per-type field mapping for all 5 types) — `Data/Mappers/CipherMapper.swift`
+- [ ] T021 Implement CipherMapper (RawCipher → VaultItem; personal ciphers only — skip organizationId != nil; per-type field mapping for all 5 types; doc comment on class explaining mapper role per §VII) — `Data/Mappers/CipherMapper.swift`
 - [ ] T022 Implement BitwardenCryptoServiceImpl actor (PBKDF2/Argon2id KDF, HKDF key stretching, encUserKey → symmetricKey, encPrivateKey → RSAPrivateKey; decryptList + decrypt via CipherMapper; lockVault zeroes key material; opening doc comment + per-function comments citing Bitwarden Security Whitepaper + RFC 5869 + NIST SP 800-132 per §VII) — `Data/Crypto/BitwardenCryptoService.swift`
 
 **Checkpoint**: All crypto unit tests pass (including known-answer tests). Keychain integration test passes. CipherMapper tests pass for all 5 item types.
@@ -189,8 +202,9 @@ items appear instantly. Switch category — term preserved, results re-filtered.
 - [ ] T068 [P] Build sync error banner (systemYellow tint, ≤44pt height, spans item list + detail columns, explicit × dismiss button, auto-dismiss on next successful sync; no retry button per FR-049) — `Presentation/Vault/VaultBrowserView.swift`
 - [ ] T069 [P] Add os.Logger calls to all auth, sync, vault, and network code paths (subsystem `com.bitwarden-macos`; .debug trace, .info flow, .error recoverable, .fault unrecoverable; secrets MUST NOT appear in logs) — all Data/ files
 - [ ] T070 Constitution check: audit every `catch {}` block — each must rethrow or log + surface via typed Error; audit every file import — Domain must have no crypto/SwiftUI, Presentation must have no Data; verify all crypto files have doc comments citing standards per §VII — all source files
-- [ ] T071 [P] Create SECURITY.md at repo root: what data is encrypted + algorithm; where keys are stored + access conditions; threat model; explicit non-goals (per CONSTITUTION.md §VII) — `SECURITY.md`
+- [ ] T071 [P] Create SECURITY.md at repo root (same level as CLAUDE.md and CONSTITUTION.md, not in specs/): what data is encrypted + algorithm; where keys are stored + access conditions; threat model; explicit non-goals (per CONSTITUTION.md §VII) — `SECURITY.md`
 - [ ] T072 [P] Validate quickstart.md end-to-end from clean checkout (build + run all tests) — `specs/001-vault-browser-ui/quickstart.md`
+- [ ] T073 [P] XCUITest: keyboard-only navigation — Tab cycles between sidebar/list/detail panes; arrow keys navigate the item list; Enter selects focused item; Escape returns focus to list; verify all interactive elements (buttons, fields) are keyboard-accessible (SC-007) — `Tests/UITests/KeyboardNavigationTests.swift`
 
 **Checkpoint**: SC-004 passes (clipboard clears ≤30s). No swallowed errors. All import rules respected. Sign-out clears all data and shows blank login screen.
 
@@ -241,7 +255,7 @@ T057 SecureNoteDetailView  |  T058 SSHKeyDetailView
 
 ### MVP First (Slices 1–4: login only)
 
-1. Complete Phase 1 — Xcode scaffold + swift-argon2 SPM dependency (unblocks everything)
+1. Complete Phase 1 — Xcode scaffold + Argon2Swift SPM dependency (unblocks everything)
 2. Complete Phase 2 — Domain layer (pure Swift, no dependencies)
 3. Complete Phase 3 — Data foundation (Keychain + native crypto + mapper)
 4. Complete Phase 4 — US1 login flow

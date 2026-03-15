@@ -10,7 +10,7 @@ Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
 - **Concurrency**: Swift async/await + Structured Concurrency
 - **Platform**: macOS 14 (Sonoma) + macOS 13 (Ventura, n-1)
 - **Project type**: macOS desktop app (App Sandbox + Hardened Runtime)
-- **Crypto/Vault**: CommonCrypto + CryptoKit + Security.framework + `swift-argon2` (Argon2id only) — Data layer only, behind `BitwardenCryptoService` protocol. sdk-swift has no macOS slice.
+- **Crypto/Vault**: CommonCrypto + CryptoKit + Security.framework + `Argon2Swift` (Argon2id only) — Data layer only, behind `BitwardenCryptoService` protocol. sdk-swift has no macOS slice.
 - **Storage**: macOS Keychain (secrets), UserDefaults (UI prefs), in-memory (decrypted vault)
 - **Networking**: `URLSession` (no third-party networking library)
 - **Testing**: XCTest (unit + integration), XCUITest (UI journeys)
@@ -42,26 +42,23 @@ specs/
 
 ```bash
 # Open project
-open Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj
+open "Bitwarden MacOS/Bitwarden MacOS.xcodeproj"
 
 # Build
-xcodebuild -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj \
+xcodebuild -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
            -scheme "Bitwarden MacOS" -configuration Debug build
 
 # Run all tests
 xcodebuild test \
-  -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj \
+  -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
   -scheme "Bitwarden MacOS" \
   -destination "platform=macOS"
-
-# Verify swift-argon2 resolved (run after SPM resolves)
-xcodebuild -resolvePackageDependencies -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj
 ```
 
 ## Architecture Rules
 
 1. **Domain layer** — `import Foundation` only. No crypto imports, no `SwiftUI`, no `AppKit`.
-2. **Data layer** — Only place that imports CommonCrypto, CryptoKit, Security, or `swift-argon2`.
+2. **Data layer** — Only place that imports CommonCrypto, CryptoKit, Security, or `Argon2Swift`.
    All crypto behind `BitwardenCryptoService` protocol. Translate types to Domain entities via
    mappers in `Data/Mappers/`.
 3. **Presentation layer** — Only place that imports `SwiftUI`. Uses Domain use cases; never
@@ -85,7 +82,7 @@ xcodebuild -resolvePackageDependencies -project Bitwarden_MacOS/Bitwarden_MacOS.
 
 ### 001-vault-browser-ui (2026-03-15)
 Added: full project scaffold, three-pane vault browser, login/unlock flows, search.
-Technologies introduced: native Bitwarden crypto (CommonCrypto + CryptoKit + swift-argon2),
+Technologies introduced: native Bitwarden crypto (CommonCrypto + CryptoKit + Argon2Swift),
 `NavigationSplitView`, macOS Keychain integration.
 Note: sdk-swift rejected (iOS-only XCFramework); native crypto adopted per CONSTITUTION.md §III.
 

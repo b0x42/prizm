@@ -10,7 +10,7 @@ Modified principles:
     BitwardenCryptoService protocol. Direct CryptoKit prohibition replaced with
     "no hand-rolled algorithms" rule.
   - External Dependencies: BitwardenSdk section updated from REQUIRED to ARCHIVED status;
-    swift-argon2 added as the only approved external crypto dependency.
+    Argon2Swift added as the only approved external crypto dependency.
 Added sections:
   - §VII Radical Transparency (new principle)
 Removed sections: N/A
@@ -69,7 +69,7 @@ This is a credential vault. Security is not a feature — it is the foundation.
 - All cryptographic operations MUST use vetted, well-understood implementations:
   - **Preferred**: Apple system frameworks — CommonCrypto, CryptoKit, Security.framework.
     These are audited, maintained, and hardware-accelerated on Apple silicon.
-  - **Permitted exception**: `swift-argon2` (thin Swift wrapper around the reference
+  - **Permitted exception**: `Argon2Swift` (thin Swift wrapper around the reference
     C implementation) for Argon2id KDF, which is not provided by Apple frameworks.
   - **All other third-party crypto libraries are PROHIBITED** without a formal
     constitution amendment documenting the rationale and supply-chain review.
@@ -205,9 +205,9 @@ Before connecting to live Bitwarden servers, this client MUST be registered:
 
 ## External Dependencies
 
-### swift-argon2 (Approved — Narrow Scope)
+### Argon2Swift (Approved — Narrow Scope)
 
-- **Repository**: https://github.com/tmthecoder/swift-argon2
+- **Repository**: https://github.com/tmthecoder/Argon2Swift
 - **Purpose**: Argon2id KDF support. Bitwarden made Argon2id the default KDF for new
   accounts in 2023. Most new accounts require it; PBKDF2-only support would block a
   large portion of users.
