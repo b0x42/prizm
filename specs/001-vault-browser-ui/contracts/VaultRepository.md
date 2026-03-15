@@ -9,7 +9,7 @@
 
 ```swift
 /// Read-only access to the decrypted vault contents.
-/// All data is sourced from the in-memory SDK Client populated during sync.
+/// All data is sourced from the in-memory store populated by SyncRepository.sync().
 /// v1 is strictly read-only — no mutating methods.
 protocol VaultRepository {
 
@@ -36,17 +36,21 @@ protocol VaultRepository {
     // MARK: - Item counts (for sidebar badges)
 
     /// Returns a map from SidebarSelection to item count.
-    /// Counts are computed once after vault sync and cached for the session.
-    /// They do not update mid-session (no background sync in v1).
-    /// Call once on vault browser mount; do not call on every render.
+    /// Counts are computed eagerly by VaultRepositoryImpl immediately after sync
+    /// populates the in-memory store, and cached internally for the session.
+    /// Callers receive the cached result instantly — no recomputation on every call.
+    /// Counts do not update mid-session (no background sync in v1).
     func itemCounts() async throws -> [SidebarSelection: Int]
 
     // MARK: - Detail (full decryption on demand)
 
     /// Returns the fully decrypted VaultItem for the given id.
-    /// The list methods (`items(for:)`, `searchItems`) return lightweight items
-    /// (CipherListView-derived) sufficient for the item list. Call this method
-    /// when the user selects an item to populate the detail pane.
+    /// The list methods (`items(for:)`, `searchItems`) return list-weight items
+    /// sufficient for the item list rows. Call this method when the user selects
+    /// an item to populate the detail pane.
+    /// Each call re-decrypts from the raw cipher — result is NOT cached. Decryption
+    /// of a single cipher via CryptoKit is fast (<1ms) and caching would require
+    /// invalidation logic. If this becomes a bottleneck, cache in VaultBrowserViewModel.
     /// Throws `VaultError.itemNotFound` if the id does not exist.
     func itemDetail(id: String) async throws -> VaultItem
 

@@ -106,15 +106,16 @@ enum AuthError: LocalizedError {
 The Domain protocol above is implementation-agnostic. The Data layer (`AuthRepositoryImpl`) uses
 this call sequence under the hood:
 
-**Login**: HTTP POST `/accounts/prelogin` → `client.auth().hashPassword(purpose: .serverAuthorization)`
-→ HTTP POST `/connect/token` → `client.crypto().initializeUserCrypto(method: .password(...))`
-→ HTTP GET `/sync` → `client.vault().ciphers().decryptList()` (personal ciphers only; org ciphers
-skipped — `initializeOrgCrypto` is NOT called in v1)
+**Login**: HTTP POST `/accounts/prelogin` → `BitwardenCryptoServiceImpl.hashPassword(purpose: .serverAuthorization)`
+→ HTTP POST `/connect/token` → `BitwardenCryptoServiceImpl.initializeUserCrypto(masterPassword:email:kdfParams:encUserKey:encPrivateKey:)`
+→ HTTP GET `/sync` → `BitwardenCryptoServiceImpl.decryptList(ciphers:)` (personal ciphers only; org ciphers
+skipped — org crypto is NOT called in v1)
 
-**Unlock**: `client.crypto().initializeUserCrypto(method: .password(...))` only — no network call.
-Uses encrypted keys stored in Keychain (`encUserKey`, `encPrivateKey`, `kdfParams`).
+**Unlock** (on relaunch after quit — vault in-memory is gone): `BitwardenCryptoServiceImpl.initializeUserCrypto(...)` to
+re-derive key material from Keychain (`encUserKey`, `encPrivateKey`, `kdfParams`) — no network for KDF.
+Then `SyncRepository.sync()` is called to re-populate the vault (network required).
 
-The SDK has no HTTP layer — all network calls are made by `BitwardenAPIClient` (Data layer).
+`BitwardenCryptoServiceImpl` has no HTTP layer — all network calls are made by `BitwardenAPIClient` (Data layer).
 
 ## Keychain Keys
 
@@ -136,16 +137,16 @@ Format: `bw.macos:{userId}:{key}` for per-account items; `bw.macos:{key}` for gl
 All items use `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`.
 No item uses `kSecAttrSynchronizable = true`.
 
-## SDK Client Lifecycle
+## Crypto Service Key Material Lifecycle
 
-The `BitwardenSdk.Client` object holds all in-memory derived key material. It is owned
-by `BitwardenClientService` (a Data layer actor). Lifecycle rules:
+`BitwardenCryptoServiceImpl` (a Data layer actor) holds all in-memory derived key material
+(master key, stretched key, symmetric vault key, RSA private key). Lifecycle rules:
 
-- **Created**: on first call to `crypto().initializeUserCrypto()` (login or unlock)
+- **Populated**: on `initializeUserCrypto()` (login or unlock)
 - **Alive**: for the duration of the unlocked session
-- **Released**: on `lockVault()` or `signOut()` — the actor sets its Client reference to `nil`,
-  allowing ARC to deallocate. All key material is gone from memory.
-- **Never persisted**: the Client object is never serialised or written to disk/Keychain.
+- **Cleared**: on `lockVault()` or `signOut()` — the actor zeroes all key material from memory.
+  Vault data in `VaultRepositoryImpl` is also cleared.
+- **Never persisted**: key material is never written to disk or Keychain.
 
 ## Server Environment Persistence
 

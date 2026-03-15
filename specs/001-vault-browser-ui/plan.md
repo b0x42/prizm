@@ -11,9 +11,10 @@ Build a read-only macOS Bitwarden vault browser with account login (email + mast
 TOTP 2FA), vault unlock, and a three-pane `NavigationSplitView` UI (sidebar / item list /
 detail pane) with real-time search scoped to the active category.
 
-The implementation follows Clean Architecture (Presentation → Domain ← Data) with BitwardenSdk
-(`sdk-swift`) as the exclusive crypto and vault-decryption engine, wrapped entirely in the Data
-layer. The app is a thin integration layer — no custom Bitwarden crypto.
+The implementation follows Clean Architecture (Presentation → Domain ← Data) with
+`BitwardenCryptoServiceImpl` as the crypto and vault-decryption engine, wrapped entirely in the
+Data layer using CommonCrypto, CryptoKit, and Security.framework. The app is a thin integration
+layer — no custom algorithm implementations.
 
 ---
 
@@ -23,12 +24,12 @@ layer. The app is a thin integration layer — no custom Bitwarden crypto.
 **UI Framework**: SwiftUI with `NavigationSplitView` (macOS 13+)
 **Concurrency**: Swift async/await + Structured Concurrency
 **Primary Dependencies**:
-- `BitwardenSdk` (sdk-swift) — canonical crypto + vault entity library (SPM binary target)
-- No other external dependencies in v1
+- `swift-argon2` — Argon2id KDF support (SPM; required for Argon2id vault accounts)
+- No other external dependencies in v1. All Bitwarden crypto implemented natively (CommonCrypto + CryptoKit + Security.framework).
 
 **Storage**:
 - macOS Keychain — session tokens, account metadata (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`)
-- In-memory only for decrypted vault data (SDK `Client` object holds key material)
+- In-memory only for decrypted vault data (`BitwardenCryptoServiceImpl` actor holds key material)
 - `UserDefaults` — non-sensitive UI preferences only (last sidebar selection, server region display)
 
 **Testing**: XCTest (unit + integration), XCUITest (UI journeys)
@@ -49,10 +50,11 @@ layer. The app is a thin integration layer — no custom Bitwarden crypto.
 |---|-----------|--------|-------|
 | I | Native-First: Swift + SwiftUI + async/await only | ✅ | `NavigationSplitView` for three-pane; AppKit not needed |
 | II | Clean Architecture: Presentation → Domain ← Data (no layer bypass) | ✅ | See Project Structure; enforced via import rules |
-| III | Security-First: BitwardenSdk for all Bitwarden-protocol crypto (no direct CryptoKit) | ✅ | SDK wraps all KDF, cipher decrypt, reprompt verify |
+| III | Security-First: All Bitwarden-protocol crypto implemented with vetted Apple frameworks (CommonCrypto, CryptoKit, Security.framework) + swift-argon2. No custom algorithm implementations. | ✅ | `BitwardenCryptoServiceImpl` wraps all KDF, cipher decrypt. sdk-swift has no macOS slice; sdk-internal is not accessible. |
 | IV | TDD: tests written & failing before implementation | ✅ | Domain use cases + Data mappers: test-first; UI: snapshot tests |
 | V | Observability: structured os.Logger, no swallowed errors | ✅ | Auth, sync, and cipher errors all surface via typed `Error` |
-| VI | Simplicity, YAGNI & Thin Layer: no custom code when a trusted library exists | ✅ | No custom crypto; no custom three-pane split (NavigationSplitView); no third-party networking (URLSession) |
+| VI | Simplicity, YAGNI & Thin Layer: no custom code when a trusted library exists | ✅ | Bitwarden crypto via vetted Apple frameworks (standard algorithms, not custom); NavigationSplitView for three-pane; URLSession for networking |
+| VII | Radical Transparency: all crypto code documented with what/why/standard; SECURITY.md required | ✅ | Crypto tasks (T019, T021, T022) require inline comments citing Bitwarden Security Whitepaper + RFC; SECURITY.md created in Phase 8 (T072) |
 
 **No violations. All gates pass.**
 
@@ -103,16 +105,21 @@ Bitwarden_MacOS/
     │       ├── SyncUseCase.swift        # calls SyncRepository.sync()
     │       └── SearchVaultUseCase.swift
     │
-    ├── Data/                            # SDK, network, Keychain. No SwiftUI imports.
-    │   ├── SDK/
-    │   │   └── BitwardenClientService.swift  # owns Client; wraps all SDK calls
+    ├── Data/                            # Crypto, network, Keychain. No SwiftUI imports.
+    │   ├── Crypto/
+    │   │   ├── BitwardenCryptoService.swift      # protocol + actor impl; owns key material in memory
+    │   │   ├── EncString.swift                   # Bitwarden EncString format parser + decryptor
+    │   │   └── CryptoKeys.swift                  # MasterKey, SymmetricKey, StretchedKey value types
     │   ├── Network/
     │   │   ├── BitwardenAPIClient.swift      # URLSession-based; sync endpoint
+    │   │   ├── Models/
+    │   │   │   ├── SyncResponse.swift            # Codable; sync API response
+    │   │   │   └── RawCipher.swift              # Codable; raw encrypted cipher from sync
     │   │   └── FaviconLoader.swift           # actor; NSCache + URLCache
     │   ├── Keychain/
     │   │   └── KeychainService.swift         # read/write/delete helpers
     │   ├── Mappers/
-    │   │   └── CipherMapper.swift            # SDK Cipher → Domain VaultItem
+    │   │   └── CipherMapper.swift            # RawCipher (Codable) → Domain VaultItem
     │   └── Repositories/
     │       ├── AuthRepositoryImpl.swift
     │       ├── VaultRepositoryImpl.swift
@@ -151,9 +158,12 @@ Bitwarden_MacOS/
         │   ├── UseCases/
         │   └── Entities/
         ├── DataTests/
+        │   ├── Crypto/
         │   ├── Repositories/
         │   ├── Mappers/
         │   └── Network/
+        ├── PresentationTests/
+        │   └── Components/
         └── UITests/
 
 ```
@@ -172,9 +182,9 @@ the source tree. A second target (autofill extension) may be added in a future v
 
 | Topic | Decision |
 |-------|----------|
-| BitwardenSdk macOS support | **No prebuilt macOS slice exists** — must build XCFramework from Rust source; fork sdk-swift (OI-001, BLOCKER) |
-| Auth API shape | App makes all HTTP calls; SDK handles local crypto only. Flow: `preLogin` HTTP → `client.auth().hashPassword()` → `/connect/token` HTTP → `client.crypto().initializeUserCrypto()` (no `initializeOrgCrypto` in v1) |
-| Vault decrypt | Two-phase: `decryptList()` on sync for personal ciphers only (list view), `decrypt(cipher:)` on selection (detail view) |
+| BitwardenSdk macOS support | **sdk-swift iOS-only; sdk-internal not accessible.** Native crypto adopted: `BitwardenCryptoServiceImpl` (CommonCrypto + CryptoKit + Security.framework + swift-argon2). OI-001 closed. |
+| Auth API shape | App makes all HTTP calls; `BitwardenCryptoServiceImpl` handles local crypto only. Flow: `preLogin` HTTP → `hashPassword()` → `/connect/token` HTTP → `initializeUserCrypto()` (no org crypto in v1) |
+| Vault decrypt | Two-phase: `BitwardenCryptoServiceImpl.decryptList()` on sync for personal ciphers only (list view), `decrypt(cipher:)` on selection (detail view) |
 | Reprompt | Deferred to future version. Not implemented in v1. |
 | Three-pane layout | `NavigationSplitView` (macOS 13+) — native, no custom code; reset `itemSelection` on sidebar change |
 | Keychain storage | `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, userId-namespaced keys, no iCloud sync |
@@ -207,10 +217,10 @@ The feature is implemented in strict vertical slices, ordered by user story prio
 
 ### Slice 1 — Xcode Project Scaffold (no user-facing code)
 
-Create the Xcode project, add `BitwardenSdk` as an SPM dependency, verify macOS slice, create
-directory structure, add `Config.swift` with placeholder client identifier.
+Create the Xcode project, add `swift-argon2` as an SPM dependency, create directory structure,
+add `Config.swift` with placeholder client identifier.
 
-**Gate**: `lipo -info` confirms macOS slice. Build succeeds. All tests pass (empty test suite).
+**Gate**: Build succeeds. Empty test suite passes.
 
 ### Slice 2 — Domain Layer
 
@@ -221,12 +231,12 @@ and `contracts/`. Define use cases as protocol-only stubs.
 **Gate**: Compiles with no imports other than `Foundation`. 100% test coverage of entity
 validation rules.
 
-### Slice 3 — Data Layer: Keychain + SDK Wrapper
+### Slice 3 — Data Layer: Keychain + Crypto Service
 
-Implement `KeychainService`, `BitwardenClientService` (wraps `Client`), and the SDK entity
-mapper (`CipherMapper` — personal ciphers only in v1).
+Implement `KeychainService`, `EncString` parser, `BitwardenCryptoServiceImpl` (CommonCrypto + CryptoKit),
+and `CipherMapper` (maps `RawCipher` → `VaultItem` — personal ciphers only in v1).
 
-**Gate**: Unit tests for all mappers. Integration test for Keychain write/read/delete.
+**Gate**: Unit tests for EncString parsing, PBKDF2/HKDF/AES-CBC/HMAC round-trips, CipherMapper (all 5 types). Integration test for Keychain write/read/delete.
 
 ### Slice 4 — US1: Login Flow (Data + Presentation)
 
@@ -263,7 +273,7 @@ active sidebar selection.
 ### Slice 8 — Final Polish & Sign-Out
 
 Wire Sign Out menu item with confirmation dialog (FR-014) — on confirm, call
-`AuthRepository.signOut()`, clear Keychain, release SDK Client, return to login screen.
+`AuthRepository.signOut()`, clear Keychain, release crypto service key material, return to login screen.
 Implement clipboard auto-clear (FR-011). Add `os.Logger` calls to all auth/sync/vault
 code paths. Final constitution check.
 
@@ -285,7 +295,7 @@ code paths. Final constitution check.
 
 | ID | Priority | Item |
 |----|----------|------|
-| OI-001 | **BLOCKER** | No prebuilt macOS XCFramework slice exists. See [sdk-macos-build.md](sdk-macos-build.md) for step-by-step instructions. Must complete before Slice 3. |
+| OI-001 | ~~CLOSED~~ | Native crypto adopted. `BitwardenCryptoServiceImpl` (CommonCrypto + CryptoKit + swift-argon2) replaces sdk-swift. No XCFramework required. |
 | OI-002 | FUTURE | Client registration with Bitwarden required when cloud (US/EU) support is added in a future version. Not needed for v1 (self-hosted only). |
 | OI-003 | FUTURE | EU cloud icons base URL needs verification when cloud support is added. Not applicable for v1. |
 | OI-004 | SHOULD | Evaluate TLS certificate pinning for `api.bitwarden.com` and `identity.bitwarden.com`. |

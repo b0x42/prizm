@@ -1,6 +1,7 @@
 # Bitwarden macOS Development Guidelines
 
-Auto-generated from feature plans. Last updated: 2026-03-13
+Auto-generated from feature plans. Last updated: 2026-03-15
+Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
 
 ## Active Technologies
 
@@ -9,7 +10,7 @@ Auto-generated from feature plans. Last updated: 2026-03-13
 - **Concurrency**: Swift async/await + Structured Concurrency
 - **Platform**: macOS 14 (Sonoma) + macOS 13 (Ventura, n-1)
 - **Project type**: macOS desktop app (App Sandbox + Hardened Runtime)
-- **Crypto/Vault**: `BitwardenSdk` (sdk-swift) — SPM binary target; Data layer only
+- **Crypto/Vault**: CommonCrypto + CryptoKit + Security.framework + `swift-argon2` (Argon2id only) — Data layer only, behind `BitwardenCryptoService` protocol. sdk-swift has no macOS slice.
 - **Storage**: macOS Keychain (secrets), UserDefaults (UI prefs), in-memory (decrypted vault)
 - **Networking**: `URLSession` (no third-party networking library)
 - **Testing**: XCTest (unit + integration), XCUITest (UI journeys)
@@ -23,7 +24,7 @@ Bitwarden_MacOS/
 └── Bitwarden_MacOS/
     ├── App/            # @main, AppContainer (DI), Config
     ├── Domain/         # Pure Swift: Entities, UseCases, Repository protocols
-    ├── Data/           # SDK wrapper, Network, Keychain, Repository impls, Mappers
+    ├── Data/           # Crypto, Network, Keychain, Repository impls, Mappers
     ├── Presentation/   # SwiftUI Views + ViewModels
     └── Tests/          # DomainTests/, DataTests/, UITests/
 
@@ -53,17 +54,18 @@ xcodebuild test \
   -scheme "Bitwarden MacOS" \
   -destination "platform=macOS"
 
-# Verify BitwardenSdk macOS slice (run after SPM resolves)
-lipo -info <path-to>/BitwardenSdk.xcframework/macos-arm64_x86_64/BitwardenSdk.framework/BitwardenSdk
+# Verify swift-argon2 resolved (run after SPM resolves)
+xcodebuild -resolvePackageDependencies -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj
 ```
 
 ## Architecture Rules
 
-1. **Domain layer** — `import Foundation` only. No `BitwardenSdk`, no `SwiftUI`, no `AppKit`.
-2. **Data layer** — Only place that imports `BitwardenSdk`. Translate all SDK types to Domain
-   entities at the Data/Domain boundary via mappers in `Data/Mappers/`.
+1. **Domain layer** — `import Foundation` only. No crypto imports, no `SwiftUI`, no `AppKit`.
+2. **Data layer** — Only place that imports CommonCrypto, CryptoKit, Security, or `swift-argon2`.
+   All crypto behind `BitwardenCryptoService` protocol. Translate types to Domain entities via
+   mappers in `Data/Mappers/`.
 3. **Presentation layer** — Only place that imports `SwiftUI`. Uses Domain use cases; never
-   imports Data layer or `BitwardenSdk`.
+   imports Data layer or crypto modules directly.
 4. **TDD enforced** — Write failing test before writing implementation. Domain use cases and
    Data mappers require unit tests. Critical UI journeys require XCUITest.
 5. **No swallowed errors** — Every `catch {}` must either rethrow or log + surface to Presentation
@@ -81,9 +83,11 @@ lipo -info <path-to>/BitwardenSdk.xcframework/macos-arm64_x86_64/BitwardenSdk.fr
 
 ## Recent Changes
 
-### 001-vault-browser-ui (2026-03-13)
+### 001-vault-browser-ui (2026-03-15)
 Added: full project scaffold, three-pane vault browser, login/unlock flows, search.
-Technologies introduced: `BitwardenSdk`, `NavigationSplitView`, macOS Keychain integration.
+Technologies introduced: native Bitwarden crypto (CommonCrypto + CryptoKit + swift-argon2),
+`NavigationSplitView`, macOS Keychain integration.
+Note: sdk-swift rejected (iOS-only XCFramework); native crypto adopted per CONSTITUTION.md §III.
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

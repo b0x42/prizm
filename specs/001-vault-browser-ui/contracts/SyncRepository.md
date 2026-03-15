@@ -8,8 +8,9 @@
 ## Protocol
 
 ```swift
-/// Handles vault sync: fetching encrypted vault JSON from the server and passing it
-/// to the SDK for decryption. Called exactly once per session (on login or unlock).
+/// Handles vault sync: fetching encrypted vault JSON from the server and decrypting it
+/// via BitwardenCryptoServiceImpl. Called once per unlock event (after login, and after
+/// every relaunch + unlock — in-memory vault is gone after app quit).
 protocol SyncRepository {
 
     /// Fetches the encrypted vault from the server, decrypts it via the SDK,
@@ -52,6 +53,8 @@ enum SyncError: LocalizedError {
 - `sync()` is called from a `SyncUseCase` in the Domain layer, triggered by:
   1. Successful login (`AuthRepository.loginWithPassword` / `loginWithTOTP`)
   2. Successful unlock (`AuthRepository.unlockWithPassword`)
+- Sync is called after every unlock event: after login, and after every relaunch + unlock
+  (in-memory vault is cleared on quit; it must be re-fetched on each unlock).
 - There is **no background sync, periodic poll, or user-triggered re-sync** in v1 (FR-037).
 - The progress callback fires at minimum two status messages: `"Syncing vault…"` (before the
   network call) and `"Decrypting…"` (before the SDK decryption step).

@@ -20,19 +20,19 @@
    ```bash
    open Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj
    ```
-   (The project will resolve the `BitwardenSdk` Swift package automatically on first open.)
+   Xcode will resolve the `swift-argon2` SPM package (`https://github.com/tmthecoder/swift-argon2`)
+   automatically on first open. No SDK XCFramework is needed — crypto is implemented natively
+   via CommonCrypto + CryptoKit.
 
-3. **Verify BitwardenSdk macOS support**
+3. **Verify swift-argon2 resolved**
    ```bash
-   # After SPM resolves packages, find the XCFramework:
-   find ~/Library/Developer/Xcode/DerivedData -name "BitwardenSdk.xcframework" 2>/dev/null | head -1
-   # Then check for macOS slice:
-   lipo -info <path>/BitwardenSdk.xcframework/macos-arm64_x86_64/BitwardenSdk.framework/BitwardenSdk
+   xcodebuild -resolvePackageDependencies \
+     -project Bitwarden_MacOS/Bitwarden_MacOS.xcodeproj
    ```
-   Expected output should include `arm64` and `x86_64` for macOS.
-   If this step fails, see `research.md` Open Items §1 before proceeding.
+   Expected: `Build input file cannot be found` warnings are normal on a fresh checkout;
+   the important line is `resolved source packages` completing without error.
 
-4. **Client identifier** (self-hosted: no registration needed)
+4. **Client identifier** (self-hosted only — no registration needed)
    - v1 targets self-hosted Bitwarden and Vaultwarden only. Self-hosted servers do not
      enforce a client whitelist.
    - Set `Config.clientName = "desktop"` and `Config.deviceType = 7` in
@@ -82,11 +82,11 @@ Bitwarden_MacOS/
     │   └── Repositories/              # AuthRepository, VaultRepository, SyncRepository (protocols)
     │
     ├── Data/
-    │   ├── SDK/                        # BitwardenSdkClientService (wraps SDK Client)
-    │   ├── Network/                    # BitwardenNetworkClient (URLSession-based)
+    │   ├── Crypto/                     # BitwardenCryptoService protocol + impl, EncString, CryptoKeys
+    │   ├── Network/                    # BitwardenAPIClient (URLSession), Models/, FaviconLoader
     │   ├── Keychain/                   # KeychainService
     │   ├── Repositories/              # AuthRepositoryImpl, VaultRepositoryImpl, SyncRepositoryImpl
-    │   └── Mappers/                    # SDK type → Domain entity mappers
+    │   └── Mappers/                    # RawCipher → Domain VaultItem
     │
     ├── Presentation/
     │   ├── Auth/
@@ -121,20 +121,24 @@ Bitwarden_MacOS/
         │   ├── UseCases/
         │   └── Entities/
         ├── DataTests/
+        │   ├── Crypto/
         │   ├── Repositories/
         │   ├── Mappers/
         │   └── Network/
+        ├── PresentationTests/
+        │   └── Components/
         └── UITests/
 
 ```
 
 ## Architecture Rules (enforced at PR review)
 
-1. **Domain layer**: No `import BitwardenSdk`. No `import SwiftUI`. Pure Swift.
-2. **Data layer**: Only place that imports `BitwardenSdk`. All SDK types translated at the
-   Data/Domain boundary via mappers.
+1. **Domain layer**: `import Foundation` only. No crypto, no SwiftUI, no AppKit.
+2. **Data layer**: Only place that imports CommonCrypto, CryptoKit, Security, or swift-argon2.
+   All crypto behind `BitwardenCryptoService` protocol. RawCipher types translated to
+   Domain entities at the boundary via `CipherMapper`.
 3. **Presentation layer**: Only place that imports `SwiftUI`. Uses Domain use cases; never
-   imports Data layer directly.
+   imports Data layer or crypto modules directly.
 4. **TDD**: Write the test first. Commit the failing test before writing the implementation.
 
 ## Key Development Flows
@@ -142,7 +146,7 @@ Bitwarden_MacOS/
 ### Adding a new detail field
 
 1. Add field to the Domain entity in `Domain/Entities/`.
-2. Update the SDK mapper in `Data/Mappers/`.
+2. Update `CipherMapper` in `Data/Mappers/`.
 3. Update the detail SwiftUI view in `Presentation/Vault/Detail/`.
 4. Write a unit test for the mapper. Write a UI snapshot/test for the detail view.
 
