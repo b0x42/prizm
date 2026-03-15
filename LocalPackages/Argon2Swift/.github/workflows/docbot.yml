@@ -1,0 +1,55 @@
+# This is a basic workflow to help you get started with Actions
+
+name: docbot
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  update-docs:
+    # The type of runner that the job will run on
+    runs-on: macos-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      # Install jazzy
+      - name: Install Jazzy
+        run: sudo gem install jazzy
+
+      # Generate Docs
+      - name: Generate Docs
+        run: |
+          git submodule update --recursive
+          jazzy --min-acl internal --no-hide-documentation-coverage --theme fullwidth --output ./docs --documentation=./*.md -x -scheme,Argon2Swift
+#          rm -rf Sources/Argon2/src/opt.c
+#          rm -rf Sources/Argon2/src/bench.c
+#          rm -rf Sources/Argon2/src/genkat.c
+#          rm -rf Sources/Argon2/src/run.c
+#          rm -rf Sources/Argon2/src/test.c
+  
+      - name: Push Documentation
+        run: |
+          mkdir doc-src && git clone https://github.com/tmthecoder/docs doc-src
+          cd doc-src
+          echo "docs.tmthecoder.dev" > CNAME
+          git config user.name  "Docbot"
+          git config user.email "docbot@github.com"
+          if [ -d Argon2Swift/ ]; then rm -Rf Argon2Swift/; fi
+          cp -R ../docs Argon2Swift/
+          git remote add secure-origin https://${{ secrets.ACCESS_TOKEN }}@github.com/tmthecoder/docs
+          git add .
+          git commit -m "Updated documentation for Argon2Swift" --allow-empty
+          git push secure-origin main
