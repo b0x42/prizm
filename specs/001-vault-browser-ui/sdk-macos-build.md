@@ -1,8 +1,32 @@
 # Building BitwardenFFI.xcframework with macOS Support
 
-**Why**: `bitwarden/sdk-swift` ships iOS slices only. A native macOS app needs a macOS slice.
-**Effort**: ~1–2 hours first time; fully scriptable after that.
-**Result**: A drop-in `BitwardenFFI.xcframework` that works in both iOS and macOS SPM targets.
+> **STATUS: ARCHIVED — Not used in v1.**
+>
+> This document is preserved for historical reference and in case a future version
+> migrates to the official `sdk-swift` package.
+>
+> **Why archived**: `bitwarden/sdk-internal` (which contains the UniFFI Swift bindings
+> and `build.sh`) is a private Bitwarden repository and is not accessible. The public
+> `bitwarden/sdk` repo has no `bitwarden-uniffi` crate. The official `sdk-swift` release
+> ships an iOS-only XCFramework with no macOS slice.
+>
+> **Current approach**: Native Bitwarden crypto implemented using CommonCrypto + CryptoKit
+> + Security.framework + `swift-argon2` (Argon2id only), wrapped behind a
+> `BitwardenCryptoService` protocol in the Data layer. See `research.md §1` and
+> `CONSTITUTION.md §III`.
+>
+> **Revisit trigger**: If Bitwarden officially packages a macOS slice of
+> `BitwardenFFI.xcframework` in a future `sdk-swift` release, migrating to the SDK
+> SHOULD be evaluated. The `BitwardenCryptoService` protocol boundary makes the swap
+> straightforward — only `BitwardenCryptoServiceImpl` would need to change.
+
+---
+
+## Original Steps (Preserved for Reference)
+
+The steps below were written assuming access to `sdk-internal`. They are retained here
+because they document the correct approach for building a macOS slice if access becomes
+available, and may be useful as the basis for an upstream PR to `bitwarden/sdk-swift`.
 
 ---
 
@@ -22,14 +46,9 @@ xcodebuild -version      # need Xcode 15+
 ## Step 1 — Clone the SDK source
 
 The build scripts live in `bitwarden/sdk-internal` (not the public `bitwarden/sdk`).
-If you only have access to the public repo, it also works — the `build.sh` structure is identical.
 
 ```bash
-# Option A: public repo
-git clone https://github.com/bitwarden/sdk.git bitwarden-sdk
-cd bitwarden-sdk
-
-# Option B: sdk-internal (if you have access)
+# Requires sdk-internal access (private Bitwarden repository)
 git clone https://github.com/bitwarden/sdk-internal.git bitwarden-sdk
 cd bitwarden-sdk
 ```
@@ -87,7 +106,6 @@ Apply this diff:
 +  -output ./tmp/target/universal-macos/$PROFILE/libbitwarden_uniffi.a
 
  # Generate swift bindings (unchanged — uses iOS sim dylib)
- cargo run -p uniffi-bindgen generate \
 @@ -40,6 +52,9 @@
  xcodebuild -create-xcframework \
    -library ../../../target/aarch64-apple-ios/$PROFILE/libbitwarden_uniffi.a \
@@ -99,73 +117,14 @@ Apply this diff:
    -output ./BitwardenFFI.xcframework
 ```
 
-Or apply it directly:
-
-```bash
-cd crates/bitwarden-uniffi/swift
-
-# Make a backup
-cp build.sh build.sh.orig
-
-# Apply the patch
-patch -p4 << 'PATCH'
---- a/crates/bitwarden-uniffi/swift/build.sh
-+++ b/crates/bitwarden-uniffi/swift/build.sh
-@@ -10,6 +10,7 @@ cd "$(dirname "$0")"
- # Build native library
- export IPHONEOS_DEPLOYMENT_TARGET="13.0"
-+export MACOSX_DEPLOYMENT_TARGET="13.0"
- export RUSTFLAGS="-C link-arg=-Wl,-application_extension"
- if [[ $DEBUG_MODE = "true" ]]; then
-   PROFILE="debug"
-@@ -20,8 +21,14 @@ fi
- cargo build --package bitwarden-uniffi --target aarch64-apple-ios-sim $PROFILE_FLAG
- cargo build --package bitwarden-uniffi --target aarch64-apple-ios $PROFILE_FLAG
- cargo build --package bitwarden-uniffi --target x86_64-apple-ios $PROFILE_FLAG
-+cargo build --package bitwarden-uniffi --target aarch64-apple-darwin $PROFILE_FLAG
-+cargo build --package bitwarden-uniffi --target x86_64-apple-darwin $PROFILE_FLAG
-
- mkdir -p tmp/target/universal-ios-sim/$PROFILE
-+mkdir -p tmp/target/universal-macos/$PROFILE
-
- # Create universal libraries
- lipo -create ../../../target/aarch64-apple-ios-sim/$PROFILE/libbitwarden_uniffi.a \
-   ../../../target/x86_64-apple-ios/$PROFILE/libbitwarden_uniffi.a \
-   -output ./tmp/target/universal-ios-sim/$PROFILE/libbitwarden_uniffi.a
-
-+lipo -create ../../../target/aarch64-apple-darwin/$PROFILE/libbitwarden_uniffi.a \
-+  ../../../target/x86_64-apple-darwin/$PROFILE/libbitwarden_uniffi.a \
-+  -output ./tmp/target/universal-macos/$PROFILE/libbitwarden_uniffi.a
-
- # Generate swift bindings
- cargo run -p uniffi-bindgen generate \
-   ../../../target/aarch64-apple-ios-sim/$PROFILE/libbitwarden_uniffi.dylib \
-@@ -40,6 +47,8 @@ xcodebuild -create-xcframework \
-   -library ../../../target/aarch64-apple-ios/$PROFILE/libbitwarden_uniffi.a \
-   -headers ./tmp/Headers \
-   -library ./tmp/target/universal-ios-sim/$PROFILE/libbitwarden_uniffi.a \
-   -headers ./tmp/Headers \
-+  -library ./tmp/target/universal-macos/$PROFILE/libbitwarden_uniffi.a \
-+  -headers ./tmp/Headers \
-   -output ./BitwardenFFI.xcframework
-PATCH
-```
-
 ---
 
 ## Step 4 — Patch `Package.swift` to declare macOS platform
 
-```bash
-# File: crates/bitwarden-uniffi/swift/Package.swift
-sed -i '' 's/platforms: \[/platforms: [\n        .macOS(.v13),/' Package.swift
-```
-
-Verify the result looks like:
-
 ```swift
 platforms: [
     .macOS(.v13),
-    .iOS(.v13),
+    .iOS(.v16),
 ],
 ```
 
@@ -178,23 +137,17 @@ platforms: [
 ./build.sh
 ```
 
-This takes 5–15 minutes on first run (Rust compiles 5 targets). Subsequent builds are faster
-due to incremental compilation.
-
-**Expected output**:
+Expected output structure:
 
 ```
 BitwardenFFI.xcframework/
 ├── Info.plist
 ├── ios-arm64/
-│   └── BitwardenFFI.framework/
 ├── ios-arm64_x86_64-simulator/
-│   └── BitwardenFFI.framework/
 └── macos-arm64_x86_64/          ← new
-    └── BitwardenFFI.framework/
 ```
 
-**Verify the macOS slice**:
+Verify the macOS slice:
 
 ```bash
 lipo -info BitwardenFFI.xcframework/macos-arm64_x86_64/BitwardenFFI.framework/BitwardenFFI
@@ -205,104 +158,17 @@ lipo -info BitwardenFFI.xcframework/macos-arm64_x86_64/BitwardenFFI.framework/Bi
 
 ## Step 6 — Fork `sdk-swift` and point it to the new XCFramework
 
-```bash
-# 1. Fork https://github.com/bitwarden/sdk-swift on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/sdk-swift.git
-cd sdk-swift
-
-# 2. Copy in the new XCFramework and updated Swift sources
-cp -R /path/to/bitwarden-sdk/crates/bitwarden-uniffi/swift/BitwardenFFI.xcframework .
-cp /path/to/bitwarden-sdk/crates/bitwarden-uniffi/swift/Sources/BitwardenSdk/*.swift \
-   Sources/BitwardenSdk/
-
-# 3. Update Package.swift — local path (for development)
-cat > Package.swift << 'EOF'
-// swift-tools-version: 5.9
-import PackageDescription
-
-let package = Package(
-    name: "BitwardenSdk",
-    platforms: [
-        .macOS(.v13),
-        .iOS(.v16),
-    ],
-    products: [
-        .library(
-            name: "BitwardenSdk",
-            targets: ["BitwardenSdk", "BitwardenFFI"]),
-    ],
-    targets: [
-        .target(
-            name: "BitwardenSdk",
-            dependencies: ["BitwardenFFI"],
-            swiftSettings: [.unsafeFlags(["-suppress-warnings"])]),
-        .testTarget(
-            name: "BitwardenSdkTests",
-            dependencies: ["BitwardenSdk"]),
-        .binaryTarget(name: "BitwardenFFI", path: "BitwardenFFI.xcframework")
-    ]
-)
-EOF
-
-# 4. Commit and push to your fork
-git add -A
-git commit -m "feat: add macOS platform support (arm64 + x86_64)"
-git push
-```
+Fork `bitwarden/sdk-swift`, copy in the new XCFramework, update `Package.swift` to use a
+local `.binaryTarget(name:path:)` pointing to the built framework, then push.
 
 ---
 
-## Step 7 — Point your Bitwarden macOS app to the fork
+## Step 7 — Open the upstream PR
 
-In Xcode:
-1. **File → Add Package Dependencies**
-2. Enter your fork URL: `https://github.com/YOUR_USERNAME/sdk-swift`
-3. Set the branch to `main` (or pin to the commit you pushed)
-4. Replace any existing `BitwardenSdk` reference
-
-Or in a local `Package.swift` if you're using SPM for the app:
-
-```swift
-.package(url: "https://github.com/YOUR_USERNAME/sdk-swift", branch: "main"),
-```
-
----
-
-## Step 8 — Open the upstream PR
-
-```bash
-# In your sdk-swift fork, open a PR to bitwarden/sdk-swift
-# In your sdk (or sdk-internal) fork, open a PR with the build.sh + Package.swift changes
-gh pr create \
-  --repo bitwarden/sdk-swift \
-  --title "feat: add macOS platform support" \
-  --body "Adds macOS arm64 + x86_64 slices to BitwardenFFI.xcframework and declares .macOS(.v13) in Package.swift. Enables native macOS Bitwarden clients to use the official SDK without Mac Catalyst."
-```
-
----
-
-## Troubleshooting
-
-**`error: cannot find -lbitwarden_uniffi`**
-→ Make sure the `cargo build` step completed for both macOS targets before running `lipo`.
-Run `ls ../../../target/aarch64-apple-darwin/release/` to confirm `libbitwarden_uniffi.a` exists.
-
-**`XCFramework: could not find a slice for the current platform`**
-→ Clean DerivedData (`⌘⇧K` in Xcode, or `rm -rf ~/Library/Developer/Xcode/DerivedData`), then re-resolve packages.
-
-**`uniffi-bindgen: dylib not found`**
-→ The Swift binding generation uses the iOS Simulator dylib — it does not need to be re-run for macOS. The generated `.swift` and `.h` files are platform-agnostic; same bindings work for iOS and macOS.
-
-**`Sandbox: deny(1) file-read`** at runtime
-→ Check App Sandbox entitlements. The SDK uses in-memory operations only; no extra entitlements needed for the SDK itself.
-
----
-
-## Notes for the upstream PR
-
-Key points to include in the PR description:
+Key points for the PR description:
 - The Rust core already supports macOS targets — this is purely a packaging change
-- `IPHONEOS_DEPLOYMENT_TARGET` env var is scoped to iOS builds only; macOS builds use `MACOSX_DEPLOYMENT_TARGET`
-- The Swift bindings (generated by uniffi-bindgen) are platform-agnostic — no regeneration needed for macOS
+- `IPHONEOS_DEPLOYMENT_TARGET` is scoped to iOS; macOS builds use `MACOSX_DEPLOYMENT_TARGET`
+- The Swift bindings generated by uniffi-bindgen are platform-agnostic — no regeneration needed
 - `DeviceType.macOsDesktop` already exists in the SDK — clear signal of intended macOS support
-- Other community macOS Bitwarden clients (e.g. Swiftwarden) currently roll their own crypto because the SDK doesn't package macOS — merging this PR removes that incentive
+- Other community macOS Bitwarden clients currently roll their own crypto because the SDK
+  doesn't package macOS — merging this removes that incentive

@@ -9,9 +9,9 @@
 
 ## Overview
 
-All entities below are **Domain layer** types — pure Swift, no SDK imports, no UI imports.
-They are produced by the Data layer (which translates from `BitwardenSdk` types) and consumed
-by the Presentation layer (via Use Cases).
+All entities below are **Domain layer** types — pure Swift, no crypto imports, no UI imports.
+They are produced by the Data layer (which decrypts `RawCipher` Codable types via
+`CipherMapper`) and consumed by the Presentation layer (via Use Cases).
 
 ---
 
@@ -22,7 +22,7 @@ by the Presentation layer (via Use Cases).
 ```swift
 /// The self-hosted Bitwarden or Vaultwarden server the app authenticates against.
 /// Bitwarden cloud (US/EU) is not supported in v1.
-struct ServerEnvironment: Equatable {
+struct ServerEnvironment: Equatable, Codable {
     let baseURL: URL                     // user-supplied, e.g. https://vault.example.com
     let overrides: ServerURLOverrides    // optional per-service overrides
 
@@ -32,7 +32,7 @@ struct ServerEnvironment: Equatable {
     var iconsURL: URL { overrides.iconsURL ?? baseURL.appendingPathComponent("icons") }
 }
 
-struct ServerURLOverrides: Equatable {
+struct ServerURLOverrides: Equatable, Codable {
     var apiURL: URL?
     var identityURL: URL?
     var iconsURL: URL?
@@ -299,7 +299,7 @@ enum SidebarSelection: Hashable {
 }
 
 /// Discriminator for item type (used for sidebar Type section).
-enum ItemType: Equatable, CaseIterable {
+enum ItemType: Equatable, Hashable, CaseIterable {
     case login
     case card
     case identity
@@ -310,15 +310,36 @@ enum ItemType: Equatable, CaseIterable {
 
 ---
 
+### KdfParams
+
+```swift
+/// Key derivation function parameters returned by /accounts/prelogin.
+/// Stored in Keychain at login time so unlock works offline.
+enum KdfType: Int, Codable {
+    case pbkdf2   = 0   // PBKDF2-SHA256 — older/migrated accounts
+    case argon2id = 1   // Argon2id — default for new accounts since 2023
+}
+
+struct KdfParams: Codable {
+    let type: KdfType
+    let iterations: Int          // PBKDF2: typically 600,000. Argon2id: typically 3.
+    let memory: Int?             // Argon2id only — memory in MB (e.g. 64). nil for PBKDF2.
+    let parallelism: Int?        // Argon2id only — thread count (e.g. 4). nil for PBKDF2.
+}
+```
+
+---
+
 ### AuthSession (Keychain-persisted)
 
 ```swift
 /// Opaque session tokens stored in the macOS Keychain.
-/// The SDK Client holds derived key material in memory only (never persisted).
+/// Key material (master key, symmetric key) is held in BitwardenCryptoServiceImpl
+/// in-memory only — never persisted.
 struct AuthSession {
-    let accessToken: String    // Keychain key: "bw.accessToken"
-    let refreshToken: String   // Keychain key: "bw.refreshToken"
-    let accountId: String      // Keychain key: "bw.accountId"
+    let accessToken: String    // Keychain key: "bw.macos:{userId}:accessToken"
+    let refreshToken: String   // Keychain key: "bw.macos:{userId}:refreshToken"
+    let accountId: String      // Keychain key: "bw.macos:activeUserId" (global)
 }
 ```
 
@@ -342,10 +363,10 @@ App Launch
     └─ Keychain session found ───► UnlockScreen
                                         │
                                         ▼
-                                   KDF (local)
+                                   KDF (local only — no network)
                                         │
                                         ▼
-                                  DecryptProgress
+                                  SyncProgress (network — vault re-fetched)
                                         │
                                         ▼
                                   VaultBrowser (three-pane)
@@ -353,7 +374,7 @@ App Launch
                                    App Quits
                                         │
                                    Vault Locks
-                                   (Client released from memory)
+                                   (key material zeroed from memory)
 ```
 
 ---
@@ -368,47 +389,53 @@ Two-phase decrypt: lightweight list on sync, full detail on item selection.
 HTTP POST /accounts/prelogin  →  KDF params
     │
     ▼
-SDK client.auth().hashPassword(email:password:kdfParams:purpose:.serverAuthorization)
+BitwardenCryptoServiceImpl.hashPassword(email:password:kdfParams:purpose:.serverAuthorization)
     │
     ▼
 HTTP POST /connect/token  →  { access_token, refresh_token, Key, PrivateKey, ... }
     │
     ▼
-SDK client.crypto().initializeUserCrypto(kdfParams:email:privateKey:method:.password)
-    │   (initializeOrgCrypto is NOT called in v1 — org ciphers are excluded)
+BitwardenCryptoServiceImpl.initializeUserCrypto(masterPassword:email:kdfParams:encUserKey:encPrivateKey:)
+    │   (org crypto is NOT called in v1 — org ciphers are excluded)
     │
     ▼
 HTTP GET /sync?excludeDomains=true  →  raw SyncResponse JSON
     │
     ▼
-SDK client.vault().ciphers().decryptList(ciphers: syncResponse.ciphers)
-    │   Returns [CipherListView] — lightweight summaries for item list rows.
+BitwardenCryptoServiceImpl.decryptList(ciphers: syncResponse.ciphers)
+    │   Returns [VaultItem] — lightweight summaries for item list rows (list-weight fields only).
     │   Only personal ciphers (organizationId == nil) are decrypted; org ciphers skipped.
     │
     ▼
-Data layer maps [CipherListView] → [VaultItem] (list-weight entities)
+(mapping already applied by crypto service via CipherMapper)
     │
     ▼
 VaultRepository stores [VaultItem] in memory
 
-── UNLOCK PATH ─────────────────────────────────────────────────────────────
+── UNLOCK PATH (relaunch after quit — in-memory vault is gone) ─────────────
 
-SDK client.crypto().initializeUserCrypto(kdfParams:email:privateKey:method:.password)
-    │   (no network call; uses stored encUserKey + encPrivateKey from Keychain)
-    │   (initializeOrgCrypto is NOT called in v1)
+BitwardenCryptoServiceImpl.initializeUserCrypto(masterPassword:email:kdfParams:encUserKey:encPrivateKey:)
+    │   (KDF is local — no network; uses stored encUserKey + encPrivateKey from Keychain)
+    │   (org crypto is NOT called in v1)
     │
     ▼
-VaultRepository in-memory items are already present from previous sync.
-No re-fetch of vault JSON needed on unlock.
+HTTP GET /sync?excludeDomains=true  →  raw SyncResponse JSON
+    │   (vault must be re-fetched; in-memory data was cleared on quit)
+    │
+    ▼
+BitwardenCryptoServiceImpl.decryptList(ciphers: syncResponse.ciphers)
+    │
+    ▼
+VaultRepository stores [VaultItem] in memory
 
 ── ON ITEM SELECTION (detail pane) ─────────────────────────────────────────
 
-SDK client.vault().ciphers().decrypt(cipher: selectedRawCipher)
-    │   Returns CipherView — full detail including passwords, custom fields, history.
+BitwardenCryptoServiceImpl.decrypt(cipher: selectedRawCipher)
+    │   Returns VaultItem — full detail including passwords and custom fields.
     │   Called lazily: only for the currently selected item.
     │
     ▼
-Data layer maps CipherView → VaultItem (detail-weight entity)
+(mapping already applied by crypto service via CipherMapper)
     │
     ▼
 ItemDetailView renders full content

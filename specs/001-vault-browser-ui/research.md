@@ -8,127 +8,120 @@
 
 ## 1. BitwardenSdk (sdk-swift) — macOS Support
 
-**Decision**: Proceed with sdk-swift as the canonical crypto/vault library. Building a macOS
-XCFramework slice is a **hard blocker** that must be resolved before Slice 3 (Data layer).
+**Decision**: Implement Bitwarden crypto natively using CommonCrypto + CryptoKit + Security.framework.
+No `sdk-swift` dependency. OI-001 is closed.
 
-**Findings** (confirmed by research agent, `Package.swift` at tag `v2.0.0-4975-625c9bc`):
-- `sdk-swift` distributes a binary `BitwardenFFI.xcframework` via SPM `.binaryTarget`.
-  Current version: `v2.0.0-4975-625c9bc` (2026-03-13). Tags are continuous CI builds
-  (format `v2.0.0-{build}-{sha}`); the iOS client pins to a specific commit revision.
-- `Package.swift` declares **`.iOS(.v16)` only** — there is **no macOS slice** in the
-  prebuilt XCFramework. This is confirmed; not merely a packaging omission.
-- The underlying Rust SDK (`bitwarden/sdk`) cross-compiles to macOS targets
-  (`x86_64-apple-macosx`, `aarch64-apple-macosx`) and the Swift DeviceType enum includes
-  `macOsDesktop` — so macOS support exists at the Rust level, just not packaged.
-- No open issues about macOS support; this is uncharted territory for the SDK team.
+**Findings** (confirmed 2026-03-15):
+- `sdk-swift` distributes `BitwardenFFI.xcframework` — iOS-only (`ios-arm64`, `ios-arm64_x86_64-simulator`).
+  No macOS slice exists in any release.
+- `bitwarden/sdk-internal` (private) contains the UniFFI Swift bindings and `build.sh`. Access is not available.
+- `bitwarden/sdk` (public) has no `bitwarden-uniffi` crate. The public `bitwarden-c` and `bitwarden-json`
+  crates only cover Secrets Manager — no vault cipher operations.
+- All Bitwarden crypto algorithms are standard and fully documented in the Bitwarden Security Whitepaper:
+  PBKDF2-SHA256 / Argon2id (key derivation), HKDF (key stretching), AES-256-CBC + HMAC-SHA256
+  (symmetric encryption), RSA-OAEP (asymmetric). All are available in Apple frameworks.
 
-**Rationale**: The SDK is mandated by constitution §III. Since no prebuilt macOS slice exists,
-the XCFramework must be built from the Rust SDK source. This is technically feasible.
+**Approach**:
+- `BitwardenCryptoService` protocol + `BitwardenCryptoServiceImpl` actor in the Data layer.
+- `EncString` value type parses and decrypts Bitwarden's `{type}.{iv}|{ct}|{mac}` format.
+- KDF: `CCKeyDerivationPBKDF` (CommonCrypto) for PBKDF2-SHA256; Argon2id via `swift-argon2` package.
+- HKDF: `HKDF<SHA256>` (CryptoKit) for key stretching.
+- AES-256-CBC: `kCCAlgorithmAES` (CommonCrypto).
+- HMAC-SHA256: `HMAC<SHA256>` (CryptoKit).
+- RSA-OAEP: `SecKeyCreateDecryptedData` (Security.framework).
+- Sync response parsed directly from JSON via `Codable` types in `Data/Network/Models/`.
+- `CipherMapper` maps from those Codable types → Domain `VaultItem`.
 
-**Alternatives considered**:
-- Custom KDF / cipher decryption using CryptoKit — **rejected** (constitution §III prohibits this).
-- Wait for upstream to package macOS — **rejected** (no timeline; blocks all progress).
-
-**Action items** (**BLOCKERS** — must resolve before Slice 3):
-1. Clone `bitwarden/sdk`, add macOS targets to the XCFramework build script,
-   build `BitwardenFFI.xcframework` with `macos-arm64_x86_64` slice.
-2. Fork `bitwarden/sdk-swift`, add `.macOS(.v13)` to `Package.swift`, point to the
-   locally built XCFramework. Use this fork until upstream accepts a PR.
-3. Open a GitHub issue on `bitwarden/sdk-swift` documenting the macOS use case.
+**No OI-001 blocker. Implementation can proceed immediately.**
 
 ---
 
-## 2. BitwardenSdk Auth & Vault API Shape
+## 2. Bitwarden Crypto — Native Implementation API Shape
 
-**Decision**: Use the SDK's `Client` object as the top-level entry point, initialised once and
-owned by the Data layer as a `BitwardenClientService` actor.
+**Decision**: `BitwardenCryptoService` protocol in the Data layer replaces the SDK `Client` object.
+All crypto is implemented using Apple frameworks. The Data layer owns the service as an `actor`.
 
-**Corrected API flow** (verified against SDK source + Bitwarden iOS reference at `bitwarden/ios`):
+**Service protocol**:
 
-The SDK does **not** handle HTTP calls. The app makes all network requests; the SDK handles
-only local cryptography. The correct call sequence is:
-
-```
-// Step 1 — App makes HTTP POST {API_BASE}/accounts/prelogin → gets KDF params
-let preLoginResponse = try await networkClient.preLogin(email: email)
-// preLoginResponse: { kdf: 0, kdfIterations: 600000 }
-
-// Step 2 — SDK derives master password hash (for network login)
-let masterPasswordHash = try client.auth().hashPassword(
-    email: email,
-    password: masterPassword,
-    kdfParams: preLoginResponse.kdf,    // Kdf enum: .pbkdf2 or .argon2id
-    purpose: .serverAuthorization
-)
-
-// Step 3 — App makes HTTP POST {IDENTITY_BASE}/connect/token (form-encoded)
-// Body: grant_type=password, username={email}, password={masterPasswordHash},
-//       client_id={registered}, deviceType={7}, deviceIdentifier={stableUUID}, ...
-// Response: { access_token, refresh_token, Key (encUserKey), PrivateKey (encPrivateKey), ... }
-let tokenResponse = try await networkClient.identityToken(...)
-
-// Step 4 — SDK initialises user crypto (unlocks vault key material)
-try await client.crypto().initializeUserCrypto(req: InitUserCryptoRequest(
-    kdfParams: tokenResponse.kdf,
-    email: email,
-    privateKey: tokenResponse.privateKey,      // user's encrypted RSA private key
-    method: .password(
-        password: masterPassword,
-        userKey: tokenResponse.key             // encrypted user symmetric key
-    )
-))
-
-// Step 5 — NOT CALLED IN V1: initializeOrgCrypto would be called here for org ciphers.
-// In v1, org ciphers are excluded (see FR-033); only personal ciphers are decrypted.
-
-// Step 6 — App makes HTTP GET {API_BASE}/sync → encrypted vault JSON
-// Step 7 — SDK decrypts vault (personal ciphers only — list view, for item list)
-let cipherListViews = try client.vault().ciphers().decryptList(ciphers: syncResponse.ciphers)
-
-// Step 8 — SDK decrypts individual cipher (full detail view, on demand)
-let cipherView = try client.vault().ciphers().decrypt(cipher: selectedCipher)
-```
-
-**Unlock flow** (existing session, no network needed):
-```
-// SDK re-initialises from stored encrypted keys
-try await client.crypto().initializeUserCrypto(req: InitUserCryptoRequest(
-    kdfParams: storedKdfParams,
-    email: storedEmail,
-    privateKey: storedEncPrivateKey,
-    method: .password(password: enteredMasterPassword, userKey: storedEncUserKey)
-))
-// No HTTP call needed. Vault is now unlocked in memory.
-```
-
-**Reprompt verification** (no network needed):
 ```swift
-// Store local hash at login time:
-let localHash = try client.auth().hashPassword(
-    email: email,
-    password: masterPassword,
-    kdfParams: kdfParams,
-    purpose: .localAuthorization
-)
-// Store localHash in Keychain as "bw.macos:{userId}:localPasswordHash"
+/// Data layer only. Owns in-memory key material. Released on lock/sign-out.
+actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
+    // Key derivation for network authentication
+    func hashPassword(email: String, password: String, kdfParams: KdfParams, purpose: HashPurpose) async throws -> String
 
-// At reprompt time:
-let isValid = try client.auth().validatePassword(
-    password: enteredPassword,
-    passwordHash: storedLocalHash
-)
+    // Initialise vault key material from master password + stored encrypted keys
+    func initializeUserCrypto(masterPassword: String, email: String, kdfParams: KdfParams,
+                               encUserKey: String, encPrivateKey: String) async throws
+
+    // Decrypt raw cipher list from sync response (personal ciphers only)
+    func decryptList(ciphers: [RawCipher]) async throws -> [VaultItem]
+
+    // Decrypt a single cipher for detail view (called on item selection)
+    func decrypt(cipher: RawCipher) async throws -> VaultItem
+
+    // Lock: wipe all key material from memory
+    func lockVault()
+}
 ```
+
+**Crypto algorithm mapping**:
+
+| Operation | Algorithm | Apple framework |
+|-----------|-----------|-----------------|
+| Master key derivation (PBKDF2) | PBKDF2-SHA256 | CommonCrypto `CCKeyDerivationPBKDF` |
+| Master key derivation (Argon2id) | Argon2id | `swift-argon2` SPM package |
+| Key stretching | HKDF-SHA256 | CryptoKit `HKDF<SHA256>` |
+| Symmetric decrypt | AES-256-CBC + HMAC-SHA256 | CommonCrypto `kCCAlgorithmAES` + CryptoKit `HMAC<SHA256>` |
+| RSA key unwrap | RSA-OAEP-SHA1 | Security.framework `SecKeyCreateDecryptedData` |
+
+**EncString format** (Bitwarden wire format):
+
+| Type | Format | Usage |
+|------|--------|-------|
+| 0 | `{base64_iv}|{base64_ct}` | AES-CBC-256, no MAC (legacy) |
+| 2 | `{base64_iv}|{base64_ct}|{base64_mac}` | AES-CBC-256 + HMAC-SHA256 (common) |
+| 4 | `{base64_ct}` | RSA-2048-OAEP-SHA1 (org keys — not used in v1) |
+| 6 | `{base64_ct}` | RSA-2048-OAEP-SHA256 (user key encrypted by public key) |
+
+**Key derivation flow** (replaces SDK `hashPassword` + `initializeUserCrypto`):
+
+```
+1. masterKey = PBKDF2-SHA256(password=masterPassword, salt=email.lowercased().utf8,
+                              iterations=kdfParams.iterations, keyLen=32)
+
+2a. serverHash = PBKDF2-SHA256(password=masterKey, salt=masterPassword.utf8, iterations=1, keyLen=32)
+    → base64(serverHash) → sent as `password` field in /connect/token
+
+2b. stretchedKey[0..31] = HKDF-SHA256-expand(prk=masterKey, info="enc", len=32)  // AES key
+    stretchedKey[32..63] = HKDF-SHA256-expand(prk=masterKey, info="mac", len=32) // MAC key
+
+3. symmetricKey (64 bytes) = AES-CBC-256-decrypt(encUserKey, key=stretchedKey[0..31],
+                                                  mac_key=stretchedKey[32..63])
+   // encUserKey is the EncString type-2 `Key` field from the token response
+
+4. Each vault field = AES-CBC-256-decrypt(encField, key=symmetricKey[0..31],
+                                          mac_key=symmetricKey[32..63])
+   // Verify HMAC-SHA256 before decrypt; discard item on MAC failure
+```
+
+**Unlock flow** (no network; uses stored Keychain values):
+```
+initializeUserCrypto(masterPassword, email, kdfParams, encUserKey, encPrivateKey)
+  → re-derive stretchedKey from masterPassword
+  → re-decrypt symmetricKey from encUserKey
+  → vault is now unlocked in memory
+```
+
+**Reprompt** (deferred to future version): not implemented.
 
 **Notes**:
-- `client.crypto().initializeUserCrypto` and `initializeOrgCrypto` must both be called before
-  any cipher decryption. Org crypto initialization requires the sync response (org keys).
-- The `Client` object holds in-memory key material. Release it on lock/sign-out.
-- `client.vault().ciphers().decryptList()` returns `[CipherListView]` (summary — efficient for
-  the item list). `decrypt(cipher:)` returns `CipherView` (full detail — call on selection).
-- The iOS reference uses a two-phase decrypt: list on sync, detail on demand. Follow this pattern.
-
-**Alternatives considered**:
-- Direct Bitwarden API calls + manual AES-CBC decryption — **rejected** (constitution §III).
+- KDF params (`kdfParams`) are stored in Keychain at login time (`bw.macos:{userId}:kdfParams`)
+  so unlock works offline without a network preLogin call.
+- Most Bitwarden accounts use PBKDF2-SHA256. Argon2id accounts are supported via `swift-argon2`.
+- The `encPrivateKey` (RSA private key) is decrypted from Keychain but not actively used in v1
+  since org ciphers are excluded. It is decrypted as part of `initializeUserCrypto` for
+  completeness and forward-compat; the result is held in memory and discarded on lock.
+- `RawCipher` is a `Codable` struct in `Data/Network/Models/` that mirrors the sync API cipher JSON.
 
 ---
 
@@ -168,7 +161,7 @@ Bitwarden cloud registration is required when cloud support is added in a future
 |-------|-------|
 | `grant_type` | `password` |
 | `username` | user email |
-| `password` | master password hash (from SDK `hashPassword(..., purpose: .serverAuthorization)`) |
+| `password` | master password hash (from `BitwardenCryptoServiceImpl.hashPassword(..., purpose: .serverAuthorization)`) |
 | `scope` | `api offline_access` |
 | `client_id` | registered client string (e.g. `desktop`) — **requires Bitwarden registration** |
 | `deviceType` | `7` (macOS Desktop) — **pending official registration** |
@@ -197,7 +190,7 @@ clear error per FR-016.
 > device type `14` (macOS CLI) may be used as a temporary stand-in.
 
 **Alternatives considered**:
-- Delegate all HTTP to the SDK — not applicable; SDK has no network layer.
+- Delegate all HTTP to a library — not applicable; all network calls use URLSession directly.
 
 ---
 
@@ -373,7 +366,7 @@ From `bitwarden/ios` (confirmed by agent research):
 
 | Pattern | Directly reusable for macOS |
 |---------|----------------------------|
-| `ClientService` protocol + `DefaultClientService` actor | Yes — wraps `Client` per userId; only instantiation changes |
+| `ClientService` protocol + `DefaultClientService` actor | Partial — actor-per-service pattern reused; `BitwardenCryptoServiceImpl` replaces SDK `Client` |
 | `KeychainService` (raw SecItem) + `KeychainRepository` (semantic) | Yes — same Security framework APIs on macOS |
 | `ServiceContainer` + `Has<X>` protocol-composition DI | Yes — zero platform code |
 | `SyncService` → `CipherService` layer | Yes — pattern applies; Core Data works on macOS |
@@ -399,7 +392,7 @@ a shared `BitwardenShared` framework (mirroring the iOS approach) would be appro
 
 | ID | Priority | Item |
 |----|----------|------|
-| OI-001 | **BLOCKER** | Build `BitwardenFFI.xcframework` with macOS slices from `bitwarden/sdk` Rust source; fork `sdk-swift` to add `.macOS(.v13)`. Open upstream issue. |
+| OI-001 | ~~CLOSED~~ | Native crypto approach adopted — CommonCrypto + CryptoKit + Security.framework. No XCFramework build required. |
 | OI-002 | FUTURE | Client registration with Bitwarden required when cloud (US/EU) support is added. Not needed for v1 (self-hosted only). |
 | OI-003 | FUTURE | EU cloud icons base URL needs verification when cloud support is added. Not applicable for v1. |
 | OI-004 | SHOULD | Evaluate TLS certificate pinning for self-hosted endpoints (user-supplied URLs). |
