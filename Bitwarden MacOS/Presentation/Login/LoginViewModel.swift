@@ -3,7 +3,7 @@ import Foundation
 // MARK: - LoginFlowState
 
 /// State machine driving the root view transition.
-enum LoginFlowState {
+enum LoginFlowState: Equatable {
     case login
     case loading
     case totpPrompt
@@ -22,11 +22,18 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Published state
 
-    @Published var serverURL:  String = ""
-    @Published var email:      String = ""
-    @Published var password:   String = ""
+    @Published var serverURL:    String = ""
+    @Published var email:        String = ""
+    @Published var password:     String = ""
     @Published var errorMessage: String?
-    @Published private(set) var flowState: LoginFlowState = .login
+    @Published private(set) var flowState: LoginFlowState = .login {
+        didSet { onFlowStateChange?(flowState) }
+    }
+
+    // MARK: - Root callback
+
+    /// Set by `AppRootViewModel` to observe flow completion.
+    var onFlowStateChange: ((LoginFlowState) -> Void)?
 
     // MARK: - Dependencies
 

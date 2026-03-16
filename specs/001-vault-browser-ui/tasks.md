@@ -120,16 +120,16 @@ shows stored email. Enter correct password → vault browser. Enter wrong passwo
 
 ### Tests (write first, must fail)
 
-- [ ] T037 [P] [US2] Failing unit test: AuthRepositoryImpl.unlockWithPassword — local KDF only, no network, encrypted keys from Keychain — `Tests/DataTests/Repositories/AuthRepositoryImplTests.swift`
-- [ ] T038 [P] [US2] Failing unit test: AuthRepositoryImpl.signOut — all per-user Keychain keys cleared, activeUserId cleared, login screen blank — `Tests/DataTests/Repositories/AuthRepositoryImplTests.swift`
-- [ ] T039 [P] [US2] Failing unit test: UnlockUseCase — unlock orchestration, wrong password returns error without locking vault — `Tests/DomainTests/UseCases/UnlockUseCaseTests.swift`
+- [X] T037 [P] [US2] Failing unit test: AuthRepositoryImpl.unlockWithPassword — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
+- [X] T038 [P] [US2] Failing unit test: AuthRepositoryImpl.signOut (comprehensive) — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
+- [X] T039 [P] [US2] Failing unit test: UnlockUseCase — unlock orchestration, wrong password without vault lock — `BitwardenMacOSTests/UnlockUseCaseTests.swift`
 
 ### Implementation
 
-- [ ] T040 [US2] Implement AuthRepositoryImpl: unlockWithPassword (initializeUserCrypto from Keychain keys; no network), signOut (clear all per-user keys + activeUserId), lockVault (release crypto service key material) — `Data/Repositories/AuthRepositoryImpl.swift`
-- [ ] T041 [US2] Implement UnlockUseCase — `Domain/UseCases/UnlockUseCase.swift`
-- [ ] T042 [US2] Build UnlockView + UnlockViewModel (stored email read-only per FR-003, master password field, "Sign in with a different account" link per FR-039, error on wrong password without vault lock) — `Presentation/Auth/UnlockView.swift`, `Presentation/Auth/UnlockViewModel.swift`
-- [ ] T043 [US2] XCUITest: US2 unlock journey — quit + relaunch, email shown, correct password unlocks, wrong password shows error, "different account" clears session — `Tests/UITests/UnlockJourneyTests.swift`
+- [X] T040 [US2] AuthRepositoryImpl: unlockWithPassword, signOut, lockVault — already implemented in Phase 4 — `Data/Repositories/AuthRepositoryImpl.swift`
+- [X] T041 [US2] Implement UnlockUseCaseImpl — `Data/UseCases/UnlockUseCaseImpl.swift`
+- [X] T042 [US2] Build UnlockView + UnlockViewModel + RootViewModel app state machine — `Presentation/Unlock/UnlockView.swift`, `Presentation/Unlock/UnlockViewModel.swift`, `App/Bitwarden_MacOSApp.swift`
+- [ ] T043 [US2] XCUITest: US2 unlock journey — `Tests/UITests/UnlockJourneyTests.swift`
 
 **Checkpoint**: US2 acceptance scenarios 1–4 pass. SC-002 passes (≤5s unlock). Vault locks on quit.
 

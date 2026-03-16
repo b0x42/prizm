@@ -22,8 +22,9 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Domain use cases
 
-    let syncUseCase:  SyncUseCaseImpl
-    let loginUseCase: LoginUseCaseImpl
+    let syncUseCase:   SyncUseCaseImpl
+    let loginUseCase:  LoginUseCaseImpl
+    let unlockUseCase: UnlockUseCaseImpl
 
     // MARK: - Init
 
@@ -50,14 +51,20 @@ final class AppContainer: ObservableObject {
         self.vaultStore      = vault
         self.authRepository  = auth
         self.syncRepository  = sync
-        self.syncUseCase     = SyncUseCaseImpl(sync: sync)
-        self.loginUseCase    = LoginUseCaseImpl(auth: auth, sync: sync)
+        self.syncUseCase    = SyncUseCaseImpl(sync: sync)
+        self.loginUseCase   = LoginUseCaseImpl(auth: auth, sync: sync)
+        self.unlockUseCase  = UnlockUseCaseImpl(auth: auth, sync: sync)
     }
 
-    // MARK: - Factory
+    // MARK: - Factories
 
     /// Creates a `LoginViewModel` pre-wired with the container's auth + sync.
     func makeLoginViewModel() -> LoginViewModel {
         LoginViewModel(auth: authRepository, sync: syncUseCase)
+    }
+
+    /// Creates an `UnlockViewModel` for a returning user with a stored session.
+    func makeUnlockViewModel(account: Account) -> UnlockViewModel {
+        UnlockViewModel(auth: authRepository, sync: syncUseCase, account: account)
     }
 }

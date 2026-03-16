@@ -6,16 +6,18 @@ final class MockAuthRepository: AuthRepository {
 
     // MARK: - State observations
 
-    private(set) var setServerEnvironmentCalled: Bool = false
-    private(set) var loginWithPasswordCalled:    Bool = false
-    private(set) var signOutCalled:              Bool = false
+    private(set) var setServerEnvironmentCalled:   Bool = false
+    private(set) var loginWithPasswordCalled:      Bool = false
+    private(set) var unlockWithPasswordCalled:     Bool = false
+    private(set) var signOutCalled:                Bool = false
+    var             lockVaultCalledCount:           Int  = 0
 
     // MARK: - Stubs
 
     /// When non-nil, `validateServerURL` throws this error.
     var validateServerURLError: AuthError?
 
-    /// Result returned by `loginWithPassword`.
+    /// Result returned by `loginWithPassword` and used by `unlockWithPassword`.
     var stubbedLoginResult: LoginResult = .success(
         Account(
             userId:            "stub-user",
@@ -30,6 +32,9 @@ final class MockAuthRepository: AuthRepository {
 
     /// When non-nil, `loginWithPassword` throws this error instead of returning a result.
     var loginWithPasswordError: Error?
+
+    /// When non-nil, `unlockWithPassword` throws this error.
+    var unlockWithPasswordError: Error?
 
     // MARK: - AuthRepository
 
@@ -58,6 +63,8 @@ final class MockAuthRepository: AuthRepository {
     }
 
     func unlockWithPassword(_ masterPassword: String) async throws -> Account {
+        unlockWithPasswordCalled = true
+        if let err = unlockWithPasswordError { throw err }
         guard case .success(let account) = stubbedLoginResult else {
             throw AuthError.invalidCredentials
         }
@@ -70,5 +77,7 @@ final class MockAuthRepository: AuthRepository {
         signOutCalled = true
     }
 
-    func lockVault() async {}
+    func lockVault() async {
+        lockVaultCalledCount += 1
+    }
 }

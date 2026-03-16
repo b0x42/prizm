@@ -39,6 +39,14 @@
 		5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7429BBFA10E247D8AEACA59B /* LoginView.swift */; };
 		98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */; };
 		A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */; };
+				48716DD27A3B45A6872E0DC2 /* UnlockUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */; };
+		DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19616C22B9CF495087EE1F17 /* UnlockView.swift */; };
+		C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */; };
+				4D8B329F0AC6430E9FFD2503 /* UnlockUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ACD196A7BE8421A8D81990A /* UnlockUseCaseImpl.swift */; };
+		221BCF3311DD45FF994FEDD3 /* UnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEC71CC0AE134243BE8A2D1E /* UnlockViewModel.swift */; };
+		CB48BC629F454234B708A1E9 /* UnlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0354BF727A841249CE0428D /* UnlockView.swift */; };
+		B66EC441E6654C5C8DD9300E /* AppRootViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B37700C73C4B228E90A312 /* AppRootViewModel.swift */; };
+		4996675880D64032BE24BBD4 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DCA1602F0946C892C1BF9F /* AppRootView.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +93,14 @@
 		7429BBFA10E247D8AEACA59B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPPromptView.swift; sourceTree = "<group>"; };
 		81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressView.swift; sourceTree = "<group>"; };
+				226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCaseImpl.swift; sourceTree = "<group>"; };
+		19616C22B9CF495087EE1F17 /* UnlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockView.swift; sourceTree = "<group>"; };
+		7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockViewModel.swift; sourceTree = "<group>"; };
+				5ACD196A7BE8421A8D81990A /* UnlockUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCaseImpl.swift; sourceTree = "<group>"; };
+		AEC71CC0AE134243BE8A2D1E /* UnlockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockViewModel.swift; sourceTree = "<group>"; };
+		F0354BF727A841249CE0428D /* UnlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockView.swift; sourceTree = "<group>"; };
+		32B37700C73C4B228E90A312 /* AppRootViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootViewModel.swift; sourceTree = "<group>"; };
+		92DCA1602F0946C892C1BF9F /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -127,7 +143,9 @@
 		4309FCE62F6808620031C9F4 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				4309FCE92F6809C10031C9F4 /* Config.swift */,
+				
+				32B37700C73C4B228E90A312 /* AppRootViewModel.swift */,
+				92DCA1602F0946C892C1BF9F /* AppRootView.swift */,4309FCE92F6809C10031C9F4 /* Config.swift */,
 				4309FCE72F6809A40031C9F4 /* AppContainer.swift */,
 				4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */,
 			);
@@ -241,7 +259,9 @@
 			children = (
 				
 				
-				498456596EC249F78737016A /* Sync */,7D6DFC79E63B457284977CA8 /* Login */,4309FCFC2F680CCD0031C9F4 /* Components */,
+				
+				
+				526104B162764AFBB5F106A3 /* Unlock */,CE7CA2E3F69D4D26BA2E50F2 /* Unlock */,498456596EC249F78737016A /* Sync */,7D6DFC79E63B457284977CA8 /* Login */,4309FCFC2F680CCD0031C9F4 /* Components */,
 				4309FCF82F680CA50031C9F4 /* Vault */,
 				4309FCF72F680C9D0031C9F4 /* Auth */,
 			);
@@ -390,7 +410,9 @@
 		FF2563714D2C473EA1DFE89E /* UseCasesImpl */ = {
 			isa = PBXGroup;
 			children = (
-				14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */,
+				
+				
+				5ACD196A7BE8421A8D81990A /* UnlockUseCaseImpl.swift */,226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */,14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */,
 				8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */,
 			);
 			path = UseCases;
@@ -412,6 +434,24 @@
 				81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */,
 			);
 			path = Sync;
+			sourceTree = "<group>";
+		};
+				CE7CA2E3F69D4D26BA2E50F2 /* Unlock */ = {
+			isa = PBXGroup;
+			children = (
+				19616C22B9CF495087EE1F17 /* UnlockView.swift */,
+				7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */,
+			);
+			path = Unlock;
+			sourceTree = "<group>";
+		};
+				526104B162764AFBB5F106A3 /* Unlock */ = {
+			isa = PBXGroup;
+			children = (
+				AEC71CC0AE134243BE8A2D1E /* UnlockViewModel.swift */,
+				F0354BF727A841249CE0428D /* UnlockView.swift */,
+			);
+			path = Unlock;
 			sourceTree = "<group>";
 		};
 		/* End PBXGroup section */
@@ -553,7 +593,15 @@
 				398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */,
 				4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */,
 				4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */,
+				48716DD27A3B45A6872E0DC2 /* UnlockUseCaseImpl.swift in Sources */,
+				DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */,
+				C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */,
 				43947740EA3343DC9C888402 /* BitwardenAPIClient.swift in Sources */,
+				4D8B329F0AC6430E9FFD2503 /* UnlockUseCaseImpl.swift in Sources */,
+				221BCF3311DD45FF994FEDD3 /* UnlockViewModel.swift in Sources */,
+				CB48BC629F454234B708A1E9 /* UnlockView.swift in Sources */,
+				B66EC441E6654C5C8DD9300E /* AppRootViewModel.swift in Sources */,
+				4996675880D64032BE24BBD4 /* AppRootView.swift in Sources */,
 				B2390AAAD10D4CE69AD6660C /* AuthRepositoryImpl.swift in Sources */,
 				3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */,
 				DB95790F466448D78246B723 /* VaultRepositoryImpl.swift in Sources */,
