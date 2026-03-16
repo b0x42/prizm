@@ -25,8 +25,31 @@ enum ItemType: String, Equatable, Hashable, CaseIterable {
 /// Represents which sidebar row the user has selected.
 /// `Hashable` is required for use as a `NavigationSplitView` selection value
 /// and as a dictionary key in `[SidebarSelection: Int]` item counts.
-enum SidebarSelection: Hashable, Equatable {
+///
+/// `Equatable` and `Hashable` are implemented explicitly with `nonisolated` to
+/// prevent Swift 5.10 from inferring `@MainActor` on the synthesized conformances,
+/// which would cause a Swift 6 error when used in nonisolated contexts.
+enum SidebarSelection: Equatable {
     case allItems
     case favorites
     case type(ItemType)
+}
+
+extension SidebarSelection: Hashable {
+    nonisolated static func == (lhs: SidebarSelection, rhs: SidebarSelection) -> Bool {
+        switch (lhs, rhs) {
+        case (.allItems, .allItems):         return true
+        case (.favorites, .favorites):       return true
+        case (.type(let a), .type(let b)):   return a == b
+        default:                             return false
+        }
+    }
+
+    nonisolated func hash(into hasher: inout Hasher) {
+        switch self {
+        case .allItems:        hasher.combine(0)
+        case .favorites:       hasher.combine(1)
+        case .type(let type):  hasher.combine(2); hasher.combine(type)
+        }
+    }
 }
