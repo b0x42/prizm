@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CDDB33A6C53E4578BF67F143 /* CryptoKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1307284FEED04829B5C4B587 /* CryptoKeys.swift */; };
+		4324756C9E904F0C988504A5 /* EncString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FBB82A6241244DD890E615C /* EncString.swift */; };
+		4030DF1096DF41F3936A1466 /* BitwardenCryptoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D710BEABBB4ADD9ADFCD1F /* BitwardenCryptoService.swift */; };
+		D43D6965E8524DD7BA400B0A /* RawCipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95E5FF4D219144A18C2BC5AA /* RawCipher.swift */; };
+		796D8E5F834B47EB907A6162 /* SyncResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15F3A553820942CF9B3935FD /* SyncResponse.swift */; };
+		7799DE23AD4B4E0DB4E1E784 /* CipherMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */; };
 		018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */; };
 		23BDC74E5D1F47618262BE0D /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 59F9054E12044EC582D79C90 /* Argon2Swift */; };
 		2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65E7D6288C347DCA88A20DF /* AuthRepository.swift */; };
@@ -36,6 +42,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1307284FEED04829B5C4B587 /* CryptoKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoKeys.swift; sourceTree = "<group>"; };
+		3FBB82A6241244DD890E615C /* EncString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncString.swift; sourceTree = "<group>"; };
+		D8D710BEABBB4ADD9ADFCD1F /* BitwardenCryptoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitwardenCryptoService.swift; sourceTree = "<group>"; };
+		95E5FF4D219144A18C2BC5AA /* RawCipher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawCipher.swift; sourceTree = "<group>"; };
+		15F3A553820942CF9B3935FD /* SyncResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncResponse.swift; sourceTree = "<group>"; };
+		F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CipherMapper.swift; sourceTree = "<group>"; };
 		09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCase.swift; sourceTree = "<group>"; };
 		0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCase.swift; sourceTree = "<group>"; };
 		257FAE34CC064783806B6A5C /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
@@ -160,6 +172,9 @@
 		4309FCF02F680AEF0031C9F4 /* Crypto */ = {
 			isa = PBXGroup;
 			children = (
+				1307284FEED04829B5C4B587 /* CryptoKeys.swift */,
+				3FBB82A6241244DD890E615C /* EncString.swift */,
+				D8D710BEABBB4ADD9ADFCD1F /* BitwardenCryptoService.swift */,
 			);
 			path = Crypto;
 			sourceTree = "<group>";
@@ -175,6 +190,8 @@
 		4309FCF22F680BDF0031C9F4 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				95E5FF4D219144A18C2BC5AA /* RawCipher.swift */,
+				15F3A553820942CF9B3935FD /* SyncResponse.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -182,6 +199,7 @@
 		4309FCF42F680BF00031C9F4 /* Mappers */ = {
 			isa = PBXGroup;
 			children = (
+				F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */,
 			);
 			path = Mappers;
 			sourceTree = "<group>";
@@ -455,6 +473,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDDB33A6C53E4578BF67F143 /* CryptoKeys.swift in Sources */,
+				4324756C9E904F0C988504A5 /* EncString.swift in Sources */,
+				4030DF1096DF41F3936A1466 /* BitwardenCryptoService.swift in Sources */,
+				D43D6965E8524DD7BA400B0A /* RawCipher.swift in Sources */,
+				796D8E5F834B47EB907A6162 /* SyncResponse.swift in Sources */,
+				7799DE23AD4B4E0DB4E1E784 /* CipherMapper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
