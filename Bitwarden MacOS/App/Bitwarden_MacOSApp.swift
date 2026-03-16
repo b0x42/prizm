@@ -11,7 +11,7 @@ import SwiftUI
 struct Bitwarden_MacOSApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Text("Bitwarden")
         }
     }
 }
