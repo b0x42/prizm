@@ -7,47 +7,63 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6A563BC5058D474D9C84561E /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = F557D7298207448A9FBFC676 /* Account.swift */; };
-		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
-		D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF90E0F31DF248FB9D12F74D /* VaultItem.swift */; };
-		3E04D7AC0223458CB329663C /* CustomField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB323D45FF2440C95C0BA70 /* CustomField.swift */; };
-		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
-		2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65E7D6288C347DCA88A20DF /* AuthRepository.swift */; };
-		87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */; };
 		018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */; };
-		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
-		714B2A1113A34984901FCC03 /* UnlockUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */; };
-		398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EBA517603CA448A8F9106AF /* SyncUseCase.swift */; };
-		4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */; };
 		23BDC74E5D1F47618262BE0D /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 59F9054E12044EC582D79C90 /* Argon2Swift */; };
+		2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65E7D6288C347DCA88A20DF /* AuthRepository.swift */; };
+		398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EBA517603CA448A8F9106AF /* SyncUseCase.swift */; };
+		3E04D7AC0223458CB329663C /* CustomField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB323D45FF2440C95C0BA70 /* CustomField.swift */; };
 		4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */; };
 		4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE72F6809A40031C9F4 /* AppContainer.swift */; };
 		4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE92F6809C10031C9F4 /* Config.swift */; };
+		4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */; };
+		6A563BC5058D474D9C84561E /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = F557D7298207448A9FBFC676 /* Account.swift */; };
+		714B2A1113A34984901FCC03 /* UnlockUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */; };
+		87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */; };
+		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
+		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
+		D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF90E0F31DF248FB9D12F74D /* VaultItem.swift */; };
+		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		4309FD112F68121F0031C9F4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 434D9EB22F670B9C00052BCB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 434D9EB92F670B9C00052BCB;
+			remoteInfo = "Bitwarden MacOS";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		F557D7298207448A9FBFC676 /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
-		E25C290F2D7A470EB4AB8698 /* KdfParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KdfParams.swift; sourceTree = "<group>"; };
-		EF90E0F31DF248FB9D12F74D /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
-		CAB323D45FF2440C95C0BA70 /* CustomField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomField.swift; sourceTree = "<group>"; };
-		D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelection.swift; sourceTree = "<group>"; };
-		B65E7D6288C347DCA88A20DF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
-		7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepository.swift; sourceTree = "<group>"; };
-		3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepository.swift; sourceTree = "<group>"; };
-		257FAE34CC064783806B6A5C /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
-		0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCase.swift; sourceTree = "<group>"; };
-		5EBA517603CA448A8F9106AF /* SyncUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUseCase.swift; sourceTree = "<group>"; };
 		09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCase.swift; sourceTree = "<group>"; };
+		0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCase.swift; sourceTree = "<group>"; };
+		257FAE34CC064783806B6A5C /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
+		3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepository.swift; sourceTree = "<group>"; };
 		4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bitwarden_MacOSApp.swift; sourceTree = "<group>"; };
 		4309FCE72F6809A40031C9F4 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		4309FCE92F6809C10031C9F4 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		4309FD0D2F68121F0031C9F4 /* BitwardenMacOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BitwardenMacOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		434D9EBA2F670B9C00052BCB /* Bitwarden MacOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bitwarden MacOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5EBA517603CA448A8F9106AF /* SyncUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUseCase.swift; sourceTree = "<group>"; };
+		7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepository.swift; sourceTree = "<group>"; };
+		B65E7D6288C347DCA88A20DF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
+		CAB323D45FF2440C95C0BA70 /* CustomField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomField.swift; sourceTree = "<group>"; };
+		D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelection.swift; sourceTree = "<group>"; };
+		E25C290F2D7A470EB4AB8698 /* KdfParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KdfParams.swift; sourceTree = "<group>"; };
+		EF90E0F31DF248FB9D12F74D /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
+		F557D7298207448A9FBFC676 /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4309FCF32F680BEA0031C9F4 /* Keychain */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Keychain;
+			sourceTree = "<group>";
+		};
+		4309FD0E2F68121F0031C9F4 /* BitwardenMacOSTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BitwardenMacOSTests;
 			sourceTree = "<group>";
 		};
 		434D9EBC2F670B9C00052BCB /* Bitwarden MacOS */ = {
@@ -58,6 +74,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		4309FD0A2F68121F0031C9F4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		434D9EB72F670B9C00052BCB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -305,6 +328,7 @@
 				4309FCEB2F680ABF0031C9F4 /* Domain */,
 				4309FCE62F6808620031C9F4 /* App */,
 				434D9EBC2F670B9C00052BCB /* Bitwarden MacOS */,
+				4309FD0E2F68121F0031C9F4 /* BitwardenMacOSTests */,
 				434D9EBB2F670B9C00052BCB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -313,6 +337,7 @@
 			isa = PBXGroup;
 			children = (
 				434D9EBA2F670B9C00052BCB /* Bitwarden MacOS.app */,
+				4309FD0D2F68121F0031C9F4 /* BitwardenMacOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -320,6 +345,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4309FD0C2F68121F0031C9F4 /* BitwardenMacOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4309FD152F68121F0031C9F4 /* Build configuration list for PBXNativeTarget "BitwardenMacOSTests" */;
+			buildPhases = (
+				4309FD092F68121F0031C9F4 /* Sources */,
+				4309FD0A2F68121F0031C9F4 /* Frameworks */,
+				4309FD0B2F68121F0031C9F4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4309FD122F68121F0031C9F4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4309FD0E2F68121F0031C9F4 /* BitwardenMacOSTests */,
+			);
+			name = BitwardenMacOSTests;
+			packageProductDependencies = (
+			);
+			productName = BitwardenMacOSTests;
+			productReference = 4309FD0D2F68121F0031C9F4 /* BitwardenMacOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		434D9EB92F670B9C00052BCB /* Bitwarden MacOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 434D9EC52F670B9E00052BCB /* Build configuration list for PBXNativeTarget "Bitwarden MacOS" */;
@@ -353,6 +401,10 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					4309FD0C2F68121F0031C9F4 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 434D9EB92F670B9C00052BCB;
+					};
 					434D9EB92F670B9C00052BCB = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -376,11 +428,19 @@
 			projectRoot = "";
 			targets = (
 				434D9EB92F670B9C00052BCB /* Bitwarden MacOS */,
+				4309FD0C2F68121F0031C9F4 /* BitwardenMacOSTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		4309FD0B2F68121F0031C9F4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		434D9EB82F670B9C00052BCB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -391,6 +451,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4309FD092F68121F0031C9F4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		434D9EB62F670B9C00052BCB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -415,7 +482,57 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		4309FD122F68121F0031C9F4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 434D9EB92F670B9C00052BCB /* Bitwarden MacOS */;
+			targetProxy = 4309FD112F68121F0031C9F4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		4309FD132F68121F0031C9F4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.BitwardenMacOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bitwarden MacOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Bitwarden MacOS";
+			};
+			name = Debug;
+		};
+		4309FD142F68121F0031C9F4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.BitwardenMacOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bitwarden MacOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Bitwarden MacOS";
+			};
+			name = Release;
+		};
 		434D9EC32F670B9E00052BCB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -639,6 +756,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4309FD152F68121F0031C9F4 /* Build configuration list for PBXNativeTarget "BitwardenMacOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4309FD132F68121F0031C9F4 /* Debug */,
+				4309FD142F68121F0031C9F4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		434D9EB52F670B9C00052BCB /* Build configuration list for PBXProject "Bitwarden MacOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
