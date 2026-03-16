@@ -1,0 +1,106 @@
+import Foundation
+
+/// A fully-decrypted vault entry. Produced by `CipherMapper` from a `RawCipher`.
+/// Value type — safe to pass across layers without defensive copying.
+struct VaultItem: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let isFavorite: Bool
+    let isDeleted: Bool
+    let creationDate: Date
+    let revisionDate: Date
+    let content: ItemContent
+}
+
+// MARK: - Item content discriminator
+
+/// Discriminated union of all five Bitwarden vault item types.
+enum ItemContent: Equatable {
+    case login(LoginContent)
+    case secureNote(SecureNoteContent)
+    case card(CardContent)
+    case identity(IdentityContent)
+    case sshKey(SSHKeyContent)
+}
+
+// MARK: - Login
+
+struct LoginContent: Equatable {
+    let username: String?
+    let password: String?
+    let uris: [LoginURI]
+    /// Stored TOTP seed. Present on some items but never displayed in v1 (FR-038).
+    let totp: String?
+    let notes: String?
+    let customFields: [CustomField]
+}
+
+struct LoginURI: Equatable {
+    let uri: String
+    let matchType: URIMatchType?
+}
+
+/// URI-matching strategy used when auto-filling (stored per URI, not used in v1 display).
+enum URIMatchType: Int, Equatable {
+    case domain = 0
+    case host = 1
+    case startsWith = 2
+    case exact = 3
+    case regularExpression = 4
+    case never = 5
+}
+
+// MARK: - Card
+
+struct CardContent: Equatable {
+    let cardholderName: String?
+    let brand: String?
+    let number: String?
+    let expMonth: String?
+    let expYear: String?
+    let code: String?
+    let notes: String?
+    let customFields: [CustomField]
+}
+
+// MARK: - Identity
+
+struct IdentityContent: Equatable {
+    let title: String?
+    let firstName: String?
+    let middleName: String?
+    let lastName: String?
+    let address1: String?
+    let address2: String?
+    let address3: String?
+    let city: String?
+    let state: String?
+    let postalCode: String?
+    let country: String?
+    let company: String?
+    let email: String?
+    let phone: String?
+    let ssn: String?
+    let username: String?
+    let passportNumber: String?
+    let licenseNumber: String?
+    let notes: String?
+    let customFields: [CustomField]
+}
+
+// MARK: - Secure Note
+
+struct SecureNoteContent: Equatable {
+    let notes: String?
+    let customFields: [CustomField]
+}
+
+// MARK: - SSH Key
+
+struct SSHKeyContent: Equatable {
+    let privateKey: String?
+    let publicKey: String?
+    let keyFingerprint: String?
+    let notes: String?
+    let customFields: [CustomField]
+}

@@ -30,10 +30,10 @@ Use `VaultItem` in domain/presentation context. Use `RawCipher` / "cipher" only 
 **Purpose**: Xcode project, Argon2Swift dependency, directory structure.
 No XCFramework required — crypto implemented natively via CommonCrypto + CryptoKit.
 
-- [ ] T001 Create Xcode project with App Sandbox + Hardened Runtime — `Bitwarden MacOS/Bitwarden MacOS.xcodeproj`
-- [ ] T002 Add Argon2Swift as vendored local SPM package (`LocalPackages/Argon2Swift/`) via `XCLocalSwiftPackageReference` in Xcode — `LocalPackages/Argon2Swift/Package.swift`
-- [ ] T003 [P] Create App layer files — `Bitwarden_MacOS/App/BitwardenMacOSApp.swift`, `AppContainer.swift`, `Config.swift`
-- [ ] T004 [P] Create directory structure — `Domain/`, `Data/Crypto/`, `Data/Network/Models/`, `Data/Keychain/`, `Data/Mappers/`, `Data/Repositories/`, `Presentation/`, `Tests/DomainTests/`, `Tests/DataTests/Crypto/`, `Tests/PresentationTests/Components/`, `Tests/UITests/` groups in Xcode
+- [X] T001 Create Xcode project with App Sandbox + Hardened Runtime — `Bitwarden MacOS/Bitwarden MacOS.xcodeproj`
+- [X] T002 Add Argon2Swift as vendored local SPM package (`LocalPackages/Argon2Swift/`) via `XCLocalSwiftPackageReference` in Xcode — `LocalPackages/Argon2Swift/Package.swift`
+- [X] T003 [P] Create App layer files — `Bitwarden_MacOS/App/BitwardenMacOSApp.swift`, `AppContainer.swift`, `Config.swift`
+- [X] T004 [P] Create directory structure — `Domain/`, `Data/Crypto/`, `Data/Network/Models/`, `Data/Keychain/`, `Data/Mappers/`, `Data/Repositories/`, `Presentation/`, `Tests/DomainTests/`, `Tests/DataTests/Crypto/`, `Tests/PresentationTests/Components/`, `Tests/UITests/` groups in Xcode
 
 **Checkpoint**: Build succeeds. Empty test suite passes.
 
@@ -44,16 +44,16 @@ No XCFramework required — crypto implemented natively via CommonCrypto + Crypt
 **Purpose**: All Domain entities and repository protocols. No SDK/SwiftUI imports. Must compile
 with `Foundation` only. Blocks all user story work.
 
-- [ ] T005 [P] Create Account + ServerEnvironment entities — `Domain/Entities/Account.swift`, `Domain/Entities/ServerEnvironment.swift`
-- [ ] T005b [P] Create KdfParams entity (KdfType enum: pbkdf2/argon2id; KdfParams struct: type, iterations, memory?, parallelism?) — `Domain/Entities/KdfParams.swift`
-- [ ] T006 [P] Create VaultItem entity + ItemContent sum type + all content structs (LoginContent, CardContent, IdentityContent, SecureNoteContent, SSHKeyContent, LoginURI, URIMatchType) — `Domain/Entities/VaultItem.swift`
-- [ ] T007 [P] Create CustomField entity + CustomFieldType + LinkedFieldId with displayName — `Domain/Entities/CustomField.swift`
-- [ ] T008 [P] Create SidebarSelection enum + ItemType enum — `Domain/Entities/SidebarSelection.swift`
-- [ ] T009 [P] Create AuthRepository protocol + LoginResult + TwoFactorMethod + AuthError — `Domain/Repositories/AuthRepository.swift`
-- [ ] T010 [P] Create VaultRepository protocol + VaultError — `Domain/Repositories/VaultRepository.swift`
-- [ ] T011 [P] Create SyncRepository protocol + SyncResult + SyncError — `Domain/Repositories/SyncRepository.swift`
-- [ ] T012 Create UseCase protocol stubs (LoginUseCase, UnlockUseCase, SyncUseCase, SearchVaultUseCase) — `Domain/UseCases/`
-- [ ] T013 [P] Unit tests for Domain entity validation rules (ServerEnvironment URL validation, Account email format, CustomField non-empty name) — `Tests/DomainTests/Entities/`
+- [X] T005 [P] Create Account + ServerEnvironment entities — `Domain/Entities/Account.swift`, `Domain/Entities/ServerEnvironment.swift`
+- [X] T005b [P] Create KdfParams entity (KdfType enum: pbkdf2/argon2id; KdfParams struct: type, iterations, memory?, parallelism?) — `Domain/Entities/KdfParams.swift`
+- [X] T006 [P] Create VaultItem entity + ItemContent sum type + all content structs (LoginContent, CardContent, IdentityContent, SecureNoteContent, SSHKeyContent, LoginURI, URIMatchType) — `Domain/Entities/VaultItem.swift`
+- [X] T007 [P] Create CustomField entity + CustomFieldType + LinkedFieldId with displayName — `Domain/Entities/CustomField.swift`
+- [X] T008 [P] Create SidebarSelection enum + ItemType enum — `Domain/Entities/SidebarSelection.swift`
+- [X] T009 [P] Create AuthRepository protocol + LoginResult + TwoFactorMethod + AuthError — `Domain/Repositories/AuthRepository.swift`
+- [X] T010 [P] Create VaultRepository protocol + VaultError — `Domain/Repositories/VaultRepository.swift`
+- [X] T011 [P] Create SyncRepository protocol + SyncResult + SyncError — `Domain/Repositories/SyncRepository.swift`
+- [X] T012 Create UseCase protocol stubs (LoginUseCase, UnlockUseCase, SyncUseCase, SearchVaultUseCase) — `Domain/UseCases/`
+- [X] T013 [P] Unit tests for Domain entity validation rules (ServerEnvironment URL validation, Account email format, CustomField non-empty name) — `Tests/DomainTests/Entities/`
 
 **Checkpoint**: Domain compiles with `import Foundation` only. 100% of entity validation tests pass.
 

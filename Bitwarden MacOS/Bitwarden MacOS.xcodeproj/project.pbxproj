@@ -7,6 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6A563BC5058D474D9C84561E /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = F557D7298207448A9FBFC676 /* Account.swift */; };
+		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
+		D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF90E0F31DF248FB9D12F74D /* VaultItem.swift */; };
+		3E04D7AC0223458CB329663C /* CustomField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB323D45FF2440C95C0BA70 /* CustomField.swift */; };
+		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
+		2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65E7D6288C347DCA88A20DF /* AuthRepository.swift */; };
+		87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */; };
+		018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */; };
+		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
+		714B2A1113A34984901FCC03 /* UnlockUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */; };
+		398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EBA517603CA448A8F9106AF /* SyncUseCase.swift */; };
+		4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */; };
 		23BDC74E5D1F47618262BE0D /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 59F9054E12044EC582D79C90 /* Argon2Swift */; };
 		4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */; };
 		4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE72F6809A40031C9F4 /* AppContainer.swift */; };
@@ -14,6 +26,18 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		F557D7298207448A9FBFC676 /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
+		E25C290F2D7A470EB4AB8698 /* KdfParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KdfParams.swift; sourceTree = "<group>"; };
+		EF90E0F31DF248FB9D12F74D /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
+		CAB323D45FF2440C95C0BA70 /* CustomField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomField.swift; sourceTree = "<group>"; };
+		D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelection.swift; sourceTree = "<group>"; };
+		B65E7D6288C347DCA88A20DF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
+		7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepository.swift; sourceTree = "<group>"; };
+		3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepository.swift; sourceTree = "<group>"; };
+		257FAE34CC064783806B6A5C /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
+		0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCase.swift; sourceTree = "<group>"; };
+		5EBA517603CA448A8F9106AF /* SyncUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUseCase.swift; sourceTree = "<group>"; };
+		09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCase.swift; sourceTree = "<group>"; };
 		4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bitwarden_MacOSApp.swift; sourceTree = "<group>"; };
 		4309FCE72F6809A40031C9F4 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		4309FCE92F6809C10031C9F4 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
@@ -68,6 +92,11 @@
 		4309FCEC2F680AC80031C9F4 /* Entities */ = {
 			isa = PBXGroup;
 			children = (
+				F557D7298207448A9FBFC676 /* Account.swift */,
+				E25C290F2D7A470EB4AB8698 /* KdfParams.swift */,
+				EF90E0F31DF248FB9D12F74D /* VaultItem.swift */,
+				CAB323D45FF2440C95C0BA70 /* CustomField.swift */,
+				D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -75,6 +104,9 @@
 		4309FCED2F680AD60031C9F4 /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
+				B65E7D6288C347DCA88A20DF /* AuthRepository.swift */,
+				7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */,
+				3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -82,6 +114,10 @@
 		4309FCEE2F680ADE0031C9F4 /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
+				257FAE34CC064783806B6A5C /* LoginUseCase.swift */,
+				0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */,
+				5EBA517603CA448A8F9106AF /* SyncUseCase.swift */,
+				09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -359,6 +395,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6A563BC5058D474D9C84561E /* Account.swift in Sources */,
+				AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */,
+				D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */,
+				3E04D7AC0223458CB329663C /* CustomField.swift in Sources */,
+				FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */,
+				2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */,
+				87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */,
+				018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */,
+				C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */,
+				714B2A1113A34984901FCC03 /* UnlockUseCase.swift in Sources */,
+				398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */,
+				4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */,
 				4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */,
 				4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */,
 				4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */,
