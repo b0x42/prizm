@@ -145,27 +145,27 @@ all field types render correctly. Reveal/mask secrets. Copy fields, verify clipb
 
 ### Tests (write first, must fail)
 
-- [ ] T044 [P] [US3] Failing unit tests: VaultRepositoryImpl — allItems (excludes isDeleted), items(for: .favorites), items(for: .type(.login)), itemCounts — `Tests/DataTests/Repositories/VaultRepositoryImplTests.swift`
-- [ ] T045 [P] [US3] Failing unit tests: MaskedFieldView — always renders 8 dots; reveal toggle shows plaintext; item-change resets to masked — `Tests/PresentationTests/Components/MaskedFieldViewTests.swift`
+- [X] T044 [P] [US3] Failing unit tests: VaultRepositoryImpl — allItems (excludes isDeleted), items(for: .favorites), items(for: .type(.login)), itemCounts — `BitwardenMacOSTests/VaultRepositoryImplTests.swift`
+- [X] T045 [P] [US3] Failing unit tests: MaskedFieldView — always renders 8 dots; reveal toggle shows plaintext; item-change resets to masked — `BitwardenMacOSTests/MaskedFieldViewTests.swift`
 
 ### Implementation
 
-- [ ] T046 [US3] Implement VaultRepositoryImpl: in-memory store populated by SyncRepositoryImpl; allItems (excludes isDeleted); items(for:) — .allItems, .favorites, .type; itemDetail (calls BitwardenCryptoServiceImpl.decrypt on demand); itemCounts cached post-sync; lastSyncedAt — `Data/Repositories/VaultRepositoryImpl.swift`
-- [ ] T047 [P] [US3] Build MaskedFieldView (exactly 8 dots when masked; plaintext on reveal; @State isRevealed resets when item changes per FR-026, FR-027) — `Presentation/Components/MaskedFieldView.swift`
-- [ ] T048 [P] [US3] Build FieldRowView (hover-reveal for copy/reveal/open-in-browser actions; background highlight on hover per FR-023) — `Presentation/Components/FieldRowView.swift`
-- [ ] T049 [P] [US3] Implement FaviconLoader actor (GET {ICONS_BASE}/{domain}/icon.png; NSCache + URLCache; silent fallback on failure per research.md §6) — `Data/Network/FaviconLoader.swift`
-- [ ] T050 [P] [US3] Build FaviconView (loads via FaviconLoader; SF Symbol fallback per item type per FR-009) — `Presentation/Components/FaviconView.swift`
-- [ ] T051 [US3] Build VaultBrowserView + VaultBrowserViewModel (NavigationSplitView .balanced; .onChange(of: sidebarSelection) resets itemSelection; search state; sync error banner state) — `Presentation/Vault/VaultBrowserView.swift`, `Presentation/Vault/VaultBrowserViewModel.swift`
-- [ ] T052 [US3] Build SidebarView (Menu Items: All Items + Favorites; Types: Login/Card/Identity/SecureNote/SSHKey; live item counts; always visible even when empty per FR-006, FR-042) — `Presentation/Vault/Sidebar/SidebarView.swift`
-- [ ] T053 [US3] Build ItemListView + ItemRowView (sorted alphabetical case-insensitive per FR-040; subtitle per type per FR-021; favicon; favorite star per FR-022; empty-state message per FR-042) — `Presentation/Vault/ItemList/ItemListView.swift`, `Presentation/Vault/ItemList/ItemRowView.swift`
-- [ ] T054 [P] [US3] Build LoginDetailView (username, password masked, each URI as independent row with copy + open-in-browser per FR-025; notes; custom fields per FR-029) — `Presentation/Vault/Detail/LoginDetailView.swift`
-- [ ] T055 [P] [US3] Build CardDetailView (cardholder name, number masked, brand, expiry MM/YYYY, security code masked, notes, custom fields) — `Presentation/Vault/Detail/CardDetailView.swift`
-- [ ] T056 [P] [US3] Build IdentityDetailView (all fields per data-model.md; subtitle fallback chain firstName+lastName → email → blank per FR-046; copy on hover per FR-030) — `Presentation/Vault/Detail/IdentityDetailView.swift`
-- [ ] T057 [P] [US3] Build SecureNoteDetailView (note body, custom fields) — `Presentation/Vault/Detail/SecureNoteDetailView.swift`
-- [ ] T058 [P] [US3] Build SSHKeyDetailView (public key + fingerprint visible; private key masked; "[No fingerprint]" placeholder per FR-047) — `Presentation/Vault/Detail/SSHKeyDetailView.swift`
-- [ ] T059 [US3] Build ItemDetailView dispatcher (routes to type-specific view; "No item selected" empty state per FR-034; creation + revision dates per FR-031) — `Presentation/Vault/Detail/ItemDetailView.swift`
-- [ ] T060 [US3] Implement clipboard auto-clear: cancellable Task.sleep 30s; new copy cancels previous task; vault lock does not cancel (best-effort on quit per FR-011) — `Presentation/Vault/VaultBrowserViewModel.swift`
-- [ ] T061 [US3] Add "Last synced: [time]" relative timestamp to toolbar (RelativeDateTimeFormatter; updates on successful sync only per FR-037, FR-041) — `Presentation/Vault/VaultBrowserView.swift`
+- [X] T046 [US3] VaultRepositoryImpl already implemented in Phase 4 — `Data/Repositories/VaultRepositoryImpl.swift`
+- [X] T047 [P] [US3] Build MaskedFieldView + MaskedFieldState (exactly 8 dots when masked; plaintext on reveal; resetForNewItem resets isRevealed per FR-026, FR-027) — `Presentation/Components/MaskedFieldView.swift`
+- [X] T048 [P] [US3] Build FieldRowView (hover-reveal for copy/reveal/open-in-browser actions; background highlight on hover per FR-023) — `Presentation/Components/FieldRowView.swift`
+- [X] T049 [P] [US3] Implement FaviconLoader actor (GET {ICONS_BASE}/{domain}/icon.png; NSCache + URLCache; silent fallback on failure per research.md §6) — `Data/Network/FaviconLoader.swift`
+- [X] T050 [P] [US3] Build FaviconView (loads via FaviconLoader; SF Symbol fallback per item type per FR-009) — `Presentation/Components/FaviconView.swift`
+- [X] T051 [US3] Build VaultBrowserView + VaultBrowserViewModel (NavigationSplitView .balanced; sidebarSelection change resets itemSelection; search state; sync error banner state) — `Presentation/Vault/VaultBrowserView.swift`, `Presentation/Vault/VaultBrowserViewModel.swift`
+- [X] T052 [US3] Build SidebarView (Menu Items: All Items + Favorites; Types: Login/Card/Identity/SecureNote/SSHKey; live item counts; always visible even when empty per FR-006, FR-042) — `Presentation/Vault/Sidebar/SidebarView.swift`
+- [X] T053 [US3] Build ItemListView + ItemRowView (sorted alphabetical case-insensitive per FR-040; subtitle per type per FR-021; favicon; favorite star per FR-022; empty-state message per FR-042) — `Presentation/Vault/ItemList/ItemListView.swift`, `Presentation/Vault/ItemList/ItemRowView.swift`
+- [X] T054 [P] [US3] Build LoginDetailView (username, password masked, each URI as independent row with copy + open-in-browser per FR-025; notes; custom fields per FR-029) — `Presentation/Vault/Detail/LoginDetailView.swift`
+- [X] T055 [P] [US3] Build CardDetailView (cardholder name, number masked, brand, expiry MM/YYYY, security code masked, notes, custom fields) — `Presentation/Vault/Detail/CardDetailView.swift`
+- [X] T056 [P] [US3] Build IdentityDetailView (all fields per data-model.md; subtitle fallback chain firstName+lastName → email → blank per FR-046; copy on hover per FR-030) — `Presentation/Vault/Detail/IdentityDetailView.swift`
+- [X] T057 [P] [US3] Build SecureNoteDetailView (note body, custom fields) — `Presentation/Vault/Detail/SecureNoteDetailView.swift`
+- [X] T058 [P] [US3] Build SSHKeyDetailView (public key + fingerprint visible; private key masked; "[No fingerprint]" placeholder per FR-047) — `Presentation/Vault/Detail/SSHKeyDetailView.swift`
+- [X] T059 [US3] Build ItemDetailView dispatcher + CustomFieldsSection (routes to type-specific view; "No item selected" empty state per FR-034; creation + revision dates per FR-031) — `Presentation/Vault/Detail/ItemDetailView.swift`, `Presentation/Vault/Detail/CustomFieldsSection.swift`
+- [X] T060 [US3] Implement clipboard auto-clear: cancellable Task.sleep 30s; new copy cancels previous task; best-effort on quit per FR-011 — `Presentation/Vault/VaultBrowserViewModel.swift`
+- [X] T061 [US3] Add "Last synced: [time]" relative timestamp to toolbar (RelativeDateTimeFormatter per FR-037, FR-041) — `Presentation/Vault/VaultBrowserView.swift`
 - [ ] T062 [US3] XCUITest: US3 vault browser journey — sidebar nav, item select, field reveal/mask, copy + clipboard clear, all item types render correctly (SC-003, SC-005 at 1,000 items) — `Tests/UITests/VaultBrowserJourneyTests.swift`
 
 **Checkpoint**: All 14 US3 acceptance scenarios pass. SC-003, SC-004, SC-005 pass. 1,000-item vault renders without lag.
