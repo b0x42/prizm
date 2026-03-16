@@ -21,6 +21,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		4309FCF32F680BEA0031C9F4 /* Keychain */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Keychain;
+			sourceTree = "<group>";
+		};
 		434D9EBC2F670B9C00052BCB /* Bitwarden MacOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Bitwarden MacOS";
@@ -50,9 +55,218 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		4309FCEB2F680ABF0031C9F4 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				4309FCEE2F680ADE0031C9F4 /* UseCases */,
+				4309FCED2F680AD60031C9F4 /* Repositories */,
+				4309FCEC2F680AC80031C9F4 /* Entities */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		4309FCEC2F680AC80031C9F4 /* Entities */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Entities;
+			sourceTree = "<group>";
+		};
+		4309FCED2F680AD60031C9F4 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		4309FCEE2F680ADE0031C9F4 /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		4309FCEF2F680AE70031C9F4 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				4309FCF52F680BF70031C9F4 /* Repositories */,
+				4309FCF42F680BF00031C9F4 /* Mappers */,
+				4309FCF32F680BEA0031C9F4 /* Keychain */,
+				4309FCF12F680BD10031C9F4 /* Network */,
+				4309FCF02F680AEF0031C9F4 /* Crypto */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		4309FCF02F680AEF0031C9F4 /* Crypto */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Crypto;
+			sourceTree = "<group>";
+		};
+		4309FCF12F680BD10031C9F4 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				4309FCF22F680BDF0031C9F4 /* Models */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		4309FCF22F680BDF0031C9F4 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		4309FCF42F680BF00031C9F4 /* Mappers */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Mappers;
+			sourceTree = "<group>";
+		};
+		4309FCF52F680BF70031C9F4 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		4309FCF62F680C950031C9F4 /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				4309FCFC2F680CCD0031C9F4 /* Components */,
+				4309FCF82F680CA50031C9F4 /* Vault */,
+				4309FCF72F680C9D0031C9F4 /* Auth */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		4309FCF72F680C9D0031C9F4 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		4309FCF82F680CA50031C9F4 /* Vault */ = {
+			isa = PBXGroup;
+			children = (
+				4309FCFB2F680CC60031C9F4 /* Detail */,
+				4309FCFA2F680CBD0031C9F4 /* ItemList */,
+				4309FCF92F680CB40031C9F4 /* Sidebar */,
+			);
+			path = Vault;
+			sourceTree = "<group>";
+		};
+		4309FCF92F680CB40031C9F4 /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
+		4309FCFA2F680CBD0031C9F4 /* ItemList */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ItemList;
+			sourceTree = "<group>";
+		};
+		4309FCFB2F680CC60031C9F4 /* Detail */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Detail;
+			sourceTree = "<group>";
+		};
+		4309FCFC2F680CCD0031C9F4 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		4309FCFD2F680CD40031C9F4 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				4309FD052F680D3B0031C9F4 /* UITests */,
+				4309FD022F680D0D0031C9F4 /* PresentationTests */,
+				4309FD002F680CFC0031C9F4 /* DataTests */,
+				4309FCFE2F680CDD0031C9F4 /* DomainTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		4309FCFE2F680CDD0031C9F4 /* DomainTests */ = {
+			isa = PBXGroup;
+			children = (
+				4309FCFF2F680CE60031C9F4 /* UseCases */,
+			);
+			path = DomainTests;
+			sourceTree = "<group>";
+		};
+		4309FCFF2F680CE60031C9F4 /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		4309FD002F680CFC0031C9F4 /* DataTests */ = {
+			isa = PBXGroup;
+			children = (
+				4309FD032F680D1A0031C9F4 /* Mappers */,
+				4309FD012F680D040031C9F4 /* Crypto */,
+			);
+			path = DataTests;
+			sourceTree = "<group>";
+		};
+		4309FD012F680D040031C9F4 /* Crypto */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Crypto;
+			sourceTree = "<group>";
+		};
+		4309FD022F680D0D0031C9F4 /* PresentationTests */ = {
+			isa = PBXGroup;
+			children = (
+				4309FD042F680D350031C9F4 /* Components */,
+			);
+			path = PresentationTests;
+			sourceTree = "<group>";
+		};
+		4309FD032F680D1A0031C9F4 /* Mappers */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Mappers;
+			sourceTree = "<group>";
+		};
+		4309FD042F680D350031C9F4 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		4309FD052F680D3B0031C9F4 /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
 		434D9EB12F670B9C00052BCB = {
 			isa = PBXGroup;
 			children = (
+				4309FCFD2F680CD40031C9F4 /* Tests */,
+				4309FCF62F680C950031C9F4 /* Presentation */,
+				4309FCEF2F680AE70031C9F4 /* Data */,
+				4309FCEB2F680ABF0031C9F4 /* Domain */,
 				4309FCE62F6808620031C9F4 /* App */,
 				434D9EBC2F670B9C00052BCB /* Bitwarden MacOS */,
 				434D9EBB2F670B9C00052BCB /* Products */,
