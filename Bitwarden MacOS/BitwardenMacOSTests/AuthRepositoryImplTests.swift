@@ -200,12 +200,95 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertNil(sut.storedAccount())
     }
 
-    // MARK: - signOut
+    /// storedAccount returns a populated Account when valid session data is in Keychain.
+    func testStoredAccount_withSession_returnsAccount() throws {
+        let env = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
+        let envJSON = String(data: try JSONEncoder().encode(env), encoding: .utf8)!
+        mockKeychain.seed(key: "bw.macos:activeUserId",            value: "user-001")
+        mockKeychain.seed(key: "bw.macos:user-001:email",          value: "alice@example.com")
+        mockKeychain.seed(key: "bw.macos:user-001:serverEnvironment", value: envJSON)
 
-    /// signOut clears all per-user Keychain keys.
+        let account = sut.storedAccount()
+        XCTAssertNotNil(account)
+        XCTAssertEqual(account?.email, "alice@example.com")
+        XCTAssertEqual(account?.userId, "user-001")
+    }
+
+    // MARK: - T037: unlockWithPassword
+
+    /// unlockWithPassword derives master key locally, decrypts vault key, unlocks crypto service.
+    func testUnlockWithPassword_validPassword_unlocksCrypto() async throws {
+        let userId = "user-001"
+        let env    = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
+        let kdf    = KdfParams(type: .pbkdf2, iterations: 600_000, memory: nil, parallelism: nil)
+
+        mockKeychain.seed(key: "bw.macos:activeUserId",                value: userId)
+        mockKeychain.seed(key: "bw.macos:\(userId):email",             value: "alice@example.com")
+        mockKeychain.seed(key: "bw.macos:\(userId):encUserKey",        value: "2.encKey==")
+        mockKeychain.seed(key: "bw.macos:\(userId):kdfParams",
+                          value: String(data: try JSONEncoder().encode(kdf), encoding: .utf8)!)
+        mockKeychain.seed(key: "bw.macos:\(userId):serverEnvironment",
+                          value: String(data: try JSONEncoder().encode(env), encoding: .utf8)!)
+
+        let account = try await sut.unlockWithPassword("masterPassword1!")
+
+        XCTAssertEqual(account.email, "alice@example.com")
+        XCTAssertEqual(account.userId, userId)
+        let isUnlocked = await mockCrypto.isUnlocked
+        XCTAssertTrue(isUnlocked, "Crypto service should be unlocked after successful unlock")
+    }
+
+    /// unlockWithPassword throws .invalidCredentials when no active session exists.
+    func testUnlockWithPassword_noSession_throws() async throws {
+        await XCTAssertThrowsErrorAsync(
+            try await sut.unlockWithPassword("any")
+        ) { error in
+            XCTAssertEqual(error as? AuthError, .invalidCredentials)
+        }
+    }
+
+    // MARK: - T038: signOut (comprehensive)
+
+    /// signOut clears all per-user Keychain keys and the global activeUserId.
     func testSignOut_clearsKeychain() async throws {
         try await sut.signOut()
         XCTAssertTrue(mockKeychain.deletedKeys.contains("bw.macos:activeUserId"))
+    }
+
+    /// signOut clears all seven per-user keys when a session exists.
+    func testSignOut_withActiveSession_clearsAllUserKeys() async throws {
+        let userId = "user-001"
+        mockKeychain.seed(key: "bw.macos:activeUserId", value: userId)
+        for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
+                       "email", "name", "serverEnvironment"] {
+            mockKeychain.seed(key: "bw.macos:\(userId):\(suffix)", value: "value")
+        }
+
+        try await sut.signOut()
+
+        for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
+                       "email", "name", "serverEnvironment"] {
+            XCTAssertTrue(
+                mockKeychain.deletedKeys.contains("bw.macos:\(userId):\(suffix)"),
+                "Expected key bw.macos:\(userId):\(suffix) to be deleted on signOut"
+            )
+        }
+        XCTAssertTrue(mockKeychain.deletedKeys.contains("bw.macos:activeUserId"))
+    }
+
+    /// After signOut, storedAccount() returns nil.
+    func testSignOut_thenStoredAccount_returnsNil() async throws {
+        mockKeychain.seed(key: "bw.macos:activeUserId", value: "user-001")
+        try await sut.signOut()
+        XCTAssertNil(sut.storedAccount())
+    }
+
+    /// signOut locks the vault (releases crypto key material).
+    func testSignOut_locksVault() async throws {
+        await mockCrypto.unlockWith(keys: CryptoKeys(encryptionKey: Data(count: 32), macKey: Data(count: 32)))
+        try await sut.signOut()
+        let isUnlocked = await mockCrypto.isUnlocked
+        XCTAssertFalse(isUnlocked, "Vault should be locked after signOut")
     }
 }
 
