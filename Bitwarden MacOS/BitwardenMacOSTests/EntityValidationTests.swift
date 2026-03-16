@@ -5,6 +5,7 @@ import XCTest
 /// Requires a unit-test target — add one in Xcode:
 ///   File → New → Target → macOS Unit Testing Bundle → "BitwardenMacOSTests"
 ///   then add this file to that target's Compile Sources.
+@MainActor
 final class EntityValidationTests: XCTestCase {
 
     // MARK: - ServerEnvironment
