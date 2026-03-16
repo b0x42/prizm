@@ -88,22 +88,22 @@ log in with valid credentials (with and without TOTP), and reach the vault brows
 
 ### Tests (write first, must fail)
 
-- [ ] T023 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithPassword — preLogin HTTP → hashPassword → identityToken → initializeUserCrypto — `Tests/DataTests/Repositories/AuthRepositoryImplTests.swift`
-- [ ] T024 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithTOTP — TOTP challenge flow + rememberDevice flag — `Tests/DataTests/Repositories/AuthRepositoryImplTests.swift`
-- [ ] T025 [P] [US1] Failing unit test: SyncRepositoryImpl.sync() — progress callbacks, personal-cipher-only decryptList, SyncResult — `Tests/DataTests/Repositories/SyncRepositoryImplTests.swift`
-- [ ] T026 [P] [US1] Failing unit test: LoginUseCase — full orchestration (preLogin → login → optional TOTP → sync) — `Tests/DomainTests/UseCases/LoginUseCaseTests.swift`
+- [X] T023 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithPassword — preLogin HTTP → hashPassword → identityToken → initializeUserCrypto — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
+- [X] T024 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithTOTP — TOTP challenge flow + rememberDevice flag — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
+- [X] T025 [P] [US1] Failing unit test: SyncRepositoryImpl.sync() — progress callbacks, personal-cipher-only decryptList, SyncResult — `BitwardenMacOSTests/SyncRepositoryImplTests.swift`
+- [X] T026 [P] [US1] Failing unit test: LoginUseCase — full orchestration (preLogin → login → optional TOTP → sync) — `BitwardenMacOSTests/LoginUseCaseTests.swift`
 
 ### Implementation
 
-- [ ] T027 [US1] Implement BitwardenAPIClient (URLSession; preLogin POST, identityToken POST form-encoded, sync GET; all required headers including Device-Type + X-Device-Identifier) — `Data/Network/BitwardenAPIClient.swift`
-- [ ] T028 [US1] Implement device identifier generation (UUID v4 on first launch, Keychain key `bw.macos:deviceIdentifier`) — `Data/Repositories/AuthRepositoryImpl.swift`
-- [ ] T029 [US1] Implement AuthRepositoryImpl: validateServerURL, setServerEnvironment, loginWithPassword, loginWithTOTP — `Data/Repositories/AuthRepositoryImpl.swift`
-- [ ] T030 [US1] Implement SyncRepositoryImpl: sync() with "Syncing vault…" + "Decrypting…" progress callbacks; personal ciphers only (skip org ciphers); graceful per-cipher failure — `Data/Repositories/SyncRepositoryImpl.swift`
-- [ ] T031 [US1] Implement LoginUseCase + SyncUseCase — `Domain/UseCases/LoginUseCase.swift`, `Domain/UseCases/SyncUseCase.swift`
-- [ ] T032 [P] [US1] Build LoginView + LoginViewModel (server URL field with validation on blur, email, master password, inline error states per FR-001, FR-013) — `Presentation/Auth/LoginView.swift`, `Presentation/Auth/LoginViewModel.swift`
-- [ ] T033 [P] [US1] Build TOTPPromptView (TOTP code input + "Remember this device" checkbox defaulting to unchecked per FR-050; unsupported 2FA method error state per FR-016) — `Presentation/Auth/TOTPPromptView.swift`
-- [ ] T034 [US1] Build SyncProgressView (full-screen, sequential status messages, replaces login screen, error state with retry on failure per FR-036) — `Presentation/Auth/SyncProgressView.swift`
-- [ ] T035 [US1] Wire app state machine in AppContainer + BitwardenMacOSApp (no session → LoginView; session exists → UnlockView; post-login → SyncProgressView → VaultBrowserView) — `App/AppContainer.swift`, `App/BitwardenMacOSApp.swift`
+- [X] T027 [US1] Implement BitwardenAPIClient (URLSession; preLogin POST, identityToken POST form-encoded, sync GET; all required headers including Device-Type + X-Device-Identifier) — `Data/Network/BitwardenAPIClient.swift`
+- [X] T028 [US1] Implement device identifier generation (UUID v4 on first launch, Keychain key `bw.macos:deviceIdentifier`) — `Data/Repositories/AuthRepositoryImpl.swift`
+- [X] T029 [US1] Implement AuthRepositoryImpl: validateServerURL, setServerEnvironment, loginWithPassword, loginWithTOTP — `Data/Repositories/AuthRepositoryImpl.swift`
+- [X] T030 [US1] Implement SyncRepositoryImpl: sync() with "Syncing vault…" + "Decrypting…" progress callbacks; personal ciphers only (skip org ciphers); graceful per-cipher failure — `Data/Repositories/SyncRepositoryImpl.swift`
+- [X] T031 [US1] Implement LoginUseCaseImpl + SyncUseCaseImpl — `Data/UseCases/LoginUseCaseImpl.swift`, `Data/UseCases/SyncUseCaseImpl.swift`
+- [X] T032 [P] [US1] Build LoginView + LoginViewModel — `Presentation/Login/LoginView.swift`, `Presentation/Login/LoginViewModel.swift`
+- [X] T033 [P] [US1] Build TOTPPromptView (TOTP code input + "Remember this device" checkbox) — `Presentation/Login/TOTPPromptView.swift`
+- [X] T034 [US1] Build SyncProgressView (full-screen, sequential status messages) — `Presentation/Sync/SyncProgressView.swift`
+- [X] T035 [US1] Wire app state machine in AppContainer + BitwardenMacOSApp — `App/AppContainer.swift`, `App/Bitwarden_MacOSApp.swift`
 - [ ] T036 [US1] XCUITest: full US1 login journey — blank login screen, enter server URL + credentials, reach vault browser (SC-001 ≤60s) — `Tests/UITests/LoginJourneyTests.swift`
 
 **Checkpoint**: US1 acceptance scenarios 1–7 all pass. SC-001 passes. SC-006 passes (all error states covered).

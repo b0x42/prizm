@@ -31,7 +31,7 @@ struct ServerEnvironment: Codable, Equatable {
 /// Optional per-service URL overrides for self-hosted deployments that
 /// separate their API, identity and icon services onto different hosts.
 struct ServerURLOverrides: Codable, Equatable {
-    var api: URL?
-    var identity: URL?
-    var icons: URL?
+    var api: URL?      = nil
+    var identity: URL? = nil
+    var icons: URL?    = nil
 }

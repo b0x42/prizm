@@ -1,8 +1,7 @@
 import Foundation
 
-/// Read-only access to the decrypted in-memory vault.
-/// All methods operate on the in-memory store populated by `SyncRepositoryImpl`.
-/// Throws `VaultError.vaultLocked` when called before a successful unlock + sync.
+/// In-memory vault store: write side used by `SyncRepositoryImpl`, read side used by use cases.
+/// Throws `VaultError.vaultLocked` when read methods are called before a successful unlock + sync.
 /// Implemented by `VaultRepositoryImpl` in the Data layer.
 protocol VaultRepository: AnyObject {
 
@@ -34,6 +33,10 @@ protocol VaultRepository: AnyObject {
     /// Returns the fully-decrypted detail for a single item.
     /// Not cached — re-decrypts on every call (decrypt on demand, per spec).
     func itemDetail(id: String) async throws -> VaultItem
+
+    /// Replaces the in-memory vault store with `items` and records the sync timestamp.
+    /// Called by `SyncRepositoryImpl` after a successful sync.
+    func populate(items: [VaultItem], syncedAt: Date)
 
     /// Clears the in-memory vault store. Called on lock and sign-out.
     func clearVault()

@@ -29,7 +29,17 @@
 		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
 		D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF90E0F31DF248FB9D12F74D /* VaultItem.swift */; };
 		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
-/* End PBXBuildFile section */
+		43947740EA3343DC9C888402 /* BitwardenAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E819470C1E544509A3DDD52F /* BitwardenAPIClient.swift */; };
+		B2390AAAD10D4CE69AD6660C /* AuthRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */; };
+		3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */; };
+		DB95790F466448D78246B723 /* VaultRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */; };
+		2CA025EEBDD14800B361F176 /* LoginUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */; };
+		56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */; };
+		9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */; };
+		5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7429BBFA10E247D8AEACA59B /* LoginView.swift */; };
+		98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */; };
+		A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		4309FD112F68121F0031C9F4 /* PBXContainerItemProxy */ = {
@@ -65,7 +75,17 @@
 		E25C290F2D7A470EB4AB8698 /* KdfParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KdfParams.swift; sourceTree = "<group>"; };
 		EF90E0F31DF248FB9D12F74D /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
 		F557D7298207448A9FBFC676 /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		E819470C1E544509A3DDD52F /* BitwardenAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitwardenAPIClient.swift; sourceTree = "<group>"; };
+		F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryImpl.swift; sourceTree = "<group>"; };
+		4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepositoryImpl.swift; sourceTree = "<group>"; };
+		9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepositoryImpl.swift; sourceTree = "<group>"; };
+		14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCaseImpl.swift; sourceTree = "<group>"; };
+		8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUseCaseImpl.swift; sourceTree = "<group>"; };
+		713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		7429BBFA10E247D8AEACA59B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPPromptView.swift; sourceTree = "<group>"; };
+		81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProgressView.swift; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4309FCF32F680BEA0031C9F4 /* Keychain */ = {
@@ -160,7 +180,8 @@
 		4309FCEF2F680AE70031C9F4 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				4309FCF52F680BF70031C9F4 /* Repositories */,
+				
+				FF2563714D2C473EA1DFE89E /* UseCasesImpl */,4309FCF52F680BF70031C9F4 /* Repositories */,
 				4309FCF42F680BF00031C9F4 /* Mappers */,
 				4309FCF32F680BEA0031C9F4 /* Keychain */,
 				4309FCF12F680BD10031C9F4 /* Network */,
@@ -182,7 +203,8 @@
 		4309FCF12F680BD10031C9F4 /* Network */ = {
 			isa = PBXGroup;
 			children = (
-				4309FCF22F680BDF0031C9F4 /* Models */,
+				
+				E819470C1E544509A3DDD52F /* BitwardenAPIClient.swift */,4309FCF22F680BDF0031C9F4 /* Models */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -207,14 +229,19 @@
 		4309FCF52F680BF70031C9F4 /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
-			);
+			
+				F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */,
+				4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */,
+				9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */,);
 			path = Repositories;
 			sourceTree = "<group>";
 		};
 		4309FCF62F680C950031C9F4 /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
-				4309FCFC2F680CCD0031C9F4 /* Components */,
+				
+				
+				498456596EC249F78737016A /* Sync */,7D6DFC79E63B457284977CA8 /* Login */,4309FCFC2F680CCD0031C9F4 /* Components */,
 				4309FCF82F680CA50031C9F4 /* Vault */,
 				4309FCF72F680C9D0031C9F4 /* Auth */,
 			);
@@ -360,7 +387,34 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-/* End PBXGroup section */
+		FF2563714D2C473EA1DFE89E /* UseCasesImpl */ = {
+			isa = PBXGroup;
+			children = (
+				14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */,
+				8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */,
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		7D6DFC79E63B457284977CA8 /* Login */ = {
+			isa = PBXGroup;
+			children = (
+				713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */,
+				7429BBFA10E247D8AEACA59B /* LoginView.swift */,
+				F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */,
+			);
+			path = Login;
+			sourceTree = "<group>";
+		};
+		498456596EC249F78737016A /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		4309FD0C2F68121F0031C9F4 /* BitwardenMacOSTests */ = {
@@ -499,6 +553,16 @@
 				398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */,
 				4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */,
 				4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */,
+				43947740EA3343DC9C888402 /* BitwardenAPIClient.swift in Sources */,
+				B2390AAAD10D4CE69AD6660C /* AuthRepositoryImpl.swift in Sources */,
+				3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */,
+				DB95790F466448D78246B723 /* VaultRepositoryImpl.swift in Sources */,
+				2CA025EEBDD14800B361F176 /* LoginUseCaseImpl.swift in Sources */,
+				56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */,
+				9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */,
+				5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */,
+				98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */,
+				A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */,
 				4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */,
 				4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */,
 			);
