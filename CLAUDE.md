@@ -4,6 +4,8 @@ Auto-generated from feature plans. Last updated: 2026-03-15
 Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
 
 ## Active Technologies
+- Swift 5.10 (latest stable) + SwiftUI, CommonCrypto, CryptoKit, Security.framework, `Argon2Swift` 1.0.1-bw2 (local vendored at `LocalPackages/Argon2Swift/`) (001-vault-browser-ui)
+- macOS Keychain (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), UserDefaults (UI prefs), in-memory (decrypted vault) (001-vault-browser-ui)
 
 - **Language**: Swift 5.10 (latest stable)
 - **UI Framework**: SwiftUI (`NavigationSplitView` for three-pane layout)
@@ -79,6 +81,7 @@ xcodebuild test \
 - Secrets MUST NOT appear in log output
 
 ## Recent Changes
+- 001-vault-browser-ui: Added Swift 5.10 (latest stable) + SwiftUI, CommonCrypto, CryptoKit, Security.framework, `Argon2Swift` 1.0.1-bw2 (local vendored at `LocalPackages/Argon2Swift/`)
 
 ### 001-vault-browser-ui (2026-03-15)
 Added: full project scaffold, three-pane vault browser, login/unlock flows, search.
