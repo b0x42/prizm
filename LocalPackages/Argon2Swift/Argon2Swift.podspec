@@ -16,7 +16,7 @@ Pod::Spec.new do |spec|
   #
 
   spec.name             = "Argon2Swift"
-  spec.version          = "1.0.1"
+  spec.version          = "1.0.1-bw1"
   spec.summary          = "A Swift wrapper around the Argon2 reference implementation."
   spec.swift_version = "5.0"
 
