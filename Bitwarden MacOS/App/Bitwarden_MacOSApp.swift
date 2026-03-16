@@ -59,17 +59,10 @@ struct Bitwarden_MacOSApp: App {
             SyncProgressView(message: message)
 
         case .vault:
-            // Vault browser implemented in Phase 6.
-            VStack(spacing: 12) {
-                Image(systemName: "lock.open.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.green)
-                Text("Vault unlocked")
-                    .font(.title.bold())
-                Text("Vault browser coming in Phase 6.")
-                    .foregroundStyle(.secondary)
-            }
-            .frame(minWidth: 480, minHeight: 360)
+            VaultBrowserView(
+                viewModel:     rootVM.vaultBrowserVM,
+                faviconLoader: container.faviconLoader
+            )
         }
     }
 }
@@ -95,14 +88,16 @@ final class RootViewModel: ObservableObject {
 
     @Published var screen: Screen
 
-    let loginVM: LoginViewModel
-    var unlockVM: UnlockViewModel?
+    let loginVM:         LoginViewModel
+    var unlockVM:        UnlockViewModel?
+    let vaultBrowserVM:  VaultBrowserViewModel
 
     private let container: AppContainer
 
     init(container: AppContainer) {
-        self.container = container
-        self.loginVM   = container.makeLoginViewModel()
+        self.container      = container
+        self.loginVM        = container.makeLoginViewModel()
+        self.vaultBrowserVM = container.makeVaultBrowserViewModel()
 
         // Check for stored session at launch.
         if let account = container.authRepository.storedAccount() {

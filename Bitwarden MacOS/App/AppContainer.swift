@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 /// Dependency injection container — wires together all Data-layer implementations
 /// and exposes the Domain-layer protocols used by the Presentation layer.
@@ -10,10 +11,11 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Data layer
 
-    let apiClient:  BitwardenAPIClientImpl
-    let crypto:     BitwardenCryptoServiceImpl
-    let keychain:   KeychainServiceImpl
-    let vaultStore: VaultRepositoryImpl
+    let apiClient:     BitwardenAPIClientImpl
+    let crypto:        BitwardenCryptoServiceImpl
+    let keychain:      KeychainServiceImpl
+    let vaultStore:    VaultRepositoryImpl
+    let faviconLoader: FaviconLoader
 
     // MARK: - Domain repositories (Data implementations)
 
@@ -49,6 +51,7 @@ final class AppContainer: ObservableObject {
         self.crypto          = crypto
         self.keychain        = keychain
         self.vaultStore      = vault
+        self.faviconLoader   = FaviconLoader()
         self.authRepository  = auth
         self.syncRepository  = sync
         self.syncUseCase    = SyncUseCaseImpl(sync: sync)
@@ -66,5 +69,10 @@ final class AppContainer: ObservableObject {
     /// Creates an `UnlockViewModel` for a returning user with a stored session.
     func makeUnlockViewModel(account: Account) -> UnlockViewModel {
         UnlockViewModel(auth: authRepository, sync: syncUseCase, account: account)
+    }
+
+    /// Creates a `VaultBrowserViewModel` backed by the live vault store.
+    func makeVaultBrowserViewModel() -> VaultBrowserViewModel {
+        VaultBrowserViewModel(vault: vaultStore)
     }
 }
