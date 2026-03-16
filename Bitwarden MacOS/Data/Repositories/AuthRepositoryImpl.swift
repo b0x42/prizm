@@ -1,0 +1,383 @@
+import Foundation
+import os.log
+
+// MARK: - AuthRepositoryImpl
+
+/// Concrete implementation of `AuthRepository`.
+///
+/// Orchestrates the full Bitwarden login flow:
+///   1. POST `/accounts/prelogin` → KDF params
+///   2. Derive master key (PBKDF2 or Argon2id) locally
+///   3. POST `/connect/token` → access + refresh tokens
+///   4. Decrypt encUserKey → vault symmetric keys
+///   5. Unlock `BitwardenCryptoServiceImpl` with vault keys
+///   6. Persist tokens + metadata in Keychain
+///
+/// Two-factor flow: `loginWithPassword` returns `.requiresTwoFactor` and stores
+/// pending state in-memory; `loginWithTOTP` completes the challenge.
+///
+/// Thread safety: all mutable state is read/written on the calling actor.
+/// `@MainActor` annotation ensures single-threaded access during tests and UI.
+@MainActor
+final class AuthRepositoryImpl: AuthRepository {
+
+    // MARK: - Dependencies
+
+    private let apiClient:  any BitwardenAPIClientProtocol
+    private let crypto:     any BitwardenCryptoService
+    private let keychain:   any KeychainService
+
+    private let logger = Logger(subsystem: "com.bitwarden-macos", category: "AuthRepository")
+
+    // MARK: - Server configuration
+
+    private(set) var serverEnvironment: ServerEnvironment?
+
+    // MARK: - Pending 2FA state
+    // Set by loginWithPassword when the server requests 2FA; consumed by loginWithTOTP.
+
+    private struct PendingTwoFactor {
+        let email:        String
+        let passwordHash: String
+        let kdfParams:    KdfParams
+        let stretchedKeys: CryptoKeys
+        let deviceId:     String
+    }
+    private var pendingTwoFactor: PendingTwoFactor?
+
+    // MARK: - Init
+
+    init(
+        apiClient: any BitwardenAPIClientProtocol,
+        crypto:    any BitwardenCryptoService,
+        keychain:  any KeychainService
+    ) {
+        self.apiClient = apiClient
+        self.crypto    = crypto
+        self.keychain  = keychain
+    }
+
+    // MARK: - Server configuration
+
+    func validateServerURL(_ urlString: String) throws {
+        // Strip trailing slash for normalisation.
+        let trimmed = urlString.hasSuffix("/") ? String(urlString.dropLast()) : urlString
+        guard let url = URL(string: trimmed),
+              let scheme = url.scheme,
+              (scheme == "https" || scheme == "http"),
+              url.host != nil else {
+            throw AuthError.invalidURL
+        }
+    }
+
+    func setServerEnvironment(_ environment: ServerEnvironment) async throws {
+        serverEnvironment = environment
+        apiClient.setBaseURL(environment.base)
+    }
+
+    // MARK: - Login
+
+    func loginWithPassword(email: String, masterPassword: String) async throws -> LoginResult {
+        guard let env = serverEnvironment else {
+            throw AuthError.serverUnreachable
+        }
+
+        // Step 1: Fetch KDF params.
+        let preLogin   = try await apiClient.preLogin(email: email)
+        let kdfParams  = preLogin.kdfParams
+
+        // Step 2: Derive master key locally — never sent to server.
+        let masterKey  = try await crypto.makeMasterKey(
+            password: masterPassword,
+            email:    email.lowercased(),
+            kdf:      kdfParams
+        )
+
+        // Step 3: Stretch master key into separate enc + mac keys (HKDF).
+        let stretched  = try await crypto.stretchKey(masterKey: masterKey)
+
+        // Step 4: Compute server authentication hash.
+        // Per Bitwarden Security Whitepaper §4: the hash proves knowledge of the
+        // master password without revealing the master key itself.
+        let serverHash = try await crypto.makeServerHash(
+            masterKey: masterKey,
+            password:  masterPassword
+        )
+
+        // Step 5: Request identity token.
+        let deviceId   = try deviceIdentifier()
+        let tokenResp: TokenResponse
+        do {
+            tokenResp = try await apiClient.identityToken(
+                email:             email,
+                passwordHash:      serverHash,
+                deviceIdentifier:  deviceId,
+                twoFactorToken:    nil,
+                twoFactorProvider: nil,
+                twoFactorRemember: false
+            )
+        } catch let err as IdentityTokenError {
+            switch err {
+            case .twoFactorRequired(let providers):
+                pendingTwoFactor = PendingTwoFactor(
+                    email:         email,
+                    passwordHash:  serverHash,
+                    kdfParams:     kdfParams,
+                    stretchedKeys: stretched,
+                    deviceId:      deviceId
+                )
+                return .requiresTwoFactor(twoFactorMethod(from: providers))
+            case .twoFactorCodeInvalid:
+                throw AuthError.invalidTwoFactorCode
+            case .invalidCredentials:
+                throw AuthError.invalidCredentials
+            }
+        }
+
+        if let providers = tokenResp.twoFactorProviders, !providers.isEmpty {
+            // Server returned a 2FA challenge inside a 200 response (test-mock path).
+            pendingTwoFactor = PendingTwoFactor(
+                email:         email,
+                passwordHash:  serverHash,
+                kdfParams:     kdfParams,
+                stretchedKeys: stretched,
+                deviceId:      deviceId
+            )
+            return .requiresTwoFactor(twoFactorMethod(from: providers))
+        }
+
+        // Step 6: Finalize the session with the token response.
+        let account = try await finalizeSession(
+            tokenResp:    tokenResp,
+            stretched:    stretched,
+            environment:  env
+        )
+        return .success(account)
+    }
+
+    func loginWithTOTP(code: String, rememberDevice: Bool) async throws -> Account {
+        guard let pending = pendingTwoFactor,
+              let env     = serverEnvironment else {
+            throw AuthError.invalidCredentials
+        }
+
+        let tokenResp: TokenResponse
+        do {
+            tokenResp = try await apiClient.identityToken(
+                email:             pending.email,
+                passwordHash:      pending.passwordHash,
+                deviceIdentifier:  pending.deviceId,
+                twoFactorToken:    code,
+                twoFactorProvider: 0,   // authenticatorApp
+                twoFactorRemember: rememberDevice
+            )
+        } catch let err as IdentityTokenError {
+            switch err {
+            case .twoFactorCodeInvalid:
+                throw AuthError.invalidTwoFactorCode
+            case .invalidCredentials:
+                throw AuthError.invalidTwoFactorCode   // TOTP wrong code maps to same user-visible error
+            case .twoFactorRequired:
+                throw AuthError.invalidTwoFactorCode
+            }
+        }
+
+        pendingTwoFactor = nil
+        return try await finalizeSession(
+            tokenResp:   tokenResp,
+            stretched:   pending.stretchedKeys,
+            environment: env
+        )
+    }
+
+    // MARK: - Unlock
+
+    func unlockWithPassword(_ masterPassword: String) async throws -> Account {
+        guard let userId = try? keychain.read(key: KeychainKey.activeUserId) else {
+            throw AuthError.invalidCredentials
+        }
+
+        let emailKey  = KeychainKey.user(userId, "email")
+        let kdfKey    = KeychainKey.user(userId, "kdfParams")
+        let encKeyKey = KeychainKey.user(userId, "encUserKey")
+
+        guard let email     = try? keychain.read(key: emailKey),
+              let kdfJSON   = try? keychain.read(key: kdfKey),
+              let encUserKey = try? keychain.read(key: encKeyKey) else {
+            throw AuthError.invalidCredentials
+        }
+
+        guard let kdfData   = kdfJSON.data(using: .utf8),
+              let kdfParams = try? JSONDecoder().decode(KdfParams.self, from: kdfData) else {
+            throw AuthError.invalidCredentials
+        }
+
+        let masterKey  = try await crypto.makeMasterKey(
+            password: masterPassword,
+            email:    email.lowercased(),
+            kdf:      kdfParams
+        )
+        let stretched  = try await crypto.stretchKey(masterKey: masterKey)
+        let vaultKeys  = try await crypto.decryptSymmetricKey(
+            encUserKey:    encUserKey,
+            stretchedKeys: stretched
+        )
+        await crypto.unlockWith(keys: vaultKeys)
+
+        return try account(for: userId)
+    }
+
+    // MARK: - Session
+
+    func storedAccount() -> Account? {
+        guard let userId = try? keychain.read(key: KeychainKey.activeUserId) else {
+            return nil
+        }
+        return try? account(for: userId)
+    }
+
+    func signOut() async throws {
+        let userId = (try? keychain.read(key: KeychainKey.activeUserId)) ?? ""
+
+        // Clear per-user keys first.
+        if !userId.isEmpty {
+            for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
+                           "email", "name", "serverEnvironment"] {
+                try? keychain.delete(key: KeychainKey.user(userId, suffix))
+            }
+        }
+        // Clear global key last.
+        try? keychain.delete(key: KeychainKey.activeUserId)
+
+        await crypto.lockVault()
+        serverEnvironment = nil
+        pendingTwoFactor  = nil
+    }
+
+    // MARK: - Lock
+
+    func lockVault() async {
+        await crypto.lockVault()
+    }
+
+    // MARK: - Private helpers
+
+    /// Completes a successful token exchange: decrypts vault key, stores credentials, returns Account.
+    private func finalizeSession(
+        tokenResp:   TokenResponse,
+        stretched:   CryptoKeys,
+        environment: ServerEnvironment
+    ) async throws -> Account {
+        guard let userId   = tokenResp.userId,
+              let email    = tokenResp.email,
+              let encKey   = tokenResp.key,
+              let accessToken  = tokenResp.accessToken.isEmpty ? nil : tokenResp.accessToken,
+              let refreshToken = tokenResp.refreshToken else {
+            throw AuthError.invalidCredentials
+        }
+
+        // Decrypt the encrypted user key using the stretched master keys.
+        let vaultKeys = try await crypto.decryptSymmetricKey(
+            encUserKey:    encKey,
+            stretchedKeys: stretched
+        )
+        await crypto.unlockWith(keys: vaultKeys)
+
+        // Persist session data in Keychain.
+        try keychain.write(key: KeychainKey.activeUserId,                       value: userId)
+        try keychain.write(key: KeychainKey.user(userId, "accessToken"),        value: accessToken)
+        try keychain.write(key: KeychainKey.user(userId, "refreshToken"),       value: refreshToken)
+        try keychain.write(key: KeychainKey.user(userId, "encUserKey"),         value: encKey)
+        try keychain.write(key: KeychainKey.user(userId, "email"),              value: email)
+        if let name = tokenResp.name {
+            try keychain.write(key: KeychainKey.user(userId, "name"),           value: name)
+        }
+
+        // Persist KDF params for offline unlock.
+        let kdfJSON = try JSONEncoder().encode(tokenResp.kdfParams(environment: environment))
+        if let str = String(data: kdfJSON, encoding: .utf8) {
+            try keychain.write(key: KeychainKey.user(userId, "kdfParams"),      value: str)
+        }
+
+        // Persist server environment for unlock.
+        let envJSON = try JSONEncoder().encode(environment)
+        if let str = String(data: envJSON, encoding: .utf8) {
+            try keychain.write(key: KeychainKey.user(userId, "serverEnvironment"), value: str)
+        }
+
+        apiClient.setAccessToken(accessToken)
+
+        return Account(
+            userId:            userId,
+            email:             email,
+            name:              tokenResp.name,
+            serverEnvironment: environment
+        )
+    }
+
+    /// Reconstructs an `Account` from Keychain data for a known `userId`.
+    private func account(for userId: String) throws -> Account {
+        let email    = try keychain.read(key: KeychainKey.user(userId, "email"))
+        let name     = try? keychain.read(key: KeychainKey.user(userId, "name"))
+        let envJSON  = try keychain.read(key: KeychainKey.user(userId, "serverEnvironment"))
+
+        guard let envData = envJSON.data(using: .utf8),
+              let env     = try? JSONDecoder().decode(ServerEnvironment.self, from: envData) else {
+            throw AuthError.invalidCredentials
+        }
+        return Account(userId: userId, email: email, name: name, serverEnvironment: env)
+    }
+
+    /// Returns the persisted device identifier UUID, generating and storing one on first use.
+    ///
+    /// Per Bitwarden device registration requirements, each installation should present a
+    /// stable UUID. Stored under `bw.macos:deviceIdentifier` (not per-user; shared across accounts).
+    private func deviceIdentifier() throws -> String {
+        if let existing = try? keychain.read(key: KeychainKey.deviceIdentifier) {
+            return existing
+        }
+        let newId = UUID().uuidString
+        try keychain.write(key: KeychainKey.deviceIdentifier, value: newId)
+        return newId
+    }
+
+    /// Maps a list of Bitwarden 2FA provider type numbers to a `TwoFactorMethod`.
+    ///
+    /// Only TOTP (provider 0) is supported in v1.  Any other combination returns `.unsupported`.
+    private func twoFactorMethod(from providers: [Int]) -> TwoFactorMethod {
+        if providers.contains(0) { return .authenticatorApp }
+        let names = providers.map { String($0) }.joined(separator: ", ")
+        return .unsupported(name: names)
+    }
+}
+
+// MARK: - TokenResponse helpers
+
+private extension TokenResponse {
+    /// Extracts `KdfParams` from the token response fields.
+    func kdfParams(environment _: ServerEnvironment) -> KdfParams {
+        let type: KdfType = (kdf == 1) ? .argon2id : .pbkdf2
+        return KdfParams(
+            type:        type,
+            iterations:  kdfIterations ?? 600_000,
+            memory:      kdfMemory,
+            parallelism: kdfParallelism
+        )
+    }
+}
+
+// MARK: - Keychain key namespacing
+
+/// Centralised Keychain key factory.
+///
+/// Key format:
+///   - Global:    `bw.macos:<name>`
+///   - Per-user:  `bw.macos:<userId>:<name>`
+enum KeychainKey {
+    static let activeUserId    = "bw.macos:activeUserId"
+    static let deviceIdentifier = "bw.macos:deviceIdentifier"
+
+    static func user(_ userId: String, _ name: String) -> String {
+        "bw.macos:\(userId):\(name)"
+    }
+}

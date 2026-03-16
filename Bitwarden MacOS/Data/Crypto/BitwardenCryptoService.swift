@@ -81,6 +81,16 @@ protocol BitwardenCryptoService: Actor {
     /// - Returns: The 64-byte vault `CryptoKeys`.
     func decryptSymmetricKey(encUserKey: String, stretchedKeys: CryptoKeys) async throws -> CryptoKeys
 
+    /// Decrypts a list of raw ciphers using the current vault keys.
+    ///
+    /// Organisation ciphers (`organizationId != nil`) are silently skipped in v1.
+    /// Per-cipher decryption failures are non-fatal: failed items are excluded and counted.
+    ///
+    /// - Parameter ciphers: Raw encrypted ciphers from the sync response.
+    /// - Returns: Tuple of successfully decrypted `VaultItem`s and a failure count.
+    /// - Throws: `BitwardenCryptoServiceError.vaultLocked` if the vault is not unlocked.
+    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int)
+
     /// Loads `keys` into memory, marking the vault as unlocked.
     func unlockWith(keys: CryptoKeys) async
 
@@ -124,6 +134,28 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         // retain copies elsewhere, but this reduces the window during which the
         // key is readable in a memory dump).
         self.keys = nil
+    }
+
+    // MARK: - decryptList
+
+    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int) {
+        guard let vaultKeys = keys else {
+            throw BitwardenCryptoServiceError.vaultLocked
+        }
+        let mapper = CipherMapper()
+        var items: [VaultItem] = []
+        var failedCount = 0
+        for cipher in ciphers {
+            // Organisation ciphers are not supported in v1.
+            if cipher.organizationId != nil { continue }
+            do {
+                let item = try mapper.map(raw: cipher, keys: vaultKeys)
+                items.append(item)
+            } catch {
+                failedCount += 1
+            }
+        }
+        return (items: items, failedCount: failedCount)
     }
 
     // MARK: - makeMasterKey

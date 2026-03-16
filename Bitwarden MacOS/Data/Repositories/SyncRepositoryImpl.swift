@@ -1,0 +1,89 @@
+import Foundation
+import os.log
+
+// MARK: - SyncRepositoryImpl
+
+/// Concrete implementation of `SyncRepository`.
+///
+/// Fetches the encrypted vault from the Bitwarden server, decrypts personal ciphers
+/// via `BitwardenCryptoServiceImpl.decryptList`, and populates the in-memory `VaultRepository`.
+///
+/// Organisation ciphers (`organizationId != nil`) are silently skipped in v1.
+/// Individual cipher decryption failures are non-fatal — they are counted and logged
+/// but the remaining ciphers are still stored.
+///
+/// Concurrent calls: the second caller receives `SyncError.syncInProgress`.
+actor SyncRepositoryImpl: SyncRepository {
+
+    // MARK: - Dependencies
+
+    private let apiClient:       any BitwardenAPIClientProtocol
+    private let crypto:          any BitwardenCryptoService
+    private let vaultRepository: any VaultRepository
+
+    private let logger = Logger(subsystem: "com.bitwarden-macos", category: "SyncRepository")
+
+    // MARK: - State
+
+    private var isSyncing = false
+
+    // MARK: - Init
+
+    init(
+        apiClient:       any BitwardenAPIClientProtocol,
+        crypto:          any BitwardenCryptoService,
+        vaultRepository: any VaultRepository
+    ) {
+        self.apiClient       = apiClient
+        self.crypto          = crypto
+        self.vaultRepository = vaultRepository
+    }
+
+    // MARK: - SyncRepository
+
+    func sync(progress: @escaping (String) -> Void) async throws -> SyncResult {
+        guard !isSyncing else {
+            logger.info("sync() called while already in progress")
+            throw SyncError.syncInProgress
+        }
+        isSyncing = true
+        defer { isSyncing = false }
+
+        // Phase 1: Fetch encrypted vault from server.
+        progress("Syncing vault…")
+        logger.info("Starting vault sync")
+
+        let syncResponse: SyncResponse
+        do {
+            syncResponse = try await apiClient.fetchSync()
+        } catch let err as APIError {
+            switch err {
+            case .httpError(statusCode: 401, _):
+                throw SyncError.unauthorized
+            default:
+                throw SyncError.networkUnavailable
+            }
+        } catch {
+            throw SyncError.networkUnavailable
+        }
+
+        let totalCiphers = syncResponse.ciphers.count
+        logger.info("Fetched \(totalCiphers) cipher(s)")
+
+        // Phase 2: Decrypt personal ciphers via the crypto service.
+        progress("Decrypting…")
+
+        let (items, failedCount) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
+        logger.info("Decrypted \(items.count) cipher(s); \(failedCount) failure(s)")
+
+        // Phase 3: Populate the in-memory vault store.
+        let syncedAt = Date()
+        vaultRepository.populate(items: items, syncedAt: syncedAt)
+
+        return SyncResult(
+            syncedAt:              syncedAt,
+            totalCiphers:          totalCiphers,
+            failedDecryptionCount: failedCount
+        )
+    }
+}
