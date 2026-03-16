@@ -1,0 +1,103 @@
+import Foundation
+
+// MARK: - RawCipher
+
+/// Wire-format model for a single cipher (vault item) returned by the Bitwarden
+/// `/sync` API endpoint.
+///
+/// All string fields that contain sensitive data are stored as Bitwarden EncStrings
+/// (e.g. `"2.<iv_b64>|<ct_b64>|<mac_b64>"`).  Plain-text fields (ids, dates, type
+/// integers) are never encrypted.
+///
+/// Reference: Bitwarden Server API `/api/sync` response body, `Ciphers[]` array.
+struct RawCipher: Codable {
+    let id:             String
+    let organizationId: String?
+    /// 1 = Login, 2 = Identity, 3 = Secure Note, 4 = Card, 5 = SSH Key
+    let type:           Int
+    let name:           String          // EncString
+    let notes:          String?         // EncString
+    let favorite:       Bool
+    let deletedDate:    String?         // ISO-8601 UTC, nil if not deleted
+    let creationDate:   String?         // ISO-8601 UTC
+    let revisionDate:   String?         // ISO-8601 UTC
+    let login:          RawLoginData?
+    let card:           RawCardData?
+    let identity:       RawIdentityData?
+    let secureNote:     RawSecureNoteData?
+    let sshKey:         RawSSHKeyData?
+    let fields:         [RawField]
+}
+
+// MARK: - Login
+
+struct RawLoginData: Codable {
+    let username: String?       // EncString
+    let password: String?       // EncString
+    let uris:     [RawURI]
+    let totp:     String?       // EncString
+}
+
+struct RawURI: Codable {
+    let uri:   String?          // EncString
+    /// 0=default, 1=baseDomain, 2=host, 3=startsWith, 4=exact, 5=regex, null=default
+    let match: Int?
+}
+
+// MARK: - Card
+
+struct RawCardData: Codable {
+    let cardholderName: String? // EncString
+    let brand:          String? // EncString
+    let number:         String? // EncString
+    let expMonth:       String? // EncString
+    let expYear:        String? // EncString
+    let code:           String? // EncString
+}
+
+// MARK: - Identity
+
+struct RawIdentityData: Codable {
+    let title:          String? // EncString
+    let firstName:      String? // EncString
+    let middleName:     String? // EncString
+    let lastName:       String? // EncString
+    let address1:       String? // EncString
+    let address2:       String? // EncString
+    let address3:       String? // EncString
+    let city:           String? // EncString
+    let state:          String? // EncString
+    let postalCode:     String? // EncString
+    let country:        String? // EncString
+    let company:        String? // EncString
+    let email:          String? // EncString
+    let phone:          String? // EncString
+    let ssn:            String? // EncString
+    let username:       String? // EncString
+    let passportNumber: String? // EncString
+    let licenseNumber:  String? // EncString
+}
+
+// MARK: - Secure Note
+
+struct RawSecureNoteData: Codable {
+    let type: Int   // 0 = Generic
+}
+
+// MARK: - SSH Key
+
+struct RawSSHKeyData: Codable {
+    let privateKey:  String?    // EncString
+    let publicKey:   String?    // EncString
+    let fingerprint: String?    // EncString
+}
+
+// MARK: - Custom Field
+
+struct RawField: Codable {
+    /// 0 = text, 1 = hidden, 2 = boolean, 3 = linked
+    let type:     Int
+    let name:     String?   // EncString
+    let value:    String?   // EncString
+    let linkedId: Int?
+}

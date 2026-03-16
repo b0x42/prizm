@@ -64,15 +64,15 @@ with `Foundation` only. Blocks all user story work.
 **Purpose**: Keychain service, EncString parser, native crypto service, cipher mapper.
 Blocks all repository implementations. No external SDK dependency.
 
-- [ ] T014 [P] Write failing unit tests for KeychainService (read/write/delete/notFound) — `Tests/DataTests/Repositories/KeychainServiceTests.swift`
-- [ ] T015 [P] Write failing unit tests for EncString parser (type-0, type-2, type-4 parse; MAC verify; decrypt round-trip with known test vectors from Bitwarden security whitepaper) — `Tests/DataTests/Crypto/EncStringTests.swift`
-- [ ] T016 [P] Write failing unit tests for BitwardenCryptoServiceImpl (PBKDF2-SHA256 key derivation, HKDF stretching, serverHash, symmetricKey decrypt from encUserKey, field decrypt round-trip) — `Tests/DataTests/Crypto/BitwardenCryptoServiceTests.swift`
-- [ ] T017 [P] Write failing unit tests for CipherMapper (RawCipher → VaultItem for all 5 item types; personal cipher only; org cipher filtered) — `Tests/DataTests/Mappers/CipherMapperTests.swift`
-- [ ] T018 Implement KeychainService (SecItem read/write/delete, userId-namespaced keys, kSecAttrAccessibleWhenUnlockedThisDeviceOnly) — `Data/Keychain/KeychainService.swift`
-- [ ] T019 Implement EncString (parser for types 0, 2, 4, 6; AES-CBC-256 decrypt + HMAC-SHA256 verify; RSA-OAEP decrypt; each function MUST have doc comment citing Bitwarden Security Whitepaper section + RFC/NIST ref per §VII) — `Data/Crypto/EncString.swift`, `Data/Crypto/CryptoKeys.swift`
-- [ ] T020 Implement RawCipher + SyncResponse Codable models — `Data/Network/Models/RawCipher.swift`, `Data/Network/Models/SyncResponse.swift`
-- [ ] T021 Implement CipherMapper (RawCipher → VaultItem; personal ciphers only — skip organizationId != nil; per-type field mapping for all 5 types; doc comment on class explaining mapper role per §VII) — `Data/Mappers/CipherMapper.swift`
-- [ ] T022 Implement BitwardenCryptoServiceImpl actor (PBKDF2/Argon2id KDF, HKDF key stretching, encUserKey → symmetricKey, encPrivateKey → RSAPrivateKey; decryptList + decrypt via CipherMapper; lockVault zeroes key material; opening doc comment + per-function comments citing Bitwarden Security Whitepaper + RFC 5869 + NIST SP 800-132 per §VII) — `Data/Crypto/BitwardenCryptoService.swift`
+- [X] T014 [P] Write failing unit tests for KeychainService (read/write/delete/notFound) — `BitwardenMacOSTests/KeychainServiceTests.swift`
+- [X] T015 [P] Write failing unit tests for EncString parser (type-0, type-2, type-4 parse; MAC verify; decrypt round-trip with known test vectors from Bitwarden security whitepaper) — `BitwardenMacOSTests/EncStringTests.swift`
+- [X] T016 [P] Write failing unit tests for BitwardenCryptoServiceImpl (PBKDF2-SHA256 key derivation, HKDF stretching, serverHash, symmetricKey decrypt from encUserKey, field decrypt round-trip) — `BitwardenMacOSTests/BitwardenCryptoServiceTests.swift`
+- [X] T017 [P] Write failing unit tests for CipherMapper (RawCipher → VaultItem for all 5 item types; personal cipher only; org cipher filtered) — `BitwardenMacOSTests/CipherMapperTests.swift`
+- [X] T018 Implement KeychainService (SecItem read/write/delete, userId-namespaced keys, kSecAttrAccessibleWhenUnlockedThisDeviceOnly) — `Data/Keychain/KeychainService.swift`
+- [X] T019 Implement EncString (parser for types 0, 2, 4, 6; AES-CBC-256 decrypt + HMAC-SHA256 verify; RSA-OAEP decrypt; each function MUST have doc comment citing Bitwarden Security Whitepaper section + RFC/NIST ref per §VII) — `Data/Crypto/EncString.swift`, `Data/Crypto/CryptoKeys.swift`
+- [X] T020 Implement RawCipher + SyncResponse Codable models — `Data/Network/Models/RawCipher.swift`, `Data/Network/Models/SyncResponse.swift`
+- [X] T021 Implement CipherMapper (RawCipher → VaultItem; personal ciphers only — skip organizationId != nil; per-type field mapping for all 5 types; doc comment on class explaining mapper role per §VII) — `Data/Mappers/CipherMapper.swift`
+- [X] T022 Implement BitwardenCryptoServiceImpl actor (PBKDF2/Argon2id KDF, HKDF key stretching, encUserKey → symmetricKey, encPrivateKey → RSAPrivateKey; decryptList + decrypt via CipherMapper; lockVault zeroes key material; opening doc comment + per-function comments citing Bitwarden Security Whitepaper + RFC 5869 + NIST SP 800-132 per §VII) — `Data/Crypto/BitwardenCryptoService.swift`
 
 **Checkpoint**: All crypto unit tests pass (including known-answer tests). Keychain integration test passes. CipherMapper tests pass for all 5 item types.
 
