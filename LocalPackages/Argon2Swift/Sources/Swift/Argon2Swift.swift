@@ -69,28 +69,28 @@ public class Argon2Swift {
         let hash = setPtr(length: length)
         let encoded = setPtr(length: encodedLen)
 
+        // Free the previously created pointers when the function exits (backport from 1.0.4).
+        // Without defer, a thrown exception would leak the allocated memory.
+        defer {
+            freePtr(pointer: hash, length: length)
+            freePtr(pointer: encoded, length: encodedLen)
+        }
+
         // Perform the actual hash operation
         let errorCode = argon2_hash(UInt32(iterations), UInt32(memory), UInt32(parallelism), [UInt8](password), password.count, [UInt8](salt.bytes), salt.bytes.count, hash, length, encoded, encodedLen, getArgon2Type(type: type), UInt32(version.rawValue))
-        
+
         // Check if there were any errors
         if errorCode != Argon2SwiftErrorCode.ARGON2_OK.rawValue {
             let errorMsg = String(cString: argon2_error_message(errorCode))
             throw Argon2SwiftException(errorMsg, errorCode: Argon2SwiftErrorCode(rawValue: errorCode) ?? Argon2SwiftErrorCode.ARGON2_UNKNOWN_ERROR)
         }
-        
+
         // Create copy arrays for the hash and encoded results
         let hashArray = Array(UnsafeBufferPointer(start: hash, count: length))
         let encodedArray = Array(UnsafeBufferPointer(start: encoded, count: encodedLen))
-        
-        // Create an instance of Argon2SwiftResult with the arrays
-        let result = Argon2SwiftResult(hashBytes: hashArray, encodedBytes: encodedArray)
-        
-        // Free the previously created pointers
-        freePtr(pointer: hash, length: length)
-        freePtr(pointer: encoded, length: encodedLen)
-        
+
         // Return the result from above
-        return result
+        return Argon2SwiftResult(hashBytes: hashArray, encodedBytes: encodedArray)
     }
     
     /**
