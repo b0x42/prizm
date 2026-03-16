@@ -8,9 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		23BDC74E5D1F47618262BE0D /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 59F9054E12044EC582D79C90 /* Argon2Swift */; };
+		4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */; };
+		4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE72F6809A40031C9F4 /* AppContainer.swift */; };
+		4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE92F6809C10031C9F4 /* Config.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bitwarden_MacOSApp.swift; sourceTree = "<group>"; };
+		4309FCE72F6809A40031C9F4 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
+		4309FCE92F6809C10031C9F4 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		434D9EBA2F670B9C00052BCB /* Bitwarden MacOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bitwarden MacOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -34,9 +40,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4309FCE62F6808620031C9F4 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				4309FCE92F6809C10031C9F4 /* Config.swift */,
+				4309FCE72F6809A40031C9F4 /* AppContainer.swift */,
+				4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
 		434D9EB12F670B9C00052BCB = {
 			isa = PBXGroup;
 			children = (
+				4309FCE62F6808620031C9F4 /* App */,
 				434D9EBC2F670B9C00052BCB /* Bitwarden MacOS */,
 				434D9EBB2F670B9C00052BCB /* Products */,
 			);
@@ -128,6 +145,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */,
+				4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */,
+				4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
