@@ -23,7 +23,7 @@ struct LoginView: View {
             VStack(spacing: 4) {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(.tint)
                 Text("Bitwarden")
                     .font(.title.bold())
                 Text("Self-hosted vault")

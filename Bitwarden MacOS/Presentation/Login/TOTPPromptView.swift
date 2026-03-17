@@ -20,7 +20,7 @@ struct TOTPPromptView: View {
             VStack(spacing: 4) {
                 Image(systemName: "key.2.on.ring.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(.tint)
                 Text("Two-step login")
                     .font(.title.bold())
                 Text("Enter the 6-digit code from your authenticator app.")
