@@ -35,6 +35,7 @@
 		DB95790F466448D78246B723 /* VaultRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */; };
 		2CA025EEBDD14800B361F176 /* LoginUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */; };
 		56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */; };
+		A7E3F19B8C2D4A61B04DE723 /* SearchVaultUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */; };
 		9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */; };
 		5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7429BBFA10E247D8AEACA59B /* LoginView.swift */; };
 		98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */; };
@@ -107,6 +108,7 @@
 		9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepositoryImpl.swift; sourceTree = "<group>"; };
 		14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCaseImpl.swift; sourceTree = "<group>"; };
 		8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUseCaseImpl.swift; sourceTree = "<group>"; };
+		6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCaseImpl.swift; sourceTree = "<group>"; };
 		713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		7429BBFA10E247D8AEACA59B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPPromptView.swift; sourceTree = "<group>"; };
@@ -466,6 +468,7 @@
 				
 				5ACD196A7BE8421A8D81990A /* UnlockUseCaseImpl.swift */,226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */,14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */,
 				8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */,
+				6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -677,6 +680,7 @@
 				DB95790F466448D78246B723 /* VaultRepositoryImpl.swift in Sources */,
 				2CA025EEBDD14800B361F176 /* LoginUseCaseImpl.swift in Sources */,
 				56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */,
+				A7E3F19B8C2D4A61B04DE723 /* SearchVaultUseCaseImpl.swift in Sources */,
 				9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */,
 				5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */,
 				98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */,

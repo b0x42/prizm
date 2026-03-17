@@ -5,7 +5,9 @@
 //  Created by Benjamin on 15.03.26.
 //
 
+import AppKit
 import SwiftUI
+import os.log
 
 @main
 struct Bitwarden_MacOSApp: App {
@@ -26,6 +28,15 @@ struct Bitwarden_MacOSApp: App {
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Sign Out…") {
+                    rootVM.confirmSignOut()
+                }
+                .keyboardShortcut("q", modifiers: [.command, .shift])
+                .disabled(!rootVM.isSignedIn)
+            }
+        }
     }
 
     @ViewBuilder
@@ -88,6 +99,8 @@ final class RootViewModel: ObservableObject {
 
     @Published var screen: Screen
 
+    private let logger = Logger(subsystem: "com.bitwarden-macos", category: "RootViewModel")
+
     let loginVM:         LoginViewModel
     var unlockVM:        UnlockViewModel?
     let vaultBrowserVM:  VaultBrowserViewModel
@@ -117,6 +130,41 @@ final class RootViewModel: ObservableObject {
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:       screen = .vault
         }
+        logger.info("Screen transition → \(String(describing: state))")
+    }
+
+    /// Whether the user has an active session (vault or unlock screen).
+    var isSignedIn: Bool {
+        switch screen {
+        case .vault, .unlock, .syncing: return true
+        default: return false
+        }
+    }
+
+    /// Shows a confirmation alert before signing out (FR-014).
+    func confirmSignOut() {
+        let alert = NSAlert()
+        alert.messageText = "Sign Out"
+        alert.informativeText = "All local data will be cleared."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Sign Out")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        signOut()
+    }
+
+    /// Clears all session data and returns to the login screen.
+    func signOut() {
+        Task {
+            do {
+                try await container.authRepository.signOut()
+            } catch {
+                logger.error("Sign-out error: \(error.localizedDescription, privacy: .public)")
+            }
+            unlockVM = nil
+            screen   = .login
+            logger.info("Sign out completed")
+        }
     }
 
     func handleUnlockFlow(_ state: UnlockFlowState) {
@@ -130,5 +178,6 @@ final class RootViewModel: ObservableObject {
             unlockVM = nil
             screen   = .login
         }
+        logger.info("Screen transition → \(String(describing: state))")
     }
 }

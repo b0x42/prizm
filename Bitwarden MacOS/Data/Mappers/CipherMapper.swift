@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 
 // MARK: - CipherMapperError
 
@@ -29,6 +30,8 @@ enum CipherMapperError: Error, Equatable {
 /// - Keychain access.
 /// - KDF derivation.
 final class CipherMapper {
+
+    private static let logger = Logger(subsystem: "com.bitwarden-macos", category: "CipherMapper")
 
     private static let iso8601: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -240,6 +243,7 @@ final class CipherMapper {
         } catch let e as EncStringError {
             throw e
         } catch {
+            Self.logger.error("Field decryption failed: \(field, privacy: .public)")
             throw CipherMapperError.fieldDecryptionFailed(field)
         }
     }

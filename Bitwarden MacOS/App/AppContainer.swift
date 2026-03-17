@@ -24,9 +24,10 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Domain use cases
 
-    let syncUseCase:   SyncUseCaseImpl
-    let loginUseCase:  LoginUseCaseImpl
-    let unlockUseCase: UnlockUseCaseImpl
+    let syncUseCase:       SyncUseCaseImpl
+    let loginUseCase:      LoginUseCaseImpl
+    let unlockUseCase:     UnlockUseCaseImpl
+    let searchVaultUseCase: SearchVaultUseCaseImpl
 
     // MARK: - Init
 
@@ -54,9 +55,10 @@ final class AppContainer: ObservableObject {
         self.faviconLoader   = FaviconLoader()
         self.authRepository  = auth
         self.syncRepository  = sync
-        self.syncUseCase    = SyncUseCaseImpl(sync: sync)
-        self.loginUseCase   = LoginUseCaseImpl(auth: auth, sync: sync)
-        self.unlockUseCase  = UnlockUseCaseImpl(auth: auth, sync: sync)
+        self.syncUseCase        = SyncUseCaseImpl(sync: sync)
+        self.loginUseCase       = LoginUseCaseImpl(auth: auth, sync: sync)
+        self.unlockUseCase      = UnlockUseCaseImpl(auth: auth, sync: sync)
+        self.searchVaultUseCase = SearchVaultUseCaseImpl(vault: vault)
     }
 
     // MARK: - Factories
@@ -73,6 +75,6 @@ final class AppContainer: ObservableObject {
 
     /// Creates a `VaultBrowserViewModel` backed by the live vault store.
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel {
-        VaultBrowserViewModel(vault: vaultStore)
+        VaultBrowserViewModel(vault: vaultStore, search: searchVaultUseCase)
     }
 }

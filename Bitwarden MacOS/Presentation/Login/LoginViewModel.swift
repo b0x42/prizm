@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 
 // MARK: - LoginFlowState
 
@@ -39,6 +40,7 @@ final class LoginViewModel: ObservableObject {
 
     private let auth: any AuthRepository
     private let sync: any SyncUseCase
+    private let logger = Logger(subsystem: "com.bitwarden-macos", category: "LoginViewModel")
 
     // MARK: - Init
 
@@ -51,6 +53,7 @@ final class LoginViewModel: ObservableObject {
 
     /// Validates credentials and initiates the login sequence.
     func signIn() {
+        logger.info("Sign-in flow started")
         errorMessage = nil
         flowState    = .loading
 
@@ -83,9 +86,11 @@ final class LoginViewModel: ObservableObject {
                 }
 
             } catch let err as AuthError {
+                logger.error("Sign-in failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
                 flowState    = .login
             } catch {
+                logger.error("Sign-in failed: \(error.localizedDescription, privacy: .public)")
                 errorMessage = error.localizedDescription
                 flowState    = .login
             }
@@ -94,6 +99,7 @@ final class LoginViewModel: ObservableObject {
 
     /// Completes a pending TOTP 2FA challenge.
     func submitTOTP(code: String, rememberDevice: Bool) {
+        logger.info("TOTP submission started")
         errorMessage = nil
         flowState    = .loading
 
@@ -102,9 +108,11 @@ final class LoginViewModel: ObservableObject {
                 let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
                 await performSync(account: account)
             } catch let err as AuthError {
+                logger.error("TOTP submission failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
                 flowState    = .totpPrompt
             } catch {
+                logger.error("TOTP submission failed: \(error.localizedDescription, privacy: .public)")
                 errorMessage = error.localizedDescription
                 flowState    = .totpPrompt
             }

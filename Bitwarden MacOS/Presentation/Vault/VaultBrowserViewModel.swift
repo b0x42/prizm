@@ -39,6 +39,7 @@ final class VaultBrowserViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let vault:  any VaultRepository
+    private let search: any SearchVaultUseCase
     private let logger = Logger(subsystem: "com.bitwarden-macos", category: "VaultBrowserViewModel")
 
     // MARK: - Clipboard auto-clear
@@ -47,8 +48,9 @@ final class VaultBrowserViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(vault: any VaultRepository) {
-        self.vault = vault
+    init(vault: any VaultRepository, search: any SearchVaultUseCase) {
+        self.vault  = vault
+        self.search = search
         refreshItems()
         refreshCounts()
         lastSyncedAt = vault.lastSyncedAt
@@ -88,11 +90,7 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Refreshes `displayedItems` from the vault store based on current selection + search query.
     func refreshItems() {
         do {
-            if searchQuery.isEmpty {
-                displayedItems = try vault.items(for: sidebarSelection)
-            } else {
-                displayedItems = try vault.searchItems(query: searchQuery, in: sidebarSelection)
-            }
+            displayedItems = try search.execute(query: searchQuery, in: sidebarSelection)
         } catch {
             logger.error("Failed to load vault items: \(error.localizedDescription, privacy: .public)")
             displayedItems = []

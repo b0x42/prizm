@@ -182,12 +182,12 @@ items appear instantly. Switch category — term preserved, results re-filtered.
 
 ### Tests (write first, must fail)
 
-- [ ] T063 [P] [US4] Failing unit tests: SearchVaultUseCase — per-type field matching (Login: username+URI, Card: cardholderName, Identity: email+company, SSH Key: name only), category scoping, empty results, term preservation — `Tests/DomainTests/UseCases/SearchVaultUseCaseTests.swift`
+- [X] T063 [P] [US4] Failing unit tests: SearchVaultUseCase — per-type field matching (Login: username+URI, Card: cardholderName, Identity: email+company, SSH Key: name only), category scoping, empty results, term preservation — `Tests/DomainTests/UseCases/SearchVaultUseCaseTests.swift`
 
 ### Implementation
 
-- [ ] T064 [US4] Implement SearchVaultUseCase (in-memory Array.filter with localizedCaseInsensitiveContains; per-type fields per FR-012; scoped to active SidebarSelection; no debounce) — `Domain/UseCases/SearchVaultUseCase.swift`
-- [ ] T065 [US4] Wire search bar into VaultBrowserViewModel (real-time filtering on every keystroke; search term preserved on .onChange(of: sidebarSelection); re-filter against new category) — `Presentation/Vault/VaultBrowserViewModel.swift`
+- [X] T064 [US4] Implement SearchVaultUseCase (in-memory Array.filter with localizedCaseInsensitiveContains; per-type fields per FR-012; scoped to active SidebarSelection; no debounce) — `Domain/UseCases/SearchVaultUseCase.swift`
+- [X] T065 [US4] Wire search bar into VaultBrowserViewModel (real-time filtering on every keystroke; search term preserved on .onChange(of: sidebarSelection); re-filter against new category) — `Presentation/Vault/VaultBrowserViewModel.swift`
 - [ ] T066 [US4] XCUITest: US4 search journey — type to filter, category switch preserves term, clear bar restores full list, empty state on no match (SC-008 <100ms per keystroke) — `Tests/UITests/SearchJourneyTests.swift`
 
 **Checkpoint**: All 6 US4 acceptance scenarios pass. SC-008 passes (<100ms per keystroke, 1,000 items).
@@ -198,11 +198,11 @@ items appear instantly. Switch category — term preserved, results re-filtered.
 
 **Purpose**: Sign-out, sync error banner, observability, final constitution check.
 
-- [ ] T067 Wire Sign Out in macOS menu (File or app menu) + NSAlert confirmation dialog ("All local data will be cleared"); on confirm → AuthRepository.signOut() → blank LoginView (FR-014) — `App/AppContainer.swift`
-- [ ] T068 [P] Build sync error banner (systemYellow tint, ≤44pt height, spans item list + detail columns, explicit × dismiss button, auto-dismiss on next successful sync; no retry button per FR-049) — `Presentation/Vault/VaultBrowserView.swift`
-- [ ] T069 [P] Add os.Logger calls to all auth, sync, vault, and network code paths (subsystem `com.bitwarden-macos`; .debug trace, .info flow, .error recoverable, .fault unrecoverable; secrets MUST NOT appear in logs) — all Data/ files
-- [ ] T070 Constitution check: audit every `catch {}` block — each must rethrow or log + surface via typed Error; audit every file import — Domain must have no crypto/SwiftUI, Presentation must have no Data; verify all crypto files have doc comments citing standards per §VII — all source files
-- [ ] T071 [P] Create SECURITY.md at repo root (same level as CLAUDE.md and CONSTITUTION.md, not in specs/): what data is encrypted + algorithm; where keys are stored + access conditions; threat model; explicit non-goals (per CONSTITUTION.md §VII) — `SECURITY.md`
+- [X] T067 Wire Sign Out in macOS menu (File or app menu) + NSAlert confirmation dialog ("All local data will be cleared"); on confirm → AuthRepository.signOut() → blank LoginView (FR-014) — `App/AppContainer.swift`
+- [X] T068 [P] Build sync error banner (systemYellow tint, ≤44pt height, spans item list + detail columns, explicit × dismiss button, auto-dismiss on next successful sync; no retry button per FR-049) — `Presentation/Vault/VaultBrowserView.swift`
+- [X] T069 [P] Add os.Logger calls to all auth, sync, vault, and network code paths (subsystem `com.bitwarden-macos`; .debug trace, .info flow, .error recoverable, .fault unrecoverable; secrets MUST NOT appear in logs) — all Data/ files
+- [X] T070 Constitution check: audit every `catch {}` block — each must rethrow or log + surface via typed Error; audit every file import — Domain must have no crypto/SwiftUI, Presentation must have no Data; verify all crypto files have doc comments citing standards per §VII — all source files
+- [X] T071 [P] Create SECURITY.md at repo root (same level as CLAUDE.md and CONSTITUTION.md, not in specs/): what data is encrypted + algorithm; where keys are stored + access conditions; threat model; explicit non-goals (per CONSTITUTION.md §VII) — `SECURITY.md`
 - [ ] T072 [P] Validate quickstart.md end-to-end from clean checkout (build + run all tests) — `specs/001-vault-browser-ui/quickstart.md`
 - [ ] T073 [P] XCUITest: keyboard-only navigation — Tab cycles between sidebar/list/detail panes; arrow keys navigate the item list; Enter selects focused item; Escape returns focus to list; verify all interactive elements (buttons, fields) are keyboard-accessible (SC-007) — `Tests/UITests/KeyboardNavigationTests.swift`
 

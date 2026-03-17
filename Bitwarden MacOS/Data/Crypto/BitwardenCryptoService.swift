@@ -2,6 +2,7 @@ import Foundation
 import CommonCrypto
 import CryptoKit
 import Argon2Swift
+import os.log
 
 // MARK: - BitwardenCryptoServiceError
 
@@ -115,6 +116,8 @@ protocol BitwardenCryptoService: Actor {
 ///   platforms (CryptoKit is FIPS 140-3 certified since macOS 12).
 actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
 
+    private let logger = Logger(subsystem: "com.bitwarden-macos", category: "BitwardenCryptoService")
+
     // MARK: - State
 
     /// The decrypted vault symmetric key pair, non-nil only when unlocked.
@@ -127,6 +130,7 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
 
     func unlockWith(keys: CryptoKeys) {
         self.keys = keys
+        logger.info("Vault unlocked")
     }
 
     func lockVault() {
@@ -134,6 +138,7 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         // retain copies elsewhere, but this reduces the window during which the
         // key is readable in a memory dump).
         self.keys = nil
+        logger.info("Vault locked — key material zeroed")
     }
 
     // MARK: - decryptList
@@ -142,10 +147,11 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         guard let vaultKeys = keys else {
             throw BitwardenCryptoServiceError.vaultLocked
         }
+        logger.info("decryptList: starting with \(ciphers.count) ciphers")
         let mapper = CipherMapper()
         var items: [VaultItem] = []
         var failedCount = 0
-        for cipher in ciphers {
+        for (index, cipher) in ciphers.enumerated() {
             // Organisation ciphers are not supported in v1.
             if cipher.organizationId != nil { continue }
             do {
@@ -153,8 +159,10 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
                 items.append(item)
             } catch {
                 failedCount += 1
+                logger.debug("decryptList: Cipher skipped at index \(index)")
             }
         }
+        logger.info("decryptList: completed — \(items.count) succeeded, \(failedCount) failed")
         return (items: items, failedCount: failedCount)
     }
 
@@ -165,6 +173,8 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
               let emailData    = email.lowercased().data(using: .utf8) else {
             throw BitwardenCryptoServiceError.kdfFailed
         }
+
+        logger.debug("KDF: using \(kdf.type) with \(kdf.iterations) iterations")
 
         switch kdf.type {
         case .pbkdf2:
@@ -237,6 +247,7 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         do {
             enc = try EncString(string: encUserKey)
         } catch {
+            logger.error("Failed to decrypt symmetric key")
             throw BitwardenCryptoServiceError.invalidEncUserKey
         }
 
@@ -244,6 +255,7 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         do {
             keyData = try enc.decrypt(keys: stretchedKeys)
         } catch {
+            logger.error("Failed to decrypt symmetric key")
             throw BitwardenCryptoServiceError.invalidEncUserKey
         }
 

@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 
 // MARK: - UnlockFlowState
 
@@ -38,6 +39,7 @@ final class UnlockViewModel: ObservableObject {
     private let auth:    any AuthRepository
     private let sync:    any SyncUseCase
     private let account: Account   // Pre-loaded from storedAccount()
+    private let logger = Logger(subsystem: "com.bitwarden-macos", category: "UnlockViewModel")
 
     // MARK: - Init
 
@@ -55,6 +57,7 @@ final class UnlockViewModel: ObservableObject {
     // MARK: - Actions
 
     func unlock() {
+        logger.info("Unlock flow started")
         errorMessage = nil
         flowState    = .loading
 
@@ -63,9 +66,11 @@ final class UnlockViewModel: ObservableObject {
                 _ = try await auth.unlockWithPassword(password)
                 await performSync()
             } catch let err as AuthError {
+                logger.error("Unlock failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
                 flowState    = .unlock
             } catch {
+                logger.error("Unlock failed: \(error.localizedDescription, privacy: .public)")
                 errorMessage = error.localizedDescription
                 flowState    = .unlock
             }
@@ -74,8 +79,13 @@ final class UnlockViewModel: ObservableObject {
 
     /// Clears session and returns to the login screen (FR-039).
     func signInWithDifferentAccount() {
+        logger.info("User switching to different account")
         Task {
-            try? await auth.signOut()
+            do {
+                try await auth.signOut()
+            } catch {
+                logger.error("Sign-out failed: \(error.localizedDescription, privacy: .public)")
+            }
             flowState = .login
         }
     }
@@ -90,7 +100,7 @@ final class UnlockViewModel: ObservableObject {
             })
             flowState = .vault(account)
         } catch {
-            // Non-fatal: show vault with empty store; error banner in Phase 6.
+            logger.error("Post-unlock sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
             flowState = .vault(account)
         }
     }
