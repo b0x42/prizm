@@ -262,6 +262,15 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         if let provider = twoFactorProvider { params["twoFactorProvider"] = String(provider) }
         if twoFactorRemember                { params["twoFactorRemember"] = "true" }
 
+        if DebugConfig.isEnabled {
+            // Log all params except password (server hash) — scrubbed for security.
+            let scrubbed = params.filter { $0.key != "password" }
+                .sorted(by: { $0.key < $1.key })
+                .map { "\($0.key)=\($0.value)" }
+                .joined(separator: " | ")
+            logger.debug("[debug] identityToken params (password scrubbed): \(scrubbed, privacy: .public)")
+        }
+
         var request = baseRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(
