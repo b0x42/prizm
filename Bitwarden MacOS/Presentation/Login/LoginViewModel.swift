@@ -126,7 +126,9 @@ final class LoginViewModel: ObservableObject {
         flowState = .syncing(message: "Preparing…")
         do {
             _ = try await sync.execute(progress: { [weak self] message in
-                self?.flowState = .syncing(message: message)
+                // Progress is called from SyncRepositoryImpl's actor thread;
+                // dispatch to @MainActor to update @Published flowState.
+                Task { @MainActor [weak self] in self?.flowState = .syncing(message: message) }
             })
             flowState = .vault(account)
         } catch {
