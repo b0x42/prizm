@@ -462,12 +462,25 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         }
     }
 
+    /// Character set safe for `application/x-www-form-urlencoded` values.
+    ///
+    /// Must be RFC 3986 unreserved characters only: `A-Z a-z 0-9 - _ . ~`
+    /// `.urlQueryAllowed` is intentionally NOT used here because it permits `+`, `=`, and `&`,
+    /// which are field separators in form encoding.  In particular, a `+` in a value is decoded
+    /// as a space by all HTTP servers — this would silently corrupt a base64 password hash that
+    /// contains `+` or ends with `=` padding.
+    private static let formValueAllowed: CharacterSet = {
+        var cs = CharacterSet.alphanumerics
+        cs.insert(charactersIn: "-._~")
+        return cs
+    }()
+
     /// Encodes a `[String: String]` dictionary as `application/x-www-form-urlencoded` data.
     private func formEncoded(_ params: [String: String]) -> Data {
         params
             .map { key, value in
-                let k = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key
-                let v = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
+                let k = key.addingPercentEncoding(withAllowedCharacters: Self.formValueAllowed) ?? key
+                let v = value.addingPercentEncoding(withAllowedCharacters: Self.formValueAllowed) ?? value
                 return "\(k)=\(v)"
             }
             .joined(separator: "&")
