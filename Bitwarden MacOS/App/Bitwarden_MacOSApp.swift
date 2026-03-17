@@ -93,9 +93,9 @@ final class RootViewModel: ObservableObject {
 
     private let logger = Logger(subsystem: "com.bitwarden-macos", category: "RootViewModel")
 
-    let loginVM:         LoginViewModel
-    var unlockVM:        UnlockViewModel?
-    let vaultBrowserVM:  VaultBrowserViewModel
+    let loginVM:          LoginViewModel
+    @Published var unlockVM: UnlockViewModel?
+    let vaultBrowserVM:   VaultBrowserViewModel
 
     private let container: AppContainer
     /// Combine subscriptions — held for the lifetime of this object.

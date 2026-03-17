@@ -23,5 +23,5 @@ enum DebugConfig {
     // nonisolated(unsafe): safe because this is a let constant initialised once at process
     // startup from CommandLine.arguments and never mutated. Avoids the Swift 6
     // @MainActor isolation error when accessed from non-main actors.
-    nonisolated(unsafe) static let isEnabled: Bool = CommandLine.arguments.contains("--debug-mode")
+    static let isEnabled: Bool = CommandLine.arguments.contains("--debug-mode")
 }
