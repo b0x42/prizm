@@ -343,15 +343,24 @@ final class AuthRepositoryImpl: AuthRepository {
         stretched:   CryptoKeys,
         environment: ServerEnvironment
     ) async throws -> Account {
+        // Vaultwarden does not return UserId/Email in the token response body.
+        // Extract them from the JWT access token claims instead (sub = userId, email = email).
+        let jwtClaims = decodeJWTClaims(tokenResp.accessToken)
+        let userId = tokenResp.userId ?? jwtClaims["sub"] as? String
+        let email  = tokenResp.email  ?? jwtClaims["email"] as? String
+        let name   = tokenResp.name   ?? jwtClaims["name"] as? String
+
         if DebugConfig.isEnabled {
-            logger.debug("[debug] finalizeSession: userId=\(tokenResp.userId != nil, privacy: .public) email=\(tokenResp.email != nil, privacy: .public) key=\(tokenResp.key != nil, privacy: .public) accessToken.isEmpty=\(tokenResp.accessToken.isEmpty, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
+            let jwtKeys = jwtClaims.keys.sorted().joined(separator: ", ")
+            logger.debug("[debug] finalizeSession: body userId=\(tokenResp.userId != nil, privacy: .public) email=\(tokenResp.email != nil, privacy: .public) | JWT claims: [\(jwtKeys, privacy: .public)] | resolved userId=\(userId != nil, privacy: .public) email=\(email != nil, privacy: .public)")
         }
-        guard let userId   = tokenResp.userId,
-              let email    = tokenResp.email,
-              let encKey   = tokenResp.key,
+
+        guard let userId,
+              let email,
+              let encKey       = tokenResp.key,
               let accessToken  = tokenResp.accessToken.isEmpty ? nil : tokenResp.accessToken,
               let refreshToken = tokenResp.refreshToken else {
-            logger.error("finalizeSession: missing required token fields — userId=\(tokenResp.userId != nil, privacy: .public) email=\(tokenResp.email != nil, privacy: .public) key=\(tokenResp.key != nil, privacy: .public) accessTokenNonEmpty=\(!tokenResp.accessToken.isEmpty, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
+            logger.error("finalizeSession: missing required fields — userId=\(userId != nil, privacy: .public) email=\(email != nil, privacy: .public) key=\(tokenResp.key != nil, privacy: .public) accessTokenNonEmpty=\(!tokenResp.accessToken.isEmpty, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
             throw AuthError.invalidCredentials
         }
         logger.info("Session finalized for user \(userId, privacy: .private)")
@@ -375,7 +384,7 @@ final class AuthRepositoryImpl: AuthRepository {
         try writeString(refreshToken, key: KeychainKey.user(userId, "refreshToken"))
         try writeString(encKey,       key: KeychainKey.user(userId, "encUserKey"))
         try writeString(email,        key: KeychainKey.user(userId, "email"))
-        if let name = tokenResp.name {
+        if let name {
             try writeString(name,     key: KeychainKey.user(userId, "name"))
         }
 
@@ -392,7 +401,7 @@ final class AuthRepositoryImpl: AuthRepository {
         return Account(
             userId:            userId,
             email:             email,
-            name:              tokenResp.name,
+            name:              name,
             serverEnvironment: environment
         )
     }
@@ -443,6 +452,32 @@ final class AuthRepositoryImpl: AuthRepository {
             throw AuthError.invalidCredentials
         }
         try keychain.write(data: data, key: key)
+    }
+
+    /// Decodes the payload of a JWT access token without verifying the signature.
+    ///
+    /// Vaultwarden does not return `UserId` or `Email` in the token response body —
+    /// they are present as standard JWT claims (`sub` = userId, `email` = email, `name` = name).
+    /// Signature verification is intentionally skipped here; the token is used only to
+    /// read the user's own identity fields, not to make authorization decisions.
+    ///
+    /// - Parameter jwt: A dot-separated JWT string (`header.payload.signature`).
+    /// - Returns: Decoded payload as a `[String: Any]` dictionary, or empty on failure.
+    private func decodeJWTClaims(_ jwt: String) -> [String: Any] {
+        let parts = jwt.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3 else { return [:] }
+        var base64 = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        // Add padding if needed (JWT uses unpadded base64url).
+        let remainder = base64.count % 4
+        if remainder != 0 { base64 += String(repeating: "=", count: 4 - remainder) }
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            logger.error("Failed to decode JWT payload")
+            return [:]
+        }
+        return json
     }
 
     /// Maps a list of Bitwarden 2FA provider type numbers to a `TwoFactorMethod`.
