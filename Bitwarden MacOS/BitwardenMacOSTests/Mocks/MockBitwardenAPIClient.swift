@@ -4,36 +4,30 @@ import Foundation
 /// Test double for `BitwardenAPIClientProtocol`.
 ///
 /// Configure stubs before calling the SUT; inspect recorded calls after.
-final class MockBitwardenAPIClient: BitwardenAPIClientProtocol {
+actor MockBitwardenAPIClient: BitwardenAPIClientProtocol {
 
     // MARK: - Configuration state
+    // nonisolated(unsafe) allows tests to read/write without await — safe in single-threaded tests.
 
-    private(set) var baseURL: URL?
-    private(set) var storedAccessToken: String?
+    nonisolated(unsafe) var baseURL: URL?
+    nonisolated(unsafe) var storedAccessToken: String?
 
     // MARK: - Stubs: preLogin
 
-    var preLoginResponse: PreLoginResponse?
-    var preLoginShouldThrow: Error?
+    nonisolated(unsafe) var preLoginResponse: PreLoginResponse?
+    nonisolated(unsafe) var preLoginShouldThrow: Error?
 
     // MARK: - Stubs: identityToken
 
-    /// When set, `identityToken` returns this response (success path).
-    var tokenResponse: TokenResponse?
-
-    /// When set, `identityToken` throws this error (e.g. `AuthError.invalidTwoFactorCode`).
-    var tokenShouldThrow: Error?
-
-    /// When set (and `tokenResponse` is nil), simulates a 2FA challenge with these providers.
-    var tokenTwoFactorProviders: [Int]?
+    nonisolated(unsafe) var tokenResponse: TokenResponse?
+    nonisolated(unsafe) var tokenShouldThrow: Error?
+    nonisolated(unsafe) var tokenTwoFactorProviders: [Int]?
 
     // MARK: - Stubs: fetchSync
 
-    var syncResponse: SyncResponse?
-    var syncShouldThrow: Error?
-
-    /// Artificial delay (seconds) before `fetchSync` returns; used for concurrency tests.
-    var syncDelay: TimeInterval = 0
+    nonisolated(unsafe) var syncResponse: SyncResponse?
+    nonisolated(unsafe) var syncShouldThrow: Error?
+    nonisolated(unsafe) var syncDelay: TimeInterval = 0
 
     // MARK: - Protocol conformance
 
@@ -62,7 +56,6 @@ final class MockBitwardenAPIClient: BitwardenAPIClientProtocol {
     ) async throws -> TokenResponse {
         if let err = tokenShouldThrow { throw err }
 
-        // 2FA challenge: return a response with twoFactorProviders set.
         if let providers = tokenTwoFactorProviders, tokenResponse == nil {
             return TokenResponse(
                 accessToken:        "",
@@ -84,7 +77,7 @@ final class MockBitwardenAPIClient: BitwardenAPIClientProtocol {
         }
 
         guard let resp = tokenResponse else {
-            throw APIError.baseURLNotSet    // fallback — caller should configure a stub
+            throw APIError.baseURLNotSet
         }
         return resp
     }
