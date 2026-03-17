@@ -101,7 +101,7 @@ final class SyncRepositoryImplTests: XCTestCase {
 
     /// GET /sync returning an unauthorized error propagates as SyncError.unauthorized.
     func testSync_propagatesUnauthorizedError() async throws {
-        mockAPI.syncShouldThrow = SyncError.unauthorized
+        mockAPI.syncShouldThrow = APIError.httpError(statusCode: 401, body: "")
 
         await XCTAssertThrowsErrorAsync(
             try await sut.sync(progress: { _ in })
