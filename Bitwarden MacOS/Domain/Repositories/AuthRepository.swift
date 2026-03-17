@@ -62,19 +62,19 @@ protocol AuthRepository: AnyObject {
 
 // MARK: - Supporting types
 
-enum LoginResult {
+nonisolated enum LoginResult {
     case success(Account)
     case requiresTwoFactor(TwoFactorMethod)
 }
 
 /// Two-factor methods supported in v1. Only `authenticatorApp` (TOTP) is handled;
 /// all others surface as `unsupported` with the method name for a clear error message.
-enum TwoFactorMethod {
+nonisolated enum TwoFactorMethod {
     case authenticatorApp
     case unsupported(name: String)
 }
 
-enum AuthError: Error, LocalizedError {
+nonisolated enum AuthError: Error, LocalizedError {
     case invalidCredentials
     case invalidTwoFactorCode
     case invalidURL

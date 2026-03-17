@@ -29,7 +29,7 @@ actor SyncRepositoryImpl: SyncRepository {
 
     // MARK: - Init
 
-    init(
+    nonisolated init(
         apiClient:       any BitwardenAPIClientProtocol,
         crypto:          any BitwardenCryptoService,
         vaultRepository: any VaultRepository
@@ -78,7 +78,7 @@ actor SyncRepositoryImpl: SyncRepository {
 
         // Phase 3: Populate the in-memory vault store.
         let syncedAt = Date()
-        vaultRepository.populate(items: items, syncedAt: syncedAt)
+        await vaultRepository.populate(items: items, syncedAt: syncedAt)
 
         return SyncResult(
             syncedAt:              syncedAt,

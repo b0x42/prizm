@@ -10,7 +10,7 @@ import Foundation
 /// integers) are never encrypted.
 ///
 /// Reference: Bitwarden Server API `/api/sync` response body, `Ciphers[]` array.
-struct RawCipher: Codable {
+nonisolated struct RawCipher: Codable {
     let id:             String
     let organizationId: String?
     /// 1 = Login, 2 = Identity, 3 = Secure Note, 4 = Card, 5 = SSH Key
@@ -31,14 +31,14 @@ struct RawCipher: Codable {
 
 // MARK: - Login
 
-struct RawLoginData: Codable {
+nonisolated struct RawLoginData: Codable {
     let username: String?       // EncString
     let password: String?       // EncString
     let uris:     [RawURI]
     let totp:     String?       // EncString
 }
 
-struct RawURI: Codable {
+nonisolated struct RawURI: Codable {
     let uri:   String?          // EncString
     /// 0=default, 1=baseDomain, 2=host, 3=startsWith, 4=exact, 5=regex, null=default
     let match: Int?
@@ -46,7 +46,7 @@ struct RawURI: Codable {
 
 // MARK: - Card
 
-struct RawCardData: Codable {
+nonisolated struct RawCardData: Codable {
     let cardholderName: String? // EncString
     let brand:          String? // EncString
     let number:         String? // EncString
@@ -57,7 +57,7 @@ struct RawCardData: Codable {
 
 // MARK: - Identity
 
-struct RawIdentityData: Codable {
+nonisolated struct RawIdentityData: Codable {
     let title:          String? // EncString
     let firstName:      String? // EncString
     let middleName:     String? // EncString
@@ -80,13 +80,13 @@ struct RawIdentityData: Codable {
 
 // MARK: - Secure Note
 
-struct RawSecureNoteData: Codable {
+nonisolated struct RawSecureNoteData: Codable {
     let type: Int   // 0 = Generic
 }
 
 // MARK: - SSH Key
 
-struct RawSSHKeyData: Codable {
+nonisolated struct RawSSHKeyData: Codable {
     let privateKey:  String?    // EncString
     let publicKey:   String?    // EncString
     let fingerprint: String?    // EncString
@@ -94,7 +94,7 @@ struct RawSSHKeyData: Codable {
 
 // MARK: - Custom Field
 
-struct RawField: Codable {
+nonisolated struct RawField: Codable {
     /// 0 = text, 1 = hidden, 2 = boolean, 3 = linked
     let type:     Int
     let name:     String?   // EncString

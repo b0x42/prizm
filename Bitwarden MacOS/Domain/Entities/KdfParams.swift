@@ -2,7 +2,7 @@ import Foundation
 
 /// Key derivation function algorithm identifiers as defined by the Bitwarden API.
 /// Returned by the `/accounts/prelogin` endpoint and persisted in the Keychain.
-enum KdfType: Int, Codable, Equatable {
+nonisolated enum KdfType: Int, Codable, Equatable {
     /// PBKDF2-SHA256 (Bitwarden default, kdfType = 0).
     case pbkdf2 = 0
     /// Argon2id (kdfType = 1). Requires `memory` and `parallelism` parameters.
@@ -12,7 +12,7 @@ enum KdfType: Int, Codable, Equatable {
 /// Parameters for the master-key derivation step.
 /// Persisted as JSON in the Keychain under `bw.macos:{userId}:kdfParams`
 /// so the unlock flow can derive the master key locally without a network call.
-struct KdfParams: Codable, Equatable {
+nonisolated struct KdfParams: Codable, Equatable {
     let type: KdfType
 
     /// Iteration count.

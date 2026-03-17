@@ -5,7 +5,7 @@ import os.log
 // MARK: - Errors
 
 /// Errors that can be thrown by KeychainService operations.
-enum KeychainError: Error, Equatable {
+nonisolated enum KeychainError: Error, Equatable {
     /// No item exists for the requested key.
     case itemNotFound
     /// The Keychain returned an unexpected status code.

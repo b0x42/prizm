@@ -10,7 +10,7 @@ import os.log
 /// Missing or invalid headers result in `400 Bad Request` / `403 Forbidden` from the server.
 ///
 /// Implemented as an `actor` to serialise the mutable `baseURL` and `accessToken` state.
-protocol BitwardenAPIClientProtocol: AnyObject {
+protocol BitwardenAPIClientProtocol: Actor {
 
     /// The base URL configured by `AuthRepositoryImpl` after the user enters their server address.
     var baseURL: URL? { get }
@@ -62,7 +62,7 @@ protocol BitwardenAPIClientProtocol: AnyObject {
 ///
 /// Contains the KDF parameters needed to derive the master key locally.
 /// `kdfMemory` and `kdfParallelism` are only present when `kdf == 1` (Argon2id).
-struct PreLoginResponse: Codable {
+nonisolated struct PreLoginResponse: Codable {
     let kdf:            Int
     let kdfIterations:  Int
     let kdfMemory:      Int?
@@ -89,7 +89,7 @@ struct PreLoginResponse: Codable {
 ///
 /// On success, contains access + refresh tokens and the encrypted vault key.
 /// On a 2FA challenge, `twoFactorProviders` is non-nil and `accessToken` will be empty/absent.
-struct TokenResponse: Codable {
+nonisolated struct TokenResponse: Codable {
     let accessToken:        String
     let refreshToken:       String?
     let tokenType:          String
@@ -135,7 +135,7 @@ struct TokenResponse: Codable {
 ///
 /// The Bitwarden identity service returns HTTP 400 for both wrong passwords and 2FA challenges;
 /// `IdentityTokenError` models the meaningful distinctions so the repository layer can act on them.
-enum IdentityTokenError: Error, Equatable {
+nonisolated enum IdentityTokenError: Error, Equatable {
     /// The server requires two-factor authentication before issuing a token.
     /// `providers` is the list of available 2FA type numbers (0 = authenticatorApp, etc.).
     case twoFactorRequired(providers: [Int])
@@ -151,7 +151,7 @@ enum IdentityTokenError: Error, Equatable {
 ///
 /// Higher-level semantic errors (e.g. `.invalidCredentials`, `.unauthorized`) are mapped
 /// by the repository layer (`AuthRepositoryImpl`, `SyncRepositoryImpl`) from these raw codes.
-enum APIError: Error, Equatable {
+nonisolated enum APIError: Error, Equatable {
     /// The HTTP response status code indicates failure.
     case httpError(statusCode: Int, body: String)
     /// The response body could not be decoded into the expected type.

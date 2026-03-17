@@ -8,7 +8,7 @@ import Foundation
 /// the vault) and the list of encrypted ciphers.
 ///
 /// Reference: Bitwarden Server API `/api/sync` response schema.
-struct SyncResponse: Codable {
+nonisolated struct SyncResponse: Codable {
     let profile: RawProfile
     let ciphers: [RawCipher]
 }
@@ -20,7 +20,7 @@ struct SyncResponse: Codable {
 /// The `encryptedPrivateKey` and the `key` (encUserKey) are both EncStrings that
 /// must be decrypted using the user's stretched master key before the vault can
 /// be unlocked.
-struct RawProfile: Codable {
+nonisolated struct RawProfile: Codable {
     let id:                  String
     let email:               String
     let name:                String?

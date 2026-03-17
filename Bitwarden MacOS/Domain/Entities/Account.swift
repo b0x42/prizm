@@ -1,7 +1,7 @@
 import Foundation
 
 /// A successfully authenticated Bitwarden user account.
-struct Account: Equatable {
+nonisolated struct Account: Equatable {
     let userId: String
     let email: String
     let name: String?
@@ -10,7 +10,7 @@ struct Account: Equatable {
 
 /// The server a user account belongs to (self-hosted Bitwarden or Vaultwarden).
 /// Stored as JSON in the Keychain under `bw.macos:{userId}:serverEnvironment`.
-struct ServerEnvironment: Codable, Equatable {
+nonisolated struct ServerEnvironment: Codable, Equatable {
 
     /// The base URL supplied by the user (e.g. `https://vault.example.com`).
     let base: URL
@@ -30,7 +30,7 @@ struct ServerEnvironment: Codable, Equatable {
 
 /// Optional per-service URL overrides for self-hosted deployments that
 /// separate their API, identity and icon services onto different hosts.
-struct ServerURLOverrides: Codable, Equatable {
+nonisolated struct ServerURLOverrides: Codable, Equatable {
     var api: URL?      = nil
     var identity: URL? = nil
     var icons: URL?    = nil

@@ -2,7 +2,7 @@ import Foundation
 
 /// A fully-decrypted vault entry. Produced by `CipherMapper` from a `RawCipher`.
 /// Value type — safe to pass across layers without defensive copying.
-struct VaultItem: Identifiable, Equatable, Hashable {
+nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     let id: String
     let name: String
     let isFavorite: Bool
@@ -15,7 +15,7 @@ struct VaultItem: Identifiable, Equatable, Hashable {
 // MARK: - Item content discriminator
 
 /// Discriminated union of all five Bitwarden vault item types.
-enum ItemContent: Equatable, Hashable {
+nonisolated enum ItemContent: Equatable, Hashable {
     case login(LoginContent)
     case secureNote(SecureNoteContent)
     case card(CardContent)
@@ -25,7 +25,7 @@ enum ItemContent: Equatable, Hashable {
 
 // MARK: - Login
 
-struct LoginContent: Equatable, Hashable {
+nonisolated struct LoginContent: Equatable, Hashable {
     let username: String?
     let password: String?
     let uris: [LoginURI]
@@ -35,13 +35,13 @@ struct LoginContent: Equatable, Hashable {
     let customFields: [CustomField]
 }
 
-struct LoginURI: Equatable, Hashable {
+nonisolated struct LoginURI: Equatable, Hashable {
     let uri: String
     let matchType: URIMatchType?
 }
 
 /// URI-matching strategy used when auto-filling (stored per URI, not used in v1 display).
-enum URIMatchType: Int, Equatable, Hashable {
+nonisolated enum URIMatchType: Int, Equatable, Hashable {
     case domain = 0
     case host = 1
     case startsWith = 2
@@ -52,7 +52,7 @@ enum URIMatchType: Int, Equatable, Hashable {
 
 // MARK: - Card
 
-struct CardContent: Equatable, Hashable {
+nonisolated struct CardContent: Equatable, Hashable {
     let cardholderName: String?
     let brand: String?
     let number: String?
@@ -65,7 +65,7 @@ struct CardContent: Equatable, Hashable {
 
 // MARK: - Identity
 
-struct IdentityContent: Equatable, Hashable {
+nonisolated struct IdentityContent: Equatable, Hashable {
     let title: String?
     let firstName: String?
     let middleName: String?
@@ -90,14 +90,14 @@ struct IdentityContent: Equatable, Hashable {
 
 // MARK: - Secure Note
 
-struct SecureNoteContent: Equatable, Hashable {
+nonisolated struct SecureNoteContent: Equatable, Hashable {
     let notes: String?
     let customFields: [CustomField]
 }
 
 // MARK: - SSH Key
 
-struct SSHKeyContent: Equatable, Hashable {
+nonisolated struct SSHKeyContent: Equatable, Hashable {
     let privateKey: String?
     let publicKey: String?
     let keyFingerprint: String?
