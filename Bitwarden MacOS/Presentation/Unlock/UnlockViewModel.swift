@@ -97,7 +97,7 @@ final class UnlockViewModel: ObservableObject {
         flowState = .syncing(message: "Preparing…")
         do {
             _ = try await sync.execute(progress: { [weak self] message in
-                self?.flowState = .syncing(message: message)
+                Task { @MainActor [weak self] in self?.flowState = .syncing(message: message) }
             })
             flowState = .vault(account)
         } catch {
