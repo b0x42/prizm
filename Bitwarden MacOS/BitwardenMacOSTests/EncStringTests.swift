@@ -132,8 +132,8 @@ final class EncStringTests: XCTestCase {
         let plaintext = "Secret".data(using: .utf8)!
         let encrypted = try EncString.encrypt(data: plaintext, keys: keys)
 
-        let wrongEncKey = Data(repeating: 0x00, count: 32)
-        let wrongKeys   = CryptoKeys(encryptionKey: wrongEncKey, macKey: macKey)
+        let wrongMacKey = Data(repeating: 0x00, count: 32)
+        let wrongKeys   = CryptoKeys(encryptionKey: encKey, macKey: wrongMacKey)
         XCTAssertThrowsError(try encrypted.decrypt(keys: wrongKeys)) { error in
             XCTAssertEqual(error as? EncStringError, .macMismatch)
         }
