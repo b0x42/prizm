@@ -29,7 +29,7 @@ actor SyncRepositoryImpl: SyncRepository {
 
     // MARK: - Init
 
-    nonisolated init(
+    init(
         apiClient:       any BitwardenAPIClientProtocol,
         crypto:          any BitwardenCryptoService,
         vaultRepository: any VaultRepository
