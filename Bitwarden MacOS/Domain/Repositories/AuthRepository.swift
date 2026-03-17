@@ -74,7 +74,7 @@ nonisolated enum TwoFactorMethod {
     case unsupported(name: String)
 }
 
-nonisolated enum AuthError: Error, LocalizedError {
+nonisolated enum AuthError: Error, LocalizedError, Equatable {
     case invalidCredentials
     case invalidTwoFactorCode
     case invalidURL

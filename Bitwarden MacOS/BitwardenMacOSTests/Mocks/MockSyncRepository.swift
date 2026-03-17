@@ -2,21 +2,22 @@ import Foundation
 @testable import Bitwarden_MacOS
 
 /// Test double for `SyncRepository` — used by `LoginUseCaseTests`.
-final class MockSyncRepository: SyncRepository {
+actor MockSyncRepository: SyncRepository {
 
     // MARK: - State observations
+    // nonisolated(unsafe) allows tests to read/write without await — safe in single-threaded tests.
 
-    private(set) var syncCalled: Bool = false
-    private(set) var progressMessages: [String] = []
+    nonisolated(unsafe) var syncCalled: Bool = false
+    nonisolated(unsafe) var progressMessages: [String] = []
 
     // MARK: - Stubs
 
-    var stubbedSyncResult: SyncResult = SyncResult(
+    nonisolated(unsafe) var stubbedSyncResult: SyncResult = SyncResult(
         syncedAt:              Date(),
         totalCiphers:          0,
         failedDecryptionCount: 0
     )
-    var syncShouldThrow: Error?
+    nonisolated(unsafe) var syncShouldThrow: Error?
 
     // MARK: - SyncRepository
 

@@ -29,7 +29,7 @@ nonisolated struct SyncResult {
     let failedDecryptionCount: Int
 }
 
-nonisolated enum SyncError: Error, LocalizedError {
+nonisolated enum SyncError: Error, LocalizedError, Equatable {
     case networkUnavailable
     case serverUnreachable(URL)
     /// Access token is invalid or expired; user must sign in again.
