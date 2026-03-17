@@ -207,7 +207,7 @@ final class AuthRepositoryImpl: AuthRepository {
         logger.info("Unlock attempt")
         let userId: String
         do {
-            userId = try keychain.read(key: KeychainKey.activeUserId)
+            userId = try readString(key: KeychainKey.activeUserId)
         } catch {
             logger.error("No active user ID in Keychain: \(error.localizedDescription, privacy: .public)")
             throw AuthError.invalidCredentials
@@ -221,9 +221,9 @@ final class AuthRepositoryImpl: AuthRepository {
         let kdfJSON: String
         let encUserKey: String
         do {
-            email      = try keychain.read(key: emailKey)
-            kdfJSON    = try keychain.read(key: kdfKey)
-            encUserKey = try keychain.read(key: encKeyKey)
+            email      = try readString(key: emailKey)
+            kdfJSON    = try readString(key: kdfKey)
+            encUserKey = try readString(key: encKeyKey)
         } catch {
             logger.error("Missing session data in Keychain: \(error.localizedDescription, privacy: .public)")
             throw AuthError.invalidCredentials
@@ -260,7 +260,7 @@ final class AuthRepositoryImpl: AuthRepository {
     // MARK: - Session
 
     func storedAccount() -> Account? {
-        guard let userId = try? keychain.read(key: KeychainKey.activeUserId) else {
+        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
             logger.debug("No stored account — activeUserId not found")
             return nil
         }
@@ -276,7 +276,7 @@ final class AuthRepositoryImpl: AuthRepository {
         logger.info("Signing out — clearing session data")
         let userId: String
         do {
-            userId = try keychain.read(key: KeychainKey.activeUserId)
+            userId = try readString(key: KeychainKey.activeUserId)
         } catch {
             logger.debug("No active userId during sign-out (may already be cleared)")
             userId = ""
@@ -336,26 +336,22 @@ final class AuthRepositoryImpl: AuthRepository {
         await crypto.unlockWith(keys: vaultKeys)
 
         // Persist session data in Keychain.
-        try keychain.write(key: KeychainKey.activeUserId,                       value: userId)
-        try keychain.write(key: KeychainKey.user(userId, "accessToken"),        value: accessToken)
-        try keychain.write(key: KeychainKey.user(userId, "refreshToken"),       value: refreshToken)
-        try keychain.write(key: KeychainKey.user(userId, "encUserKey"),         value: encKey)
-        try keychain.write(key: KeychainKey.user(userId, "email"),              value: email)
+        try writeString(userId,       key: KeychainKey.activeUserId)
+        try writeString(accessToken,  key: KeychainKey.user(userId, "accessToken"))
+        try writeString(refreshToken, key: KeychainKey.user(userId, "refreshToken"))
+        try writeString(encKey,       key: KeychainKey.user(userId, "encUserKey"))
+        try writeString(email,        key: KeychainKey.user(userId, "email"))
         if let name = tokenResp.name {
-            try keychain.write(key: KeychainKey.user(userId, "name"),           value: name)
+            try writeString(name,     key: KeychainKey.user(userId, "name"))
         }
 
         // Persist KDF params for offline unlock.
         let kdfJSON = try JSONEncoder().encode(tokenResp.kdfParams(environment: environment))
-        if let str = String(data: kdfJSON, encoding: .utf8) {
-            try keychain.write(key: KeychainKey.user(userId, "kdfParams"),      value: str)
-        }
+        try keychain.write(data: kdfJSON, key: KeychainKey.user(userId, "kdfParams"))
 
         // Persist server environment for unlock.
         let envJSON = try JSONEncoder().encode(environment)
-        if let str = String(data: envJSON, encoding: .utf8) {
-            try keychain.write(key: KeychainKey.user(userId, "serverEnvironment"), value: str)
-        }
+        try keychain.write(data: envJSON, key: KeychainKey.user(userId, "serverEnvironment"))
 
         apiClient.setAccessToken(accessToken)
 
@@ -369,14 +365,10 @@ final class AuthRepositoryImpl: AuthRepository {
 
     /// Reconstructs an `Account` from Keychain data for a known `userId`.
     private func account(for userId: String) throws -> Account {
-        let email    = try keychain.read(key: KeychainKey.user(userId, "email"))
-        let name     = try? keychain.read(key: KeychainKey.user(userId, "name"))
-        let envJSON  = try keychain.read(key: KeychainKey.user(userId, "serverEnvironment"))
+        let email = try readString(key: KeychainKey.user(userId, "email"))
+        let name  = try? readString(key: KeychainKey.user(userId, "name"))
+        let envData = try keychain.read(key: KeychainKey.user(userId, "serverEnvironment"))
 
-        guard let envData = envJSON.data(using: .utf8) else {
-            logger.error("Server environment not valid UTF-8")
-            throw AuthError.invalidCredentials
-        }
         let env: ServerEnvironment
         do {
             env = try JSONDecoder().decode(ServerEnvironment.self, from: envData)
@@ -393,13 +385,30 @@ final class AuthRepositoryImpl: AuthRepository {
     /// stable UUID. Stored under `bw.macos:deviceIdentifier` (not per-user; shared across accounts).
     private func deviceIdentifier() throws -> String {
         do {
-            return try keychain.read(key: KeychainKey.deviceIdentifier)
+            return try readString(key: KeychainKey.deviceIdentifier)
         } catch {
             logger.debug("No device identifier — generating new UUID")
         }
         let newId = UUID().uuidString
-        try keychain.write(key: KeychainKey.deviceIdentifier, value: newId)
+        try writeString(newId, key: KeychainKey.deviceIdentifier)
         return newId
+    }
+
+    /// Reads a UTF-8 string from the Keychain.
+    private func readString(key: String) throws -> String {
+        let data = try keychain.read(key: key)
+        guard let string = String(data: data, encoding: .utf8) else {
+            throw AuthError.invalidCredentials
+        }
+        return string
+    }
+
+    /// Writes a UTF-8 string to the Keychain.
+    private func writeString(_ value: String, key: String) throws {
+        guard let data = value.data(using: .utf8) else {
+            throw AuthError.invalidCredentials
+        }
+        try keychain.write(data: data, key: key)
     }
 
     /// Maps a list of Bitwarden 2FA provider type numbers to a `TwoFactorMethod`.
