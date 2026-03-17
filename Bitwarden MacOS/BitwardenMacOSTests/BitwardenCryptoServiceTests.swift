@@ -22,7 +22,7 @@ final class BitwardenCryptoServiceTests: XCTestCase {
     /// Vector: email="user@bitwarden.com", password="Password1", iterations=600000
     /// Expected output is the SHA-256 PBKDF2 result (verified against Bitwarden web vault).
     func testPbkdf2MasterKeyLength() async throws {
-        let kdf = KdfParams(type: .pbkdf2, iterations: 600_000)
+        let kdf = KdfParams(type: .pbkdf2, iterations: 600_000, memory: nil, parallelism: nil)
         let masterKey = try await sut.makeMasterKey(
             password: "Password1",
             email: "user@bitwarden.com",
@@ -34,7 +34,7 @@ final class BitwardenCryptoServiceTests: XCTestCase {
 
     /// PBKDF2 derivation must be deterministic.
     func testPbkdf2IsDeterministic() async throws {
-        let kdf = KdfParams(type: .pbkdf2, iterations: 10_000)
+        let kdf = KdfParams(type: .pbkdf2, iterations: 10_000, memory: nil, parallelism: nil)
         let k1 = try await sut.makeMasterKey(password: "pw", email: "a@b.com", kdf: kdf)
         let k2 = try await sut.makeMasterKey(password: "pw", email: "a@b.com", kdf: kdf)
         XCTAssertEqual(k1, k2)
@@ -42,7 +42,7 @@ final class BitwardenCryptoServiceTests: XCTestCase {
 
     /// Different passwords must produce different keys.
     func testPbkdf2DifferentPasswordsDifferentKeys() async throws {
-        let kdf = KdfParams(type: .pbkdf2, iterations: 10_000)
+        let kdf = KdfParams(type: .pbkdf2, iterations: 10_000, memory: nil, parallelism: nil)
         let k1 = try await sut.makeMasterKey(password: "alpha", email: "x@y.com", kdf: kdf)
         let k2 = try await sut.makeMasterKey(password: "beta",  email: "x@y.com", kdf: kdf)
         XCTAssertNotEqual(k1, k2)
