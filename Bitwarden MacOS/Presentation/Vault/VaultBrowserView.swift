@@ -47,6 +47,7 @@ struct VaultBrowserView: View {
         )
         .navigationSplitViewStyle(.balanced)
         .searchable(text: $viewModel.searchQuery, prompt: "Search vault")
+        .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 lastSyncedLabel
@@ -73,11 +74,13 @@ struct VaultBrowserView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Dismiss")
+                .accessibilityIdentifier(AccessibilityID.Vault.syncErrorDismiss)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color.yellow.opacity(0.15))
             .frame(maxHeight: 44)
+            .accessibilityIdentifier(AccessibilityID.Vault.syncErrorBanner)
         }
     }
 
@@ -87,6 +90,7 @@ struct VaultBrowserView: View {
             Text("Last synced: \(date, formatter: relativeDateFormatter)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier(AccessibilityID.Vault.lastSyncedLabel)
         }
     }
 

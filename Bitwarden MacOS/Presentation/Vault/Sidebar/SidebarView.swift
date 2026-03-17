@@ -21,12 +21,14 @@ struct SidebarView: View {
                     selection:  .allItems,
                     count:      itemCounts[.allItems] ?? 0
                 )
+                .accessibilityIdentifier(AccessibilityID.Sidebar.allItems)
                 SidebarRowView(
                     title:      "Favorites",
                     systemImage: "star",
                     selection:  .favorites,
                     count:      itemCounts[.favorites] ?? 0
                 )
+                .accessibilityIdentifier(AccessibilityID.Sidebar.favorites)
             }
 
             // MARK: Types section
@@ -38,6 +40,7 @@ struct SidebarView: View {
                         selection:  .type(type),
                         count:      itemCounts[.type(type)] ?? 0
                     )
+                    .accessibilityIdentifier(AccessibilityID.Sidebar.type(type.displayName))
                 }
             }
         }

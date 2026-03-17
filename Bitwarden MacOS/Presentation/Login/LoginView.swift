@@ -41,6 +41,7 @@ struct LoginView: View {
                         .focused($focusedField, equals: .serverURL)
                         .autocorrectionDisabled()
                         .onSubmit { focusedField = .email }
+                        .accessibilityIdentifier(AccessibilityID.Login.serverURLField)
                 }
 
                 // Email — FR-003
@@ -50,6 +51,7 @@ struct LoginView: View {
                         .focused($focusedField, equals: .email)
                         .autocorrectionDisabled()
                         .onSubmit { focusedField = .password }
+                        .accessibilityIdentifier(AccessibilityID.Login.emailField)
                 }
 
                 // Master password — FR-005
@@ -58,6 +60,7 @@ struct LoginView: View {
                         .textFieldStyle(.roundedBorder)
                         .focused($focusedField, equals: .password)
                         .onSubmit { signIn() }
+                        .accessibilityIdentifier(AccessibilityID.Login.passwordField)
                 }
             }
             .labeledContentStyle(.vertical)
@@ -71,6 +74,7 @@ struct LoginView: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
                     .transition(.opacity)
+                    .accessibilityIdentifier(AccessibilityID.Login.errorMessage)
             }
 
             // MARK: Sign In button — FR-007
@@ -88,6 +92,7 @@ struct LoginView: View {
             .frame(width: 360)
             .disabled(isSignInDisabled)
             .keyboardShortcut(.return, modifiers: [])
+            .accessibilityIdentifier(AccessibilityID.Login.signInButton)
 
             Spacer()
         }

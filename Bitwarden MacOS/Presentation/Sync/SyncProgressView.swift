@@ -23,6 +23,7 @@ struct SyncProgressView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
                 .animation(.easeInOut, value: message)
+                .accessibilityIdentifier(AccessibilityID.Sync.progressMessage)
         }
         .frame(minWidth: 480, minHeight: 320)
         .padding(40)
