@@ -214,29 +214,32 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
     // MARK: - stretchKey
 
     func stretchKey(masterKey: Data) async throws -> CryptoKeys {
-        // HKDF-Extract+Expand (RFC 5869) with independent "enc" and "mac" info labels.
-        // Per Bitwarden Security Whitepaper §4: "Key Stretching".
-        // Each call to deriveKey performs its own extract + expand internally,
-        // producing independent keys from the same input key material.
-        let inputKey = SymmetricKey(data: masterKey)
-
-        let encSymKey = HKDF<SHA256>.deriveKey(
-            inputKeyMaterial: inputKey,
-            salt:             Data(),
-            info:             Data("enc".utf8),
-            outputByteCount:  32
-        )
-        let macSymKey = HKDF<SHA256>.deriveKey(
-            inputKeyMaterial: inputKey,
-            salt:             Data(),
-            info:             Data("mac".utf8),
-            outputByteCount:  32
-        )
-
-        // SymmetricKey does not expose raw bytes directly; use withUnsafeBytes.
-        let encKey = encSymKey.withUnsafeBytes { Data($0) }
-        let macKey = macSymKey.withUnsafeBytes { Data($0) }
+        // Bitwarden Key Stretching (Security Whitepaper §4):
+        //   encKey = HKDF-Expand(PRK=masterKey, info="enc", len=32)
+        //   macKey = HKDF-Expand(PRK=masterKey, info="mac", len=32)
+        //
+        // IMPORTANT: Bitwarden uses HKDF-Expand ONLY (RFC 5869 §2.3) — it skips the
+        // Extract step and uses the 32-byte masterKey directly as the PRK.
+        // CryptoKit's HKDF.deriveKey() performs full HKDF (Extract + Expand), which
+        // produces different output and must NOT be used here.
+        //
+        // Reference: bitwarden/sdk-internal CryptoService.stretchKey / jslib hkdfExpand
+        let encKey = hkdfExpand(prk: masterKey, info: Data("enc".utf8), outputLength: 32)
+        let macKey = hkdfExpand(prk: masterKey, info: Data("mac".utf8), outputLength: 32)
         return CryptoKeys(encryptionKey: encKey, macKey: macKey)
+    }
+
+    /// HKDF-Expand only (RFC 5869 §2.3) for a single output block (≤ 32 bytes).
+    ///
+    /// `T(1) = HMAC-SHA256(key=PRK, data=info || 0x01)`
+    ///
+    /// Bitwarden passes the masterKey directly as PRK, bypassing the Extract phase.
+    /// This matches the behaviour of `CryptoFunctionService.hkdfExpand` in bitwarden/sdk.
+    private func hkdfExpand(prk: Data, info: Data, outputLength: Int) -> Data {
+        precondition(outputLength <= 32, "Single-block HKDF-Expand limited to 32 bytes (SHA-256 hash length)")
+        let input = info + Data([0x01])   // T(0)=empty || info || counter=1
+        let mac   = HMAC<SHA256>.authenticationCode(for: input, using: SymmetricKey(data: prk))
+        return Data(mac).prefix(outputLength)
     }
 
     // MARK: - makeServerHash
