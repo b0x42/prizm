@@ -363,7 +363,7 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         let url          = components.url!
 
         if DebugConfig.isEnabled {
-            logger.debug("[debug] fetchSync → GET \(url.absoluteString, privacy: .public) hasToken=\(accessToken != nil, privacy: .public)")
+            logger.debug("[debug] fetchSync → GET \(url.absoluteString, privacy: .public) hasToken=\(self.accessToken != nil, privacy: .public)")
         }
 
         var request      = baseRequest(url: url)
