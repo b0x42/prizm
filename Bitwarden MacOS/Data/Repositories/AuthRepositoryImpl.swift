@@ -78,6 +78,7 @@ final class AuthRepositoryImpl: AuthRepository {
     // MARK: - Login
 
     func loginWithPassword(email: String, masterPassword: String) async throws -> LoginResult {
+        logger.info("Login attempt for \(email, privacy: .private)")
         guard let env = serverEnvironment else {
             throw AuthError.serverUnreachable
         }
@@ -126,10 +127,13 @@ final class AuthRepositoryImpl: AuthRepository {
                     stretchedKeys: stretched,
                     deviceId:      deviceId
                 )
+                logger.info("2FA required")
                 return .requiresTwoFactor(twoFactorMethod(from: providers))
             case .twoFactorCodeInvalid:
+                logger.error("Login failed: \(AuthError.invalidTwoFactorCode.localizedDescription, privacy: .public)")
                 throw AuthError.invalidTwoFactorCode
             case .invalidCredentials:
+                logger.error("Login failed: \(AuthError.invalidCredentials.localizedDescription, privacy: .public)")
                 throw AuthError.invalidCredentials
             }
         }
@@ -143,6 +147,7 @@ final class AuthRepositoryImpl: AuthRepository {
                 stretchedKeys: stretched,
                 deviceId:      deviceId
             )
+            logger.info("2FA required")
             return .requiresTwoFactor(twoFactorMethod(from: providers))
         }
 
@@ -152,10 +157,12 @@ final class AuthRepositoryImpl: AuthRepository {
             stretched:    stretched,
             environment:  env
         )
+        logger.info("Login succeeded")
         return .success(account)
     }
 
     func loginWithTOTP(code: String, rememberDevice: Bool) async throws -> Account {
+        logger.info("Submitting TOTP code")
         guard let pending = pendingTwoFactor,
               let env     = serverEnvironment else {
             throw AuthError.invalidCredentials
@@ -174,15 +181,19 @@ final class AuthRepositoryImpl: AuthRepository {
         } catch let err as IdentityTokenError {
             switch err {
             case .twoFactorCodeInvalid:
+                logger.error("Login failed: \(AuthError.invalidTwoFactorCode.localizedDescription, privacy: .public)")
                 throw AuthError.invalidTwoFactorCode
             case .invalidCredentials:
+                logger.error("Login failed: \(AuthError.invalidTwoFactorCode.localizedDescription, privacy: .public)")
                 throw AuthError.invalidTwoFactorCode   // TOTP wrong code maps to same user-visible error
             case .twoFactorRequired:
+                logger.error("Login failed: \(AuthError.invalidTwoFactorCode.localizedDescription, privacy: .public)")
                 throw AuthError.invalidTwoFactorCode
             }
         }
 
         pendingTwoFactor = nil
+        logger.info("TOTP accepted")
         return try await finalizeSession(
             tokenResp:   tokenResp,
             stretched:   pending.stretchedKeys,
@@ -193,7 +204,12 @@ final class AuthRepositoryImpl: AuthRepository {
     // MARK: - Unlock
 
     func unlockWithPassword(_ masterPassword: String) async throws -> Account {
-        guard let userId = try? keychain.read(key: KeychainKey.activeUserId) else {
+        logger.info("Unlock attempt")
+        let userId: String
+        do {
+            userId = try keychain.read(key: KeychainKey.activeUserId)
+        } catch {
+            logger.error("No active user ID in Keychain: \(error.localizedDescription, privacy: .public)")
             throw AuthError.invalidCredentials
         }
 
@@ -201,14 +217,27 @@ final class AuthRepositoryImpl: AuthRepository {
         let kdfKey    = KeychainKey.user(userId, "kdfParams")
         let encKeyKey = KeychainKey.user(userId, "encUserKey")
 
-        guard let email     = try? keychain.read(key: emailKey),
-              let kdfJSON   = try? keychain.read(key: kdfKey),
-              let encUserKey = try? keychain.read(key: encKeyKey) else {
+        let email: String
+        let kdfJSON: String
+        let encUserKey: String
+        do {
+            email      = try keychain.read(key: emailKey)
+            kdfJSON    = try keychain.read(key: kdfKey)
+            encUserKey = try keychain.read(key: encKeyKey)
+        } catch {
+            logger.error("Missing session data in Keychain: \(error.localizedDescription, privacy: .public)")
             throw AuthError.invalidCredentials
         }
 
-        guard let kdfData   = kdfJSON.data(using: .utf8),
-              let kdfParams = try? JSONDecoder().decode(KdfParams.self, from: kdfData) else {
+        guard let kdfData = kdfJSON.data(using: .utf8) else {
+            logger.error("KDF params not valid UTF-8")
+            throw AuthError.invalidCredentials
+        }
+        let kdfParams: KdfParams
+        do {
+            kdfParams = try JSONDecoder().decode(KdfParams.self, from: kdfData)
+        } catch {
+            logger.error("KDF params decode failed: \(error.localizedDescription, privacy: .public)")
             throw AuthError.invalidCredentials
         }
 
@@ -224,6 +253,7 @@ final class AuthRepositoryImpl: AuthRepository {
         )
         await crypto.unlockWith(keys: vaultKeys)
 
+        logger.info("Unlock succeeded")
         return try account(for: userId)
     }
 
@@ -231,23 +261,44 @@ final class AuthRepositoryImpl: AuthRepository {
 
     func storedAccount() -> Account? {
         guard let userId = try? keychain.read(key: KeychainKey.activeUserId) else {
+            logger.debug("No stored account — activeUserId not found")
             return nil
         }
-        return try? account(for: userId)
+        do {
+            return try account(for: userId)
+        } catch {
+            logger.error("Failed to reconstruct account for stored userId: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     func signOut() async throws {
-        let userId = (try? keychain.read(key: KeychainKey.activeUserId)) ?? ""
+        logger.info("Signing out — clearing session data")
+        let userId: String
+        do {
+            userId = try keychain.read(key: KeychainKey.activeUserId)
+        } catch {
+            logger.debug("No active userId during sign-out (may already be cleared)")
+            userId = ""
+        }
 
-        // Clear per-user keys first.
+        // Clear per-user keys first — best-effort, log failures.
         if !userId.isEmpty {
             for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
                            "email", "name", "serverEnvironment"] {
-                try? keychain.delete(key: KeychainKey.user(userId, suffix))
+                do {
+                    try keychain.delete(key: KeychainKey.user(userId, suffix))
+                } catch {
+                    logger.debug("Keychain delete \(suffix) skipped: \(error.localizedDescription, privacy: .public)")
+                }
             }
         }
         // Clear global key last.
-        try? keychain.delete(key: KeychainKey.activeUserId)
+        do {
+            try keychain.delete(key: KeychainKey.activeUserId)
+        } catch {
+            logger.debug("activeUserId delete skipped: \(error.localizedDescription, privacy: .public)")
+        }
 
         await crypto.lockVault()
         serverEnvironment = nil
@@ -275,6 +326,7 @@ final class AuthRepositoryImpl: AuthRepository {
               let refreshToken = tokenResp.refreshToken else {
             throw AuthError.invalidCredentials
         }
+        logger.info("Session finalized for user \(userId, privacy: .private)")
 
         // Decrypt the encrypted user key using the stretched master keys.
         let vaultKeys = try await crypto.decryptSymmetricKey(
@@ -321,8 +373,15 @@ final class AuthRepositoryImpl: AuthRepository {
         let name     = try? keychain.read(key: KeychainKey.user(userId, "name"))
         let envJSON  = try keychain.read(key: KeychainKey.user(userId, "serverEnvironment"))
 
-        guard let envData = envJSON.data(using: .utf8),
-              let env     = try? JSONDecoder().decode(ServerEnvironment.self, from: envData) else {
+        guard let envData = envJSON.data(using: .utf8) else {
+            logger.error("Server environment not valid UTF-8")
+            throw AuthError.invalidCredentials
+        }
+        let env: ServerEnvironment
+        do {
+            env = try JSONDecoder().decode(ServerEnvironment.self, from: envData)
+        } catch {
+            logger.error("Server environment decode failed: \(error.localizedDescription, privacy: .public)")
             throw AuthError.invalidCredentials
         }
         return Account(userId: userId, email: email, name: name, serverEnvironment: env)
@@ -333,8 +392,10 @@ final class AuthRepositoryImpl: AuthRepository {
     /// Per Bitwarden device registration requirements, each installation should present a
     /// stable UUID. Stored under `bw.macos:deviceIdentifier` (not per-user; shared across accounts).
     private func deviceIdentifier() throws -> String {
-        if let existing = try? keychain.read(key: KeychainKey.deviceIdentifier) {
-            return existing
+        do {
+            return try keychain.read(key: KeychainKey.deviceIdentifier)
+        } catch {
+            logger.debug("No device identifier — generating new UUID")
         }
         let newId = UUID().uuidString
         try keychain.write(key: KeychainKey.deviceIdentifier, value: newId)

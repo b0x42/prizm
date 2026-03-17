@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import os.log
 
 // MARK: - Errors
 
@@ -45,6 +46,7 @@ protocol KeychainService {
 final class KeychainServiceImpl: KeychainService {
 
     private let service = "com.bitwarden-macos"
+    private let logger = Logger(subsystem: "com.bitwarden-macos", category: "KeychainService")
 
     /// Returns the base Keychain query dictionary for `key`.
     private func baseQuery(for key: String) -> [CFString: Any] {
@@ -70,6 +72,7 @@ final class KeychainServiceImpl: KeychainService {
         let addStatus = SecItemAdd(query as CFDictionary, nil)
 
         if addStatus == errSecSuccess {
+            logger.debug("Keychain write: \(key, privacy: .public)")
             return
         }
 
@@ -83,11 +86,14 @@ final class KeychainServiceImpl: KeychainService {
                 updateAttributes as CFDictionary
             )
             guard updateStatus == errSecSuccess else {
+                logger.error("Keychain error: status \(updateStatus)")
                 throw KeychainError.unexpectedStatus(updateStatus)
             }
+            logger.debug("Keychain write: \(key, privacy: .public)")
             return
         }
 
+        logger.error("Keychain error: status \(addStatus)")
         throw KeychainError.unexpectedStatus(addStatus)
     }
 
@@ -114,6 +120,7 @@ final class KeychainServiceImpl: KeychainService {
         case errSecItemNotFound:
             throw KeychainError.itemNotFound
         default:
+            logger.error("Keychain error: status \(status)")
             throw KeychainError.unexpectedStatus(status)
         }
     }
@@ -126,8 +133,10 @@ final class KeychainServiceImpl: KeychainService {
         let status = SecItemDelete(baseQuery(for: key) as CFDictionary)
         switch status {
         case errSecSuccess, errSecItemNotFound:
+            logger.debug("Keychain delete: \(key, privacy: .public)")
             return
         default:
+            logger.error("Keychain error: status \(status)")
             throw KeychainError.unexpectedStatus(status)
         }
     }
