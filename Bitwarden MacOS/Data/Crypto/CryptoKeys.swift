@@ -11,7 +11,7 @@ import CommonCrypto
 /// "Key Derivation" — the 256-bit stretched master key is split into a 256-bit
 /// encryption key and a 256-bit MAC key so that the keys used for encryption and
 /// authentication are independent (per NIST SP 800-107 §5.3).
-struct CryptoKeys {
+nonisolated struct CryptoKeys {
     /// 32-byte AES-256-CBC encryption key.
     let encryptionKey: Data
     /// 32-byte HMAC-SHA256 MAC key (used for authenticated encryption).
@@ -20,7 +20,7 @@ struct CryptoKeys {
 
 // MARK: - Static HMAC helper
 
-extension CryptoKeys {
+nonisolated extension CryptoKeys {
 
     /// Computes HMAC-SHA256 of `data` under `key`.
     ///

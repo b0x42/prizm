@@ -72,7 +72,7 @@ final class AuthRepositoryImpl: AuthRepository {
 
     func setServerEnvironment(_ environment: ServerEnvironment) async throws {
         serverEnvironment = environment
-        apiClient.setBaseURL(environment.base)
+        await apiClient.setBaseURL(environment.base)
     }
 
     // MARK: - Login
@@ -353,7 +353,7 @@ final class AuthRepositoryImpl: AuthRepository {
         let envJSON = try JSONEncoder().encode(environment)
         try keychain.write(data: envJSON, key: KeychainKey.user(userId, "serverEnvironment"))
 
-        apiClient.setAccessToken(accessToken)
+        await apiClient.setAccessToken(accessToken)
 
         return Account(
             userId:            userId,

@@ -44,7 +44,7 @@ protocol VaultRepository: AnyObject {
 
 // MARK: - Errors
 
-enum VaultError: Error, LocalizedError {
+nonisolated enum VaultError: Error, LocalizedError {
     case vaultLocked
     case decryptionFailed(String)
     case itemNotFound(String)

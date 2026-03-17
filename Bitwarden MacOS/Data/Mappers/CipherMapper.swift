@@ -4,7 +4,7 @@ import os.log
 // MARK: - CipherMapperError
 
 /// Errors that can be thrown by `CipherMapper.map(raw:keys:)`.
-enum CipherMapperError: Error, Equatable {
+nonisolated enum CipherMapperError: Error, Equatable {
     /// The cipher belongs to an organisation and is intentionally skipped in
     /// the personal vault view (organizationId != nil).
     case organisationCipherSkipped
@@ -29,7 +29,7 @@ enum CipherMapperError: Error, Equatable {
 /// - Network I/O.
 /// - Keychain access.
 /// - KDF derivation.
-final class CipherMapper {
+nonisolated final class CipherMapper {
 
     private static let logger = Logger(subsystem: "com.bitwarden-macos", category: "CipherMapper")
 

@@ -4,7 +4,7 @@ import Foundation
 /// Called once per unlock event (after login and after every relaunch + unlock).
 /// No background sync, periodic polling, or user-triggered re-sync in v1.
 /// Implemented by `SyncRepositoryImpl` in the Data layer.
-protocol SyncRepository: AnyObject {
+protocol SyncRepository: Actor {
 
     /// Syncs the vault from the server.
     ///
@@ -23,13 +23,13 @@ protocol SyncRepository: AnyObject {
 
 // MARK: - Supporting types
 
-struct SyncResult {
+nonisolated struct SyncResult {
     let syncedAt: Date
     let totalCiphers: Int
     let failedDecryptionCount: Int
 }
 
-enum SyncError: Error, LocalizedError {
+nonisolated enum SyncError: Error, LocalizedError {
     case networkUnavailable
     case serverUnreachable(URL)
     /// Access token is invalid or expired; user must sign in again.

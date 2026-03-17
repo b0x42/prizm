@@ -7,7 +7,7 @@ import os.log
 // MARK: - BitwardenCryptoServiceError
 
 /// Errors thrown by `BitwardenCryptoService` operations.
-enum BitwardenCryptoServiceError: Error, Equatable {
+nonisolated enum BitwardenCryptoServiceError: Error, Equatable {
     /// PBKDF2 or Argon2id key derivation failed.
     case kdfFailed
     /// HKDF key expansion failed.
@@ -174,7 +174,7 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
             throw BitwardenCryptoServiceError.kdfFailed
         }
 
-        logger.debug("KDF: using \(kdf.type) with \(kdf.iterations) iterations")
+        logger.debug("KDF: using \(String(describing: kdf.type)) with \(kdf.iterations) iterations")
 
         switch kdf.type {
         case .pbkdf2:
@@ -209,13 +209,13 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         // producing independent keys from the same input key material.
         let inputKey = SymmetricKey(data: masterKey)
 
-        let encSymKey = try HKDF<SHA256>.deriveKey(
+        let encSymKey = HKDF<SHA256>.deriveKey(
             inputKeyMaterial: inputKey,
             salt:             Data(),
             info:             Data("enc".utf8),
             outputByteCount:  32
         )
-        let macSymKey = try HKDF<SHA256>.deriveKey(
+        let macSymKey = HKDF<SHA256>.deriveKey(
             inputKeyMaterial: inputKey,
             salt:             Data(),
             info:             Data("mac".utf8),

@@ -8,7 +8,7 @@ import CryptoKit
 ///
 /// Values match the numeric type prefix in the wire format
 /// (Bitwarden Security Whitepaper §4: "Cipher String Types").
-enum EncType: Int {
+nonisolated enum EncType: Int {
     /// Type 0 — AES-256-CBC, Base64 IV + Base64 ciphertext (no MAC).
     case aes256Cbc_B64             = 0
     /// Type 2 — AES-256-CBC + HMAC-SHA256, Base64 IV|ciphertext|mac.
@@ -22,7 +22,7 @@ enum EncType: Int {
 // MARK: - EncStringError
 
 /// Errors that can be thrown by EncString operations.
-enum EncStringError: Error, Equatable {
+nonisolated enum EncStringError: Error, Equatable {
     /// The string does not conform to the "<type>.<segments>" format.
     case malformedEncString
     /// The numeric type prefix is not one of the supported values (0, 2, 4, 6).
@@ -47,7 +47,7 @@ enum EncStringError: Error, Equatable {
 ///   all new symmetric encryption.
 /// - **Type 4** — RSA-2048-OAEP-SHA1 wrapped AES key.
 /// - **Type 6** — RSA-2048-OAEP-SHA256 wrapped AES key (newer).
-struct EncString {
+nonisolated struct EncString {
 
     let encType:    EncType
     let iv:         Data
@@ -215,7 +215,8 @@ struct EncString {
     /// Padding: PKCS#7 (RFC 5652 §6.3).
     private static func aesCbcDecrypt(key: Data, iv: Data, ciphertext: Data) throws -> Data {
         var outLength = 0
-        var outData   = Data(count: ciphertext.count + kCCBlockSizeAES128)
+        let outCapacity = ciphertext.count + kCCBlockSizeAES128
+        var outData = Data(count: outCapacity)
 
         let status = outData.withUnsafeMutableBytes { outPtr in
             ciphertext.withUnsafeBytes { ctPtr in
@@ -228,7 +229,7 @@ struct EncString {
                             keyPtr.baseAddress, key.count,
                             ivPtr.baseAddress,
                             ctPtr.baseAddress, ciphertext.count,
-                            outPtr.baseAddress, outData.count,
+                            outPtr.baseAddress, outCapacity,
                             &outLength
                         )
                     }
@@ -245,9 +246,9 @@ struct EncString {
 
     /// AES-256-CBC encrypt using CommonCrypto `CCCrypt`.
     private static func aesCbcEncrypt(key: Data, iv: Data, plaintext: Data) throws -> Data {
-        let bufferSize = plaintext.count + kCCBlockSizeAES128
         var outLength  = 0
-        var outData    = Data(count: bufferSize)
+        let outCapacity = plaintext.count + kCCBlockSizeAES128
+        var outData    = Data(count: outCapacity)
 
         let status = outData.withUnsafeMutableBytes { outPtr in
             plaintext.withUnsafeBytes { ptPtr in
@@ -260,7 +261,7 @@ struct EncString {
                             keyPtr.baseAddress, key.count,
                             ivPtr.baseAddress,
                             ptPtr.baseAddress, plaintext.count,
-                            outPtr.baseAddress, bufferSize,
+                            outPtr.baseAddress, outCapacity,
                             &outLength
                         )
                     }
@@ -278,7 +279,7 @@ struct EncString {
 
 // MARK: - Memberwise init (private, used by encrypt)
 
-private extension EncString {
+nonisolated private extension EncString {
     init(encType: EncType, iv: Data, ciphertext: Data, mac: Data?) {
         self.encType    = encType
         self.iv         = iv

@@ -4,7 +4,7 @@ import Foundation
 /// `CaseIterable` enables the sidebar to iterate all types without a hardcoded list.
 /// `Hashable` is required because `SidebarSelection.type(ItemType)` uses this as an
 /// associated value, and `[SidebarSelection: Int]` is used for item counts.
-enum ItemType: String, Equatable, Hashable, CaseIterable {
+nonisolated enum ItemType: String, Equatable, Hashable, CaseIterable {
     case login
     case card
     case identity
@@ -29,7 +29,7 @@ enum ItemType: String, Equatable, Hashable, CaseIterable {
 /// `Equatable` and `Hashable` are implemented explicitly with `nonisolated` to
 /// prevent Swift 5.10 from inferring `@MainActor` on the synthesized conformances,
 /// which would cause a Swift 6 error when used in nonisolated contexts.
-enum SidebarSelection: Equatable {
+nonisolated enum SidebarSelection: Equatable {
     case allItems
     case favorites
     case type(ItemType)
