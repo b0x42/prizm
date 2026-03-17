@@ -71,6 +71,7 @@ struct MaskedFieldView: View {
                 Text(state.displayValue)
                     .font(.body.monospaced())
                     .textSelection(.enabled)
+                    .accessibilityIdentifier(AccessibilityID.Masked.value(label))
             }
             Spacer()
             Button {
@@ -81,6 +82,7 @@ struct MaskedFieldView: View {
             }
             .buttonStyle(.plain)
             .help(state.isRevealed ? "Hide" : "Reveal")
+            .accessibilityIdentifier(AccessibilityID.Masked.toggle(label))
         }
         // Reset to masked whenever the parent item changes (FR-027).
         .onChange(of: itemId) { _, _ in

@@ -23,6 +23,7 @@ struct TOTPPromptView: View {
                     .foregroundStyle(.tint)
                 Text("Two-step login")
                     .font(.title.bold())
+                    .accessibilityIdentifier(AccessibilityID.TOTP.headerTitle)
                 Text("Enter the 6-digit code from your authenticator app.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -39,6 +40,7 @@ struct TOTPPromptView: View {
                     .textFieldStyle(.roundedBorder)
                     .focused($codeFieldFocused)
                     .frame(width: 200)
+                    .accessibilityIdentifier(AccessibilityID.TOTP.codeField)
                     .onChange(of: totpCode) { _, new in
                         // Enforce 6 digits.
                         totpCode = String(new.filter(\.isNumber).prefix(6))
@@ -49,6 +51,7 @@ struct TOTPPromptView: View {
             // MARK: Remember device — FR-050
             Toggle("Remember this device", isOn: $rememberDevice)
                 .frame(width: 200, alignment: .leading)
+                .accessibilityIdentifier(AccessibilityID.TOTP.rememberToggle)
 
             // MARK: Error message
             if let error = viewModel.errorMessage {
@@ -57,6 +60,7 @@ struct TOTPPromptView: View {
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
+                    .accessibilityIdentifier(AccessibilityID.TOTP.errorMessage)
             }
 
             // MARK: Submit button
@@ -73,6 +77,7 @@ struct TOTPPromptView: View {
             .buttonStyle(.borderedProminent)
             .disabled(isSubmitDisabled)
             .keyboardShortcut(.return, modifiers: [])
+            .accessibilityIdentifier(AccessibilityID.TOTP.continueButton)
 
             Spacer()
         }

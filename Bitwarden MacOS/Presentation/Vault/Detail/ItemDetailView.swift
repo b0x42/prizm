@@ -21,6 +21,7 @@ struct ItemDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding([.top, .horizontal], 16)
                     .padding(.bottom, 8)
+                    .accessibilityIdentifier(AccessibilityID.Detail.itemName)
 
                 Divider()
 
@@ -55,6 +56,7 @@ struct ItemDetailView: View {
                 systemImage: "square.dashed",
                 description: Text("Select an item from the list.")
             )
+            .accessibilityIdentifier(AccessibilityID.Detail.emptyState)
         }
     }
 

@@ -67,67 +67,82 @@ Or in Xcode: **⌘U**
 ## Project Structure
 
 ```
-Bitwarden_MacOS/
-├── Bitwarden_MacOS.xcodeproj/
-└── Bitwarden_MacOS/
-    ├── App/
-    │   ├── BitwardenMacOSApp.swift     # @main entry point
-    │   ├── AppContainer.swift          # Dependency injection (manual)
-    │   └── Config.swift                # Client identifier, device type, app version
-    │
-    ├── Domain/
-    │   ├── Entities/                   # VaultItem, Account, ServerEnvironment, etc.
-    │   ├── UseCases/                   # LoginUseCase, UnlockUseCase, SyncUseCase, etc.
-    │   └── Repositories/              # AuthRepository, VaultRepository, SyncRepository (protocols)
-    │
-    ├── Data/
-    │   ├── Crypto/                     # BitwardenCryptoService protocol + impl, EncString, CryptoKeys
-    │   ├── Network/                    # BitwardenAPIClient (URLSession), Models/, FaviconLoader
-    │   ├── Keychain/                   # KeychainService
-    │   ├── Repositories/              # AuthRepositoryImpl, VaultRepositoryImpl, SyncRepositoryImpl
-    │   └── Mappers/                    # RawCipher → Domain VaultItem
-    │
-    ├── Presentation/
-    │   ├── Auth/
-    │   │   ├── LoginView.swift
-    │   │   ├── LoginViewModel.swift
-    │   │   ├── UnlockView.swift
-    │   │   ├── UnlockViewModel.swift
-    │   │   ├── SyncProgressView.swift
-    │   │   └── ServerSelectionView.swift
-    │   ├── Vault/
-    │   │   ├── VaultBrowserView.swift         # NavigationSplitView root
-    │   │   ├── VaultBrowserViewModel.swift
-    │   │   ├── Sidebar/
-    │   │   │   └── SidebarView.swift
-    │   │   ├── ItemList/
-    │   │   │   ├── ItemListView.swift
-    │   │   │   └── ItemRowView.swift
-    │   │   └── Detail/
-    │   │       ├── ItemDetailView.swift
-    │   │       ├── LoginDetailView.swift
-    │   │       ├── CardDetailView.swift
-    │   │       ├── IdentityDetailView.swift
-    │   │       ├── SecureNoteDetailView.swift
-    │   │       └── SSHKeyDetailView.swift
-    │   └── Components/
-    │       ├── FieldRowView.swift             # hover-reveal row
-    │       ├── MaskedFieldView.swift          # fixed-length masking
-    │       └── FaviconView.swift              # favicon + fallback icon
-    │
-    └── Tests/
-        ├── DomainTests/
-        │   ├── UseCases/
-        │   └── Entities/
-        ├── DataTests/
-        │   ├── Crypto/
-        │   ├── Repositories/
-        │   ├── Mappers/
-        │   └── Network/
-        ├── PresentationTests/
-        │   └── Components/
-        └── UITests/
-
+Bitwarden MacOS/
+├── Bitwarden MacOS.xcodeproj/
+├── App/
+│   ├── Bitwarden_MacOSApp.swift     # @main entry point + RootViewModel
+│   ├── AppContainer.swift           # Dependency injection (manual)
+│   └── Config.swift                 # Client identifier, device type, app version
+│
+├── Domain/
+│   ├── Entities/                    # VaultItem, Account, ServerEnvironment, KdfParams, etc.
+│   ├── UseCases/                    # LoginUseCase, UnlockUseCase, SyncUseCase, SearchVaultUseCase
+│   └── Repositories/               # AuthRepository, VaultRepository, SyncRepository (protocols)
+│
+├── Data/
+│   ├── Crypto/                      # BitwardenCryptoService protocol + impl, EncString, CryptoKeys
+│   ├── Network/                     # BitwardenAPIClient (URLSession), Models/, FaviconLoader
+│   ├── Keychain/                    # KeychainService
+│   ├── Repositories/                # AuthRepositoryImpl, VaultRepositoryImpl, SyncRepositoryImpl
+│   ├── Mappers/                     # CipherMapper: RawCipher → Domain VaultItem
+│   └── UseCases/                    # LoginUseCaseImpl, UnlockUseCaseImpl, SyncUseCaseImpl
+│
+├── Presentation/
+│   ├── AccessibilityIdentifiers.swift  # Shared XCUITest identifiers
+│   ├── Login/
+│   │   ├── LoginView.swift
+│   │   ├── LoginViewModel.swift
+│   │   └── TOTPPromptView.swift
+│   ├── Unlock/
+│   │   ├── UnlockView.swift
+│   │   └── UnlockViewModel.swift
+│   ├── Sync/
+│   │   └── SyncProgressView.swift
+│   ├── Vault/
+│   │   ├── VaultBrowserView.swift         # NavigationSplitView root
+│   │   ├── VaultBrowserViewModel.swift
+│   │   ├── Sidebar/
+│   │   │   └── SidebarView.swift
+│   │   ├── ItemList/
+│   │   │   ├── ItemListView.swift
+│   │   │   └── ItemRowView.swift
+│   │   └── Detail/
+│   │       ├── ItemDetailView.swift       # Type router + metadata footer
+│   │       ├── LoginDetailView.swift
+│   │       ├── CardDetailView.swift
+│   │       ├── IdentityDetailView.swift
+│   │       ├── SecureNoteDetailView.swift
+│   │       ├── SSHKeyDetailView.swift
+│   │       └── CustomFieldsSection.swift
+│   └── Components/
+│       ├── FieldRowView.swift             # hover-reveal row
+│       ├── MaskedFieldView.swift          # fixed-length masking
+│       └── FaviconView.swift              # favicon + fallback icon
+│
+├── BitwardenMacOSTests/             # Unit + integration tests (PBXFileSystemSynchronizedRootGroup)
+│   ├── Mocks/                       # MockBitwardenAPIClient, MockCryptoService, etc.
+│   ├── EntityValidationTests.swift
+│   ├── KeychainServiceTests.swift
+│   ├── EncStringTests.swift
+│   ├── BitwardenCryptoServiceTests.swift
+│   ├── CipherMapperTests.swift
+│   ├── AuthRepositoryImplTests.swift
+│   ├── SyncRepositoryImplTests.swift
+│   ├── VaultRepositoryImplTests.swift
+│   ├── LoginUseCaseTests.swift
+│   ├── UnlockUseCaseTests.swift
+│   ├── SearchVaultTests.swift
+│   └── MaskedFieldViewTests.swift
+│
+└── Tests/
+    ├── DomainTests/
+    │   └── UseCases/
+    └── UITests/                     # XCUITest journey tests
+        ├── LoginJourneyTests.swift
+        ├── UnlockJourneyTests.swift
+        ├── VaultBrowserJourneyTests.swift
+        ├── SearchJourneyTests.swift
+        └── KeyboardNavigationTests.swift
 ```
 
 ## Architecture Rules (enforced at PR review)

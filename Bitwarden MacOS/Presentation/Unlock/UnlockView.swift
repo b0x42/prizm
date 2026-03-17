@@ -21,6 +21,7 @@ struct UnlockView: View {
                     .foregroundStyle(.tint)
                 Text("Vault locked")
                     .font(.title.bold())
+                    .accessibilityIdentifier(AccessibilityID.Unlock.headerTitle)
                 Text("Enter your master password to unlock.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -36,6 +37,7 @@ struct UnlockView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(6)
                         .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                        .accessibilityIdentifier(AccessibilityID.Unlock.emailLabel)
                 }
 
                 // Master password
@@ -44,6 +46,7 @@ struct UnlockView: View {
                         .textFieldStyle(.roundedBorder)
                         .focused($passwordFocused)
                         .onSubmit { unlockIfReady() }
+                        .accessibilityIdentifier(AccessibilityID.Unlock.passwordField)
                 }
             }
             .labeledContentStyle(.vertical)
@@ -57,6 +60,7 @@ struct UnlockView: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
                     .transition(.opacity)
+                    .accessibilityIdentifier(AccessibilityID.Unlock.errorMessage)
             }
 
             // MARK: Unlock button
@@ -74,6 +78,7 @@ struct UnlockView: View {
             .frame(width: 360)
             .disabled(isUnlockDisabled)
             .keyboardShortcut(.return, modifiers: [])
+            .accessibilityIdentifier(AccessibilityID.Unlock.unlockButton)
 
             // MARK: Sign in with a different account — FR-039
             Button("Sign in with a different account") {
@@ -82,6 +87,7 @@ struct UnlockView: View {
             .buttonStyle(.plain)
             .font(.callout)
             .foregroundStyle(.secondary)
+            .accessibilityIdentifier(AccessibilityID.Unlock.switchAccount)
 
             Spacer()
         }

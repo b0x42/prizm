@@ -66,6 +66,7 @@ struct FieldRowView: View {
                         }
                         .buttonStyle(.plain)
                         .help("Copy \(label)")
+                        .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
                     }
 
                     if let link = url {
@@ -75,6 +76,7 @@ struct FieldRowView: View {
                         }
                         .buttonStyle(.plain)
                         .help("Open in browser")
+                        .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
                     }
                 }
                 .transition(.opacity)
@@ -86,6 +88,7 @@ struct FieldRowView: View {
             RoundedRectangle(cornerRadius: 4)
                 .fill(isHovered ? Color.primary.opacity(0.06) : Color.clear)
         )
+        .accessibilityIdentifier(AccessibilityID.Field.row(label))
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.1)) {
                 isHovered = hovering

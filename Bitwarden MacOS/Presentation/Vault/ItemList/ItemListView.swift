@@ -20,10 +20,12 @@ struct ItemListView: View {
                     systemImage: "tray",
                     description: Text("No items in this category.")
                 )
+                .accessibilityIdentifier(AccessibilityID.ItemList.emptyState)
             } else {
                 List(items, id: \.id, selection: $selection) { item in
                     ItemRowView(item: item, faviconLoader: faviconLoader)
                         .tag(item)
+                        .accessibilityIdentifier(AccessibilityID.ItemList.row(item.id))
                 }
             }
         }

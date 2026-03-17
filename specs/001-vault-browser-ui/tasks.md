@@ -104,7 +104,7 @@ log in with valid credentials (with and without TOTP), and reach the vault brows
 - [X] T033 [P] [US1] Build TOTPPromptView (TOTP code input + "Remember this device" checkbox) — `Presentation/Login/TOTPPromptView.swift`
 - [X] T034 [US1] Build SyncProgressView (full-screen, sequential status messages) — `Presentation/Sync/SyncProgressView.swift`
 - [X] T035 [US1] Wire app state machine in AppContainer + BitwardenMacOSApp — `App/AppContainer.swift`, `App/Bitwarden_MacOSApp.swift`
-- [ ] T036 [US1] XCUITest: full US1 login journey — blank login screen, enter server URL + credentials, reach vault browser (SC-001 ≤60s) — `Tests/UITests/LoginJourneyTests.swift`
+- [X] T036 [US1] XCUITest: full US1 login journey — blank login screen, enter server URL + credentials, reach vault browser (SC-001 ≤60s) — `Tests/UITests/LoginJourneyTests.swift`
 
 **Checkpoint**: US1 acceptance scenarios 1–7 all pass. SC-001 passes. SC-006 passes (all error states covered).
 
@@ -129,7 +129,7 @@ shows stored email. Enter correct password → vault browser. Enter wrong passwo
 - [X] T040 [US2] AuthRepositoryImpl: unlockWithPassword, signOut, lockVault — already implemented in Phase 4 — `Data/Repositories/AuthRepositoryImpl.swift`
 - [X] T041 [US2] Implement UnlockUseCaseImpl — `Data/UseCases/UnlockUseCaseImpl.swift`
 - [X] T042 [US2] Build UnlockView + UnlockViewModel + RootViewModel app state machine — `Presentation/Unlock/UnlockView.swift`, `Presentation/Unlock/UnlockViewModel.swift`, `App/Bitwarden_MacOSApp.swift`
-- [ ] T043 [US2] XCUITest: US2 unlock journey — `Tests/UITests/UnlockJourneyTests.swift`
+- [X] T043 [US2] XCUITest: US2 unlock journey — `Tests/UITests/UnlockJourneyTests.swift`
 
 **Checkpoint**: US2 acceptance scenarios 1–4 pass. SC-002 passes (≤5s unlock). Vault locks on quit.
 
@@ -166,7 +166,7 @@ all field types render correctly. Reveal/mask secrets. Copy fields, verify clipb
 - [X] T059 [US3] Build ItemDetailView dispatcher + CustomFieldsSection (routes to type-specific view; "No item selected" empty state per FR-034; creation + revision dates per FR-031) — `Presentation/Vault/Detail/ItemDetailView.swift`, `Presentation/Vault/Detail/CustomFieldsSection.swift`
 - [X] T060 [US3] Implement clipboard auto-clear: cancellable Task.sleep 30s; new copy cancels previous task; best-effort on quit per FR-011 — `Presentation/Vault/VaultBrowserViewModel.swift`
 - [X] T061 [US3] Add "Last synced: [time]" relative timestamp to toolbar (RelativeDateTimeFormatter per FR-037, FR-041) — `Presentation/Vault/VaultBrowserView.swift`
-- [ ] T062 [US3] XCUITest: US3 vault browser journey — sidebar nav, item select, field reveal/mask, copy + clipboard clear, all item types render correctly (SC-003, SC-005 at 1,000 items) — `Tests/UITests/VaultBrowserJourneyTests.swift`
+- [X] T062 [US3] XCUITest: US3 vault browser journey — sidebar nav, item select, field reveal/mask, copy + clipboard clear, all item types render correctly (SC-003, SC-005 at 1,000 items) — `Tests/UITests/VaultBrowserJourneyTests.swift`
 
 **Checkpoint**: All 14 US3 acceptance scenarios pass. SC-003, SC-004, SC-005 pass. 1,000-item vault renders without lag.
 
@@ -188,7 +188,7 @@ items appear instantly. Switch category — term preserved, results re-filtered.
 
 - [X] T064 [US4] Implement SearchVaultUseCase (in-memory Array.filter with localizedCaseInsensitiveContains; per-type fields per FR-012; scoped to active SidebarSelection; no debounce) — `Domain/UseCases/SearchVaultUseCase.swift`
 - [X] T065 [US4] Wire search bar into VaultBrowserViewModel (real-time filtering on every keystroke; search term preserved on .onChange(of: sidebarSelection); re-filter against new category) — `Presentation/Vault/VaultBrowserViewModel.swift`
-- [ ] T066 [US4] XCUITest: US4 search journey — type to filter, category switch preserves term, clear bar restores full list, empty state on no match (SC-008 <100ms per keystroke) — `Tests/UITests/SearchJourneyTests.swift`
+- [X] T066 [US4] XCUITest: US4 search journey — type to filter, category switch preserves term, clear bar restores full list, empty state on no match (SC-008 <100ms per keystroke) — `Tests/UITests/SearchJourneyTests.swift`
 
 **Checkpoint**: All 6 US4 acceptance scenarios pass. SC-008 passes (<100ms per keystroke, 1,000 items).
 
@@ -203,8 +203,8 @@ items appear instantly. Switch category — term preserved, results re-filtered.
 - [X] T069 [P] Add os.Logger calls to all auth, sync, vault, and network code paths (subsystem `com.bitwarden-macos`; .debug trace, .info flow, .error recoverable, .fault unrecoverable; secrets MUST NOT appear in logs) — all Data/ files
 - [X] T070 Constitution check: audit every `catch {}` block — each must rethrow or log + surface via typed Error; audit every file import — Domain must have no crypto/SwiftUI, Presentation must have no Data; verify all crypto files have doc comments citing standards per §VII — all source files
 - [X] T071 [P] Create SECURITY.md at repo root (same level as CLAUDE.md and CONSTITUTION.md, not in specs/): what data is encrypted + algorithm; where keys are stored + access conditions; threat model; explicit non-goals (per CONSTITUTION.md §VII) — `SECURITY.md`
-- [ ] T072 [P] Validate quickstart.md end-to-end from clean checkout (build + run all tests) — `specs/001-vault-browser-ui/quickstart.md`
-- [ ] T073 [P] XCUITest: keyboard-only navigation — Tab cycles between sidebar/list/detail panes; arrow keys navigate the item list; Enter selects focused item; Escape returns focus to list; verify all interactive elements (buttons, fields) are keyboard-accessible (SC-007) — `Tests/UITests/KeyboardNavigationTests.swift`
+- [X] T072 [P] Validate quickstart.md end-to-end from clean checkout (build + run all tests) — `specs/001-vault-browser-ui/quickstart.md`
+- [X] T073 [P] XCUITest: keyboard-only navigation — Tab cycles between sidebar/list/detail panes; arrow keys navigate the item list; Enter selects focused item; Escape returns focus to list; verify all interactive elements (buttons, fields) are keyboard-accessible (SC-007) — `Tests/UITests/KeyboardNavigationTests.swift`
 
 **Checkpoint**: SC-004 passes (clipboard clears ≤30s). No swallowed errors. All import rules respected. Sign-out clears all data and shows blank login screen.
 
