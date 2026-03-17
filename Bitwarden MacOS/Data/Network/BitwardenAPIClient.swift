@@ -291,10 +291,20 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         if http.statusCode == 400 {
             let body = String(data: data, encoding: .utf8) ?? ""
             if DebugConfig.isEnabled {
-                // Scrub: log only top-level JSON keys, never values (may contain partial token data).
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     let keys = json.keys.sorted().joined(separator: ", ")
                     logger.debug("[debug] identityToken 400 body keys: [\(keys, privacy: .public)]")
+                    // error_description and message are server-generated error text, not secrets.
+                    if let errorDesc = json["error_description"] as? String {
+                        logger.debug("[debug] identityToken 400 error_description: \(errorDesc, privacy: .public)")
+                    }
+                    if let msg = json["message"] as? String {
+                        logger.debug("[debug] identityToken 400 message: \(msg, privacy: .public)")
+                    }
+                    if let errorModel = json["errorModel"] as? [String: Any],
+                       let errMsg = errorModel["message"] as? String {
+                        logger.debug("[debug] identityToken 400 errorModel.message: \(errMsg, privacy: .public)")
+                    }
                 } else {
                     logger.debug("[debug] identityToken 400 body (non-JSON): \(body.prefix(200), privacy: .public)")
                 }
