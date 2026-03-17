@@ -277,19 +277,23 @@ final class AuthRepositoryImpl: AuthRepository {
         )
         await crypto.unlockWith(keys: vaultKeys)
 
-        // Restore the access token so the API client can make authenticated requests
-        // (e.g. the post-unlock sync). The token was persisted at login time.
+        // Restore API client state so the post-unlock sync can make authenticated requests.
+        // Both baseURL and accessToken are nil on a fresh app launch until restored here.
+        let restoredAccount = try account(for: userId)
+        serverEnvironment = restoredAccount.serverEnvironment
+        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+
         if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
             await apiClient.setAccessToken(accessToken)
             if DebugConfig.isEnabled {
-                logger.debug("[debug] unlock: access token restored to API client")
+                logger.debug("[debug] unlock: baseURL and access token restored to API client")
             }
         } else {
             logger.error("Unlock: access token not found in Keychain — sync will fail with 401")
         }
 
         logger.info("Unlock succeeded")
-        return try account(for: userId)
+        return restoredAccount
     }
 
     // MARK: - Session
