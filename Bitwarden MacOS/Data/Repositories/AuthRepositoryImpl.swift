@@ -84,28 +84,45 @@ final class AuthRepositoryImpl: AuthRepository {
         }
 
         // Step 1: Fetch KDF params.
+        logger.info("Step 1: fetching KDF params for \(email, privacy: .private)")
         let preLogin   = try await apiClient.preLogin(email: email)
         let kdfParams  = preLogin.kdfParams
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] KDF params → type=\(String(describing: kdfParams.type), privacy: .public) iterations=\(kdfParams.iterations, privacy: .public) memory=\(kdfParams.memory.map(String.init) ?? "nil", privacy: .public) parallelism=\(kdfParams.parallelism.map(String.init) ?? "nil", privacy: .public)")
+        }
 
         // Step 2: Derive master key locally — never sent to server.
+        logger.info("Step 2: deriving master key (KDF)")
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
             email:    email.lowercased(),
             kdf:      kdfParams
         )
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] master key derived (\(masterKey.count, privacy: .public) bytes)")
+        }
 
         // Step 3: Stretch master key into separate enc + mac keys (HKDF).
+        logger.info("Step 3: stretching master key (HKDF)")
         let stretched  = try await crypto.stretchKey(masterKey: masterKey)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] stretched key: encKey=\(stretched.encryptionKey.count, privacy: .public) bytes, macKey=\(stretched.macKey.count, privacy: .public) bytes")
+        }
 
         // Step 4: Compute server authentication hash.
         // Per Bitwarden Security Whitepaper §4: the hash proves knowledge of the
         // master password without revealing the master key itself.
+        logger.info("Step 4: computing server authentication hash")
         let serverHash = try await crypto.makeServerHash(
             masterKey: masterKey,
             password:  masterPassword
         )
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] server hash computed (\(serverHash.count, privacy: .public) chars)")
+        }
 
         // Step 5: Request identity token.
+        logger.info("Step 5: requesting identity token")
         let deviceId   = try deviceIdentifier()
         let tokenResp: TokenResponse
         do {
@@ -152,6 +169,10 @@ final class AuthRepositoryImpl: AuthRepository {
         }
 
         // Step 6: Finalize the session with the token response.
+        logger.info("Step 6: finalizing session")
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] token response fields present → key=\(tokenResp.key != nil, privacy: .public) kdf=\(tokenResp.kdf != nil, privacy: .public) userId=\(tokenResp.userId != nil, privacy: .public) email=\(tokenResp.email != nil, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
+        }
         let account = try await finalizeSession(
             tokenResp:    tokenResp,
             stretched:    stretched,
@@ -241,6 +262,9 @@ final class AuthRepositoryImpl: AuthRepository {
             throw AuthError.invalidCredentials
         }
 
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] unlock: KDF type=\(String(describing: kdfParams.type), privacy: .public) iterations=\(kdfParams.iterations, privacy: .public) encUserKey prefix=\(String(encUserKey.prefix(2)), privacy: .public)")
+        }
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
             email:    email.lowercased(),
@@ -319,20 +343,30 @@ final class AuthRepositoryImpl: AuthRepository {
         stretched:   CryptoKeys,
         environment: ServerEnvironment
     ) async throws -> Account {
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] finalizeSession: userId=\(tokenResp.userId != nil, privacy: .public) email=\(tokenResp.email != nil, privacy: .public) key=\(tokenResp.key != nil, privacy: .public) accessToken.isEmpty=\(tokenResp.accessToken.isEmpty, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
+        }
         guard let userId   = tokenResp.userId,
               let email    = tokenResp.email,
               let encKey   = tokenResp.key,
               let accessToken  = tokenResp.accessToken.isEmpty ? nil : tokenResp.accessToken,
               let refreshToken = tokenResp.refreshToken else {
+            logger.error("finalizeSession: missing required token fields — userId=\(tokenResp.userId != nil, privacy: .public) email=\(tokenResp.email != nil, privacy: .public) key=\(tokenResp.key != nil, privacy: .public) accessTokenNonEmpty=\(!tokenResp.accessToken.isEmpty, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
             throw AuthError.invalidCredentials
         }
         logger.info("Session finalized for user \(userId, privacy: .private)")
 
         // Decrypt the encrypted user key using the stretched master keys.
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] decrypting encUserKey (type prefix: \(String(encKey.prefix(2)), privacy: .public))")
+        }
         let vaultKeys = try await crypto.decryptSymmetricKey(
             encUserKey:    encKey,
             stretchedKeys: stretched
         )
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] vault keys decrypted — encKey=\(vaultKeys.encryptionKey.count, privacy: .public) bytes, macKey=\(vaultKeys.macKey.count, privacy: .public) bytes")
+        }
         await crypto.unlockWith(keys: vaultKeys)
 
         // Persist session data in Keychain.
