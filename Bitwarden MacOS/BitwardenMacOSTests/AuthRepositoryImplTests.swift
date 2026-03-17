@@ -234,7 +234,7 @@ final class AuthRepositoryImplTests: XCTestCase {
 
         XCTAssertEqual(account.email, "alice@example.com")
         XCTAssertEqual(account.userId, userId)
-        let isUnlocked = await mockCrypto.isUnlocked
+        let isUnlocked = mockCrypto.isUnlocked
         XCTAssertTrue(isUnlocked, "Crypto service should be unlocked after successful unlock")
     }
 
@@ -287,7 +287,7 @@ final class AuthRepositoryImplTests: XCTestCase {
     func testSignOut_locksVault() async throws {
         await mockCrypto.unlockWith(keys: CryptoKeys(encryptionKey: Data(count: 32), macKey: Data(count: 32)))
         try await sut.signOut()
-        let isUnlocked = await mockCrypto.isUnlocked
+        let isUnlocked = mockCrypto.isUnlocked
         XCTAssertFalse(isUnlocked, "Vault should be locked after signOut")
     }
 }
