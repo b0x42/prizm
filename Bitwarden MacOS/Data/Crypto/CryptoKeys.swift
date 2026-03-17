@@ -50,9 +50,7 @@ nonisolated extension CryptoKeys {
     /// - Returns: `true` if the computed MAC equals `expected`.
     static func verifyHmacSHA256(key: Data, data: Data, expected: Data) -> Bool {
         let symmetricKey = SymmetricKey(data: key)
-        guard let mac = try? HMAC<SHA256>.authenticationCode(for: data, using: symmetricKey) else {
-            return false
-        }
+        let mac = HMAC<SHA256>.authenticationCode(for: data, using: symmetricKey)
         return Data(mac) == expected
     }
 }
