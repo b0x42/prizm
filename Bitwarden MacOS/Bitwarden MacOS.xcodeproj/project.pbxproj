@@ -61,6 +61,12 @@
 		21BA94E7B93240BAB0D49B1A /* SSHKeyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E312819D0F20492CADB986E4 /* SSHKeyDetailView.swift */; };
 		2E8E71AB9E244C56B93F96AD /* CustomFieldsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */; };
 		2D9BD6B00E6145FA83F324D7 /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C40EE0279BE41BE97FC5942 /* ItemDetailView.swift */; };
+		A1B2C3D4E5F647A8B9C0D1E2 /* CryptoKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1307284FEED04829B5C4B587 /* CryptoKeys.swift */; };
+		B2C3D4E5F6A748B9C0D1E2F3 /* EncString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FBB82A6241244DD890E615C /* EncString.swift */; };
+		C3D4E5F6A7B849C0D1E2F3A4 /* BitwardenCryptoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D710BEABBB4ADD9ADFCD1F /* BitwardenCryptoService.swift */; };
+		D4E5F6A7B8C94AD1E2F3A4B5 /* RawCipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95E5FF4D219144A18C2BC5AA /* RawCipher.swift */; };
+		E5F6A7B8C9D04BE2F3A4B5C6 /* SyncResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15F3A553820942CF9B3935FD /* SyncResponse.swift */; };
+		F6A7B8C9D0E14CF3A4B5C6D7 /* CipherMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -520,6 +526,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				434D9EBC2F670B9C00052BCB /* Bitwarden MacOS */,
+				4309FCF32F680BEA0031C9F4 /* Keychain */,
 			);
 			name = "Bitwarden MacOS";
 			packageProductDependencies = (
@@ -653,6 +660,12 @@
 				21BA94E7B93240BAB0D49B1A /* SSHKeyDetailView.swift in Sources */,
 				2E8E71AB9E244C56B93F96AD /* CustomFieldsSection.swift in Sources */,
 				2D9BD6B00E6145FA83F324D7 /* ItemDetailView.swift in Sources */,
+				A1B2C3D4E5F647A8B9C0D1E2 /* CryptoKeys.swift in Sources */,
+				B2C3D4E5F6A748B9C0D1E2F3 /* EncString.swift in Sources */,
+				C3D4E5F6A7B849C0D1E2F3A4 /* BitwardenCryptoService.swift in Sources */,
+				D4E5F6A7B8C94AD1E2F3A4B5 /* RawCipher.swift in Sources */,
+				E5F6A7B8C9D04BE2F3A4B5C6 /* SyncResponse.swift in Sources */,
+				F6A7B8C9D0E14CF3A4B5C6D7 /* CipherMapper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

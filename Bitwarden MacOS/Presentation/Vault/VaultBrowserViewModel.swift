@@ -1,5 +1,6 @@
-import Foundation
 import AppKit
+import Combine
+import Foundation
 import os.log
 
 // MARK: - VaultBrowserViewModel

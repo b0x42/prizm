@@ -1,5 +1,6 @@
-import Foundation
 import AppKit
+import Combine
+import Foundation
 
 /// Dependency injection container — wires together all Data-layer implementations
 /// and exposes the Domain-layer protocols used by the Presentation layer.
