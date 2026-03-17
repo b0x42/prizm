@@ -77,12 +77,8 @@ nonisolated struct PreLoginResponse: Codable {
         )
     }
 
-    enum CodingKeys: String, CodingKey {
-        case kdf            = "Kdf"
-        case kdfIterations  = "KdfIterations"
-        case kdfMemory      = "KdfMemory"
-        case kdfParallelism = "KdfParallelism"
-    }
+    // Vaultwarden/Bitwarden returns camelCase keys matching the property names,
+    // so no custom CodingKeys needed — synthesized conformance handles it.
 }
 
 /// Response from POST `/connect/token`.
@@ -261,7 +257,56 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         )
         request.httpBody = formEncoded(params)
 
-        return try await perform(request: request)
+        return try await performIdentityToken(request: request)
+    }
+
+    /// Specialized perform for the identity token endpoint.
+    ///
+    /// HTTP 400 from the Bitwarden identity service can mean:
+    /// - 2FA challenge: body contains `"TwoFactorProviders2"` → throw `IdentityTokenError.twoFactorRequired`
+    /// - Invalid TOTP code: body contains `"errorModel"` with `"TwoFactor"` → throw `.twoFactorCodeInvalid`
+    /// - Wrong password: body contains `"invalid_grant"` → throw `.invalidCredentials`
+    private func performIdentityToken(request: URLRequest) async throws -> TokenResponse {
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.httpError(statusCode: 0, body: "")
+        }
+
+        logger.debug("[\(http.statusCode)] \(request.httpMethod ?? "?") \(request.url?.path ?? "")")
+
+        if http.statusCode == 400 {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            // Parse the error body to determine the specific error type.
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                // 2FA challenge: server returns TwoFactorProviders2 dict with available providers.
+                if let providers2 = json["TwoFactorProviders2"] as? [String: Any] {
+                    let providerTypes = providers2.keys.compactMap { Int($0) }
+                    throw IdentityTokenError.twoFactorRequired(providers: providerTypes)
+                }
+                // Invalid TOTP code or wrong password.
+                if let errorDesc = json["error_description"] as? String {
+                    if errorDesc.contains("Two-factor") || errorDesc.contains("two factor") {
+                        throw IdentityTokenError.twoFactorCodeInvalid
+                    }
+                }
+            }
+            // Generic invalid_grant (wrong email/password).
+            throw IdentityTokenError.invalidCredentials
+        }
+
+        guard (200..<300).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            logger.error("HTTP \(http.statusCode) for \(request.url?.path ?? "unknown")")
+            throw APIError.httpError(statusCode: http.statusCode, body: body)
+        }
+
+        do {
+            return try JSONDecoder().decode(TokenResponse.self, from: data)
+        } catch {
+            logger.error("Decoding failed for TokenResponse: \(error.localizedDescription)")
+            throw APIError.decodingFailed
+        }
     }
 
     // MARK: - fetchSync

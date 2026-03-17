@@ -17,7 +17,7 @@ nonisolated struct SyncResponse: Codable {
 
 /// The authenticated user's profile data included in the sync response.
 ///
-/// The `encryptedPrivateKey` and the `key` (encUserKey) are both EncStrings that
+/// The `privateKey` and the `key` (encUserKey) are both EncStrings that
 /// must be decrypted using the user's stretched master key before the vault can
 /// be unlocked.
 nonisolated struct RawProfile: Codable {
@@ -29,9 +29,8 @@ nonisolated struct RawProfile: Codable {
     let key:                 String
     /// The user's RSA-2048 private key, encrypted under the vault symmetric key.
     /// EncString (Type-2 or Type-4).
-    let encryptedPrivateKey: String?
-    let kdf:                 Int
-    let kdfIterations:       Int
-    let kdfMemory:           Int?
-    let kdfParallelism:      Int?
+    /// Vaultwarden returns this as `"privateKey"` (camelCase) in the sync profile.
+    let privateKey:          String?
+    // Note: KDF params are NOT included in the Vaultwarden sync profile response.
+    // They are obtained from the preLogin endpoint and stored in the Keychain at login time.
 }
