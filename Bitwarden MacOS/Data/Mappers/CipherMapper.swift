@@ -58,7 +58,7 @@ nonisolated final class CipherMapper {
 
         let name   = try decryptRequired(raw.name, field: "name", keys: keys)
         let notes  = try raw.notes.map { try decryptRequired($0, field: "notes", keys: keys) }
-        let fields = try mapFields(raw.fields, keys: keys)
+        let fields = try mapFields(raw.fields ?? [], keys: keys)
 
         let content: ItemContent = try mapContent(
             type:   raw.type,
@@ -112,7 +112,7 @@ nonisolated final class CipherMapper {
         keys:   CryptoKeys
     ) throws -> ItemContent {
         let login = data ?? RawLoginData(username: nil, password: nil, uris: [], totp: nil)
-        let uris: [LoginURI] = try login.uris.compactMap { rawURI in
+        let uris: [LoginURI] = try (login.uris ?? []).compactMap { rawURI in
             guard let encUri = rawURI.uri else { return nil }
             let uriStr = try decryptRequired(encUri, field: "uri", keys: keys)
             let match  = rawURI.match.flatMap { URIMatchType(rawValue: $0) }

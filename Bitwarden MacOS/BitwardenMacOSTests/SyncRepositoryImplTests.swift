@@ -145,15 +145,11 @@ final class SyncRepositoryImplTests: XCTestCase {
         }
         return SyncResponse(
             profile: RawProfile(
-                id:                  "profile-id",
-                email:               "alice@example.com",
-                name:                nil,
-                key:                 "2.encKey==",
-                encryptedPrivateKey: "2.encPrivKey==",
-                kdf:                 0,
-                kdfIterations:       600_000,
-                kdfMemory:           nil,
-                kdfParallelism:      nil
+                id:         "profile-id",
+                email:      "alice@example.com",
+                name:       nil,
+                key:        "2.encKey==",
+                privateKey: "2.encPrivKey=="
             ),
             ciphers: ciphers
         )

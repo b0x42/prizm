@@ -90,8 +90,7 @@ actor MockBitwardenAPIClient: BitwardenAPIClientProtocol {
         return syncResponse ?? SyncResponse(
             profile: RawProfile(
                 id: "pid", email: "test@example.com", name: nil,
-                key: "2.k==", encryptedPrivateKey: nil,
-                kdf: 0, kdfIterations: 600_000, kdfMemory: nil, kdfParallelism: nil
+                key: "2.k==", privateKey: nil
             ),
             ciphers: []
         )

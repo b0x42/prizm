@@ -26,7 +26,7 @@ nonisolated struct RawCipher: Codable {
     let identity:       RawIdentityData?
     let secureNote:     RawSecureNoteData?
     let sshKey:         RawSSHKeyData?
-    let fields:         [RawField]
+    let fields:         [RawField]?
 }
 
 // MARK: - Login
@@ -34,7 +34,7 @@ nonisolated struct RawCipher: Codable {
 nonisolated struct RawLoginData: Codable {
     let username: String?       // EncString
     let password: String?       // EncString
-    let uris:     [RawURI]
+    let uris:     [RawURI]?
     let totp:     String?       // EncString
 }
 
