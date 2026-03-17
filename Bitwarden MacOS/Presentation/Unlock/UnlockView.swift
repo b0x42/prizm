@@ -18,7 +18,7 @@ struct UnlockView: View {
             VStack(spacing: 4) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(.tint)
                 Text("Vault locked")
                     .font(.title.bold())
                 Text("Enter your master password to unlock.")
