@@ -45,9 +45,6 @@ struct Bitwarden_MacOSApp: App {
         switch rootVM.screen {
         case .login:
             LoginView(viewModel: rootVM.loginVM)
-                .onChange(of: rootVM.loginVM.flowState) { _, state in
-                    rootVM.handleLoginFlow(state)
-                }
 
         case .loading:
             ProgressView("Signing in…")
@@ -55,16 +52,10 @@ struct Bitwarden_MacOSApp: App {
 
         case .totpPrompt:
             TOTPPromptView(viewModel: rootVM.loginVM)
-                .onChange(of: rootVM.loginVM.flowState) { _, state in
-                    rootVM.handleLoginFlow(state)
-                }
 
         case .unlock:
             if let unlockVM = rootVM.unlockVM {
                 UnlockView(viewModel: unlockVM)
-                    .onChange(of: unlockVM.flowState) { _, state in
-                        rootVM.handleUnlockFlow(state)
-                    }
             }
 
         case .syncing(let message):
@@ -107,6 +98,10 @@ final class RootViewModel: ObservableObject {
     let vaultBrowserVM:  VaultBrowserViewModel
 
     private let container: AppContainer
+    /// Combine subscriptions — held for the lifetime of this object.
+    /// Using Combine (not SwiftUI .onChange) so transitions fire regardless
+    /// of whether the source view is currently in the view hierarchy.
+    private var cancellables = Set<AnyCancellable>()
 
     init(container: AppContainer) {
         self.container      = container
@@ -121,6 +116,26 @@ final class RootViewModel: ObservableObject {
             self.screen   = .login
             self.unlockVM = nil
         }
+
+        subscribeToFlowStates()
+    }
+
+    // MARK: - Combine subscriptions
+
+    private func subscribeToFlowStates() {
+        // Login flow — observe for the lifetime of the app (loginVM is never replaced).
+        loginVM.$flowState
+            .receive(on: RunLoop.main)
+            .sink { [weak self] state in self?.handleLoginFlow(state) }
+            .store(in: &cancellables)
+
+        // Unlock flow — re-subscribe whenever unlockVM is assigned.
+        $unlockVM
+            .compactMap { $0 }
+            .flatMap { $0.$flowState }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] state in self?.handleUnlockFlow(state) }
+            .store(in: &cancellables)
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {
