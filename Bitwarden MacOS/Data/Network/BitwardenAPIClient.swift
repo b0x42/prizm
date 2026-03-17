@@ -212,6 +212,10 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/accounts/prelogin")
 
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] preLogin → POST \(url.absoluteString, privacy: .public)")
+        }
+
         var request = baseRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -219,7 +223,11 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         let body = try JSONEncoder().encode(["email": email])
         request.httpBody = body
 
-        return try await perform(request: request)
+        let response: PreLoginResponse = try await perform(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] preLogin ← kdf=\(response.kdf, privacy: .public) iterations=\(response.kdfIterations, privacy: .public) memory=\(response.kdfMemory.map(String.init) ?? "nil", privacy: .public) parallelism=\(response.kdfParallelism.map(String.init) ?? "nil", privacy: .public)")
+        }
+        return response
     }
 
     // MARK: - identityToken
@@ -234,6 +242,11 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
     ) async throws -> TokenResponse {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("identity/connect/token")
+
+        if DebugConfig.isEnabled {
+            let isTOTP = twoFactorToken != nil
+            logger.debug("[debug] identityToken → POST \(url.absoluteString, privacy: .public) 2FA=\(isTOTP, privacy: .public) provider=\(twoFactorProvider.map(String.init) ?? "nil", privacy: .public)")
+        }
 
         var params: [String: String] = [
             "grant_type":      "password",
@@ -277,21 +290,39 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
 
         if http.statusCode == 400 {
             let body = String(data: data, encoding: .utf8) ?? ""
+            if DebugConfig.isEnabled {
+                // Scrub: log only top-level JSON keys, never values (may contain partial token data).
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let keys = json.keys.sorted().joined(separator: ", ")
+                    logger.debug("[debug] identityToken 400 body keys: [\(keys, privacy: .public)]")
+                } else {
+                    logger.debug("[debug] identityToken 400 body (non-JSON): \(body.prefix(200), privacy: .public)")
+                }
+            }
             // Parse the error body to determine the specific error type.
             if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 // 2FA challenge: server returns TwoFactorProviders2 dict with available providers.
                 if let providers2 = json["TwoFactorProviders2"] as? [String: Any] {
                     let providerTypes = providers2.keys.compactMap { Int($0) }
+                    if DebugConfig.isEnabled {
+                        logger.debug("[debug] identityToken → 2FA required, providers: \(providerTypes, privacy: .public)")
+                    }
                     throw IdentityTokenError.twoFactorRequired(providers: providerTypes)
                 }
                 // Invalid TOTP code or wrong password.
                 if let errorDesc = json["error_description"] as? String {
                     if errorDesc.contains("Two-factor") || errorDesc.contains("two factor") {
+                        if DebugConfig.isEnabled {
+                            logger.debug("[debug] identityToken → 2FA code invalid (error_description match)")
+                        }
                         throw IdentityTokenError.twoFactorCodeInvalid
                     }
                 }
             }
             // Generic invalid_grant (wrong email/password).
+            if DebugConfig.isEnabled {
+                logger.debug("[debug] identityToken → invalidCredentials (generic 400)")
+            }
             throw IdentityTokenError.invalidCredentials
         }
 
@@ -302,9 +333,23 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         }
 
         do {
-            return try JSONDecoder().decode(TokenResponse.self, from: data)
+            let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
+            if DebugConfig.isEnabled {
+                // Log which fields are present — never log token values.
+                let hasKey         = tokenResponse.key != nil
+                let hasKdf         = tokenResponse.kdf != nil
+                let hasUserId      = tokenResponse.userId != nil
+                let hasEmail       = tokenResponse.email != nil
+                let has2FA         = tokenResponse.twoFactorProviders != nil
+                logger.debug("[debug] identityToken ← key=\(hasKey, privacy: .public) kdf=\(hasKdf, privacy: .public) userId=\(hasUserId, privacy: .public) email=\(hasEmail, privacy: .public) 2fa=\(has2FA, privacy: .public)")
+            }
+            return tokenResponse
         } catch {
             logger.error("Decoding failed for TokenResponse: \(error.localizedDescription)")
+            if DebugConfig.isEnabled {
+                let raw = String(data: data, encoding: .utf8) ?? "(binary)"
+                logger.debug("[debug] TokenResponse raw body keys: \((try? JSONSerialization.jsonObject(with: data) as? [String: Any])?.keys.sorted().joined(separator: ", ") ?? raw.prefix(300).description, privacy: .public)")
+            }
             throw APIError.decodingFailed
         }
     }
@@ -317,13 +362,21 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         components.queryItems = [URLQueryItem(name: "excludeDomains", value: "true")]
         let url          = components.url!
 
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] fetchSync → GET \(url.absoluteString, privacy: .public) hasToken=\(accessToken != nil, privacy: .public)")
+        }
+
         var request      = baseRequest(url: url)
         request.httpMethod = "GET"
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        return try await perform(request: request)
+        let response: SyncResponse = try await perform(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
+        }
+        return response
     }
 
     // MARK: - Private helpers
@@ -348,18 +401,44 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
         }
 
         logger.debug("[\(http.statusCode)] \(request.httpMethod ?? "?") \(request.url?.path ?? "")")
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] perform [\(http.statusCode)] \(request.httpMethod ?? "?") \(request.url?.absoluteString ?? "", privacy: .public) responseBytes=\(data.count, privacy: .public)")
+        }
 
         guard (200..<300).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8) ?? ""
             // Scrub: do not log response body (may contain tokens or error details with PII).
             logger.error("HTTP \(http.statusCode) for \(request.url?.path ?? "unknown")")
+            if DebugConfig.isEnabled {
+                // Log only top-level JSON keys on error, never values.
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let keys = json.keys.sorted().joined(separator: ", ")
+                    logger.debug("[debug] error body keys: [\(keys, privacy: .public)]")
+                } else {
+                    logger.debug("[debug] error body (non-JSON, \(data.count, privacy: .public) bytes)")
+                }
+            }
             throw APIError.httpError(statusCode: http.statusCode, body: body)
         }
 
         do {
-            return try JSONDecoder().decode(T.self, from: data)
+            let decoded = try JSONDecoder().decode(T.self, from: data)
+            if DebugConfig.isEnabled {
+                logger.debug("[debug] decoded \(T.self, privacy: .public) OK")
+            }
+            return decoded
         } catch {
             logger.error("Decoding failed for \(T.self): \(error.localizedDescription)")
+            if DebugConfig.isEnabled {
+                logger.debug("[debug] decode error detail: \(error, privacy: .public)")
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let keys = json.keys.sorted().joined(separator: ", ")
+                    logger.debug("[debug] response body keys: [\(keys, privacy: .public)]")
+                } else {
+                    let snippet = String(data: data.prefix(500), encoding: .utf8) ?? "(binary)"
+                    logger.debug("[debug] response body snippet: \(snippet, privacy: .public)")
+                }
+            }
             throw APIError.decodingFailed
         }
     }

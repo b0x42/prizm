@@ -153,13 +153,24 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         var failedCount = 0
         for (index, cipher) in ciphers.enumerated() {
             // Organisation ciphers are not supported in v1.
-            if cipher.organizationId != nil { continue }
+            if cipher.organizationId != nil {
+                if DebugConfig.isEnabled {
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] skipped — organizationId present")
+                }
+                continue
+            }
             do {
                 let item = try mapper.map(raw: cipher, keys: vaultKeys)
                 items.append(item)
+                if DebugConfig.isEnabled {
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] OK — type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private)")
+                }
             } catch {
                 failedCount += 1
                 logger.debug("decryptList: Cipher skipped at index \(index)")
+                if DebugConfig.isEnabled {
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] FAILED — type=\(cipher.type, privacy: .public) error=\(error, privacy: .public)")
+                }
             }
         }
         logger.info("decryptList: completed — \(items.count) succeeded, \(failedCount) failed")
@@ -243,11 +254,14 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
     // MARK: - decryptSymmetricKey
 
     func decryptSymmetricKey(encUserKey: String, stretchedKeys: CryptoKeys) async throws -> CryptoKeys {
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] decryptSymmetricKey: encUserKey type prefix=\(String(encUserKey.prefix(2)), privacy: .public) len=\(encUserKey.count, privacy: .public)")
+        }
         let enc: EncString
         do {
             enc = try EncString(string: encUserKey)
         } catch {
-            logger.error("Failed to decrypt symmetric key")
+            logger.error("Failed to parse encUserKey EncString: \(error, privacy: .public)")
             throw BitwardenCryptoServiceError.invalidEncUserKey
         }
 
@@ -255,11 +269,12 @@ actor BitwardenCryptoServiceImpl: BitwardenCryptoService {
         do {
             keyData = try enc.decrypt(keys: stretchedKeys)
         } catch {
-            logger.error("Failed to decrypt symmetric key")
+            logger.error("Failed to decrypt encUserKey: \(error, privacy: .public)")
             throw BitwardenCryptoServiceError.invalidEncUserKey
         }
 
         guard keyData.count == 64 else {
+            logger.error("Decrypted symmetric key has wrong length: \(keyData.count, privacy: .public) bytes (expected 64)")
             throw BitwardenCryptoServiceError.invalidSymmetricKeyLength
         }
 

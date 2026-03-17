@@ -70,11 +70,28 @@ actor SyncRepositoryImpl: SyncRepository {
         let totalCiphers = syncResponse.ciphers.count
         logger.info("Fetched \(totalCiphers) cipher(s)")
 
+        if DebugConfig.isEnabled {
+            // Log cipher type breakdown (no sensitive data — just counts by type int).
+            let typeCounts = syncResponse.ciphers.reduce(into: [Int: Int]()) { acc, c in
+                acc[c.type, default: 0] += 1
+            }
+            let orgCount = syncResponse.ciphers.filter { $0.organizationId != nil }.count
+            let typeNames = [1: "login", 2: "identity", 3: "note", 4: "card", 5: "sshKey"]
+            let breakdown = typeCounts
+                .sorted(by: { $0.key < $1.key })
+                .map { "\(typeNames[$0.key] ?? "type\($0.key)")=\($0.value)" }
+                .joined(separator: " ")
+            logger.debug("[debug] cipher breakdown: \(breakdown, privacy: .public) org(skipped)=\(orgCount, privacy: .public)")
+        }
+
         // Phase 2: Decrypt personal ciphers via the crypto service.
-        progress("Decrypting…")
+        progress("Decrypting \(totalCiphers) item(s)…")
 
         let (items, failedCount) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
         logger.info("Decrypted \(items.count) cipher(s); \(failedCount) failure(s)")
+        if DebugConfig.isEnabled && failedCount > 0 {
+            logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check BitwardenCryptoService logs for per-cipher errors")
+        }
 
         // Phase 3: Populate the in-memory vault store.
         let syncedAt = Date()
