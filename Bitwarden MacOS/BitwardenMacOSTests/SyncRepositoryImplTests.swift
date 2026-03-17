@@ -130,19 +130,17 @@ final class SyncRepositoryImplTests: XCTestCase {
                 organizationId: nil,
                 type:           3,   // secureNote — simplest type
                 name:           "2.name\(i)==",
-                isFavorite:     false,
-                isDeleted:      false,
+                notes:          nil,
+                favorite:       false,
                 deletedDate:    nil,
-                folderId:       nil,
                 creationDate:   nil,
                 revisionDate:   nil,
                 login:          nil,
-                secureNote:     nil,
                 card:           nil,
                 identity:       nil,
+                secureNote:     nil,
                 sshKey:         nil,
-                notes:          nil,
-                fields:         nil
+                fields:         []
             )
         }
         return SyncResponse(
