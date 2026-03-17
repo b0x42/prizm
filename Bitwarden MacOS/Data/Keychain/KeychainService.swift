@@ -49,17 +49,11 @@ final class KeychainServiceImpl: KeychainService {
     private let logger = Logger(subsystem: "com.bitwarden-macos", category: "KeychainService")
 
     /// Returns the base Keychain query dictionary for `key`.
-    ///
-    /// `kSecUseDataProtectionKeychain: true` opts into the modern data-protection
-    /// keychain used by sandboxed apps.  Without this flag, each item in the legacy
-    /// login keychain can trigger a separate "allow access" prompt per item per launch.
-    /// With it, macOS ties access to the app's sandbox entitlement and no prompts appear.
     private func baseQuery(for key: String) -> [CFString: Any] {
         [
-            kSecClass:                    kSecClassGenericPassword,
-            kSecAttrService:              service,
-            kSecAttrAccount:              key,
-            kSecUseDataProtectionKeychain: true,
+            kSecClass:       kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: key,
         ]
     }
 
