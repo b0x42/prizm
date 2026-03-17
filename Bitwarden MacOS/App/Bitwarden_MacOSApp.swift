@@ -144,7 +144,9 @@ final class RootViewModel: ObservableObject {
         case .loading:     screen = .loading
         case .totpPrompt:  screen = .totpPrompt
         case .syncing(let msg): screen = .syncing(message: msg)
-        case .vault:       screen = .vault
+        case .vault:
+            vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
+            screen = .vault
         }
         logger.info("Screen transition → \(String(describing: state))")
     }
@@ -188,7 +190,9 @@ final class RootViewModel: ObservableObject {
         case .unlock:       screen = .unlock
         case .loading:      screen = .unlock   // stay on unlock screen with spinner
         case .syncing(let msg): screen = .syncing(message: msg)
-        case .vault:        screen = .vault
+        case .vault:
+            vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
+            screen = .vault
         case .login:
             // "Sign in with a different account" — reset to login.
             unlockVM = nil
