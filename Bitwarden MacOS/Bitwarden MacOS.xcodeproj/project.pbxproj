@@ -37,12 +37,11 @@
 		48716DD27A3B45A6872E0DC2 /* UnlockUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */; };
 		DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19616C22B9CF495087EE1F17 /* UnlockView.swift */; };
 		C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */; };
-		B66EC441E6654C5C8DD9300E /* AppRootViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B37700C73C4B228E90A312 /* AppRootViewModel.swift */; };
-		4996675880D64032BE24BBD4 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DCA1602F0946C892C1BF9F /* AppRootView.swift */; };
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
 		FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */; };
 		B11759DE56D34E4199773C2D /* FieldRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E105187F1E54E0E91E82B14 /* FieldRowView.swift */; };
 		98E8E51C9AD5496C88E0ABD3 /* FaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */; };
+		A1B2C3D4E5F64789A1B2C3D4 /* VerticalLabeledContentStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */; };
 		C3DDB598E8834E85833D86FE /* VaultBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */; };
 		E17D4DA652374B49BC2CD6B1 /* VaultBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */; };
 		3B3721D2F8C646EC91512FDA /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00802736F25046A0BD600128 /* SidebarView.swift */; };
@@ -113,12 +112,11 @@
 		226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCaseImpl.swift; sourceTree = "<group>"; };
 		19616C22B9CF495087EE1F17 /* UnlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockView.swift; sourceTree = "<group>"; };
 		7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockViewModel.swift; sourceTree = "<group>"; };
-		32B37700C73C4B228E90A312 /* AppRootViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootViewModel.swift; sourceTree = "<group>"; };
-		92DCA1602F0946C892C1BF9F /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		50445584AD814B6EBD971FDA /* FaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconLoader.swift; sourceTree = "<group>"; };
 		F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskedFieldView.swift; sourceTree = "<group>"; };
 		3E105187F1E54E0E91E82B14 /* FieldRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldRowView.swift; sourceTree = "<group>"; };
 		87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconView.swift; sourceTree = "<group>"; };
+		D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalLabeledContentStyle.swift; sourceTree = "<group>"; };
 		F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBrowserViewModel.swift; sourceTree = "<group>"; };
 		E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBrowserView.swift; sourceTree = "<group>"; };
 		00802736F25046A0BD600128 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
@@ -173,8 +171,6 @@
 				4309FCE12F6807970031C9F4 /* Bitwarden_MacOSApp.swift */,
 				4309FCE72F6809A40031C9F4 /* AppContainer.swift */,
 				4309FCE92F6809C10031C9F4 /* Config.swift */,
-				32B37700C73C4B228E90A312 /* AppRootViewModel.swift */,
-				92DCA1602F0946C892C1BF9F /* AppRootView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -352,6 +348,7 @@
 				F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */,
 				3E105187F1E54E0E91E82B14 /* FieldRowView.swift */,
 				87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */,
+				D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -623,8 +620,6 @@
 				4309FCE32F6807970031C9F4 /* Bitwarden_MacOSApp.swift in Sources */,
 				4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */,
 				4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */,
-				B66EC441E6654C5C8DD9300E /* AppRootViewModel.swift in Sources */,
-				4996675880D64032BE24BBD4 /* AppRootView.swift in Sources */,
 				43947740EA3343DC9C888402 /* BitwardenAPIClient.swift in Sources */,
 				FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */,
 				B2390AAAD10D4CE69AD6660C /* AuthRepositoryImpl.swift in Sources */,
@@ -643,6 +638,7 @@
 				FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */,
 				B11759DE56D34E4199773C2D /* FieldRowView.swift in Sources */,
 				98E8E51C9AD5496C88E0ABD3 /* FaviconView.swift in Sources */,
+				A1B2C3D4E5F64789A1B2C3D4 /* VerticalLabeledContentStyle.swift in Sources */,
 				C3DDB598E8834E85833D86FE /* VaultBrowserViewModel.swift in Sources */,
 				E17D4DA652374B49BC2CD6B1 /* VaultBrowserView.swift in Sources */,
 				3B3721D2F8C646EC91512FDA /* SidebarView.swift in Sources */,

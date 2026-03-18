@@ -28,7 +28,7 @@ struct FaviconView: View {
                     .interpolation(.medium)
                     .scaledToFit()
             } else {
-                Image(systemName: sfSymbol(for: itemType))
+                Image(systemName: itemType.sfSymbol)
                     .resizable()
                     .scaledToFit()
                     .foregroundStyle(.secondary)
@@ -41,19 +41,6 @@ struct FaviconView: View {
                 return
             }
             image = await loader.favicon(for: domain)
-        }
-    }
-
-    // MARK: - SF Symbol fallbacks
-
-    /// Returns the SF Symbol name for the given item type (FR-009).
-    private func sfSymbol(for type: ItemType) -> String {
-        switch type {
-        case .login:      return "key"
-        case .card:       return "creditcard"
-        case .identity:   return "person.crop.rectangle"
-        case .secureNote: return "note.text"
-        case .sshKey:     return "terminal"
         }
     }
 }

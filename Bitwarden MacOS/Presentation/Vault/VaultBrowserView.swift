@@ -87,7 +87,7 @@ struct VaultBrowserView: View {
     @ViewBuilder
     private var lastSyncedLabel: some View {
         if let date = viewModel.lastSyncedAt {
-            Text("Last synced: \(date, formatter: relativeDateFormatter)")
+            Text("Last synced: \(date, formatter: Self.relativeDateFormatter)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier(AccessibilityID.Vault.lastSyncedLabel)
@@ -96,9 +96,9 @@ struct VaultBrowserView: View {
 
     // MARK: - Formatters
 
-    private var relativeDateFormatter: RelativeDateTimeFormatter {
+    private static let relativeDateFormatter: RelativeDateTimeFormatter = {
         let f = RelativeDateTimeFormatter()
         f.unitsStyle = .full
         return f
-    }
+    }()
 }

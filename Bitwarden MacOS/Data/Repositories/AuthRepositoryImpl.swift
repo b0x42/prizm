@@ -288,6 +288,24 @@ final class AuthRepositoryImpl: AuthRepository {
             if DebugConfig.isEnabled {
                 logger.debug("[debug] unlock: baseURL and access token restored to API client")
             }
+
+            // The stored access token may be expired. Attempt a refresh using the stored
+            // refresh token so the post-unlock sync doesn't fail with 401.
+            if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
+                do {
+                    let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
+                    try? writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                    if let newRefresh = tokens.refreshToken {
+                        try? writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                    }
+                    if DebugConfig.isEnabled {
+                        logger.debug("[debug] unlock: access token refreshed successfully")
+                    }
+                } catch {
+                    // Refresh failed — keep the old token; sync will fail with 401 (non-fatal).
+                    logger.warning("Unlock: token refresh failed — sync may fail: \(error.localizedDescription, privacy: .public)")
+                }
+            }
         } else {
             logger.error("Unlock: access token not found in Keychain — sync will fail with 401")
         }

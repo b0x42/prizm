@@ -64,9 +64,9 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Factories
 
-    /// Creates a `LoginViewModel` pre-wired with the container's auth + sync.
+    /// Creates a `LoginViewModel` pre-wired with the container's login use case.
     func makeLoginViewModel() -> LoginViewModel {
-        LoginViewModel(auth: authRepository, sync: syncUseCase)
+        LoginViewModel(loginUseCase: loginUseCase)
     }
 
     /// Creates an `UnlockViewModel` for a returning user with a stored session.
