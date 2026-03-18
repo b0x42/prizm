@@ -26,14 +26,7 @@ final class UnlockViewModel: ObservableObject {
 
     @Published var password:      String = ""
     @Published var errorMessage:  String?
-    @Published private(set) var flowState: UnlockFlowState = .unlock {
-        didSet { onFlowStateChange?(flowState) }
-    }
-
-    // MARK: - Root callback
-
-    /// Set by `AppRootViewModel` to observe flow completion.
-    var onFlowStateChange: ((UnlockFlowState) -> Void)?
+    @Published private(set) var flowState: UnlockFlowState = .unlock
 
     // MARK: - Dependencies
 

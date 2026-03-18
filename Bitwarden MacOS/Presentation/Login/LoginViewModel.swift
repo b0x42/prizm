@@ -28,14 +28,7 @@ final class LoginViewModel: ObservableObject {
     @Published var email:        String = ""
     @Published var password:     String = ""
     @Published var errorMessage: String?
-    @Published private(set) var flowState: LoginFlowState = .login {
-        didSet { onFlowStateChange?(flowState) }
-    }
-
-    // MARK: - Root callback
-
-    /// Set by `AppRootViewModel` to observe flow completion.
-    var onFlowStateChange: ((LoginFlowState) -> Void)?
+    @Published private(set) var flowState: LoginFlowState = .login
 
     // MARK: - Dependencies
 
