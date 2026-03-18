@@ -21,8 +21,10 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published var sidebarSelection: SidebarSelection = .allItems {
         didSet {
             if oldValue != sidebarSelection {
-                itemSelection = nil
-                Task { @MainActor in refreshItems() }
+                Task { @MainActor [weak self] in
+                    self?.itemSelection = nil
+                    self?.refreshItems()
+                }
             }
         }
     }

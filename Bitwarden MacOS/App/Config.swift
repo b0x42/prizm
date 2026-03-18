@@ -20,7 +20,6 @@ enum Config {
 /// **Never enable in production builds** — debug output may contain sensitive field
 /// names, cipher counts, and HTTP response structure (though never key material or tokens).
 enum DebugConfig {
-    // nonisolated(unsafe): safe because this is a let constant initialised once at process
-    // startup from CommandLine.arguments and never mutated.
-    nonisolated(unsafe) static let isEnabled: Bool = CommandLine.arguments.contains("--debug-mode")
+    // Safe to access from any isolation domain — Bool is Sendable and this is a let constant.
+    static nonisolated let isEnabled: Bool = CommandLine.arguments.contains("--debug-mode")
 }
