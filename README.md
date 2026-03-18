@@ -14,17 +14,9 @@ A native, read-only Bitwarden client for macOS. Connect to your self-hosted [Bit
 
 ## Features
 
-- **Self-hosted server support** — connect to any Bitwarden or Vaultwarden instance
-- **Two-factor authentication** — TOTP authenticator app with optional device remembering
-- **Session persistence** — unlock with your master password on relaunch, no re-login needed
-- **All vault item types** — Logins, Cards, Identities, Secure Notes, SSH Keys
-- **Three-pane vault browser** — sidebar categories, item list, and detail view
-- **Instant search** — filter across names, usernames, URIs, and more as you type
-- **Masked fields** — passwords, card numbers, and keys hidden by default with one-click reveal
-- **Copy on hover** — copy any field to clipboard; auto-clears after 30 seconds
-- **Favicons** — website icons for login items with SF Symbol fallbacks
-- **Favorites & filtering** — sidebar counts and category filtering
-- **Custom fields** — text, hidden, boolean, and linked field types
+- **Connect to your server** — works with any self-hosted Bitwarden or Vaultwarden instance
+- **Browse everything** — Logins, Cards, Identities, Secure Notes, and SSH Keys
+- **Find items fast** — real-time search across names, usernames, URIs, and more
 - **Native macOS** — built with SwiftUI, feels right at home
 
 ## Security
