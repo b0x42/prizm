@@ -20,6 +20,16 @@ nonisolated enum ItemType: String, Equatable, Hashable, CaseIterable {
         case .sshKey:     return "SSH Key"
         }
     }
+
+    var sfSymbol: String {
+        switch self {
+        case .login:      return "key"
+        case .card:       return "creditcard"
+        case .identity:   return "person.crop.rectangle"
+        case .secureNote: return "note.text"
+        case .sshKey:     return "terminal"
+        }
+    }
 }
 
 /// Represents which sidebar row the user has selected.
@@ -29,7 +39,7 @@ nonisolated enum ItemType: String, Equatable, Hashable, CaseIterable {
 /// `Equatable` and `Hashable` are implemented explicitly with `nonisolated` to
 /// prevent Swift 5.10 from inferring `@MainActor` on the synthesized conformances,
 /// which would cause a Swift 6 error when used in nonisolated contexts.
-nonisolated enum SidebarSelection: Equatable {
+nonisolated enum SidebarSelection {
     case allItems
     case favorites
     case type(ItemType)

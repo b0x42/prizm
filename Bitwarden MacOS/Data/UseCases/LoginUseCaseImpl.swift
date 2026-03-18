@@ -45,9 +45,16 @@ final class LoginUseCaseImpl: LoginUseCase {
             return result
 
         case .requiresTwoFactor:
-            // 2FA required — sync deferred; caller must invoke loginWithTOTP then re-sync.
+            // 2FA required — sync deferred; caller must invoke completeTOTP then re-sync.
             logger.info("Login requires 2FA")
             return result
         }
+    }
+
+    func completeTOTP(code: String, rememberDevice: Bool) async throws -> Account {
+        logger.info("Completing TOTP")
+        let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
+        _ = try await sync.sync(progress: { _ in })
+        return account
     }
 }

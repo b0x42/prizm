@@ -28,19 +28,13 @@ struct SSHKeyDetailView: View {
                 }
 
                 // Fingerprint — visible; "[No fingerprint]" placeholder (FR-047)
-                let fingerprint = sshKey.keyFingerprint?.isEmpty == false
-                    ? sshKey.keyFingerprint
-                    : "[No fingerprint]"
+                let hasFingerprint = sshKey.keyFingerprint?.isEmpty == false
+                let fingerprint = hasFingerprint ? sshKey.keyFingerprint! : "[No fingerprint]"
                 FieldRowView(
                     label:  "Fingerprint",
                     value:  fingerprint,
                     itemId: item.id,
-                    onCopy: { value in
-                        // Only copy if there is a real fingerprint.
-                        if sshKey.keyFingerprint?.isEmpty == false {
-                            onCopy(value)
-                        }
-                    }
+                    onCopy: hasFingerprint ? onCopy : { _ in }
                 )
                 Divider()
 

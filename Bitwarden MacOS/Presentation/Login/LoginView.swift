@@ -115,19 +115,4 @@ struct LoginView: View {
     }
 }
 
-// MARK: - Vertical LabeledContentStyle
 
-private struct VerticalLabeledContentStyle: LabeledContentStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            configuration.label
-                .font(.callout.weight(.medium))
-                .foregroundStyle(.secondary)
-            configuration.content
-        }
-    }
-}
-
-private extension LabeledContentStyle where Self == VerticalLabeledContentStyle {
-    static var vertical: VerticalLabeledContentStyle { .init() }
-}

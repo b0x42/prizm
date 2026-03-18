@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import os.log
 
@@ -10,7 +9,7 @@ enum LoginFlowState: Equatable {
     case loading
     case totpPrompt
     case syncing(message: String)
-    case vault(Account)
+    case vault
 }
 
 // MARK: - LoginViewModel
@@ -39,15 +38,13 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let auth: any AuthRepository
-    private let sync: any SyncUseCase
+    private let loginUseCase: any LoginUseCase
     private let logger = Logger(subsystem: "com.bitwarden-macos", category: "LoginViewModel")
 
     // MARK: - Init
 
-    init(auth: any AuthRepository, sync: any SyncUseCase) {
-        self.auth = auth
-        self.sync = sync
+    init(loginUseCase: any LoginUseCase) {
+        self.loginUseCase = loginUseCase
     }
 
     // MARK: - Actions
@@ -60,21 +57,15 @@ final class LoginViewModel: ObservableObject {
 
         Task {
             do {
-                // Validate + configure server URL.
-                try auth.validateServerURL(serverURL)
-                let trimmed = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-                guard let url = URL(string: trimmed) else { throw AuthError.invalidURL }
-                try await auth.setServerEnvironment(ServerEnvironment(base: url, overrides: nil))
-
-                // Attempt password login.
-                let result = try await auth.loginWithPassword(
+                let result = try await loginUseCase.execute(
+                    serverURL:      serverURL,
                     email:          email,
                     masterPassword: password
                 )
 
                 switch result {
-                case .success(let account):
-                    await performSync(account: account)
+                case .success:
+                    flowState = .vault
 
                 case .requiresTwoFactor(let method):
                     guard case .authenticatorApp = method else {
@@ -106,8 +97,8 @@ final class LoginViewModel: ObservableObject {
 
         Task {
             do {
-                let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
-                await performSync(account: account)
+                let _ = try await loginUseCase.completeTOTP(code: code, rememberDevice: rememberDevice)
+                flowState = .vault
             } catch let err as AuthError {
                 logger.error("TOTP submission failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
@@ -117,24 +108,6 @@ final class LoginViewModel: ObservableObject {
                 errorMessage = error.localizedDescription
                 flowState    = .totpPrompt
             }
-        }
-    }
-
-    // MARK: - Private helpers
-
-    private func performSync(account: Account) async {
-        flowState = .syncing(message: "Preparing…")
-        do {
-            _ = try await sync.execute(progress: { [weak self] message in
-                // Progress is called from SyncRepositoryImpl's actor thread;
-                // dispatch to @MainActor to update @Published flowState.
-                Task { @MainActor [weak self] in self?.flowState = .syncing(message: message) }
-            })
-            flowState = .vault(account)
-        } catch {
-            // Sync failure is non-fatal for Phase 4 — show vault with whatever was synced.
-            // A banner error would be surfaced in Phase 6 (FR-049).
-            flowState = .vault(account)
         }
     }
 }

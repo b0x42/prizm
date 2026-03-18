@@ -8,4 +8,6 @@ protocol LoginUseCase {
         email: String,
         masterPassword: String
     ) async throws -> LoginResult
+
+    func completeTOTP(code: String, rememberDevice: Bool) async throws -> Account
 }

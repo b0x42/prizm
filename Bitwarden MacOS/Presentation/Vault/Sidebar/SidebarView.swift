@@ -36,7 +36,7 @@ struct SidebarView: View {
                 ForEach(ItemType.allCases, id: \.self) { type in
                     SidebarRowView(
                         title:      type.displayName,
-                        systemImage: sfSymbol(for: type),
+                        systemImage: type.sfSymbol,
                         selection:  .type(type),
                         count:      itemCounts[.type(type)] ?? 0
                     )
@@ -45,18 +45,6 @@ struct SidebarView: View {
             }
         }
         .navigationTitle("Bitwarden")
-    }
-
-    // MARK: - Private helpers
-
-    private func sfSymbol(for type: ItemType) -> String {
-        switch type {
-        case .login:      return "key"
-        case .card:       return "creditcard"
-        case .identity:   return "person.crop.rectangle"
-        case .secureNote: return "note.text"
-        case .sshKey:     return "terminal"
-        }
     }
 }
 
