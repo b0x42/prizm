@@ -35,7 +35,7 @@ All cryptography runs locally on your device:
 - macOS 13 (Ventura) or later
 - A self-hosted Bitwarden or Vaultwarden server
 
-## Getting Started
+## Getting Started for Development
 
 ```bash
 git clone https://github.com/b0x42/bitwarden-macos.git
