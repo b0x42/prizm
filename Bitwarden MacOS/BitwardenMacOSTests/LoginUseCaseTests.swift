@@ -98,20 +98,21 @@ final class LoginUseCaseTests: XCTestCase {
         XCTAssertFalse(mockSync.syncCalled, "Sync must not be called on failed login")
     }
 
-    /// A sync failure after successful login propagates as a SyncError.
+    /// A sync failure after successful login is non-fatal — result is still .success (FR-049).
     func testExecute_syncFailure_throws() async throws {
         mockAuth.stubbedLoginResult = .success(makeAccount())
         mockSync.syncShouldThrow    = SyncError.networkUnavailable
 
-        await XCTAssertThrowsErrorAsync(
-            try await sut.execute(
-                serverURL:      serverURL,
-                email:          email,
-                masterPassword: masterPassword
-            )
-        ) { error in
-            XCTAssertEqual(error as? SyncError, .networkUnavailable)
+        let result = try await sut.execute(
+            serverURL:      serverURL,
+            email:          email,
+            masterPassword: masterPassword
+        )
+        guard case .success = result else {
+            XCTFail("Expected .success despite sync failure")
+            return
         }
+        XCTAssertTrue(mockSync.syncCalled, "Sync should still be attempted")
     }
 
     // MARK: - Helpers
