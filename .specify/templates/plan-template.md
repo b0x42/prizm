@@ -31,16 +31,16 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verify each principle from `.specify/memory/constitution.md` (v1.4.0):
+Verify each principle from `.specify/memory/constitution.md` (v1.0.0):
 
 | # | Principle | Status | Notes |
 |---|-----------|--------|-------|
 | I | Native-First: Swift + SwiftUI + async/await only | ✅ / ❌ | |
 | II | Clean Architecture: Presentation → Domain ← Data (no layer bypass) | ✅ / ❌ | |
-| III | Security-First: zero-trust, no plaintext secrets, BitwardenSdk for all Bitwarden-protocol crypto (no direct CryptoKit) | ✅ / ❌ | |
+| III | Security-First: zero-trust, no plaintext secrets, CryptoKit only | ✅ / ❌ | |
 | IV | TDD: tests written & failing before implementation | ✅ / ❌ | |
 | V | Observability: structured os.Logger, no swallowed errors | ✅ / ❌ | |
-| VI | Simplicity, YAGNI & Thin Layer: no custom code when a trusted library exists; reuse Apple → Bitwarden SDK → vetted community | ✅ / ❌ | |
+| VI | Simplicity: no premature abstractions, YAGNI enforced | ✅ / ❌ | |
 
 Any ❌ is a **blocking** issue — resolve before proceeding.
 
