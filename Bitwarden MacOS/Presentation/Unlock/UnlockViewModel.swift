@@ -8,7 +8,7 @@ enum UnlockFlowState: Equatable {
     case unlock
     case loading
     case syncing(message: String)
-    case vault(Account)
+    case vault
     /// Returned to login (triggered by "Sign in with a different account").
     case login
 }
@@ -26,14 +26,7 @@ final class UnlockViewModel: ObservableObject {
 
     @Published var password:      String = ""
     @Published var errorMessage:  String?
-    @Published private(set) var flowState: UnlockFlowState = .unlock {
-        didSet { onFlowStateChange?(flowState) }
-    }
-
-    // MARK: - Root callback
-
-    /// Set by `AppRootViewModel` to observe flow completion.
-    var onFlowStateChange: ((UnlockFlowState) -> Void)?
+    @Published private(set) var flowState: UnlockFlowState = .unlock
 
     // MARK: - Dependencies
 
@@ -99,10 +92,10 @@ final class UnlockViewModel: ObservableObject {
             _ = try await sync.execute(progress: { [weak self] message in
                 Task { @MainActor [weak self] in self?.flowState = .syncing(message: message) }
             })
-            flowState = .vault(account)
+            flowState = .vault
         } catch {
             logger.error("Post-unlock sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
-            flowState = .vault(account)
+            flowState = .vault
         }
     }
 }

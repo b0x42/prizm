@@ -40,14 +40,31 @@ final class LoginUseCaseImpl: LoginUseCase {
         switch result {
         case .success:
             // Step 4: Sync vault immediately after successful login.
+            // Sync failure is non-fatal — show vault with whatever was synced (FR-049).
             logger.info("Login succeeded — starting vault sync")
-            _ = try await sync.sync(progress: { _ in })
+            do {
+                _ = try await sync.sync(progress: { _ in })
+            } catch {
+                logger.error("Post-login sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
+            }
             return result
 
         case .requiresTwoFactor:
-            // 2FA required — sync deferred; caller must invoke loginWithTOTP then re-sync.
+            // 2FA required — sync deferred; caller must invoke completeTOTP then re-sync.
             logger.info("Login requires 2FA")
             return result
         }
+    }
+
+    func completeTOTP(code: String, rememberDevice: Bool) async throws -> Account {
+        logger.info("Completing TOTP")
+        let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
+        // Sync failure is non-fatal — show vault with whatever was synced (FR-049).
+        do {
+            _ = try await sync.sync(progress: { _ in })
+        } catch {
+            logger.error("Post-TOTP sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
+        }
+        return account
     }
 }

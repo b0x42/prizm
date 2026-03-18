@@ -21,15 +21,17 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published var sidebarSelection: SidebarSelection = .allItems {
         didSet {
             if oldValue != sidebarSelection {
-                itemSelection = nil
-                refreshItems()
+                Task { @MainActor [weak self] in
+                    self?.itemSelection = nil
+                    self?.refreshItems()
+                }
             }
         }
     }
 
     @Published var itemSelection: VaultItem?
     @Published var searchQuery:   String = "" {
-        didSet { refreshItems() }
+        didSet { Task { @MainActor in refreshItems() } }
     }
 
     @Published private(set) var displayedItems: [VaultItem] = []

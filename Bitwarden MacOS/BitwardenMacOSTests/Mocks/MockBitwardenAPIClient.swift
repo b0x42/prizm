@@ -29,6 +29,11 @@ actor MockBitwardenAPIClient: BitwardenAPIClientProtocol {
     nonisolated(unsafe) var syncShouldThrow: Error?
     nonisolated(unsafe) var syncDelay: TimeInterval = 0
 
+    // MARK: - Stubs: refreshAccessToken
+
+    nonisolated(unsafe) var refreshResponse: String?
+    nonisolated(unsafe) var refreshShouldThrow: Error?
+
     // MARK: - Protocol conformance
 
     func setBaseURL(_ url: URL) {
@@ -94,5 +99,12 @@ actor MockBitwardenAPIClient: BitwardenAPIClientProtocol {
             ),
             ciphers: []
         )
+    }
+
+    func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?) {
+        if let err = refreshShouldThrow { throw err }
+        let token = refreshResponse ?? "refreshed-access-token"
+        storedAccessToken = token
+        return (token, nil)
     }
 }

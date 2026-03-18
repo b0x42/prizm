@@ -125,7 +125,7 @@ final class RootViewModel: ObservableObject {
     private func subscribeToFlowStates() {
         // Login flow — observe for the lifetime of the app (loginVM is never replaced).
         loginVM.$flowState
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] state in self?.handleLoginFlow(state) }
             .store(in: &cancellables)
 
@@ -133,7 +133,7 @@ final class RootViewModel: ObservableObject {
         $unlockVM
             .compactMap { $0 }
             .flatMap { $0.$flowState }
-            .receive(on: RunLoop.main)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] state in self?.handleUnlockFlow(state) }
             .store(in: &cancellables)
     }

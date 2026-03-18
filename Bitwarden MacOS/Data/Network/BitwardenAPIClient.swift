@@ -54,6 +54,13 @@ protocol BitwardenAPIClientProtocol: Actor {
     /// Requires a valid `Authorization: Bearer <accessToken>` header.
     /// Throws `SyncError.unauthorized` on HTTP 401.
     func fetchSync() async throws -> SyncResponse
+
+    /// POST `/identity/connect/token` with `grant_type=refresh_token` — exchanges a refresh token
+    /// for a new access token. Updates the stored access token on success.
+    ///
+    /// - Returns: A tuple of (newAccessToken, newRefreshToken). The refresh token may be nil
+    ///   if the server does not rotate it.
+    func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?)
 }
 
 // MARK: - Wire Models
@@ -396,6 +403,36 @@ actor BitwardenAPIClientImpl: BitwardenAPIClientProtocol {
             logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
         }
         return response
+    }
+
+    // MARK: - refreshAccessToken
+
+    func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?) {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("identity/connect/token")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] refreshAccessToken → POST \(url.absoluteString, privacy: .public)")
+        }
+
+        let params: [String: String] = [
+            "grant_type":    "refresh_token",
+            "refresh_token": refreshToken,
+            "client_id":     ClientHeaders.clientId,
+        ]
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = formEncoded(params)
+
+        let tokenResponse: TokenResponse = try await perform(request: request)
+        accessToken = tokenResponse.accessToken
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] refreshAccessToken ← new token obtained")
+        }
+        return (tokenResponse.accessToken, tokenResponse.refreshToken)
     }
 
     // MARK: - Private helpers
