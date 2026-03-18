@@ -21,7 +21,6 @@ enum Config {
 /// names, cipher counts, and HTTP response structure (though never key material or tokens).
 enum DebugConfig {
     // nonisolated(unsafe): safe because this is a let constant initialised once at process
-    // startup from CommandLine.arguments and never mutated. Avoids the Swift 6
-    // @MainActor isolation error when accessed from non-main actors.
-    static let isEnabled: Bool = CommandLine.arguments.contains("--debug-mode")
+    // startup from CommandLine.arguments and never mutated.
+    nonisolated(unsafe) static let isEnabled: Bool = CommandLine.arguments.contains("--debug-mode")
 }
