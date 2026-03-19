@@ -26,6 +26,7 @@ struct Bitwarden_MacOSApp: App {
         WindowGroup {
             rootView
                 .frame(minWidth: 480, minHeight: 360)
+                .containerBackground(.thinMaterial, for: .window)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
