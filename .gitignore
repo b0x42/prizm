@@ -43,3 +43,7 @@ fastlane/test_output
 # Local dev Vaultwarden
 dev-vault/
 dev-vault/
+.claude/
+.specify/
+specs/.claude/
+specs/.specify/
