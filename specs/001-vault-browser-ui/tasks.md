@@ -1,4 +1,4 @@
-# Tasks: Bitwarden macOS Client — Core Vault Browser
+# Tasks: Macwarden Client — Core Vault Browser
 
 **Input**: `specs/001-vault-browser-ui/` (plan.md, spec.md, data-model.md, contracts/, research.md)
 **Branch**: `001-vault-browser-ui`
@@ -30,9 +30,9 @@ Use `VaultItem` in domain/presentation context. Use `RawCipher` / "cipher" only 
 **Purpose**: Xcode project, Argon2Swift dependency, directory structure.
 No XCFramework required — crypto implemented natively via CommonCrypto + CryptoKit.
 
-- [X] T001 Create Xcode project with App Sandbox + Hardened Runtime — `Bitwarden MacOS/Bitwarden MacOS.xcodeproj`
+- [X] T001 Create Xcode project with App Sandbox + Hardened Runtime — `Macwarden/Macwarden.xcodeproj`
 - [X] T002 Add Argon2Swift as vendored local SPM package (`LocalPackages/Argon2Swift/`) via `XCLocalSwiftPackageReference` in Xcode — `LocalPackages/Argon2Swift/Package.swift`
-- [X] T003 [P] Create App layer files — `Bitwarden_MacOS/App/BitwardenMacOSApp.swift`, `AppContainer.swift`, `Config.swift`
+- [X] T003 [P] Create App layer files — `Macwarden/App/MacwardenApp.swift`, `AppContainer.swift`, `Config.swift`
 - [X] T004 [P] Create directory structure — `Domain/`, `Data/Crypto/`, `Data/Network/Models/`, `Data/Keychain/`, `Data/Mappers/`, `Data/Repositories/`, `Presentation/`, `Tests/DomainTests/`, `Tests/DataTests/Crypto/`, `Tests/PresentationTests/Components/`, `Tests/UITests/` groups in Xcode
 
 **Checkpoint**: Build succeeds. Empty test suite passes.
@@ -64,10 +64,10 @@ with `Foundation` only. Blocks all user story work.
 **Purpose**: Keychain service, EncString parser, native crypto service, cipher mapper.
 Blocks all repository implementations. No external SDK dependency.
 
-- [X] T014 [P] Write failing unit tests for KeychainService (read/write/delete/notFound) — `BitwardenMacOSTests/KeychainServiceTests.swift`
-- [X] T015 [P] Write failing unit tests for EncString parser (type-0, type-2, type-4 parse; MAC verify; decrypt round-trip with known test vectors from Bitwarden security whitepaper) — `BitwardenMacOSTests/EncStringTests.swift`
-- [X] T016 [P] Write failing unit tests for BitwardenCryptoServiceImpl (PBKDF2-SHA256 key derivation, HKDF stretching, serverHash, symmetricKey decrypt from encUserKey, field decrypt round-trip) — `BitwardenMacOSTests/BitwardenCryptoServiceTests.swift`
-- [X] T017 [P] Write failing unit tests for CipherMapper (RawCipher → VaultItem for all 5 item types; personal cipher only; org cipher filtered) — `BitwardenMacOSTests/CipherMapperTests.swift`
+- [X] T014 [P] Write failing unit tests for KeychainService (read/write/delete/notFound) — `MacwardenTests/KeychainServiceTests.swift`
+- [X] T015 [P] Write failing unit tests for EncString parser (type-0, type-2, type-4 parse; MAC verify; decrypt round-trip with known test vectors from Bitwarden security whitepaper) — `MacwardenTests/EncStringTests.swift`
+- [X] T016 [P] Write failing unit tests for BitwardenCryptoServiceImpl (PBKDF2-SHA256 key derivation, HKDF stretching, serverHash, symmetricKey decrypt from encUserKey, field decrypt round-trip) — `MacwardenTests/BitwardenCryptoServiceTests.swift`
+- [X] T017 [P] Write failing unit tests for CipherMapper (RawCipher → VaultItem for all 5 item types; personal cipher only; org cipher filtered) — `MacwardenTests/CipherMapperTests.swift`
 - [X] T018 Implement KeychainService (SecItem read/write/delete, userId-namespaced keys, kSecAttrAccessibleWhenUnlockedThisDeviceOnly) — `Data/Keychain/KeychainService.swift`
 - [X] T019 Implement EncString (parser for types 0, 2, 4, 6; AES-CBC-256 decrypt + HMAC-SHA256 verify; RSA-OAEP decrypt; each function MUST have doc comment citing Bitwarden Security Whitepaper section + RFC/NIST ref per §VII) — `Data/Crypto/EncString.swift`, `Data/Crypto/CryptoKeys.swift`
 - [X] T020 Implement RawCipher + SyncResponse Codable models — `Data/Network/Models/RawCipher.swift`, `Data/Network/Models/SyncResponse.swift`
@@ -88,14 +88,14 @@ log in with valid credentials (with and without TOTP), and reach the vault brows
 
 ### Tests (write first, must fail)
 
-- [X] T023 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithPassword — preLogin HTTP → hashPassword → identityToken → initializeUserCrypto — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
-- [X] T024 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithTOTP — TOTP challenge flow + rememberDevice flag — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
-- [X] T025 [P] [US1] Failing unit test: SyncRepositoryImpl.sync() — progress callbacks, personal-cipher-only decryptList, SyncResult — `BitwardenMacOSTests/SyncRepositoryImplTests.swift`
-- [X] T026 [P] [US1] Failing unit test: LoginUseCase — full orchestration (preLogin → login → optional TOTP → sync) — `BitwardenMacOSTests/LoginUseCaseTests.swift`
+- [X] T023 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithPassword — preLogin HTTP → hashPassword → identityToken → initializeUserCrypto — `MacwardenTests/AuthRepositoryImplTests.swift`
+- [X] T024 [P] [US1] Failing unit test: AuthRepositoryImpl.loginWithTOTP — TOTP challenge flow + rememberDevice flag — `MacwardenTests/AuthRepositoryImplTests.swift`
+- [X] T025 [P] [US1] Failing unit test: SyncRepositoryImpl.sync() — progress callbacks, personal-cipher-only decryptList, SyncResult — `MacwardenTests/SyncRepositoryImplTests.swift`
+- [X] T026 [P] [US1] Failing unit test: LoginUseCase — full orchestration (preLogin → login → optional TOTP → sync) — `MacwardenTests/LoginUseCaseTests.swift`
 
 ### Implementation
 
-- [X] T027 [US1] Implement BitwardenAPIClient (URLSession; preLogin POST, identityToken POST form-encoded, sync GET; all required headers including Device-Type + X-Device-Identifier) — `Data/Network/BitwardenAPIClient.swift`
+- [X] T027 [US1] Implement BitwardenAPIClient (URLSession; preLogin POST, identityToken POST form-encoded, sync GET; all required headers including Device-Type + X-Device-Identifier) — `Data/Network/MacwardenAPIClient.swift`
 - [X] T028 [US1] Implement device identifier generation (UUID v4 on first launch, Keychain key `bw.macos:deviceIdentifier`) — `Data/Repositories/AuthRepositoryImpl.swift`
 - [X] T029 [US1] Implement AuthRepositoryImpl: validateServerURL, setServerEnvironment, loginWithPassword, loginWithTOTP — `Data/Repositories/AuthRepositoryImpl.swift`
 - [X] T030 [US1] Implement SyncRepositoryImpl: sync() with "Syncing vault…" + "Decrypting…" progress callbacks; personal ciphers only (skip org ciphers); graceful per-cipher failure — `Data/Repositories/SyncRepositoryImpl.swift`
@@ -103,7 +103,7 @@ log in with valid credentials (with and without TOTP), and reach the vault brows
 - [X] T032 [P] [US1] Build LoginView + LoginViewModel — `Presentation/Login/LoginView.swift`, `Presentation/Login/LoginViewModel.swift`
 - [X] T033 [P] [US1] Build TOTPPromptView (TOTP code input + "Remember this device" checkbox) — `Presentation/Login/TOTPPromptView.swift`
 - [X] T034 [US1] Build SyncProgressView (full-screen, sequential status messages) — `Presentation/Sync/SyncProgressView.swift`
-- [X] T035 [US1] Wire app state machine in AppContainer + BitwardenMacOSApp — `App/AppContainer.swift`, `App/Bitwarden_MacOSApp.swift`
+- [X] T035 [US1] Wire app state machine in AppContainer + MacwardenApp — `App/AppContainer.swift`, `App/MacwardenApp.swift`
 - [X] T036 [US1] XCUITest: full US1 login journey — blank login screen, enter server URL + credentials, reach vault browser (SC-001 ≤60s) — `Tests/UITests/LoginJourneyTests.swift`
 
 **Checkpoint**: US1 acceptance scenarios 1–7 all pass. SC-001 passes. SC-006 passes (all error states covered).
@@ -120,15 +120,15 @@ shows stored email. Enter correct password → vault browser. Enter wrong passwo
 
 ### Tests (write first, must fail)
 
-- [X] T037 [P] [US2] Failing unit test: AuthRepositoryImpl.unlockWithPassword — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
-- [X] T038 [P] [US2] Failing unit test: AuthRepositoryImpl.signOut (comprehensive) — `BitwardenMacOSTests/AuthRepositoryImplTests.swift`
-- [X] T039 [P] [US2] Failing unit test: UnlockUseCase — unlock orchestration, wrong password without vault lock — `BitwardenMacOSTests/UnlockUseCaseTests.swift`
+- [X] T037 [P] [US2] Failing unit test: AuthRepositoryImpl.unlockWithPassword — `MacwardenTests/AuthRepositoryImplTests.swift`
+- [X] T038 [P] [US2] Failing unit test: AuthRepositoryImpl.signOut (comprehensive) — `MacwardenTests/AuthRepositoryImplTests.swift`
+- [X] T039 [P] [US2] Failing unit test: UnlockUseCase — unlock orchestration, wrong password without vault lock — `MacwardenTests/UnlockUseCaseTests.swift`
 
 ### Implementation
 
 - [X] T040 [US2] AuthRepositoryImpl: unlockWithPassword, signOut, lockVault — already implemented in Phase 4 — `Data/Repositories/AuthRepositoryImpl.swift`
 - [X] T041 [US2] Implement UnlockUseCaseImpl — `Data/UseCases/UnlockUseCaseImpl.swift`
-- [X] T042 [US2] Build UnlockView + UnlockViewModel + RootViewModel app state machine — `Presentation/Unlock/UnlockView.swift`, `Presentation/Unlock/UnlockViewModel.swift`, `App/Bitwarden_MacOSApp.swift`
+- [X] T042 [US2] Build UnlockView + UnlockViewModel + RootViewModel app state machine — `Presentation/Unlock/UnlockView.swift`, `Presentation/Unlock/UnlockViewModel.swift`, `App/MacwardenApp.swift`
 - [X] T043 [US2] XCUITest: US2 unlock journey — `Tests/UITests/UnlockJourneyTests.swift`
 
 **Checkpoint**: US2 acceptance scenarios 1–4 pass. SC-002 passes (≤5s unlock). Vault locks on quit.
@@ -145,8 +145,8 @@ all field types render correctly. Reveal/mask secrets. Copy fields, verify clipb
 
 ### Tests (write first, must fail)
 
-- [X] T044 [P] [US3] Failing unit tests: VaultRepositoryImpl — allItems (excludes isDeleted), items(for: .favorites), items(for: .type(.login)), itemCounts — `BitwardenMacOSTests/VaultRepositoryImplTests.swift`
-- [X] T045 [P] [US3] Failing unit tests: MaskedFieldView — always renders 8 dots; reveal toggle shows plaintext; item-change resets to masked — `BitwardenMacOSTests/MaskedFieldViewTests.swift`
+- [X] T044 [P] [US3] Failing unit tests: VaultRepositoryImpl — allItems (excludes isDeleted), items(for: .favorites), items(for: .type(.login)), itemCounts — `MacwardenTests/VaultRepositoryImplTests.swift`
+- [X] T045 [P] [US3] Failing unit tests: MaskedFieldView — always renders 8 dots; reveal toggle shows plaintext; item-change resets to masked — `MacwardenTests/MaskedFieldViewTests.swift`
 
 ### Implementation
 
@@ -200,7 +200,7 @@ items appear instantly. Switch category — term preserved, results re-filtered.
 
 - [X] T067 Wire Sign Out in macOS menu (File or app menu) + NSAlert confirmation dialog ("All local data will be cleared"); on confirm → AuthRepository.signOut() → blank LoginView (FR-014) — `App/AppContainer.swift`
 - [X] T068 [P] Build sync error banner (systemYellow tint, ≤44pt height, spans item list + detail columns, explicit × dismiss button, auto-dismiss on next successful sync; no retry button per FR-049) — `Presentation/Vault/VaultBrowserView.swift`
-- [X] T069 [P] Add os.Logger calls to all auth, sync, vault, and network code paths (subsystem `com.bitwarden-macos`; .debug trace, .info flow, .error recoverable, .fault unrecoverable; secrets MUST NOT appear in logs) — all Data/ files
+- [X] T069 [P] Add os.Logger calls to all auth, sync, vault, and network code paths (subsystem `com.macwarden`; .debug trace, .info flow, .error recoverable, .fault unrecoverable; secrets MUST NOT appear in logs) — all Data/ files
 - [X] T070 Constitution check: audit every `catch {}` block — each must rethrow or log + surface via typed Error; audit every file import — Domain must have no crypto/SwiftUI, Presentation must have no Data; verify all crypto files have doc comments citing standards per §VII — all source files
 - [X] T071 [P] Create SECURITY.md at repo root (same level as CLAUDE.md and CONSTITUTION.md, not in specs/): what data is encrypted + algorithm; where keys are stored + access conditions; threat model; explicit non-goals (per CONSTITUTION.md §VII) — `SECURITY.md`
 - [X] T072 [P] Validate quickstart.md end-to-end from clean checkout (build + run all tests) — `specs/001-vault-browser-ui/quickstart.md`

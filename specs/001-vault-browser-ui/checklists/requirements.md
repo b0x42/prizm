@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Bitwarden macOS Client — Core Vault Browser
+# Specification Quality Checklist: Macwarden Client — Core Vault Browser
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-13

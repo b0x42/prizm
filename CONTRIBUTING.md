@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in contributing to Bitwarden for macOS! This document covers how to get started, the project conventions, and how to submit changes.
+Thanks for your interest in contributing to Macwarden! This document covers how to get started, the project conventions, and how to submit changes.
 
 ## About the Author
 
@@ -10,7 +10,7 @@ Hi, I'm Benjamin ([@b0x42](https://github.com/b0x42)). I build tools that scratc
 - [**E-Paper-Emulator**](https://github.com/b0x42/E-Paper-Emulator) — Drop-in Waveshare e-Paper emulator for desktop development (Python)
 - [**dns-racing**](https://github.com/b0x42/dns-racing) — Compare your local DNS server latency against public resolvers (Node.js)
 - [**db-meetingstation-public**](https://github.com/b0x42/db-meetingstation-public) — Shortest-path station finder for Deutsche Bahn (Java)
-- [**bitwarden-macos**](https://github.com/b0x42/bitwarden-macos) — Native read-only Bitwarden/Vaultwarden client for macOS (Swift)
+- [**macwarden**](https://github.com/b0x42/macwarden) — Native read-only Bitwarden/Vaultwarden client for macOS (Swift)
 
 ## Getting Started
 
@@ -23,9 +23,9 @@ Hi, I'm Benjamin ([@b0x42](https://github.com/b0x42)). I build tools that scratc
 ### Setup
 
 ```bash
-git clone https://github.com/b0x42/bitwarden-macos.git
-cd bitwarden-macos
-open "Bitwarden MacOS/Bitwarden MacOS.xcodeproj"
+git clone https://github.com/b0x42/macwarden.git
+cd macwarden
+open "Macwarden/Macwarden.xcodeproj"
 ```
 
 No package managers or dependency installs needed — the only external dependency (Argon2Swift) is vendored.

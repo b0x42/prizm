@@ -11,14 +11,14 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/b0x42/bitwarden-macos.git
-   cd bitwarden-macos
+   git clone https://github.com/b0x42/macwarden.git
+   cd macwarden
    git checkout 001-vault-browser-ui
    ```
 
 2. **Open the Xcode project**
    ```bash
-   open "Bitwarden MacOS/Bitwarden MacOS.xcodeproj"
+   open "Macwarden/Macwarden.xcodeproj"
    ```
    `Argon2Swift` is vendored locally at `LocalPackages/Argon2Swift/` and referenced as an
    `XCLocalSwiftPackageReference` — no internet access or package resolution needed.
@@ -26,8 +26,8 @@
 
 3. **Verify the build compiles**
    ```bash
-   xcodebuild -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
-     -scheme "Bitwarden MacOS" -configuration Debug build
+   xcodebuild -project "Macwarden/Macwarden.xcodeproj" \
+     -scheme "Macwarden" -configuration Debug build
    ```
    Expected: `BUILD SUCCEEDED`.
 
@@ -35,7 +35,7 @@
    - v1 targets self-hosted Bitwarden and Vaultwarden only. Self-hosted servers do not
      enforce a client whitelist.
    - Set `Config.clientName = "desktop"` and `Config.deviceType = 7` in
-     `Bitwarden_MacOS/App/Config.swift` — these are accepted by all self-hosted instances.
+     `Macwarden/App/Config.swift` — these are accepted by all self-hosted instances.
    - Note: `Config.swift` holds only the static client identifier and device type. The
      **server URL** is entered by the user at login time and persisted in the Keychain
      per-user (`bw.macos:{userId}:serverEnvironment`) — it is not in `Config.swift`.
@@ -47,8 +47,8 @@
 ```bash
 # From Xcode: ⌘R
 # Or from command line:
-xcodebuild -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
-           -scheme "Bitwarden MacOS" \
+xcodebuild -project "Macwarden/Macwarden.xcodeproj" \
+           -scheme "Macwarden" \
            -configuration Debug \
            build
 ```
@@ -57,8 +57,8 @@ xcodebuild -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
 
 ```bash
 xcodebuild test \
-  -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
-  -scheme "Bitwarden MacOS" \
+  -project "Macwarden/Macwarden.xcodeproj" \
+  -scheme "Macwarden" \
   -destination "platform=macOS"
 ```
 
@@ -67,10 +67,10 @@ Or in Xcode: **⌘U**
 ## Project Structure
 
 ```
-Bitwarden MacOS/
-├── Bitwarden MacOS.xcodeproj/
+Macwarden/
+├── Macwarden.xcodeproj/
 ├── App/
-│   ├── Bitwarden_MacOSApp.swift     # @main entry point + RootViewModel
+│   ├── MacwardenApp.swift     # @main entry point + RootViewModel
 │   ├── AppContainer.swift           # Dependency injection (manual)
 │   └── Config.swift                 # Client identifier, device type, app version
 │
@@ -81,7 +81,7 @@ Bitwarden MacOS/
 │
 ├── Data/
 │   ├── Crypto/                      # BitwardenCryptoService protocol + impl, EncString, CryptoKeys
-│   ├── Network/                     # BitwardenAPIClient (URLSession), Models/, FaviconLoader
+│   ├── Network/                     # MacwardenAPIClient (URLSession), Models/, FaviconLoader
 │   ├── Keychain/                    # KeychainService
 │   ├── Repositories/                # AuthRepositoryImpl, VaultRepositoryImpl, SyncRepositoryImpl
 │   ├── Mappers/                     # CipherMapper: RawCipher → Domain VaultItem
@@ -119,8 +119,8 @@ Bitwarden MacOS/
 │       ├── MaskedFieldView.swift          # fixed-length masking
 │       └── FaviconView.swift              # favicon + fallback icon
 │
-├── BitwardenMacOSTests/             # Unit + integration tests (PBXFileSystemSynchronizedRootGroup)
-│   ├── Mocks/                       # MockBitwardenAPIClient, MockCryptoService, etc.
+├── MacwardenTests/             # Unit + integration tests (PBXFileSystemSynchronizedRootGroup)
+│   ├── Mocks/                       # MockMacwardenAPIClient, MockMacwardenCryptoService, etc.
 │   ├── EntityValidationTests.swift
 │   ├── KeychainServiceTests.swift
 │   ├── EncStringTests.swift

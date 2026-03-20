@@ -1,4 +1,4 @@
-# Bitwarden for macOS
+# Macwarden
 
 [![Swift](https://img.shields.io/badge/Swift-6-orange.svg)](https://swift.org/)
 [![macOS](https://img.shields.io/badge/macOS-13%2B-blue.svg)](https://www.apple.com/macos/)
@@ -38,9 +38,9 @@ All cryptography runs locally on your device:
 ## Getting Started for Development
 
 ```bash
-git clone https://github.com/b0x42/bitwarden-macos.git
-cd bitwarden-macos
-open "Bitwarden MacOS/Bitwarden MacOS.xcodeproj"
+git clone https://github.com/b0x42/macwarden.git
+cd macwarden
+open "Macwarden/Macwarden.xcodeproj"
 ```
 
 Build and run with `⌘R` in Xcode. No package managers or dependency installs needed.

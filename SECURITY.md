@@ -1,7 +1,7 @@
-# Security Model — Bitwarden macOS Client
+# Security Model — Macwarden Client
 
 This document describes, in plain language, the security architecture of this
-Bitwarden macOS desktop client. It is intended to allow any developer or
+Macwarden desktop client. It is intended to allow any developer or
 technically literate user to verify the implementation (Constitution §VII).
 
 ---

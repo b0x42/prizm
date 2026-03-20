@@ -26,7 +26,7 @@ Follow-up TODOs:
     See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 -->
 
-# Bitwarden macOS Constitution
+# Macwarden Constitution
 
 ## Core Principles
 
@@ -107,7 +107,7 @@ Red → Green → Refactor. No exceptions.
 Silent failures are prohibited in vault and sync operations.
 
 - Structured logging is REQUIRED for all vault, sync, auth, and crypto operations.
-  Use `os.Logger` with subsystem = `com.bitwarden-macos` and appropriate categories.
+  Use `os.Logger` with subsystem = `com.macwarden` and appropriate categories.
 - Log levels MUST be used correctly: `.debug` for trace, `.info` for normal flow,
   `.error` for recoverable faults, `.fault` for unrecoverable states.
 - Secrets MUST NEVER appear in log output — scrub before logging.

@@ -177,7 +177,7 @@ Bitwarden-Client-Name:      desktop          (or registered name)
 Bitwarden-Client-Version:   {appVersion}
 Device-Type:                7
 X-Device-Identifier:        {stableInstallUUID}
-User-Agent:                 Bitwarden_MacOS/{version} (macOS)
+User-Agent:                 Macwarden/{version} (macOS)
 ```
 
 **2FA flow**: If `/connect/token` returns HTTP 400 with `"TwoFactorProviders": [0, ...]`, prompt

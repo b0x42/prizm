@@ -1,4 +1,4 @@
-# Implementation Plan: Bitwarden macOS Client — Core Vault Browser
+# Implementation Plan: Macwarden Client — Core Vault Browser
 
 **Branch**: `001-vault-browser-ui` | **Date**: 2026-03-13 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `specs/001-vault-browser-ui/spec.md`
@@ -37,7 +37,7 @@ Crypto is implemented natively (CommonCrypto + CryptoKit + Argon2Swift) because 
 | II | Clean Architecture: Presentation → Domain ← Data (no layer bypass) | ✅ | Three-layer separation enforced; Domain = Foundation only; Data owns all crypto/network/Keychain; Presentation = SwiftUI only |
 | III | Security-First: zero-trust, no plaintext secrets, SDK for Bitwarden crypto | ⚠️ | **Justified deviation** — `sdk-swift` has no macOS XCFramework slice (iOS-only). Native crypto adopted per Complexity Tracking row 1. All crypto behind `BitwardenCryptoService` protocol in Data layer. Constitution §III rule against custom crypto is superseded by OI-001 resolution. |
 | IV | TDD: tests written & failing before implementation | ✅ | All phases: failing tests committed before implementation (verified in git history) |
-| V | Observability: structured os.Logger, no swallowed errors | ✅ | `os.Logger(subsystem: "com.bitwarden-macos", ...)` in all Data layer operations; all errors propagate as typed `Error` |
+| V | Observability: structured os.Logger, no swallowed errors | ✅ | `os.Logger(subsystem: "com.macwarden", ...)` in all Data layer operations; all errors propagate as typed `Error` |
 | VI | Simplicity: no premature abstractions, YAGNI enforced | ✅ | Single Xcode target; no Swift packages per layer; no over-abstraction in Data layer |
 
 ---
@@ -62,10 +62,10 @@ specs/001-vault-browser-ui/
 ### Source Code
 
 ```text
-Bitwarden MacOS/
-├── Bitwarden MacOS.xcodeproj/
+Macwarden/
+├── Macwarden.xcodeproj/
 ├── App/
-│   ├── Bitwarden_MacOSApp.swift     # @main entry point, WindowGroup
+│   ├── MacwardenApp.swift     # @main entry point, WindowGroup
 │   ├── AppContainer.swift           # Manual DI — wires all service/repository instances
 │   └── Config.swift                 # clientName="desktop", deviceType=7, appVersion
 │
@@ -92,7 +92,7 @@ Bitwarden MacOS/
 │   │   ├── EncString.swift               # EncString parser + AES-CBC-256 decrypt/encrypt
 │   │   └── CryptoKeys.swift              # CryptoKeys struct + HMAC-SHA256 helpers
 │   ├── Network/
-│   │   ├── BitwardenAPIClient.swift      # URLSession actor; all 4 endpoints
+│   │   ├── MacwardenAPIClient.swift      # URLSession actor; all 4 endpoints
 │   │   ├── FaviconLoader.swift           # Actor; NSCache + URLCache
 │   │   └── Models/
 │   │       ├── RawCipher.swift           # Codable wire types for /sync ciphers
@@ -131,7 +131,7 @@ Bitwarden MacOS/
 │       ├── MaskedFieldView.swift        # 8-dot fixed mask
 │       └── FaviconView.swift            # favicon + SF Symbol fallback
 │
-└── BitwardenMacOSTests/             # PBXFileSystemSynchronizedRootGroup — auto-includes all .swift
+└── MacwardenTests/             # PBXFileSystemSynchronizedRootGroup — auto-includes all .swift
     ├── EntityValidationTests.swift   # Domain entities (T005)
     ├── KeychainServiceTests.swift    # T014
     ├── EncStringTests.swift          # T015
@@ -169,7 +169,7 @@ All open items resolved. See [research.md](research.md) for full findings.
 | Favicon fetch + cache | `FaviconLoader` actor; `{iconsBase}/{domain}/icon.png`; `NSCache` + `URLCache` |
 | Clipboard auto-clear | Cancellable `Task` with `Task.sleep(for: .seconds(30))` |
 | Search implementation | In-memory `Array.filter` + `localizedCaseInsensitiveContains`, no debounce needed |
-| Keychain pattern | `KeychainService` (raw SecItem) scoped to `com.bitwarden-macos` service |
+| Keychain pattern | `KeychainService` (raw SecItem) scoped to `com.macwarden` service |
 | Device identifier | UUID v4, generated once, stored at `bw.macos:deviceIdentifier` |
 
 ---

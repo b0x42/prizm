@@ -1,4 +1,4 @@
-# Feature Specification: Bitwarden macOS Client — Core Vault Browser
+# Feature Specification: Macwarden Client — Core Vault Browser
 
 **Feature Branch**: `001-vault-browser-ui`
 **Created**: 2026-03-13
