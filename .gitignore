@@ -39,3 +39,6 @@ fastlane/test_output
 *.p12
 *.mobileprovision
 .claude/worktrees/
+
+# Local dev Vaultwarden
+dev-vault/
