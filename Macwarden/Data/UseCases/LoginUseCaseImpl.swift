@@ -40,7 +40,10 @@ final class LoginUseCaseImpl: LoginUseCase {
         switch result {
         case .success:
             // Step 4: Sync vault immediately after successful login.
-            // Sync failure is non-fatal — show vault with whatever was synced (FR-049).
+            // Sync is best-effort: if the server is temporarily unreachable the user
+            // still lands in the vault browser showing items from the last sync.
+            // Failing the entire login on a sync error would lock users out even when
+            // the server is degraded — unacceptable for a password manager.
             logger.info("Login succeeded — starting vault sync")
             do {
                 _ = try await sync.sync(progress: { _ in })
@@ -50,7 +53,9 @@ final class LoginUseCaseImpl: LoginUseCase {
             return result
 
         case .requiresTwoFactor:
-            // 2FA required — sync deferred; caller must invoke completeTOTP then re-sync.
+            // Sync is deferred until TOTP is accepted. At this point we have derived the
+            // master key but do not yet have an access token, so a sync request would be
+            // rejected with 401. The vault populates after completeTOTP succeeds below.
             logger.info("Login requires 2FA")
             return result
         }
