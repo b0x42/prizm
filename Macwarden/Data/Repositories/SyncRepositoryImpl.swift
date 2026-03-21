@@ -8,12 +8,7 @@ import os.log
 /// Fetches the encrypted vault from the Bitwarden server, decrypts personal ciphers
 /// via `MacwardenCryptoServiceImpl.decryptList`, and populates the in-memory `VaultRepository`.
 ///
-/// Organisation ciphers (`organizationId != nil`) are skipped in v1. The encrypted
-/// private key needed to decrypt per-org symmetric keys is present in the token response
-/// (`PrivateKey` field) but RSA decryption is not yet implemented.
-// TODO: support organisation ciphers — requires RSA private-key decryption of the
-// per-org symmetric key wrapped in the account's RSA keypair. No issue filed yet.
-///
+/// Organisation ciphers (`organizationId != nil`) are silently skipped in v1.
 /// Individual cipher decryption failures are non-fatal — they are counted and logged
 /// but the remaining ciphers are still stored.
 ///
@@ -76,9 +71,7 @@ actor SyncRepositoryImpl: SyncRepository {
         logger.info("Fetched \(totalCiphers) cipher(s)")
 
         if DebugConfig.isEnabled {
-            // Log counts by cipher type to help diagnose sync issues (e.g. unexpected
-            // type integers from a non-standard server). Values are type ints only —
-            // no cipher names, URLs, or other vault content is logged.
+            // Log cipher type breakdown (no sensitive data — just counts by type int).
             let typeCounts = syncResponse.ciphers.reduce(into: [Int: Int]()) { acc, c in
                 acc[c.type, default: 0] += 1
             }

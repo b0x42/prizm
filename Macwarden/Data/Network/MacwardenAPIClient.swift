@@ -6,8 +6,7 @@ import os.log
 /// Bitwarden REST API client for auth and vault sync operations.
 ///
 /// All requests require the `X-Client-Id`, `X-Client-Version`, and `Device-Type` headers
-/// that Bitwarden mandates for all client integrations.
-/// Reference: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
+/// that Bitwarden mandates for all client integrations (see Bitwarden ADR: integration-identifiers).
 /// Missing or invalid headers result in `400 Bad Request` / `403 Forbidden` from the server.
 ///
 /// Implemented as an `actor` to serialise the mutable `baseURL` and `accessToken` state.
@@ -171,10 +170,10 @@ nonisolated enum APIError: Error, Equatable {
 /// All requests include the required Bitwarden client identification headers:
 /// - `X-Client-Id: "desktop"`       (registered client identifier for third-party clients)
 /// - `X-Client-Version: "2024.1.0"` (version string matching tested server release)
-/// - `Device-Type: "7"`             (7 = macOS desktop, per Bitwarden DeviceType enum)
+/// - `Device-Type: "8"`              (7 = macOS desktop, per Bitwarden DeviceType enum)
 ///
-/// Header requirements: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
-/// DeviceType enum values: https://github.com/bitwarden/server/blob/main/src/Core/Enums/DeviceType.cs
+/// Reference for header requirements:
+/// https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
     // MARK: - Private state
@@ -190,8 +189,7 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
     // MARK: - Bitwarden client identification headers
     // These are mandatory on every request to the Bitwarden identity + API services.
-    // deviceType 7 = macOS desktop per the Bitwarden DeviceType enum:
-    // https://github.com/bitwarden/server/blob/main/src/Core/Enums/DeviceType.cs
+    // `device_type` 7 = macOS desktop (Bitwarden DeviceType enum; contact Bitwarden CS for registration).
     private enum ClientHeaders {
         static let clientId      = "desktop"
         static let clientVersion = "2024.1.0"
@@ -293,16 +291,10 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
     /// Specialized perform for the identity token endpoint.
     ///
-    /// The Bitwarden identity service overloads HTTP 400 for three distinct outcomes —
-    /// disambiguation requires inspecting the response body:
-    ///   1. 2FA challenge (occurs on first password attempt when 2FA is enabled):
-    ///      body contains `"TwoFactorProviders2"` key → throw `.twoFactorRequired`
-    ///   2. Bad TOTP code (occurs on the second request when the code is wrong):
-    ///      `error_description` contains "Two-factor" → throw `.twoFactorCodeInvalid`
-    ///   3. Wrong password (no 2FA in play, or bad credentials at any step):
-    ///      generic `invalid_grant` body → throw `.invalidCredentials`
-    /// Cases 2 and 3 use the same fallthrough path because they produce the same
-    /// user-facing error: re-enter your password / code.
+    /// HTTP 400 from the Bitwarden identity service can mean:
+    /// - 2FA challenge: body contains `"TwoFactorProviders2"` → throw `IdentityTokenError.twoFactorRequired`
+    /// - Invalid TOTP code: body contains `"errorModel"` with `"TwoFactor"` → throw `.twoFactorCodeInvalid`
+    /// - Wrong password: body contains `"invalid_grant"` → throw `.invalidCredentials`
     private func performIdentityToken(request: URLRequest) async throws -> TokenResponse {
         let (data, response) = try await session.data(for: request)
 
