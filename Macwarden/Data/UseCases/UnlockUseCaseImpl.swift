@@ -8,11 +8,8 @@ import os.log
 ///   2. On success, call `SyncRepository.sync` to re-populate the in-memory vault
 ///      (the in-memory store is cleared on every app quit).
 ///
-/// On wrong password: `AuthError.invalidCredentials` is thrown and the vault stays locked.
-/// `lockVault` is intentionally NOT called on failure — the existing locked session is
-/// preserved so the user can retry without re-entering their server URL or re-authenticating.
-/// The crypto service keys remain zeroed (they are never populated on a failed attempt),
-/// so no vault data is exposed between retry attempts.
+/// On wrong password: `AuthError.invalidCredentials` is thrown.
+/// `lockVault` is NOT called on failure — the existing session stays intact (FR-039).
 final class UnlockUseCaseImpl: UnlockUseCase {
 
     private let auth: any AuthRepository
