@@ -1,0 +1,49 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+
+# Xcode build output
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+# Note: Package.resolved (xcshareddata/swiftpm/Package.resolved) is intentionally tracked
+
+# CocoaPods (not used, but just in case)
+Pods/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Env / secrets
+.env
+*.p12
+*.mobileprovision
+.claude/worktrees/
+
+# Local dev Vaultwarden
+dev-vault/
+dev-vault/
+.claude/
+.specify/
+specs/.claude/
+specs/.specify/

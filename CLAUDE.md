@@ -1,4 +1,4 @@
-# Bitwarden macOS Development Guidelines
+# Macwarden Development Guidelines
 
 Auto-generated from feature plans. Last updated: 2026-03-21
 Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
@@ -16,14 +16,14 @@ Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
 - **Storage**: macOS Keychain (secrets), UserDefaults (UI prefs), in-memory (decrypted vault)
 - **Networking**: `URLSession` (no third-party networking library)
 - **Testing**: XCTest (unit + integration), XCUITest (UI journeys)
-- **Logging**: `os.Logger` with subsystem `com.bitwarden-macos`
+- **Logging**: `os.Logger` with subsystem `com.macwarden`
 
 ## Project Structure
 
 ```text
-Bitwarden_MacOS/
-├── Bitwarden_MacOS.xcodeproj/
-└── Bitwarden_MacOS/
+Macwarden/
+├── Macwarden.xcodeproj/
+└── Macwarden/
     ├── App/            # @main, AppContainer (DI), Config
     ├── Domain/         # Pure Swift: Entities, UseCases, Repository protocols
     ├── Data/           # Crypto, Network, Keychain, Repository impls, Mappers
@@ -44,16 +44,16 @@ specs/
 
 ```bash
 # Open project
-open "Bitwarden MacOS/Bitwarden MacOS.xcodeproj"
+open "Macwarden/Macwarden.xcodeproj"
 
 # Build
-xcodebuild -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
-           -scheme "Bitwarden MacOS" -configuration Debug build
+xcodebuild -project "Macwarden/Macwarden.xcodeproj" \
+           -scheme "Macwarden" -configuration Debug build
 
 # Run all tests
 xcodebuild test \
-  -project "Bitwarden MacOS/Bitwarden MacOS.xcodeproj" \
-  -scheme "Bitwarden MacOS" \
+  -project "Macwarden/Macwarden.xcodeproj" \
+  -scheme "Macwarden" \
   -destination "platform=macOS"
 ```
 
