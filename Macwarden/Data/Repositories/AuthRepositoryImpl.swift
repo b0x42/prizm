@@ -110,8 +110,10 @@ final class AuthRepositoryImpl: AuthRepository {
         }
 
         // Step 4: Compute server authentication hash.
-        // Per Bitwarden Security Whitepaper §4: the hash proves knowledge of the
-        // master password without revealing the master key itself.
+        // Per Bitwarden Security Whitepaper §4 + RFC 8018 §5.2 (PBKDF2):
+        // A second PBKDF2 round is applied over the masterKey using the plaintext
+        // password as input, producing a value the server can verify without storing —
+        // or ever receiving — the raw master key. The master key never leaves the device.
         logger.info("Step 4: computing server authentication hash")
         let serverHash = try await crypto.makeServerHash(
             masterKey: masterKey,
@@ -376,8 +378,14 @@ final class AuthRepositoryImpl: AuthRepository {
         stretched:   CryptoKeys,
         environment: ServerEnvironment
     ) async throws -> Account {
-        // Vaultwarden does not return UserId/Email in the token response body.
-        // Extract them from the JWT access token claims instead (sub = userId, email = email).
+        // Vaultwarden omits UserId/Email from the token response body (unlike the official
+        // Bitwarden server, which includes them as PascalCase fields). Extract identity from
+        // JWT claims instead: sub → userId, email → email, name → display name.
+        // Trust model: the JWT was just issued by the user's own configured server over HTTPS
+        // and is only used to read their own identity — not to make authorization decisions.
+        // A malicious server could falsify these claims, but trusting the chosen server is
+        // an explicit prerequisite of self-hosting. Signature verification is skipped for
+        // this reason — see decodeJWTClaims for the full rationale.
         let jwtClaims = decodeJWTClaims(tokenResp.accessToken)
         let userId = tokenResp.userId ?? jwtClaims["sub"] as? String
         let email  = tokenResp.email  ?? jwtClaims["email"] as? String
@@ -491,8 +499,15 @@ final class AuthRepositoryImpl: AuthRepository {
     ///
     /// Vaultwarden does not return `UserId` or `Email` in the token response body —
     /// they are present as standard JWT claims (`sub` = userId, `email` = email, `name` = name).
-    /// Signature verification is intentionally skipped here; the token is used only to
-    /// read the user's own identity fields, not to make authorization decisions.
+    ///
+    /// - Security goal: extract the user's own identity fields from a freshly-issued token.
+    /// - Why signature skip is safe: the token arrived over HTTPS from our configured server
+    ///   moments ago and is only used to read `sub`/`email`/`name` for local Keychain storage.
+    ///   It is never used for access-control or authorization decisions.
+    /// - What this does NOT protect against: a compromised or malicious self-hosted server.
+    ///   If the server issues a JWT with a falsified `sub`, we would store the wrong userId.
+    ///   Defending against a malicious server is out of scope — the user chose to trust it.
+    /// - Base64url decoding per RFC 7519 §3 (JWT compact serialization: header.payload.signature).
     ///
     /// - Parameter jwt: A dot-separated JWT string (`header.payload.signature`).
     /// - Returns: Decoded payload as a `[String: Any]` dictionary, or empty on failure.

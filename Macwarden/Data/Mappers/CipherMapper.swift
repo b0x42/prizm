@@ -21,6 +21,10 @@ nonisolated enum CipherMapperError: Error, Equatable {
 ///
 /// **Responsibilities** (single responsibility per §III of the project constitution):
 /// - Decrypt each EncString field using AES-256-CBC + HMAC-SHA256 (EncString type-2).
+///   Decryption is eager (at sync time, inside the mapper) rather than lazy (at display
+///   time, inside Views). This keeps `VaultItem` domain entities as plain decrypted
+///   Swift structs, so the Presentation layer never imports or calls crypto code.
+///   Decryption failures are surfaced once during sync rather than scattered across the UI.
 /// - Map the raw `type` integer to a typed `ItemContent` enum case.
 /// - Filter out organisation ciphers (`organizationId != nil`) — personal vault only.
 /// - Map raw `RawField` array to `[CustomField]` domain values.
