@@ -47,21 +47,24 @@
 - [ ] 7.2 Create `CardEditForm` SwiftUI view: Name, Cardholder Name, Brand, Number, Expiry Month, Expiry Year, Security Code, Notes, editable custom field rows (existing only)
 - [ ] 7.3 Create `IdentityEditForm` SwiftUI view: Name + all identity fields grouped into sections matching the read-only card layout, Notes, editable custom field rows (existing only)
 - [ ] 7.4 Create `SecureNoteEditForm` SwiftUI view: Name, Note text, editable custom field rows (existing only)
-- [ ] 7.5 Create `SSHKeyEditForm` SwiftUI view: Name, Private Key, Public Key, Fingerprint, Notes, editable custom field rows (existing only)
+- [ ] 7.5 Create `SSHKeyEditForm` SwiftUI view: Name, Private Key (masked, with reveal toggle), Public Key, Notes, editable custom field rows (existing only); Key Fingerprint displayed as a read-only label (auto-derived, not editable)
 - [ ] 7.6 Create `CustomFieldsEditSection` reusable view: editable rows for existing custom fields only (no add/remove/reorder controls); Hidden-type fields masked with reveal toggle
 - [ ] 7.7 Ensure all edit form views use `DesignSystem` typography and spacing tokens (no hardcoded literals)
 
 ## 8. Presentation Layer — Edit Sheet Container
 
-- [ ] 8.1 Create `ItemEditView` sheet container: toolbar with Save and Discard buttons, dispatches to per-type form, shows progress indicator during save, shows inline error banner on failure
+- [ ] 8.1 Create `ItemEditView` sheet container: toolbar with Save and Discard buttons, dispatches to per-type form, shows inline error banner on failure; Save button label changes to "Saving…" while request is in-flight
 - [ ] 8.2 Add Name-required validation: disable Save and show error when Name field is empty
-- [ ] 8.3 Implement discard confirmation prompt (shown only when `hasChanges` is true), triggered by both Discard button and Esc key
+- [ ] 8.3 Implement discard confirmation prompt (shown only when `hasChanges` is true), triggered by both Discard button and Esc key; prompt buttons: "Discard Changes" (destructive) and "Keep Editing"
 - [ ] 8.4 Add `.help("Discard changes (Esc)")` tooltip to the Discard button
 - [ ] 8.5 Add `.sheet` presentation to `ItemDetailView` triggered by an Edit toolbar button
 - [ ] 8.6 Add `AccessibilityIdentifiers` constants for Edit button, Save button, Discard button, and error banner
 - [ ] 8.7 Attach `.keyboardShortcut("e", modifiers: .command)` to the Edit button in `ItemDetailView` (active only when an item is selected)
 - [ ] 8.8 Attach `.keyboardShortcut("s", modifiers: .command)` to the Save button in `ItemEditView`
 - [ ] 8.9 Add `.onExitCommand` to the `ItemEditView` sheet content to invoke the same discard logic as the Discard button (handles Esc)
+- [ ] 8.10 Observe vault lock events in `ItemEditViewModel`; dismiss the edit sheet immediately (no confirmation) and clear `DraftVaultItem` when the vault locks
+- [ ] 8.11 Clear `DraftVaultItem` from memory on sheet dismiss (both save and discard paths) to satisfy Constitution §III plaintext minimisation
+- [ ] 8.12 Apply sensitive-field auto-mask timeout to revealed password (Login) and revealed private key (SSH Key) fields, consistent with the app-wide configurable timeout
 
 ## 9. Presentation Layer — "Item" Menu Bar Extra
 
@@ -74,7 +77,7 @@
 ## 10. UI Journey Tests
 
 - [ ] 10.1 Write `EditItemJourneyTests` XCUITest: open vault, select a Login item, tap Edit, change the name, tap Save, verify detail pane and list row show updated name
-- [ ] 10.2 Write XCUITest: open edit sheet, make a change, click "Discard (ESC)", confirm discard, verify item is unchanged
+- [ ] 10.2 Write XCUITest: open edit sheet, make a change, click Discard, click "Discard Changes" in the prompt, verify item is unchanged
 - [ ] 10.3 Write XCUITest: open edit sheet, clear the Name field, verify Save is disabled
 - [ ] 10.4 Write XCUITest: select an item, press ⌘E, verify edit sheet opens
 - [ ] 10.5 Write XCUITest: open edit sheet, make a change, press ⌘S, verify sheet dismisses and item updated

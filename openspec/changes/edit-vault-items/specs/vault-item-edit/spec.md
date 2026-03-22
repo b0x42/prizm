@@ -24,7 +24,7 @@ Clicking the Edit button SHALL open a modal edit sheet containing fields pre-pop
 
 #### Scenario: Identity edit sheet pre-populated
 - **WHEN** the user clicks Edit on an Identity item
-- **THEN** an edit sheet SHALL open with the item name, title, first name, middle name, last name, company, email, phone, SSN, username, passport number, licence number, address line 1, address line 2, address line 3, city, state, postal code, country, notes, and custom fields pre-populated
+- **THEN** an edit sheet SHALL open with the item name, title, first name, middle name, last name, company, email, phone, SSN, username, passport number, license number, address line 1, address line 2, address line 3, city, state, postal code, country, notes, and custom fields pre-populated
 
 #### Scenario: Secure Note edit sheet pre-populated
 - **WHEN** the user clicks Edit on a Secure Note item
@@ -32,7 +32,7 @@ Clicking the Edit button SHALL open a modal edit sheet containing fields pre-pop
 
 #### Scenario: SSH Key edit sheet pre-populated
 - **WHEN** the user clicks Edit on an SSH Key item
-- **THEN** an edit sheet SHALL open with the item name, private key, public key, key fingerprint, notes, and custom fields pre-populated
+- **THEN** an edit sheet SHALL open with the item name, private key, public key, and notes editable, and the key fingerprint displayed as a read-only field; custom fields SHALL be pre-populated
 
 ### Requirement: Item name is editable for all types
 The system SHALL include an editable "Name" field at the top of the edit sheet regardless of item type.
@@ -68,7 +68,7 @@ The system SHALL display all existing custom fields as editable rows showing the
 - **THEN** its value SHALL be masked by default with a toggle to reveal it
 
 ### Requirement: Sensitive fields masked by default in edit sheet
-The Login password field and the SSH Key private key field SHALL be masked by default in the edit sheet, consistent with the treatment of Hidden custom fields.
+The Login password field and the SSH Key private key field SHALL be masked by default in the edit sheet, consistent with the treatment of Hidden custom fields. Revealed values SHALL auto-mask after the app's configured sensitive-field timeout (Constitution §III).
 
 #### Scenario: Password masked in Login edit sheet
 - **WHEN** the Login edit sheet is open
@@ -78,6 +78,10 @@ The Login password field and the SSH Key private key field SHALL be masked by de
 - **WHEN** the user clicks the reveal toggle on the password field
 - **THEN** the password value SHALL be shown in plain text
 
+#### Scenario: Revealed password auto-masks after timeout
+- **WHEN** the password field has been revealed and the sensitive-field timeout elapses
+- **THEN** the password field SHALL revert to masked automatically
+
 #### Scenario: Private key masked in SSH Key edit sheet
 - **WHEN** the SSH Key edit sheet is open
 - **THEN** the private key field SHALL display its value masked by default
@@ -85,6 +89,10 @@ The Login password field and the SSH Key private key field SHALL be masked by de
 #### Scenario: Private key revealed on toggle
 - **WHEN** the user clicks the reveal toggle on the private key field
 - **THEN** the private key value SHALL be shown in plain text
+
+#### Scenario: Revealed private key auto-masks after timeout
+- **WHEN** the private key field has been revealed and the sensitive-field timeout elapses
+- **THEN** the private key field SHALL revert to masked automatically
 
 ### Requirement: Save action re-encrypts and persists the item
 The Save action (button, ⌘S, or menu bar) SHALL re-encrypt the edited item, call `PUT /ciphers/{id}` on the Bitwarden API, and on success update the in-memory vault and dismiss the edit sheet.
@@ -106,7 +114,7 @@ The Save action (button, ⌘S, or menu bar) SHALL re-encrypt the edited item, ca
 
 #### Scenario: All save triggers disabled during in-flight request
 - **WHEN** a save request is in progress
-- **THEN** the Save button, ⌘S, and the menu bar Save action SHALL all be disabled and a progress indicator SHALL be shown
+- **THEN** the Save button SHALL change its label to "Saving…" and be disabled, ⌘S and the menu bar Save action SHALL be disabled, the Discard button SHALL be disabled, and a progress indicator SHALL be shown
 
 ### Requirement: Discard unsaved edits
 The edit sheet toolbar SHALL display a "Discard" button alongside the Save button. The button SHALL have a tooltip "Discard changes (Esc)". Clicking it or pressing Esc are equivalent and follow the same confirmation logic. The confirmation prompt SHALL offer two actions: "Discard Changes" (confirms discard) and "Keep Editing" (returns to the edit sheet).
@@ -131,9 +139,17 @@ The edit sheet toolbar SHALL display a "Discard" button alongside the Save butto
 - **WHEN** the confirmation prompt is shown and the user clicks "Discard Changes"
 - **THEN** the edit sheet SHALL dismiss and the item SHALL retain its original values
 
-#### Scenario: Keeping editing dismisses prompt
+#### Scenario: Keep Editing dismisses prompt
 - **WHEN** the confirmation prompt is shown and the user clicks "Keep Editing"
 - **THEN** the prompt SHALL dismiss and the edit sheet SHALL remain open with all edits intact
+
+#### Scenario: DraftVaultItem cleared from memory on dismiss
+- **WHEN** the edit sheet is dismissed (whether by saving, discarding, or vault lock)
+- **THEN** the `DraftVaultItem` holding plaintext field values SHALL be cleared from memory
+
+#### Scenario: Edit sheet dismissed when vault locks
+- **WHEN** the vault is locked while the edit sheet is open
+- **THEN** the edit sheet SHALL be dismissed immediately without a confirmation prompt and all unsaved edits SHALL be discarded
 
 ### Requirement: Keyboard shortcut to open edit sheet
 The system SHALL open the edit sheet for the currently selected item when the user presses `⌘E`. If the edit sheet is already open, `⌘E` SHALL have no effect.
@@ -183,6 +199,10 @@ The system SHALL display a `MenuBarExtra` labelled "Item" in the macOS system me
 #### Scenario: Edit action disabled with no selection
 - **WHEN** no vault item is selected
 - **THEN** the "Edit" menu item SHALL be disabled
+
+#### Scenario: Edit action does nothing when edit sheet is already open
+- **WHEN** the edit sheet is already open and the user clicks "Item" → "Edit"
+- **THEN** the edit sheet SHALL remain open unchanged
 
 #### Scenario: Save action saves current edits
 - **WHEN** the edit sheet is open, the Name field is non-empty, and the user clicks "Item" → "Save"
