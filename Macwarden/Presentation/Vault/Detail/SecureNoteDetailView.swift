@@ -4,7 +4,8 @@ import SwiftUI
 
 /// Detail view for Secure Note items.
 ///
-/// Displays the note body (copyable) and any custom fields.
+/// Displays the note body in a "Note" card and any custom fields in a
+/// "Custom Fields" card. Both sections are hidden when their content is empty.
 struct SecureNoteDetailView: View {
 
     let item:       VaultItem
@@ -13,18 +14,24 @@ struct SecureNoteDetailView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+
                 if let notes = secureNote.notes, !notes.isEmpty {
-                    FieldRowView(label: "Notes", value: notes, itemId: item.id, onCopy: onCopy)
-                    Divider()
+                    DetailSectionCard("Note") {
+                        FieldRowView(label: "Notes", value: notes, itemId: item.id, onCopy: onCopy)
+                    }
                 }
-                CustomFieldsSection(
-                    fields: secureNote.customFields,
-                    itemId: item.id,
-                    onCopy: onCopy
-                )
+
+                if !secureNote.customFields.isEmpty {
+                    DetailSectionCard("Custom Fields") {
+                        CustomFieldsSection(
+                            fields: secureNote.customFields,
+                            itemId: item.id,
+                            onCopy: onCopy
+                        )
+                    }
+                }
             }
-            .padding(.horizontal, 8)
         }
     }
 }

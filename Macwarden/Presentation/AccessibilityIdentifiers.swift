@@ -78,6 +78,10 @@ nonisolated enum AccessibilityID {
         static let itemName          = "detail.name"
         static let createdDate       = "detail.created"
         static let updatedDate       = "detail.updated"
+        /// Accessibility identifier for a `DetailSectionCard` header label.
+        static func cardHeader(_ title: String) -> String {
+            "detail.cardHeader.\(title.lowercased().replacingOccurrences(of: " ", with: "."))"
+        }
     }
 
     // MARK: - Field Row (US3)

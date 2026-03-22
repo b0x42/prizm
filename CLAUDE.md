@@ -57,6 +57,45 @@ xcodebuild test \
   -destination "platform=macOS"
 ```
 
+## Design System
+
+All Presentation layer typography and spacing is defined in one place:
+`Macwarden/Presentation/DesignSystem.swift`
+
+**Never use raw font or spacing literals in views.** Always reference the tokens below.
+
+### Typography tokens (`Typography.*`)
+
+| Token | Font | Approx pt (macOS) | Role |
+|---|---|---|---|
+| `pageTitle` | `.largeTitle.bold()` | 26pt | Item name in detail pane |
+| `sectionHeader` | `.title3` | 15pt | Card section headings ("Credentials", "Websites") |
+| `fieldValue` | `.body` | 13pt | Primary field content |
+| `fieldLabel` | `.subheadline` | 11pt | Small label above a field value |
+| `utility` | `.caption` | 10pt | COPY button, footer dates, metadata |
+| `listTitle` | `.body` | 13pt | Item name in the list pane |
+| `listSubtitle` | `.caption` | 10pt | Secondary subtitle in list rows |
+
+### Spacing tokens (`Spacing.*`)
+
+| Token | Value | Role |
+|---|---|---|
+| `pageMargin` | 20pt | Horizontal edges of the detail pane |
+| `pageTop` | 28pt | Above the item title |
+| `pageHeaderBottom` | 12pt | Below the item title |
+| `cardTop` | 12pt | Above each section card |
+| `cardBottom` | 18pt | Below each section card |
+| `headerGap` | 8pt | Between section header label and card |
+| `rowVertical` | 9pt | Field row top/bottom padding |
+| `rowHorizontal` | 12pt | Field row left/right padding |
+
+### Adding new views
+
+When building a new view that needs fonts or spacing:
+1. Check if an existing token fits — use it.
+2. If a genuinely new role is needed, add it to `DesignSystem.swift` with a comment.
+3. Never hardcode a size that should be consistent with existing UI.
+
 ## Architecture Rules
 
 1. **Domain layer** — `import Foundation` only. No crypto imports, no `SwiftUI`, no `AppKit`.

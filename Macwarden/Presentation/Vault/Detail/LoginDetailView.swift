@@ -4,63 +4,86 @@ import SwiftUI
 
 /// Detail view for Login items (FR-025, FR-029).
 ///
-/// Displays username, masked password, each URI as an independent copyable row
-/// with an open-in-browser button, notes, and custom fields.
+/// Fields are grouped into labelled card sections to reduce cognitive load
+/// when scanning items with multiple URIs, notes, and custom fields.
+/// Sections are hidden entirely when their content is nil/empty.
 struct LoginDetailView: View {
 
     let item:  VaultItem
     let login: LoginContent
     let onCopy: (String) -> Void
 
+    // A Credentials card is only meaningful when at least one credential field is present.
+    private var hasCredentials: Bool {
+        login.username != nil || login.password != nil
+    }
+
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                if let username = login.username {
-                    FieldRowView(
-                        label:  "Username",
-                        value:  username,
-                        itemId: item.id,
-                        onCopy: onCopy
-                    )
-                    Divider()
+            VStack(alignment: .leading, spacing: 0) {
+
+                if hasCredentials {
+                    DetailSectionCard("Credentials") {
+                        if let username = login.username {
+                            FieldRowView(
+                                label:  "Username",
+                                value:  username,
+                                itemId: item.id,
+                                onCopy: onCopy
+                            )
+                        }
+                        if login.username != nil && login.password != nil {
+                            Divider()
+                        }
+                        if let password = login.password {
+                            FieldRowView(
+                                label:    "Password",
+                                value:    password,
+                                itemId:   item.id,
+                                isMasked: true,
+                                onCopy:   onCopy
+                            )
+                        }
+                    }
                 }
 
-                if let password = login.password {
-                    FieldRowView(
-                        label:    "Password",
-                        value:    password,
-                        itemId:   item.id,
-                        isMasked: true,
-                        onCopy:   onCopy
-                    )
-                    Divider()
-                }
-
-                ForEach(login.uris.indices, id: \.self) { index in
-                    let uri = login.uris[index]
-                    FieldRowView(
-                        label:  "Website",
-                        value:  uri.uri,
-                        itemId: item.id,
-                        url:    URL(string: uri.uri),
-                        onCopy: onCopy
-                    )
-                    Divider()
+                if !login.uris.isEmpty {
+                    DetailSectionCard("Websites") {
+                        ForEach(login.uris.indices, id: \.self) { index in
+                            let uri = login.uris[index]
+                            if index > 0 { Divider() }
+                            FieldRowView(
+                                label:  "Website",
+                                value:  uri.uri,
+                                itemId: item.id,
+                                url:    URL(string: uri.uri),
+                                onCopy: onCopy
+                            )
+                        }
+                    }
                 }
 
                 if let notes = login.notes, !notes.isEmpty {
-                    FieldRowView(
-                        label:  "Notes",
-                        value:  notes,
-                        itemId: item.id,
-                        onCopy: onCopy
-                    )
-                    Divider()
+                    DetailSectionCard("Notes") {
+                        FieldRowView(
+                            label:  "Notes",
+                            value:  notes,
+                            itemId: item.id,
+                            onCopy: onCopy
+                        )
+                    }
                 }
 
-                CustomFieldsSection(fields: login.customFields, itemId: item.id, onCopy: onCopy)
+                if !login.customFields.isEmpty {
+                    DetailSectionCard("Custom Fields") {
+                        CustomFieldsSection(
+                            fields: login.customFields,
+                            itemId: item.id,
+                            onCopy: onCopy
+                        )
+                    }
+                }
             }
-            .padding(.horizontal, 8)
         }
     }
 }

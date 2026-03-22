@@ -26,9 +26,9 @@ struct CustomFieldsSection: View {
                 }
             } header: {
                 Text("Custom Fields")
-                    .font(.caption)
+                    .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.headerGap)
                     .padding(.horizontal, 8)
             }
         }
@@ -58,30 +58,30 @@ struct CustomFieldsSection: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(field.name)
-                        .font(.caption)
+                        .font(Typography.fieldLabel)
                         .foregroundStyle(.secondary)
                     Image(systemName: field.value == "true" ? "checkmark.square" : "square")
                         .imageScale(.medium)
                 }
                 Spacer()
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
+            .padding(.vertical, Spacing.rowVertical)
+            .padding(.horizontal, Spacing.rowHorizontal)
 
         case .linked:
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(field.name)
-                        .font(.caption)
+                        .font(Typography.fieldLabel)
                         .foregroundStyle(.secondary)
                     Text("→ \(field.linkedId?.displayName ?? "Unknown Field")")
-                        .font(.body)
+                        .font(Typography.fieldValue)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
+            .padding(.vertical, Spacing.rowVertical)
+            .padding(.horizontal, Spacing.rowHorizontal)
         }
     }
 }
