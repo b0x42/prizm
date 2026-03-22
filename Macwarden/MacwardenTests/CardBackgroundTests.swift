@@ -30,21 +30,21 @@ final class CardBackgroundTests: XCTestCase {
 
     /// A non-empty title means the card should render a visible section header.
     func testHasHeader_nonEmptyTitle_returnsTrue() {
-        XCTAssertTrue(DetailSectionCard.hasHeader("Credentials"))
+        XCTAssertTrue(DetailSectionCard<EmptyView>.hasHeader("Credentials"))
     }
 
     /// An empty string title means no header label should be rendered.
     func testHasHeader_emptyTitle_returnsFalse() {
-        XCTAssertFalse(DetailSectionCard.hasHeader(""))
+        XCTAssertFalse(DetailSectionCard<EmptyView>.hasHeader(""))
     }
 
     /// A whitespace-only title is treated as absent — no header rendered.
     func testHasHeader_whitespaceTitle_returnsFalse() {
-        XCTAssertFalse(DetailSectionCard.hasHeader("   "))
+        XCTAssertFalse(DetailSectionCard<EmptyView>.hasHeader("   "))
     }
 
     /// nil title means no header label should be rendered.
     func testHasHeader_nilTitle_returnsFalse() {
-        XCTAssertFalse(DetailSectionCard.hasHeader(nil))
+        XCTAssertFalse(DetailSectionCard<EmptyView>.hasHeader(nil))
     }
 }
