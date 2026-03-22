@@ -29,7 +29,7 @@ struct ItemRowView: View {
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 4) {
                     Text(item.name)
-                        .font(.body)
+                        .font(Typography.listTitle)
                         .lineLimit(1)
                     if item.isFavorite {
                         Image(systemName: "star.fill")
@@ -39,7 +39,7 @@ struct ItemRowView: View {
                 }
                 if let subtitle = subtitle(for: item) {
                     Text(subtitle)
-                        .font(.caption)
+                        .font(Typography.listSubtitle)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }

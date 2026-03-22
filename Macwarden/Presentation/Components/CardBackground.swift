@@ -55,10 +55,10 @@ struct DetailSectionCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.headerGap) {
             if Self.hasHeader(title) {
                 Text(title!)
-                    .font(.headline)
+                    .font(Typography.sectionHeader)
                     .foregroundStyle(.secondary)
                     .padding(.leading, 4)
                     .accessibilityIdentifier(
@@ -71,9 +71,9 @@ struct DetailSectionCard<Content: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .cardBackground()
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 18)
+        .padding(.horizontal, Spacing.pageMargin)
+        .padding(.top, Spacing.cardTop)
+        .padding(.bottom, Spacing.cardBottom)
     }
 
     // MARK: - Testable header logic

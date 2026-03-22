@@ -24,13 +24,13 @@ struct ItemDetailView: View {
                         size:     36
                     )
                     Text(item.name.isEmpty ? " " : item.name)
-                        .font(.largeTitle.bold())
+                        .font(Typography.pageTitle)
                         .accessibilityIdentifier(AccessibilityID.Detail.itemName)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 28)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
+                .padding(.top, Spacing.pageTop)
+                .padding(.horizontal, Spacing.pageMargin)
+                .padding(.bottom, Spacing.pageHeaderBottom)
 
                 // Type-specific content
                 typeDetailView(for: item)
@@ -43,7 +43,7 @@ struct ItemDetailView: View {
                         "Created \(item.creationDate.formatted(date: .abbreviated, time: .omitted))",
                         systemImage: "calendar"
                     )
-                    .font(.caption)
+                    .font(Typography.utility)
                     .foregroundStyle(.secondary)
 
                     Spacer()
@@ -52,7 +52,7 @@ struct ItemDetailView: View {
                         "Updated \(item.revisionDate.formatted(date: .abbreviated, time: .omitted))",
                         systemImage: "clock"
                     )
-                    .font(.caption)
+                    .font(Typography.utility)
                     .foregroundStyle(.secondary)
                 }
                 .padding(12)

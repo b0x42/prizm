@@ -44,10 +44,10 @@ struct FieldRowView: View {
             } else {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label)
-                        .font(.footnote)
+                        .font(Typography.fieldLabel)
                         .foregroundStyle(.secondary)
                     Text(value ?? "—")
-                        .font(.body)
+                        .font(Typography.fieldValue)
                         .textSelection(.enabled)
                 }
             }
@@ -62,7 +62,7 @@ struct FieldRowView: View {
                             onCopy?(copyValue)
                         } label: {
                             Text("COPY")
-                                .font(.caption)
+                                .font(Typography.utility)
                                 .bold()
                         }
                         .buttonStyle(.plain)
@@ -83,8 +83,8 @@ struct FieldRowView: View {
                 .transition(.opacity)
             }
         }
-        .padding(.vertical, 9)
-        .padding(.horizontal, 12)
+        .padding(.vertical, Spacing.rowVertical)
+        .padding(.horizontal, Spacing.rowHorizontal)
         .background(
             RoundedRectangle(cornerRadius: 4)
                 .fill(isHovered ? Color.primary.opacity(0.06) : Color.clear)

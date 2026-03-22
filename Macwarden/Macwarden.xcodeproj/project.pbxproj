@@ -63,6 +63,7 @@
 		A2B3C4D5E6F74718B9C0D1E2 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8F9A0B1C2D3E4F5A6B7C8D /* KeychainService.swift */; };
 		AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */; };
 		CB1A2B3C4D5E6F7A8B9C0D1E /* CardBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */; };
+		EE11223344556677889900BB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00112233445566778899AA /* DesignSystem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,6 +134,7 @@
 		7E8F9A0B1C2D3E4F5A6B7C8D /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityIdentifiers.swift; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardBackground.swift; sourceTree = "<group>"; };
+		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -292,6 +294,7 @@
 			isa = PBXGroup;
 			children = (
 				BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */,
+				FF00112233445566778899AA /* DesignSystem.swift */,
 				CE7CA2E3F69D4D26BA2E50F2 /* Unlock */,
 				498456596EC249F78737016A /* Sync */,
 				7D6DFC79E63B457284977CA8 /* Login */,
@@ -663,6 +666,7 @@
 				A2B3C4D5E6F74718B9C0D1E2 /* KeychainService.swift in Sources */,
 				AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */,
 				CB1A2B3C4D5E6F7A8B9C0D1E /* CardBackground.swift in Sources */,
+				EE11223344556677889900BB /* DesignSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
