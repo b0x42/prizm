@@ -16,6 +16,12 @@ struct MacwardenApp: App {
     @StateObject private var container: AppContainer
     @StateObject private var rootVM:    RootViewModel
 
+    // @State on the App struct is the only reliable way to drive SceneBuilder
+    // re-evaluation dynamically. @StateObject changes re-render views inside
+    // scenes (WindowGroup content) but do NOT reliably trigger scene-graph
+    // diffing. This @State is kept in sync via .onChange inside rootView.
+    @State private var menuBarVisible = false
+
     init() {
         let c = AppContainer()
         _container = StateObject(wrappedValue: c)
@@ -27,6 +33,10 @@ struct MacwardenApp: App {
             rootView
                 .frame(minWidth: 480, minHeight: 360)
                 .containerBackground(.thinMaterial, for: .window)
+                // Bridge @StateObject observation into @State so the SceneBuilder
+                // re-evaluates when the vault locks or unlocks (spec §9.2).
+                .onAppear { menuBarVisible = rootVM.menuBarIsVaultUnlocked }
+                .onChange(of: rootVM.menuBarIsVaultUnlocked) { _, v in menuBarVisible = v }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
@@ -41,18 +51,10 @@ struct MacwardenApp: App {
         }
 
         // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
-        //
-        // Uses `if` (not isInserted: Binding) for conditional visibility. isInserted:
-        // with a computed Binding(get:set:) is not tracked for changes by SwiftUI —
-        // only a direct @State / @AppStorage / @Published binding is. The `if` branch
-        // is re-evaluated as part of normal SceneBuilder diffing when rootVM fires
-        // objectWillChange (which happens here because menuBarIsVaultUnlocked is a
-        // computed property that reads `screen`, a @Published on this @StateObject).
-        //
-        // Earlier attempts at `if` failed because menuBarIsVaultUnlocked was set via a
-        // Combine sink with @MainActor isolation ambiguity, so objectWillChange never
-        // fired. The computed property removes that indirection entirely.
-        if rootVM.menuBarIsVaultUnlocked {
+        // Conditioned on `menuBarVisible` (@State on App) rather than a @StateObject
+        // property: @State changes are guaranteed to trigger SceneBuilder diffing and
+        // insert/remove the MenuBarExtra from the system status bar.
+        if menuBarVisible {
             MenuBarExtra("Item", systemImage: "key.fill") {
                 Button("Edit") {
                     container.menuBarViewModel.onEdit?()
