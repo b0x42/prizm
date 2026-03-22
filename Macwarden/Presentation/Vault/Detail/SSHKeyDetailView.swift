@@ -42,7 +42,10 @@ struct SSHKeyDetailView: View {
                         onCopy: hasFingerprint ? onCopy : { _ in }
                     )
 
-                    // Private key — masked
+                    // Private key — masked by default.
+                    // Security goal: the SSH private key is long-lived credentials material;
+                    // masking prevents accidental shoulder-surfing and screen-capture exposure.
+                    // The user must explicitly tap the reveal button to view the raw key.
                     if let privateKey = sshKey.privateKey {
                         Divider()
                         FieldRowView(
