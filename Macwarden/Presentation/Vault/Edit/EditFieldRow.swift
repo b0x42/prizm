@@ -7,8 +7,8 @@ import SwiftUI
 ///
 /// Usage:
 /// ```swift
-/// EditFieldRow("Username", text: $draft.username)
-/// EditFieldRow("Notes", text: $draft.notes, isMultiline: true)
+/// EditFieldRow(label: "Username", text: $draft.username)
+/// EditFieldRow(label: "Notes", text: $draft.notes, isMultiline: true)
 /// ```
 struct EditFieldRow: View {
 
@@ -49,7 +49,7 @@ struct OptionalEditFieldRow: View {
 
     var body: some View {
         EditFieldRow(
-            label,
+            label: label,
             text: Binding(
                 get:  { value ?? "" },
                 set:  { value = $0.isEmpty ? nil : $0 }

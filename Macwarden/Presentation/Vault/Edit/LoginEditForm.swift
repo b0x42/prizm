@@ -49,7 +49,7 @@ private struct URIEditRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            EditFieldRow("Website", text: $uri.uri)
+            EditFieldRow(label: "Website", text: $uri.uri)
             Divider()
             HStack {
                 Text("Match Type")
