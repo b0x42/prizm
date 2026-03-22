@@ -58,8 +58,7 @@ struct DetailSectionCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 6) {
             if Self.hasHeader(title) {
                 Text(title!)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .font(.headline)
                     .foregroundStyle(.secondary)
                     .padding(.leading, 4)
                     .accessibilityIdentifier(
