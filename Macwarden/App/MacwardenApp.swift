@@ -41,30 +41,33 @@ struct MacwardenApp: App {
         }
 
         // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
-        // `if` in SceneBuilder IS supported; the earlier compile error was caused by
-        // accessing a nested @StateObject chain (container.menuBarViewModel.isVaultUnlocked).
-        // Now that menuBarIsVaultUnlocked is a direct @Published on the @StateObject rootVM,
-        // this compiles and reactively hides/shows the extra on lock/unlock.
-        // Note: isInserted: Binding only gates user-removal (macOS 13 feature) — it does
-        // not actually show/hide the extra on value changes.
-        if rootVM.menuBarIsVaultUnlocked {
-            MenuBarExtra("Item", systemImage: "key.fill") {
-                Button("Edit") {
-                    container.menuBarViewModel.onEdit?()
-                }
-                .disabled(!rootVM.menuBarCanEdit)
-                // Renders ⌘E inline in the dropdown (spec §9.3).
-                .keyboardShortcut("e", modifiers: .command)
-
-                Button("Save") {
-                    container.menuBarViewModel.onSave?()
-                }
-                .disabled(!rootVM.menuBarCanSave)
-                // Renders ⌘S inline in the dropdown (spec §9.4).
-                .keyboardShortcut("s", modifiers: .command)
+        // isInserted: is the correct API for conditional visibility (Apple docs §"Create
+        // custom menus"). The Binding getter reads menuBarIsVaultUnlocked, which is a
+        // computed property derived from `screen` (@Published on this @StateObject) —
+        // guaranteed to trigger a SceneBuilder re-evaluation on every screen transition.
+        MenuBarExtra(
+            "Item",
+            systemImage: "key.fill",
+            isInserted: Binding(
+                get:  { rootVM.menuBarIsVaultUnlocked },
+                set:  { _ in }   // read-only; vault lock state is model-driven
+            )
+        ) {
+            Button("Edit") {
+                container.menuBarViewModel.onEdit?()
             }
-            .menuBarExtraStyle(.menu)
+            .disabled(!rootVM.menuBarCanEdit)
+            // Renders ⌘E inline in the dropdown (spec §9.3).
+            .keyboardShortcut("e", modifiers: .command)
+
+            Button("Save") {
+                container.menuBarViewModel.onSave?()
+            }
+            .disabled(!rootVM.menuBarCanSave)
+            // Renders ⌘S inline in the dropdown (spec §9.4).
+            .keyboardShortcut("s", modifiers: .command)
         }
+        .menuBarExtraStyle(.menu)
     }
 
     @ViewBuilder
@@ -126,17 +129,23 @@ final class RootViewModel: ObservableObject {
 
     @Published var screen: Screen
 
-    // MARK: - Menu bar extra state (forwarded from MenuBarViewModel)
-    //
-    // @ObservedObject does not drive re-renders in an App struct's SceneBuilder body —
-    // only @StateObject does. These three properties forward MenuBarViewModel's published
-    // state into RootViewModel (a @StateObject) so the SceneBuilder reacts correctly.
+    // MARK: - Menu bar extra state
 
-    /// Whether the "Item" MenuBarExtra should be visible (vault unlocked).
-    @Published private(set) var menuBarIsVaultUnlocked: Bool = false
+    /// Whether the "Item" MenuBarExtra should be visible.
+    ///
+    /// Derived directly from `screen` (a @Published property on this @StateObject) rather
+    /// than forwarded via Combine from MenuBarViewModel. This guarantees that SwiftUI's
+    /// observation chain fires when `screen` changes — no async Combine sink needed.
+    var menuBarIsVaultUnlocked: Bool {
+        if case .vault = screen { return true }
+        return false
+    }
+
     /// Whether the Edit action should be enabled (item selected, sheet closed).
+    /// Forwarded from MenuBarViewModel via Combine; see subscribeToFlowStates().
     @Published private(set) var menuBarCanEdit: Bool = false
     /// Whether the Save action should be enabled (sheet open).
+    /// Forwarded from MenuBarViewModel via Combine; see subscribeToFlowStates().
     @Published private(set) var menuBarCanSave: Bool = false
 
     private let logger = Logger(subsystem: "com.macwarden", category: "RootViewModel")
@@ -207,13 +216,8 @@ final class RootViewModel: ObservableObject {
             self?.vaultBrowserVM.saveSubject.send()
         }
 
-        // Forward MenuBarViewModel published state into RootViewModel so the SceneBuilder
-        // reacts to changes. @ObservedObject does not trigger App.body re-evaluations —
-        // only @StateObject does. RootViewModel is the @StateObject bridge for scene state.
-        container.menuBarViewModel.$isVaultUnlocked
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] v in self?.menuBarIsVaultUnlocked = v }
-            .store(in: &cancellables)
+        // Forward canEdit/canSave from MenuBarViewModel into RootViewModel @Published
+        // properties so the SceneBuilder button disabled states react correctly.
         container.menuBarViewModel.$canEdit
             .receive(on: DispatchQueue.main)
             .sink { [weak self] v in self?.menuBarCanEdit = v }
