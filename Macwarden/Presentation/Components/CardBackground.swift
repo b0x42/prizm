@@ -16,8 +16,8 @@ struct CardBackground: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(Color("CardBackground"))
-            .cornerRadius(20)
-            .shadow(color: .black.opacity(0.2), radius: 4)
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
     }
 }
 
@@ -55,13 +55,13 @@ struct DetailSectionCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             if Self.hasHeader(title) {
                 Text(title!)
-                    .font(.caption)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                    .padding(.horizontal, 4)
+                    .padding(.leading, 4)
                     .accessibilityIdentifier(
                         AccessibilityID.Detail.cardHeader(title!)
                     )
@@ -69,10 +69,11 @@ struct DetailSectionCard<Content: View>: View {
             VStack(alignment: .leading, spacing: 0) {
                 content
             }
+            .padding(.vertical, 6)
             .cardBackground()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Testable header logic

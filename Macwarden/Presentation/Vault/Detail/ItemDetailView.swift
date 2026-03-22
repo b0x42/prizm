@@ -17,10 +17,10 @@ struct ItemDetailView: View {
             VStack(spacing: 0) {
                 // Item name header
                 Text(item.name.isEmpty ? " " : item.name)
-                    .font(.title2.bold())
+                    .font(.title.bold())
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding([.top, .horizontal], 16)
-                    .padding(.bottom, 8)
+                    .padding([.top, .horizontal], 20)
+                    .padding(.bottom, 12)
                     .accessibilityIdentifier(AccessibilityID.Detail.itemName)
 
                 Divider()

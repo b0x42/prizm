@@ -82,8 +82,8 @@ struct FieldRowView: View {
                 .transition(.opacity)
             }
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 9)
+        .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 4)
                 .fill(isHovered ? Color.primary.opacity(0.06) : Color.clear)
