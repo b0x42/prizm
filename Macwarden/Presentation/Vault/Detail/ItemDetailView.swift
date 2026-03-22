@@ -28,7 +28,8 @@ struct ItemDetailView: View {
                         .accessibilityIdentifier(AccessibilityID.Detail.itemName)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding([.top, .horizontal], 20)
+                .padding(.top, 28)
+                .padding(.horizontal, 20)
                 .padding(.bottom, 12)
 
                 // Type-specific content
