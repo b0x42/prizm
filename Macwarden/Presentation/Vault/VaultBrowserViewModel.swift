@@ -38,12 +38,25 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
     @Published private(set) var lastSyncedAt: Date?
     @Published var syncErrorMessage: String? = nil
+    /// Reflects whether the edit sheet is currently open. Used by `MenuBarViewModel`
+    /// to enable/disable the Edit and Save menu bar actions.
+    @Published private(set) var editSheetOpen: Bool = false
 
     // MARK: - Dependencies
 
     private let vault:  any VaultRepository
     private let search: any SearchVaultUseCase
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
+
+    // MARK: - Menu bar action relay
+
+    /// Fired when the "Item > Edit" menu bar action is triggered (spec §9.3).
+    /// `ItemDetailView` observes this to open the edit sheet for the selected item.
+    let openEditSubject = PassthroughSubject<Void, Never>()
+
+    /// Fired when the "Item > Save" menu bar action is triggered (spec §9.4).
+    /// `ItemDetailView` observes this to call `save()` on the active edit ViewModel.
+    let saveSubject = PassthroughSubject<Void, Never>()
 
     // MARK: - Clipboard auto-clear
 
@@ -120,5 +133,20 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Called when a sync fails mid-session (FR-049).
     func handleSyncError(_ message: String) {
         syncErrorMessage = message
+    }
+
+    /// Called by `ItemDetailView` when the edit sheet opens or closes.
+    func handleEditSheetState(_ open: Bool) {
+        editSheetOpen = open
+    }
+
+    /// Called after a successful item edit save to refresh the list pane and detail pane.
+    ///
+    /// Updates `itemSelection` so the detail pane reflects the saved values, then
+    /// refreshes the item list and sidebar counts so any name change appears immediately.
+    func handleItemSaved(_ updatedItem: VaultItem) {
+        itemSelection = updatedItem
+        refreshItems()
+        refreshCounts()
     }
 }

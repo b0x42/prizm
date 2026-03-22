@@ -368,6 +368,11 @@ final class AuthRepositoryImpl: AuthRepository {
 
     func lockVault() async {
         await crypto.lockVault()
+        // Notify any open edit sheets to dismiss immediately (no confirmation prompt).
+        // Posted on the main queue because subscribers are @MainActor UI components.
+        await MainActor.run {
+            NotificationCenter.default.post(name: .vaultDidLock, object: nil)
+        }
     }
 
     // MARK: - Private helpers

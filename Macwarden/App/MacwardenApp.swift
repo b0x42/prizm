@@ -39,6 +39,28 @@ struct MacwardenApp: App {
                 .disabled(!rootVM.isSignedIn)
             }
         }
+
+        // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
+        // Uses `.menu` style to render a native macOS dropdown, matching the spec requirement.
+        // MenuBarExtra requires macOS 13+; the project already targets macOS 13.
+        if container.menuBarViewModel.isVaultUnlocked {
+            MenuBarExtra("Item", systemImage: "key.fill") {
+                Button("Edit") {
+                    container.menuBarViewModel.onEdit?()
+                }
+                .disabled(!container.menuBarViewModel.canEdit)
+                // Renders ⌘E inline in the dropdown (spec §9.3).
+                .keyboardShortcut("e", modifiers: .command)
+
+                Button("Save") {
+                    container.menuBarViewModel.onSave?()
+                }
+                .disabled(!container.menuBarViewModel.canSave)
+                // Renders ⌘S inline in the dropdown (spec §9.4).
+                .keyboardShortcut("s", modifiers: .command)
+            }
+            .menuBarExtraStyle(.menu)
+        }
     }
 
     @ViewBuilder
@@ -64,8 +86,16 @@ struct MacwardenApp: App {
 
         case .vault:
             VaultBrowserView(
-                viewModel:     rootVM.vaultBrowserVM,
-                faviconLoader: container.faviconLoader
+                viewModel:         rootVM.vaultBrowserVM,
+                faviconLoader:     container.faviconLoader,
+                makeEditViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] item in
+                    let vm = container.makeItemEditViewModel(for: item)
+                    // Wire the list-pane refresh callback to the shared VaultBrowserViewModel.
+                    vm.onSaveSuccess = { [weak vaultBrowserVM] updatedItem in
+                        vaultBrowserVM?.handleItemSaved(updatedItem)
+                    }
+                    return vm
+                }
             )
         }
     }
@@ -137,6 +167,28 @@ final class RootViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in self?.handleUnlockFlow(state) }
             .store(in: &cancellables)
+
+        // canEdit: item selected AND edit sheet not yet open (spec §9.3).
+        vaultBrowserVM.$itemSelection
+            .combineLatest(vaultBrowserVM.$editSheetOpen)
+            .map { selection, sheetOpen in selection != nil && !sheetOpen }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] canEdit in self?.container.menuBarViewModel.canEdit = canEdit }
+            .store(in: &cancellables)
+
+        // canSave: edit sheet is open (save guard in ItemEditViewModel handles finer checks).
+        vaultBrowserVM.$editSheetOpen
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] open in self?.container.menuBarViewModel.canSave = open }
+            .store(in: &cancellables)
+
+        // Route menu bar actions into the vault browser's relay subjects (spec §9.3–9.4).
+        container.menuBarViewModel.onEdit = { [weak self] in
+            self?.vaultBrowserVM.openEditSubject.send()
+        }
+        container.menuBarViewModel.onSave = { [weak self] in
+            self?.vaultBrowserVM.saveSubject.send()
+        }
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {
@@ -147,6 +199,7 @@ final class RootViewModel: ObservableObject {
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
+            container.menuBarViewModel.setVaultUnlocked(true)
             screen = .vault
         }
         logger.info("Screen transition → \(String(describing: state))")
@@ -193,6 +246,7 @@ final class RootViewModel: ObservableObject {
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
+            container.menuBarViewModel.setVaultUnlocked(true)
             screen = .vault
         case .login:
             // "Sign in with a different account" — reset to login.

@@ -15,10 +15,28 @@ final class VaultRepositoryImpl: VaultRepository {
 
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultRepository")
 
+    // MARK: - Dependencies (write path)
+
+    private let apiClient: any MacwardenAPIClientProtocol
+    private let crypto:    any MacwardenCryptoService
+    private let mapper:    CipherMapper
+
     // MARK: - State
 
     private var items: [VaultItem] = []
     private(set) var lastSyncedAt: Date? = nil
+
+    // MARK: - Init
+
+    init(
+        apiClient: any MacwardenAPIClientProtocol,
+        crypto:    any MacwardenCryptoService,
+        mapper:    CipherMapper = CipherMapper()
+    ) {
+        self.apiClient = apiClient
+        self.crypto    = crypto
+        self.mapper    = mapper
+    }
 
     // MARK: - Write side (called by SyncRepositoryImpl)
 
@@ -76,6 +94,71 @@ final class VaultRepositoryImpl: VaultRepository {
             throw VaultError.itemNotFound(id)
         }
         return item
+    }
+
+    // MARK: - Update (write path — called by EditVaultItemUseCaseImpl)
+
+    /// Re-encrypts `draft`, calls `PUT /api/ciphers/{id}`, splices the server-confirmed
+    /// item into the in-memory cache, and returns it.
+    ///
+    /// - Security goal: the vault's symmetric keys are used to re-encrypt every sensitive
+    ///   field before the request leaves the device. The re-encryption boundary is the call
+    ///   to `CipherMapper.toRawCipher` — after that point only EncString ciphertext exists
+    ///   in the `RawCipher` struct. Plaintext is never serialised into the JSON body.
+    ///   Algorithm: EncString type-2 (AES-256-CBC + HMAC-SHA256); see `CipherMapper.toRawCipher`
+    ///   for the full algorithm reference and security notes.
+    ///
+    /// - Data flow (re-encryption boundary):
+    ///   1. Obtain current symmetric keys from `MacwardenCryptoService` — throws immediately
+    ///      if the vault is locked, preventing writes from a locked state.
+    ///   2. `CipherMapper.toRawCipher` encrypts every sensitive field with the vault key.
+    ///      No plaintext value crosses this call boundary in the outbound direction.
+    ///   3. The encrypted `RawCipher` is sent via `PUT /api/ciphers/{id}`.
+    ///   4. The server response is decoded and re-mapped to a `VaultItem` — we use the
+    ///      *response* (not the draft) so the server's revision date and any server-side
+    ///      normalisation are captured correctly.
+    ///   5. The in-memory cache is patched in-place so the UI reflects the latest state
+    ///      without triggering a full re-sync.
+    ///
+    /// - What is NOT done:
+    ///   • Biometric re-authentication is not required before writing (see TODO below).
+    ///   • Offline writes are not queued; a network failure surfaces as a thrown error
+    ///     and leaves the local cache unchanged (see TODO below).
+    ///
+    /// - Throws: `MacwardenCryptoServiceError.vaultLocked` if the vault is locked.
+    /// - Throws: `APIError` on network or HTTP failure.
+    /// - Throws: `CipherMapperError` if the reverse mapper or response mapper fails.
+    func update(_ draft: DraftVaultItem) async throws -> VaultItem {
+        // TODO: Require biometric re-auth (Touch ID / Face ID) before encrypting and
+        // sending the updated cipher — deferred pending SecureEnclave entitlement approval.
+        // Until this is added, any process that obtains the unlocked vault keys can write
+        // changes without a second user confirmation.
+
+        // Step 1: Obtain current symmetric keys — throws if vault is locked.
+        let keys = try await crypto.currentKeys()
+
+        // Step 2: Re-encrypt all sensitive fields via the reverse cipher mapper.
+        let rawCipher = try mapper.toRawCipher(draft, encryptedWith: keys)
+
+        // Step 3: Send to the Bitwarden API (PUT /api/ciphers/{id}).
+        // TODO: Queue the encrypted `rawCipher` for offline persistence so edits made
+        // without connectivity are synced when the network becomes available.
+        // Deferred to a later phase — requires a durable encrypted write-ahead log.
+        let updatedRaw = try await apiClient.updateCipher(id: draft.id, cipher: rawCipher)
+
+        // Step 4: Decode the server response into a domain item.
+        let updatedItem = try mapper.map(raw: updatedRaw, keys: keys)
+
+        // Step 5: Splice into the in-memory cache (no full re-sync needed).
+        if let idx = items.firstIndex(where: { $0.id == updatedItem.id }) {
+            items[idx] = updatedItem
+        } else {
+            // Item wasn't in cache (shouldn't happen in normal flow) — append it.
+            items.append(updatedItem)
+        }
+        logger.info("Vault item updated: \(draft.id, privacy: .public)")
+
+        return updatedItem
     }
 
     // MARK: - Private helpers

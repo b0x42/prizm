@@ -7,6 +7,17 @@
 
 import Foundation
 
+// MARK: - Vault lock notification
+
+extension Notification.Name {
+    /// Posted on the main thread whenever the vault is locked (sign-out or explicit lock).
+    /// `ItemEditViewModel` subscribes to dismiss the edit sheet immediately, without a
+    /// confirmation prompt, and clear the `DraftVaultItem` from memory (Constitution §III).
+    static let vaultDidLock = Notification.Name("com.macwarden.vaultDidLock")
+}
+
+// MARK: - App config
+
 enum Config {
     static let clientName = "desktop"
     static let deviceType = 7
