@@ -23,8 +23,6 @@ struct ItemDetailView: View {
                     .padding(.bottom, 12)
                     .accessibilityIdentifier(AccessibilityID.Detail.itemName)
 
-                Divider()
-
                 // Type-specific content
                 typeDetailView(for: item)
 
