@@ -1,4 +1,5 @@
 import XCTest
+import SwiftUI
 @testable import Macwarden
 
 // MARK: - CardBackgroundTests
@@ -45,6 +46,6 @@ final class CardBackgroundTests: XCTestCase {
 
     /// nil title means no header label should be rendered.
     func testHasHeader_nilTitle_returnsFalse() {
-        XCTAssertFalse(DetailSectionCard<EmptyView>.hasHeader(nil))
+        XCTAssertFalse(DetailSectionCard<EmptyView>.hasHeader(nil as String?))
     }
 }
