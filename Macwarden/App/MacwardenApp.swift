@@ -35,8 +35,11 @@ struct MacwardenApp: App {
                 .containerBackground(.thinMaterial, for: .window)
                 // Bridge @StateObject observation into @State so the SceneBuilder
                 // re-evaluates when the vault locks or unlocks (spec §9.2).
-                .onAppear { menuBarVisible = rootVM.menuBarIsVaultUnlocked }
-                .onChange(of: rootVM.menuBarIsVaultUnlocked) { _, v in menuBarVisible = v }
+                // onReceive is used instead of onChange because onChange's two-argument
+                // closure form { _, v in } requires macOS 14; onReceive works on macOS 13+.
+                .onReceive(rootVM.$screen) { screen in
+                    menuBarVisible = { if case .vault = screen { return true }; return false }()
+                }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
