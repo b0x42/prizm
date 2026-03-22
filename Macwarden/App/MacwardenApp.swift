@@ -54,27 +54,25 @@ struct MacwardenApp: App {
         }
 
         // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
-        // Conditioned on `menuBarVisible` (@State on App) rather than a @StateObject
-        // property: @State changes are guaranteed to trigger SceneBuilder diffing and
-        // insert/remove the MenuBarExtra from the system status bar.
-        if menuBarVisible {
-            MenuBarExtra("Item", systemImage: "key.fill") {
-                Button("Edit") {
-                    container.menuBarViewModel.onEdit?()
-                }
-                .disabled(!rootVM.menuBarCanEdit)
-                // Renders ⌘E inline in the dropdown (spec §9.3).
-                .keyboardShortcut("e", modifiers: .command)
-
-                Button("Save") {
-                    container.menuBarViewModel.onSave?()
-                }
-                .disabled(!rootVM.menuBarCanSave)
-                // Renders ⌘S inline in the dropdown (spec §9.4).
-                .keyboardShortcut("s", modifiers: .command)
+        // `isInserted` is the documented SceneBuilder API for dynamic visibility; an `if`
+        // block in SceneBuilder causes a compiler diagnostic failure (swift.org bug).
+        // `$menuBarVisible` is the @State var kept in sync by .onReceive above.
+        MenuBarExtra("Item", systemImage: "key.fill", isInserted: $menuBarVisible) {
+            Button("Edit") {
+                container.menuBarViewModel.onEdit?()
             }
-            .menuBarExtraStyle(.menu)
+            .disabled(!rootVM.menuBarCanEdit)
+            // Renders ⌘E inline in the dropdown (spec §9.3).
+            .keyboardShortcut("e", modifiers: .command)
+
+            Button("Save") {
+                container.menuBarViewModel.onSave?()
+            }
+            .disabled(!rootVM.menuBarCanSave)
+            // Renders ⌘S inline in the dropdown (spec §9.4).
+            .keyboardShortcut("s", modifiers: .command)
         }
+        .menuBarExtraStyle(.menu)
     }
 
     @ViewBuilder
