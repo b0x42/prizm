@@ -72,7 +72,8 @@ struct DetailSectionCard<Content: View>: View {
             .cardBackground()
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 8)
+        .padding(.top, 6)
+        .padding(.bottom, 14)
     }
 
     // MARK: - Testable header logic
