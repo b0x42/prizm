@@ -41,32 +41,30 @@ struct MacwardenApp: App {
         }
 
         // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
-        // `isInserted` is the correct SceneBuilder API for runtime visibility. State is
-        // forwarded through rootVM (@StateObject) because @ObservedObject does not drive
-        // App.body re-evaluations — only @StateObject properties do.
-        MenuBarExtra(
-            "Item",
-            systemImage: "key.fill",
-            isInserted: Binding(
-                get: { rootVM.menuBarIsVaultUnlocked },
-                set: { _ in }
-            )
-        ) {
-            Button("Edit") {
-                container.menuBarViewModel.onEdit?()
-            }
-            .disabled(!rootVM.menuBarCanEdit)
-            // Renders ⌘E inline in the dropdown (spec §9.3).
-            .keyboardShortcut("e", modifiers: .command)
+        // `if` in SceneBuilder IS supported; the earlier compile error was caused by
+        // accessing a nested @StateObject chain (container.menuBarViewModel.isVaultUnlocked).
+        // Now that menuBarIsVaultUnlocked is a direct @Published on the @StateObject rootVM,
+        // this compiles and reactively hides/shows the extra on lock/unlock.
+        // Note: isInserted: Binding only gates user-removal (macOS 13 feature) — it does
+        // not actually show/hide the extra on value changes.
+        if rootVM.menuBarIsVaultUnlocked {
+            MenuBarExtra("Item", systemImage: "key.fill") {
+                Button("Edit") {
+                    container.menuBarViewModel.onEdit?()
+                }
+                .disabled(!rootVM.menuBarCanEdit)
+                // Renders ⌘E inline in the dropdown (spec §9.3).
+                .keyboardShortcut("e", modifiers: .command)
 
-            Button("Save") {
-                container.menuBarViewModel.onSave?()
+                Button("Save") {
+                    container.menuBarViewModel.onSave?()
+                }
+                .disabled(!rootVM.menuBarCanSave)
+                // Renders ⌘S inline in the dropdown (spec §9.4).
+                .keyboardShortcut("s", modifiers: .command)
             }
-            .disabled(!rootVM.menuBarCanSave)
-            // Renders ⌘S inline in the dropdown (spec §9.4).
-            .keyboardShortcut("s", modifiers: .command)
+            .menuBarExtraStyle(.menu)
         }
-        .menuBarExtraStyle(.menu)
     }
 
     @ViewBuilder
