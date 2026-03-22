@@ -46,26 +46,32 @@ struct MacwardenApp: App {
         }
 
         // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
-        // Uses `.menu` style to render a native macOS dropdown, matching the spec requirement.
-        // MenuBarExtra requires macOS 13+; the project already targets macOS 13.
-        if menuBarVM.isVaultUnlocked {
-            MenuBarExtra("Item", systemImage: "key.fill") {
-                Button("Edit") {
-                    container.menuBarViewModel.onEdit?()
-                }
-                .disabled(!container.menuBarViewModel.canEdit)
-                // Renders ⌘E inline in the dropdown (spec §9.3).
-                .keyboardShortcut("e", modifiers: .command)
-
-                Button("Save") {
-                    container.menuBarViewModel.onSave?()
-                }
-                .disabled(!container.menuBarViewModel.canSave)
-                // Renders ⌘S inline in the dropdown (spec §9.4).
-                .keyboardShortcut("s", modifiers: .command)
+        // `isInserted` is the correct SceneBuilder API for runtime visibility; a plain
+        // `if` block in a SceneBuilder causes a compiler diagnostic failure.
+        // The setter is a no-op because visibility is driven by MenuBarViewModel alone.
+        MenuBarExtra(
+            "Item",
+            systemImage: "key.fill",
+            isInserted: Binding(
+                get: { menuBarVM.isVaultUnlocked },
+                set: { _ in }
+            )
+        ) {
+            Button("Edit") {
+                container.menuBarViewModel.onEdit?()
             }
-            .menuBarExtraStyle(.menu)
+            .disabled(!menuBarVM.canEdit)
+            // Renders ⌘E inline in the dropdown (spec §9.3).
+            .keyboardShortcut("e", modifiers: .command)
+
+            Button("Save") {
+                container.menuBarViewModel.onSave?()
+            }
+            .disabled(!menuBarVM.canSave)
+            // Renders ⌘S inline in the dropdown (spec §9.4).
+            .keyboardShortcut("s", modifiers: .command)
         }
+        .menuBarExtraStyle(.menu)
     }
 
     @ViewBuilder
