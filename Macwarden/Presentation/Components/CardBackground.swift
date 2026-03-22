@@ -68,7 +68,7 @@ struct DetailSectionCard<Content: View>: View {
             VStack(alignment: .leading, spacing: 0) {
                 content
             }
-            .padding(.vertical, 6)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             .cardBackground()
         }
         .padding(.horizontal, 20)
