@@ -13,18 +13,13 @@ import os.log
 @main
 struct MacwardenApp: App {
 
-    @StateObject private var container:    AppContainer
-    @StateObject private var rootVM:       RootViewModel
-    // SceneBuilder cannot traverse nested @StateObject published properties, so we
-    // hold a direct @ObservedObject reference to MenuBarViewModel for the `if` guard
-    // on the MenuBarExtra scene.
-    @ObservedObject private var menuBarVM: MenuBarViewModel
+    @StateObject private var container: AppContainer
+    @StateObject private var rootVM:    RootViewModel
 
     init() {
         let c = AppContainer()
-        _container  = StateObject(wrappedValue: c)
-        _rootVM     = StateObject(wrappedValue: RootViewModel(container: c))
-        _menuBarVM  = ObservedObject(wrappedValue: c.menuBarViewModel)
+        _container = StateObject(wrappedValue: c)
+        _rootVM    = StateObject(wrappedValue: RootViewModel(container: c))
     }
 
     var body: some Scene {
@@ -46,28 +41,28 @@ struct MacwardenApp: App {
         }
 
         // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
-        // `isInserted` is the correct SceneBuilder API for runtime visibility; a plain
-        // `if` block in a SceneBuilder causes a compiler diagnostic failure.
-        // The setter is a no-op because visibility is driven by MenuBarViewModel alone.
+        // `isInserted` is the correct SceneBuilder API for runtime visibility. State is
+        // forwarded through rootVM (@StateObject) because @ObservedObject does not drive
+        // App.body re-evaluations — only @StateObject properties do.
         MenuBarExtra(
             "Item",
             systemImage: "key.fill",
             isInserted: Binding(
-                get: { menuBarVM.isVaultUnlocked },
+                get: { rootVM.menuBarIsVaultUnlocked },
                 set: { _ in }
             )
         ) {
             Button("Edit") {
                 container.menuBarViewModel.onEdit?()
             }
-            .disabled(!menuBarVM.canEdit)
+            .disabled(!rootVM.menuBarCanEdit)
             // Renders ⌘E inline in the dropdown (spec §9.3).
             .keyboardShortcut("e", modifiers: .command)
 
             Button("Save") {
                 container.menuBarViewModel.onSave?()
             }
-            .disabled(!menuBarVM.canSave)
+            .disabled(!rootVM.menuBarCanSave)
             // Renders ⌘S inline in the dropdown (spec §9.4).
             .keyboardShortcut("s", modifiers: .command)
         }
@@ -132,6 +127,19 @@ final class RootViewModel: ObservableObject {
     }
 
     @Published var screen: Screen
+
+    // MARK: - Menu bar extra state (forwarded from MenuBarViewModel)
+    //
+    // @ObservedObject does not drive re-renders in an App struct's SceneBuilder body —
+    // only @StateObject does. These three properties forward MenuBarViewModel's published
+    // state into RootViewModel (a @StateObject) so the SceneBuilder reacts correctly.
+
+    /// Whether the "Item" MenuBarExtra should be visible (vault unlocked).
+    @Published private(set) var menuBarIsVaultUnlocked: Bool = false
+    /// Whether the Edit action should be enabled (item selected, sheet closed).
+    @Published private(set) var menuBarCanEdit: Bool = false
+    /// Whether the Save action should be enabled (sheet open).
+    @Published private(set) var menuBarCanSave: Bool = false
 
     private let logger = Logger(subsystem: "com.macwarden", category: "RootViewModel")
 
@@ -200,6 +208,22 @@ final class RootViewModel: ObservableObject {
         container.menuBarViewModel.onSave = { [weak self] in
             self?.vaultBrowserVM.saveSubject.send()
         }
+
+        // Forward MenuBarViewModel published state into RootViewModel so the SceneBuilder
+        // reacts to changes. @ObservedObject does not trigger App.body re-evaluations —
+        // only @StateObject does. RootViewModel is the @StateObject bridge for scene state.
+        container.menuBarViewModel.$isVaultUnlocked
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] v in self?.menuBarIsVaultUnlocked = v }
+            .store(in: &cancellables)
+        container.menuBarViewModel.$canEdit
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] v in self?.menuBarCanEdit = v }
+            .store(in: &cancellables)
+        container.menuBarViewModel.$canSave
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] v in self?.menuBarCanSave = v }
+            .store(in: &cancellables)
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {
