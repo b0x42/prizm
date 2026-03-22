@@ -23,7 +23,7 @@ struct UnlockView: View {
                     .font(.title.bold())
                     .accessibilityIdentifier(AccessibilityID.Unlock.headerTitle)
                 Text("Enter your master password to unlock.")
-                    .font(.subheadline)
+                    .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
             }
             .padding(.top, 24)

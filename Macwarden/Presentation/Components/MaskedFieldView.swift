@@ -66,10 +66,10 @@ struct MaskedFieldView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.caption)
+                    .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
                 Text(state.displayValue)
-                    .font(.body.monospaced())
+                    .font(Typography.fieldValue.monospaced())
                     .textSelection(.enabled)
                     .accessibilityIdentifier(AccessibilityID.Masked.value(label))
             }

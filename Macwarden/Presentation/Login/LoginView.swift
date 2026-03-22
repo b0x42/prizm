@@ -27,7 +27,7 @@ struct LoginView: View {
                 Text("Macwarden")
                     .font(.title.bold())
                 Text("Self-hosted vault")
-                    .font(.subheadline)
+                    .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
             }
             .padding(.top, 24)
