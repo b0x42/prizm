@@ -61,8 +61,9 @@ struct FieldRowView: View {
                         Button {
                             onCopy?(copyValue)
                         } label: {
-                            Image(systemName: "doc.on.doc")
-                                .imageScale(.small)
+                            Text("COPY")
+                                .font(.caption)
+                                .bold()
                         }
                         .buttonStyle(.plain)
                         .help("Copy \(label)")
