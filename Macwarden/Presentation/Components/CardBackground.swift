@@ -55,7 +55,7 @@ struct DetailSectionCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             if Self.hasHeader(title) {
                 Text(title!)
                     .font(.headline)
@@ -72,8 +72,8 @@ struct DetailSectionCard<Content: View>: View {
             .cardBackground()
         }
         .padding(.horizontal, 20)
-        .padding(.top, 6)
-        .padding(.bottom, 14)
+        .padding(.top, 12)
+        .padding(.bottom, 18)
     }
 
     // MARK: - Testable header logic
