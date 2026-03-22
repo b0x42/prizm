@@ -17,6 +17,7 @@ struct FaviconView: View {
     let domain:   String?
     let itemType: ItemType
     let loader:   FaviconLoader
+    var size:     CGFloat = 16
 
     @State private var image: NSImage? = nil
 
@@ -34,7 +35,7 @@ struct FaviconView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 16, height: 16)
+        .frame(width: size, height: size)
         .task(id: domain) {
             guard let domain else {
                 image = nil

@@ -15,13 +15,21 @@ struct ItemDetailView: View {
     var body: some View {
         if let item {
             VStack(spacing: 0) {
-                // Item name header
-                Text(item.name.isEmpty ? " " : item.name)
-                    .font(.title.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding([.top, .horizontal], 20)
-                    .padding(.bottom, 12)
-                    .accessibilityIdentifier(AccessibilityID.Detail.itemName)
+                // Item name header with favicon/type icon
+                HStack(alignment: .center, spacing: 12) {
+                    FaviconView(
+                        domain:   primaryDomain(for: item),
+                        itemType: itemType(for: item),
+                        loader:   faviconLoader,
+                        size:     36
+                    )
+                    Text(item.name.isEmpty ? " " : item.name)
+                        .font(.largeTitle.bold())
+                        .accessibilityIdentifier(AccessibilityID.Detail.itemName)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding([.top, .horizontal], 20)
+                .padding(.bottom, 12)
 
                 // Type-specific content
                 typeDetailView(for: item)
@@ -55,6 +63,24 @@ struct ItemDetailView: View {
                 description: Text("Select an item from the list.")
             )
             .accessibilityIdentifier(AccessibilityID.Detail.emptyState)
+        }
+    }
+
+    // MARK: - Favicon helpers
+
+    private func primaryDomain(for item: VaultItem) -> String? {
+        guard case .login(let l) = item.content,
+              let first = l.uris.first else { return nil }
+        return URL(string: first.uri)?.host
+    }
+
+    private func itemType(for item: VaultItem) -> ItemType {
+        switch item.content {
+        case .login:      return .login
+        case .card:       return .card
+        case .identity:   return .identity
+        case .secureNote: return .secureNote
+        case .sshKey:     return .sshKey
         }
     }
 
