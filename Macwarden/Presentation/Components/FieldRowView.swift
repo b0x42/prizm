@@ -44,7 +44,7 @@ struct FieldRowView: View {
             } else {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label)
-                        .font(.caption)
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                     Text(value ?? "—")
                         .font(.body)
