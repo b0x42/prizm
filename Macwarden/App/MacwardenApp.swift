@@ -13,13 +13,18 @@ import os.log
 @main
 struct MacwardenApp: App {
 
-    @StateObject private var container: AppContainer
-    @StateObject private var rootVM:    RootViewModel
+    @StateObject private var container:    AppContainer
+    @StateObject private var rootVM:       RootViewModel
+    // SceneBuilder cannot traverse nested @StateObject published properties, so we
+    // hold a direct @ObservedObject reference to MenuBarViewModel for the `if` guard
+    // on the MenuBarExtra scene.
+    @ObservedObject private var menuBarVM: MenuBarViewModel
 
     init() {
         let c = AppContainer()
-        _container = StateObject(wrappedValue: c)
-        _rootVM    = StateObject(wrappedValue: RootViewModel(container: c))
+        _container  = StateObject(wrappedValue: c)
+        _rootVM     = StateObject(wrappedValue: RootViewModel(container: c))
+        _menuBarVM  = ObservedObject(wrappedValue: c.menuBarViewModel)
     }
 
     var body: some Scene {
@@ -43,7 +48,7 @@ struct MacwardenApp: App {
         // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
         // Uses `.menu` style to render a native macOS dropdown, matching the spec requirement.
         // MenuBarExtra requires macOS 13+; the project already targets macOS 13.
-        if container.menuBarViewModel.isVaultUnlocked {
+        if menuBarVM.isVaultUnlocked {
             MenuBarExtra("Item", systemImage: "key.fill") {
                 Button("Edit") {
                     container.menuBarViewModel.onEdit?()
