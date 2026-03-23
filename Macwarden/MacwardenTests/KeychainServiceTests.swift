@@ -1,8 +1,11 @@
 import XCTest
 @testable import Macwarden
 
-/// Failing tests for KeychainService (T014).
-/// These tests will fail until KeychainService is implemented (T018).
+/// Tests for KeychainServiceImpl exercising the real macOS Keychain (integration-level).
+///
+/// These tests hit the actual Keychain, which makes them the authoritative verification
+/// that `kSecUseDataProtectionKeychain` is wired correctly — unit tests using
+/// MockKeychainService cannot exercise real Security.framework attributes.
 @MainActor
 final class KeychainServiceTests: XCTestCase {
 

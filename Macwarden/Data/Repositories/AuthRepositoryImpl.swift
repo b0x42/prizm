@@ -236,15 +236,23 @@ final class AuthRepositoryImpl: AuthRepository {
             throw AuthError.invalidCredentials
         }
 
-        let emailKey  = KeychainKey.user(userId, "email")
+        // Read account data (email, name, serverEnvironment) once via account(for:).
+        // Previously email was also read directly below for use in makeMasterKey, producing
+        // a duplicate read. Now account(for:) is called first and email is reused from it.
+        let restoredAccount: Account
+        do {
+            restoredAccount = try account(for: userId)
+        } catch {
+            logger.error("Missing session data in Keychain: \(error.localizedDescription, privacy: .public)")
+            throw AuthError.invalidCredentials
+        }
+
         let kdfKey    = KeychainKey.user(userId, "kdfParams")
         let encKeyKey = KeychainKey.user(userId, "encUserKey")
 
-        let email: String
         let kdfJSON: String
         let encUserKey: String
         do {
-            email      = try readString(key: emailKey)
             kdfJSON    = try readString(key: kdfKey)
             encUserKey = try readString(key: encKeyKey)
         } catch {
@@ -269,7 +277,7 @@ final class AuthRepositoryImpl: AuthRepository {
         }
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
-            email:    email.lowercased(),
+            email:    restoredAccount.email.lowercased(),
             kdf:      kdfParams
         )
         let stretched  = try await crypto.stretchKey(masterKey: masterKey)
@@ -281,7 +289,6 @@ final class AuthRepositoryImpl: AuthRepository {
 
         // Restore API client state so the post-unlock sync can make authenticated requests.
         // Both baseURL and accessToken are nil on a fresh app launch until restored here.
-        let restoredAccount = try account(for: userId)
         serverEnvironment = restoredAccount.serverEnvironment
         await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
 

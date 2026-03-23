@@ -6,5 +6,13 @@
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- Keychain access group: routes items to the data protection keychain.
+	     Access is controlled by this entitlement (stable across rebuilds) rather
+	     than per-binary code-signature ACLs, eliminating keychain prompts on every build.
+	     $(AppIdentifierPrefix) is resolved at build time to TEAMID. from LocalConfig.xcconfig. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.macwarden</string>
+	</array>
 </dict>
 </plist>

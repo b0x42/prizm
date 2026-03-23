@@ -40,6 +40,9 @@ fastlane/test_output
 *.mobileprovision
 .claude/worktrees/
 
+# Per-developer Xcode signing config (contains Team ID — never commit)
+Macwarden/LocalConfig.xcconfig
+
 # Local dev Vaultwarden
 dev-vault/
 dev-vault/
