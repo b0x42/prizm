@@ -43,9 +43,6 @@ nonisolated enum SidebarSelection {
     case allItems
     case favorites
     case type(ItemType)
-    /// Soft-deleted items awaiting permanent removal (Bitwarden Trash).
-    /// Items in trash have `isDeleted == true` and are excluded from all other selections.
-    case trash
 }
 
 extension SidebarSelection: Hashable {
@@ -54,7 +51,6 @@ extension SidebarSelection: Hashable {
         case (.allItems, .allItems):         return true
         case (.favorites, .favorites):       return true
         case (.type(let a), .type(let b)):   return a == b
-        case (.trash, .trash):               return true
         default:                             return false
         }
     }
@@ -64,7 +60,6 @@ extension SidebarSelection: Hashable {
         case .allItems:        hasher.combine(0)
         case .favorites:       hasher.combine(1)
         case .type(let type):  hasher.combine(2); hasher.combine(type)
-        case .trash:           hasher.combine(3)
         }
     }
 }

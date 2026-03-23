@@ -25,14 +25,11 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Domain use cases
 
-    let syncUseCase:             SyncUseCaseImpl
-    let loginUseCase:            LoginUseCaseImpl
-    let unlockUseCase:           UnlockUseCaseImpl
-    let searchVaultUseCase:      SearchVaultUseCaseImpl
-    let editVaultItemUseCase:    EditVaultItemUseCaseImpl
-    let deleteVaultItemUseCase:  DeleteVaultItemUseCaseImpl
-    let restoreVaultItemUseCase: RestoreVaultItemUseCaseImpl
-    let emptyTrashUseCase:       EmptyTrashUseCaseImpl
+    let syncUseCase:          SyncUseCaseImpl
+    let loginUseCase:         LoginUseCaseImpl
+    let unlockUseCase:        UnlockUseCaseImpl
+    let searchVaultUseCase:   SearchVaultUseCaseImpl
+    let editVaultItemUseCase: EditVaultItemUseCaseImpl
 
     // MARK: - Init
 
@@ -60,14 +57,11 @@ final class AppContainer: ObservableObject {
         self.faviconLoader   = FaviconLoader()
         self.authRepository  = auth
         self.syncRepository  = sync
-        self.syncUseCase             = SyncUseCaseImpl(sync: sync)
-        self.loginUseCase            = LoginUseCaseImpl(auth: auth, sync: sync)
-        self.unlockUseCase           = UnlockUseCaseImpl(auth: auth, sync: sync)
-        self.searchVaultUseCase      = SearchVaultUseCaseImpl(vault: vault)
-        self.editVaultItemUseCase    = EditVaultItemUseCaseImpl(repository: vault)
-        self.deleteVaultItemUseCase  = DeleteVaultItemUseCaseImpl(repository: vault)
-        self.restoreVaultItemUseCase = RestoreVaultItemUseCaseImpl(repository: vault)
-        self.emptyTrashUseCase       = EmptyTrashUseCaseImpl(repository: vault)
+        self.syncUseCase          = SyncUseCaseImpl(sync: sync)
+        self.loginUseCase         = LoginUseCaseImpl(auth: auth, sync: sync)
+        self.unlockUseCase        = UnlockUseCaseImpl(auth: auth, sync: sync)
+        self.searchVaultUseCase   = SearchVaultUseCaseImpl(vault: vault)
+        self.editVaultItemUseCase = EditVaultItemUseCaseImpl(repository: vault)
     }
 
     // MARK: - Factories
@@ -84,13 +78,7 @@ final class AppContainer: ObservableObject {
 
     /// Creates a `VaultBrowserViewModel` backed by the live vault store.
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel {
-        VaultBrowserViewModel(
-            vault:   vaultStore,
-            search:  searchVaultUseCase,
-            delete:  deleteVaultItemUseCase,
-            restore: restoreVaultItemUseCase,
-            emptyTrash: emptyTrashUseCase
-        )
+        VaultBrowserViewModel(vault: vaultStore, search: searchVaultUseCase)
     }
 
     /// Creates an `ItemEditViewModel` for the given item, wired with the live edit use case.

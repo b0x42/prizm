@@ -33,24 +33,11 @@ struct VaultBrowserView: View {
             content: {
                 VStack(spacing: 0) {
                     syncErrorBanner
-                    if viewModel.sidebarSelection == .trash {
-                        // Trash pane — shows soft-deleted items with restore/purge actions.
-                        TrashView(
-                            items:           viewModel.displayedItems,
-                            selection:       $viewModel.itemSelection,
-                            faviconLoader:   faviconLoader,
-                            onRestore:       { id in await viewModel.performRestore(id: id) },
-                            onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) },
-                            onEmptyTrash:    { await viewModel.performEmptyTrash() }
-                        )
-                    } else {
-                        ItemListView(
-                            items:        viewModel.displayedItems,
-                            selection:    $viewModel.itemSelection,
-                            faviconLoader: faviconLoader,
-                            onDelete:     { id in await viewModel.performSoftDelete(id: id) }
-                        )
-                    }
+                    ItemListView(
+                        items:        viewModel.displayedItems,
+                        selection:    $viewModel.itemSelection,
+                        faviconLoader: faviconLoader
+                    )
                 }
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280)
             },
@@ -64,9 +51,6 @@ struct VaultBrowserView: View {
                         viewModel.handleEditSheetState(open)
                         onEditSheetState?(open)
                     },
-                    onSoftDelete:        { id in await viewModel.performSoftDelete(id: id) },
-                    onRestore:           { id in await viewModel.performRestore(id: id) },
-                    onPermanentDelete:   { id in await viewModel.performPermanentDelete(id: id) },
                     // Relay menu bar Edit/Save actions into the detail pane (spec §9.3–9.4).
                     editTrigger:         viewModel.editTrigger,
                     saveTrigger:         viewModel.saveTrigger
@@ -75,15 +59,6 @@ struct VaultBrowserView: View {
         )
         .navigationSplitViewStyle(.balanced)
         .searchable(text: $viewModel.searchQuery, prompt: "Search vault")
-        // Error alert for delete / restore / empty-trash failures.
-        .alert("Action Failed", isPresented: Binding(
-            get:  { viewModel.actionError != nil },
-            set:  { if !$0 { viewModel.actionError = nil } }
-        )) {
-            Button("OK", role: .cancel) { viewModel.actionError = nil }
-        } message: {
-            Text(viewModel.actionError ?? "")
-        }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .toolbar {
             ToolbarItem(placement: .automatic) {
