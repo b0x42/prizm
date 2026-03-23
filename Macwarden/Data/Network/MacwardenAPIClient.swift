@@ -100,16 +100,6 @@ protocol MacwardenAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/restore
     func restoreCipher(id: String) async throws
 
-    /// DELETE `/api/ciphers/purge` — permanently deletes all trashed ciphers.
-    ///
-    /// **Irreversible.** All items with a non-nil `deletedDate` are permanently removed
-    /// from the server.
-    ///
-    /// Bitwarden and Vaultwarden both require the `masterPasswordHash` in the request body
-    /// as a re-authentication confirmation before executing this destructive operation.
-    ///
-    /// Reference: Bitwarden Server API DELETE /api/ciphers/purge
-    func purgeTrashedCiphers(masterPasswordHash: String) async throws
 }
 
 // MARK: - Wire Models
@@ -569,33 +559,6 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
         try await performEmpty(request: request)
         if DebugConfig.isEnabled {
             logger.debug("[debug] restoreCipher ← ok id=\(id, privacy: .public)")
-        }
-    }
-
-    // MARK: - purgeTrashedCiphers
-
-    func purgeTrashedCiphers(masterPasswordHash: String) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/purge")
-
-        if DebugConfig.isEnabled {
-            logger.debug("[debug] purgeTrashedCiphers → DELETE \(url.absoluteString, privacy: .public)")
-        }
-
-        var request = baseRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token = accessToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        // masterPasswordHash is required by Bitwarden/Vaultwarden as a re-authentication
-        // confirmation before executing this irreversible bulk-delete operation.
-        let body = try JSONSerialization.data(withJSONObject: ["masterPasswordHash": masterPasswordHash])
-        request.httpBody = body
-
-        try await performEmpty(request: request)
-        if DebugConfig.isEnabled {
-            logger.debug("[debug] purgeTrashedCiphers ← ok")
         }
     }
 

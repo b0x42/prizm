@@ -34,14 +34,13 @@ struct VaultBrowserView: View {
                 VStack(spacing: 0) {
                     syncErrorBanner
                     if viewModel.sidebarSelection == .trash {
-                        // Trash pane — shows soft-deleted items with restore/purge actions.
+                        // Trash pane — shows soft-deleted items with restore/permanent-delete actions.
                         TrashView(
-                            items:           viewModel.displayedItems,
-                            selection:       $viewModel.itemSelection,
-                            faviconLoader:   faviconLoader,
-                            onRestore:       { id in await viewModel.performRestore(id: id) },
-                            onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) },
-                            onEmptyTrash:    { await viewModel.performEmptyTrash() }
+                            items:             viewModel.displayedItems,
+                            selection:         $viewModel.itemSelection,
+                            faviconLoader:     faviconLoader,
+                            onRestore:         { id in await viewModel.performRestore(id: id) },
+                            onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) }
                         )
                     } else {
                         ItemListView(
@@ -75,7 +74,7 @@ struct VaultBrowserView: View {
         )
         .navigationSplitViewStyle(.balanced)
         .searchable(text: $viewModel.searchQuery, prompt: "Search vault")
-        // Error alert for delete / restore / empty-trash failures.
+        // Error alert for delete / restore failures.
         .alert("Action Failed", isPresented: Binding(
             get:  { viewModel.actionError != nil },
             set:  { if !$0 { viewModel.actionError = nil } }

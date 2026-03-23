@@ -3,8 +3,8 @@ import XCTest
 
 // MARK: - DeleteRestoreVaultItemUseCaseTests
 
-/// Unit tests for `DeleteVaultItemUseCaseImpl`, `RestoreVaultItemUseCaseImpl`,
-/// and `EmptyTrashUseCaseImpl`.
+/// Unit tests for `DeleteVaultItemUseCaseImpl`, `PermanentDeleteVaultItemUseCaseImpl`,
+/// and `RestoreVaultItemUseCaseImpl`.
 ///
 /// Each use case is a thin delegate — tests verify correct delegation to the
 /// repository and that errors propagate correctly.
@@ -100,29 +100,4 @@ final class DeleteRestoreVaultItemUseCaseTests: XCTestCase {
         }
     }
 
-    // MARK: - EmptyTrashUseCase
-
-    func test_emptyTrash_delegatesToRepository() async throws {
-        let sut = EmptyTrashUseCaseImpl(repository: mockRepo)
-        try await sut.execute()
-
-        XCTAssertEqual(mockRepo.emptyTrashCallCount, 1)
-    }
-
-    func test_emptyTrash_repositoryThrows_rethrowsError() async {
-        mockRepo.stubbedEmptyTrashError = APIError.httpError(statusCode: 503, body: "unavailable")
-        let sut = EmptyTrashUseCaseImpl(repository: mockRepo)
-
-        do {
-            try await sut.execute()
-            XCTFail("Expected error to be thrown")
-        } catch let error as APIError {
-            guard case .httpError(let code, _) = error else {
-                return XCTFail("Expected .httpError, got \(error)")
-            }
-            XCTAssertEqual(code, 503)
-        } catch {
-            XCTFail("Unexpected error type: \(error)")
-        }
-    }
 }

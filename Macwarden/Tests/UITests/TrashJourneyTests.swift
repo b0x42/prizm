@@ -122,29 +122,4 @@ final class TrashJourneyTests: XCTestCase {
         XCTAssertFalse(stillPresent.waitForExistence(timeout: 3), "Permanently deleted item should not appear in Trash")
     }
 
-    // MARK: - 7.4: Empty Trash
-
-    /// Empties trash via the "Empty Trash" toolbar button and verifies the Trash list
-    /// shows the empty state.
-    func testEmptyTrash_clearsAllTrashedItems() throws {
-        // Navigate to Trash.
-        let trashSidebarRow = app.buttons["sidebar.trash"]
-        XCTAssertTrue(trashSidebarRow.waitForExistence(timeout: 5))
-        trashSidebarRow.click()
-
-        // Tap "Empty Trash".
-        let emptyTrashButton = app.buttons["trash.button.emptyTrash"]
-        XCTAssertTrue(emptyTrashButton.waitForExistence(timeout: 3))
-        XCTAssertTrue(emptyTrashButton.isEnabled, "Empty Trash should be enabled when trash has items")
-        emptyTrashButton.click()
-
-        // Confirm the destructive alert.
-        let confirmButton = app.buttons["Empty Trash"]
-        XCTAssertTrue(confirmButton.waitForExistence(timeout: 3))
-        confirmButton.click()
-
-        // Verify the empty state appears.
-        let emptyState = app.otherElements["trash.emptyState"]
-        XCTAssertTrue(emptyState.waitForExistence(timeout: 5), "Trash empty state should appear after emptying")
-    }
 }

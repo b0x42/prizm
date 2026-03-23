@@ -25,15 +25,14 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Domain use cases
 
-    let syncUseCase:                    SyncUseCaseImpl
-    let loginUseCase:                   LoginUseCaseImpl
-    let unlockUseCase:                  UnlockUseCaseImpl
-    let searchVaultUseCase:             SearchVaultUseCaseImpl
-    let editVaultItemUseCase:           EditVaultItemUseCaseImpl
-    let deleteVaultItemUseCase:         DeleteVaultItemUseCaseImpl
+    let syncUseCase:                     SyncUseCaseImpl
+    let loginUseCase:                    LoginUseCaseImpl
+    let unlockUseCase:                   UnlockUseCaseImpl
+    let searchVaultUseCase:              SearchVaultUseCaseImpl
+    let editVaultItemUseCase:            EditVaultItemUseCaseImpl
+    let deleteVaultItemUseCase:          DeleteVaultItemUseCaseImpl
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
-    let restoreVaultItemUseCase:        RestoreVaultItemUseCaseImpl
-    let emptyTrashUseCase:              EmptyTrashUseCaseImpl
+    let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
 
     // MARK: - Init
 
@@ -69,7 +68,6 @@ final class AppContainer: ObservableObject {
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
         self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
         self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
-        self.emptyTrashUseCase               = EmptyTrashUseCaseImpl(repository: vault)
     }
 
     // MARK: - Factories
@@ -91,8 +89,7 @@ final class AppContainer: ObservableObject {
             search:          searchVaultUseCase,
             delete:          deleteVaultItemUseCase,
             permanentDelete: permanentDeleteVaultItemUseCase,
-            restore:         restoreVaultItemUseCase,
-            emptyTrash:      emptyTrashUseCase
+            restore:         restoreVaultItemUseCase
         )
     }
 

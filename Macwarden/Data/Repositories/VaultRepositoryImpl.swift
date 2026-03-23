@@ -232,26 +232,6 @@ final class VaultRepositoryImpl: VaultRepository {
         logger.info("Vault item restored: \(id, privacy: .public)")
     }
 
-    /// Permanently deletes all trashed items by calling `DELETE /api/ciphers/purge`.
-    ///
-    /// - Security goal: the master password hash is included in the request body as required
-    ///   by Bitwarden/Vaultwarden, providing a re-authentication check before this irreversible
-    ///   operation. The hash is retrieved from `MacwardenCryptoService` where it is stored
-    ///   after login/unlock with the same lifecycle as the vault keys.
-    /// - On success all items with `isDeleted == true` are removed from the local cache.
-    func emptyTrash() async throws {
-        let hash: String
-        do {
-            hash = try await crypto.storedPasswordHash()
-        } catch {
-            // Translate vault-locked error to VaultError for consistent Domain-layer handling.
-            throw VaultError.vaultLocked
-        }
-        try await apiClient.purgeTrashedCiphers(masterPasswordHash: hash)
-        items.removeAll(where: \.isDeleted)
-        logger.info("Trash emptied (all trashed items permanently deleted)")
-    }
-
     // MARK: - Private helpers
 
     private func sorted(_ input: [VaultItem]) -> [VaultItem] {

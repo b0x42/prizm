@@ -55,7 +55,6 @@ final class VaultBrowserViewModel: ObservableObject {
     private let deleteUseCase:          any DeleteVaultItemUseCase
     private let permanentDeleteUseCase: any PermanentDeleteVaultItemUseCase
     private let restoreUseCase:         any RestoreVaultItemUseCase
-    private let emptyTrashCase:         any EmptyTrashUseCase
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
@@ -84,15 +83,13 @@ final class VaultBrowserViewModel: ObservableObject {
         search:          any SearchVaultUseCase,
         delete:          any DeleteVaultItemUseCase,
         permanentDelete: any PermanentDeleteVaultItemUseCase,
-        restore:         any RestoreVaultItemUseCase,
-        emptyTrash:      any EmptyTrashUseCase
+        restore:         any RestoreVaultItemUseCase
     ) {
         self.vault                  = vault
         self.search                 = search
         self.deleteUseCase          = delete
         self.permanentDeleteUseCase = permanentDelete
         self.restoreUseCase         = restore
-        self.emptyTrashCase         = emptyTrash
         refreshItems()
         refreshCounts()
         lastSyncedAt = vault.lastSyncedAt
@@ -231,19 +228,4 @@ final class VaultBrowserViewModel: ObservableObject {
         }
     }
 
-    /// Permanently deletes all items in Trash.
-    ///
-    /// The caller is responsible for showing a confirmation alert before invoking this method.
-    func performEmptyTrash() async {
-        do {
-            try await emptyTrashCase.execute()
-            logger.info("Trash emptied")
-            if itemSelection?.isDeleted == true { itemSelection = nil }
-            refreshItems()
-            refreshCounts()
-        } catch {
-            logger.error("Empty trash failed: \(error.localizedDescription, privacy: .public)")
-            actionError = error.localizedDescription
-        }
-    }
 }

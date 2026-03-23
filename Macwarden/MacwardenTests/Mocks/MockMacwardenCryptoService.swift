@@ -60,16 +60,4 @@ actor MockMacwardenCryptoService: MacwardenCryptoService {
         return stubbedVaultKeys
     }
 
-    nonisolated(unsafe) var storedHash: String? = "stubPasswordHash=="
-
-    func storePasswordHash(_ hash: String) {
-        storedHash = hash
-    }
-
-    func storedPasswordHash() throws -> String {
-        guard _isUnlocked, let hash = storedHash else {
-            throw MacwardenCryptoServiceError.vaultLocked
-        }
-        return hash
-    }
 }

@@ -158,15 +158,4 @@ actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
         if let err = restoreShouldThrow { throw err }
     }
 
-    // MARK: - Stubs: purgeTrashedCiphers
-
-    nonisolated(unsafe) var purgeShouldThrow: Error?
-    nonisolated(unsafe) var purgeCallCount: Int = 0
-    nonisolated(unsafe) var lastPurgePasswordHash: String?
-
-    func purgeTrashedCiphers(masterPasswordHash: String) async throws {
-        purgeCallCount += 1
-        lastPurgePasswordHash = masterPasswordHash
-        if let err = purgeShouldThrow { throw err }
-    }
 }

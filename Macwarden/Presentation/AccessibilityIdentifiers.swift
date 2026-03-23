@@ -117,8 +117,6 @@ nonisolated enum AccessibilityID {
     // MARK: - Trash (delete-restore-items)
 
     enum Trash {
-        /// The "Empty Trash" toolbar button in TrashView.
-        static let emptyTrashButton  = "trash.button.emptyTrash"
         /// The empty-state view shown when Trash contains no items.
         static let emptyState        = "trash.emptyState"
         /// The banner shown in ItemDetailView when the selected item is in trash.

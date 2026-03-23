@@ -78,11 +78,9 @@
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
 		48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */; };
 		50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */; };
-		41470174C79D49A0BABA5AD5 /* EmptyTrashUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB0B6F1E792423F9F3F557B /* EmptyTrashUseCase.swift */; };
 		5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */; };
 		C95CAFFEA54E4E66BED34362 /* DeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */; };
 		3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */; };
-		0213A4B95E9A4DE6938AE657 /* EmptyTrashUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E56F28CB464B95A922F683 /* EmptyTrashUseCaseImpl.swift */; };
 		7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */; };
 		421368787851407FBCA9D99F /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212734E66AE74662AD28E6CB /* TrashView.swift */; };
 /* End PBXBuildFile section */
@@ -172,11 +170,9 @@
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
 		4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCase.swift; sourceTree = "<group>"; };
-		9DB0B6F1E792423F9F3F557B /* EmptyTrashUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyTrashUseCase.swift; sourceTree = "<group>"; };
 		6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
 		42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
-		F8E56F28CB464B95A922F683 /* EmptyTrashUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyTrashUseCaseImpl.swift; sourceTree = "<group>"; };
 		8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		212734E66AE74662AD28E6CB /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
 		2D38B14DD3084CD9A3AA4FFF /* TrashJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashJourneyTests.swift; sourceTree = "<group>"; };
@@ -267,8 +263,7 @@
 				D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */,
 				EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */,
 				4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */,
-				9DB0B6F1E792423F9F3F557B /* EmptyTrashUseCase.swift */,
-				6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
+					6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -570,8 +565,7 @@
 				F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */,
 				42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */,
 				75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */,
-				F8E56F28CB464B95A922F683 /* EmptyTrashUseCaseImpl.swift */,
-				8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
+					8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -774,12 +768,10 @@
 				071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */,
 				48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */,
 				50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */,
-				41470174C79D49A0BABA5AD5 /* EmptyTrashUseCase.swift in Sources */,
-				5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */,
+					5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */,
 				C95CAFFEA54E4E66BED34362 /* DeleteVaultItemUseCaseImpl.swift in Sources */,
 				3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */,
-				0213A4B95E9A4DE6938AE657 /* EmptyTrashUseCaseImpl.swift in Sources */,
-				7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */,
+					7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */,
 				421368787851407FBCA9D99F /* TrashView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

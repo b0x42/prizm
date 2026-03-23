@@ -10,7 +10,6 @@ import XCTest
 ///   - deleteItem soft-deletes active items (marks isDeleted, stays in cache)
 ///   - deleteItem permanently removes already-trashed items from cache
 ///   - restoreItem marks trashed items as active
-///   - emptyTrash removes all trashed items from cache
 ///   - items(for: .trash) returns only trashed items
 ///   - itemCounts includes .trash count
 ///   - API errors propagate correctly
@@ -147,47 +146,6 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
         let trashed = try sut.items(for: .trash)
         XCTAssertEqual(trashed.count, 1, "Trashed item should remain when API call fails")
-    }
-
-    // MARK: - emptyTrash
-
-    func testEmptyTrash_removesAllTrashedItemsFromCache() async throws {
-        let active  = makeLogin(name: "Active",    isDeleted: false)
-        let trash1  = makeLogin(name: "Trashed 1", isDeleted: true)
-        let trash2  = makeLogin(name: "Trashed 2", isDeleted: true)
-        sut.populate(items: [active, trash1, trash2], syncedAt: Date())
-
-        try await sut.emptyTrash()
-
-        let trashed = try sut.items(for: .trash)
-        XCTAssertTrue(trashed.isEmpty, "All trashed items should be removed after empty-trash")
-
-        // Active item should be unaffected.
-        let stillActive = try sut.allItems()
-        XCTAssertEqual(stillActive.count, 1)
-        XCTAssertEqual(stillActive[0].name, "Active")
-    }
-
-    func testEmptyTrash_callsAPIOnce() async throws {
-        sut.populate(items: [makeLogin(name: "T", isDeleted: true)], syncedAt: Date())
-
-        try await sut.emptyTrash()
-
-        XCTAssertEqual(mockAPI.purgeCallCount, 1)
-    }
-
-    func testEmptyTrash_apiError_doesNotUpdateCache() async throws {
-        let item = makeLogin(name: "Trashed", isDeleted: true)
-        sut.populate(items: [item], syncedAt: Date())
-        mockAPI.purgeShouldThrow = APIError.httpError(statusCode: 500, body: "fail")
-
-        do {
-            try await sut.emptyTrash()
-            XCTFail("Expected error")
-        } catch { }
-
-        let trashed = try sut.items(for: .trash)
-        XCTAssertEqual(trashed.count, 1, "Trashed items should remain when API call fails")
     }
 
     // MARK: - items(for: .trash)

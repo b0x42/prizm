@@ -74,13 +74,6 @@ protocol VaultRepository: AnyObject {
     /// - Throws: `Error` on network or HTTP failure.
     func restoreItem(id: String) async throws
 
-    /// Permanently deletes all items in trash by calling `DELETE /ciphers/purge`.
-    ///
-    /// This operation is irreversible — all trashed items are removed from the server
-    /// and cleared from the local cache.
-    ///
-    /// - Throws: `Error` on network or HTTP failure.
-    func emptyTrash() async throws
 }
 
 // MARK: - Errors

@@ -113,16 +113,6 @@ final class MockVaultRepository: VaultRepository {
         if let error = stubbedRestoreError { throw error }
     }
 
-    // MARK: - emptyTrash stubbing
-
-    var stubbedEmptyTrashError: Error?
-    private(set) var emptyTrashCallCount: Int = 0
-
-    func emptyTrash() async throws {
-        emptyTrashCallCount += 1
-        if let error = stubbedEmptyTrashError { throw error }
-        populatedItems.removeAll(where: \.isDeleted)
-    }
 }
 
 // MARK: - ItemContent helper
