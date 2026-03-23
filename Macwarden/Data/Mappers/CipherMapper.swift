@@ -97,11 +97,14 @@ nonisolated final class CipherMapper {
         fields: [CustomField],
         keys:   CryptoKeys
     ) throws -> ItemContent {
+        // Type integers match the Bitwarden server CipherType enum:
+        // 1=Login, 2=SecureNote, 3=Card, 4=Identity, 5=SSHKey.
+        // Reference: github.com/bitwarden/server CipherType.cs; vaultwarden CipherType enum.
         switch type {
         case 1: return try mapLogin(raw.login,       notes: notes, fields: fields, keys: keys)
-        case 2: return try mapIdentity(raw.identity, notes: notes, fields: fields, keys: keys)
-        case 3: return mapSecureNote(                notes: notes, fields: fields)
-        case 4: return try mapCard(raw.card,         notes: notes, fields: fields, keys: keys)
+        case 2: return mapSecureNote(                notes: notes, fields: fields)
+        case 3: return try mapCard(raw.card,         notes: notes, fields: fields, keys: keys)
+        case 4: return try mapIdentity(raw.identity, notes: notes, fields: fields, keys: keys)
         case 5: return try mapSSHKey(raw.sshKey,     notes: notes, fields: fields, keys: keys)
         default:
             throw CipherMapperError.unsupportedCipherType(type)
@@ -316,15 +319,17 @@ nonisolated final class CipherMapper {
         secureNote: RawSecureNoteData?,
         sshKey: RawSSHKeyData?
     ) {
+        // Type integers: 1=Login, 2=SecureNote, 3=Card, 4=Identity, 5=SSHKey.
+        // Must match the forward mapper (mapContent) and the Bitwarden server CipherType enum.
         switch content {
         case .login(let c):
             return (1, try toRawLogin(c, keys: keys), nil, nil, nil, nil)
-        case .identity(let c):
-            return (2, nil, nil, try toRawIdentity(c, keys: keys), nil, nil)
         case .secureNote:
-            return (3, nil, nil, nil, RawSecureNoteData(type: 0), nil)
+            return (2, nil, nil, nil, RawSecureNoteData(type: 0), nil)
         case .card(let c):
-            return (4, nil, try toRawCard(c, keys: keys), nil, nil, nil)
+            return (3, nil, try toRawCard(c, keys: keys), nil, nil, nil)
+        case .identity(let c):
+            return (4, nil, nil, try toRawIdentity(c, keys: keys), nil, nil)
         case .sshKey(let c):
             return (5, nil, nil, nil, nil, try toRawSSHKey(c, keys: keys))
         }

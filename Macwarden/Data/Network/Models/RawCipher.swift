@@ -13,7 +13,9 @@ import Foundation
 nonisolated struct RawCipher: Codable {
     let id:             String
     let organizationId: String?
-    /// 1 = Login, 2 = Identity, 3 = Secure Note, 4 = Card, 5 = SSH Key
+    /// 1 = Login, 2 = SecureNote, 3 = Card, 4 = Identity, 5 = SSH Key
+    /// Reference: Bitwarden server `CipherType` enum (C#), Vaultwarden `CipherType` (Rust),
+    /// and Bitwarden web client `CipherType` enum (TypeScript). All three sources agree.
     let type:           Int
     let name:           String          // EncString
     let notes:          String?         // EncString
