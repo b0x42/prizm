@@ -42,7 +42,15 @@ cd macwarden
 open "Macwarden/Macwarden.xcodeproj"
 ```
 
-Build and run with `⌘R` in Xcode. No package managers or dependency installs needed.
+Before building, set up your local signing config:
+
+```bash
+cp Macwarden/LocalConfig.xcconfig.template Macwarden/LocalConfig.xcconfig
+```
+
+Open `Macwarden/LocalConfig.xcconfig` and fill in your Apple Team ID (find it in Xcode → Settings → Accounts, or at developer.apple.com → Membership). A free Apple ID is sufficient for local development.
+
+Then build and run with `⌘R`. No package managers or dependency installs needed.
 
 ### Debug Mode
 
