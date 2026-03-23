@@ -43,6 +43,18 @@ struct SidebarView: View {
                     .accessibilityIdentifier(AccessibilityID.Sidebar.type(type.displayName))
                 }
             }
+
+            // MARK: Trash section
+            // Shown without a badge count when empty so users know the section exists.
+            Section {
+                SidebarRowView(
+                    title:       "Trash",
+                    systemImage: "trash",
+                    selection:   .trash,
+                    count:       itemCounts[.trash] ?? 0
+                )
+                .accessibilityIdentifier(AccessibilityID.Sidebar.trash)
+            }
         }
         .navigationTitle("Macwarden")
     }
