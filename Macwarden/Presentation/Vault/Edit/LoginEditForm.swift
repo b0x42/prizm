@@ -18,7 +18,7 @@ struct LoginEditForm: View {
                 DetailSectionCard("Credentials") {
                     OptionalEditFieldRow(label: "Username", value: $draft.username)
                     Divider()
-                    MaskedEditFieldRow(label: "Password", value: $draft.password)
+                    MaskedEditFieldRow(label: "Password", value: $draft.password, generatorBinding: $draft.password)
                 }
 
                 if !draft.uris.isEmpty {
