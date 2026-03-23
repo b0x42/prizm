@@ -73,14 +73,25 @@ protocol MacwardenAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}
     func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher
 
-    /// DELETE `/api/ciphers/{id}` — soft-deletes a cipher by moving it to Trash.
+    /// PUT `/api/ciphers/{id}/delete` — soft-deletes a cipher by moving it to Trash.
     ///
     /// Sets `deletedDate` on the server. The item remains in the user's vault data and
     /// can be restored. Bitwarden cloud auto-purges trashed items after 30 days server-side;
     /// self-hosted Vaultwarden only auto-purges if `TRASH_AUTO_DELETE_DAYS` is configured.
     ///
-    /// Reference: Bitwarden Server API DELETE /api/ciphers/{id}
+    /// Note: `DELETE /api/ciphers/{id}` is the *permanent* delete endpoint — do NOT use it
+    /// for soft-delete. The soft-delete endpoint is `PUT /api/ciphers/{id}/delete`.
+    ///
+    /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/delete
     func softDeleteCipher(id: String) async throws
+
+    /// DELETE `/api/ciphers/{id}` — permanently deletes a cipher.
+    ///
+    /// **Irreversible.** Removes the cipher from the server entirely.
+    /// Used only when deleting an item that is already in Trash.
+    ///
+    /// Reference: Bitwarden Server API DELETE /api/ciphers/{id}
+    func permanentDeleteCipher(id: String) async throws
 
     /// PUT `/api/ciphers/{id}/restore` — restores a trashed cipher to the active vault.
     ///
@@ -498,10 +509,34 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
     func softDeleteCipher(id: String) async throws {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
+        // PUT /api/ciphers/{id}/delete — soft-delete (moves to Trash, sets deletedDate).
+        // Do NOT use DELETE /api/ciphers/{id} here; that endpoint permanently removes the cipher.
+        let url = base.appendingPathComponent("api/ciphers/\(id)/delete")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] softDeleteCipher → PUT \(url.absoluteString, privacy: .public)")
+        }
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        try await performEmpty(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] softDeleteCipher ← ok id=\(id, privacy: .public)")
+        }
+    }
+
+    // MARK: - permanentDeleteCipher
+
+    func permanentDeleteCipher(id: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/ciphers/\(id)")
 
         if DebugConfig.isEnabled {
-            logger.debug("[debug] softDeleteCipher → DELETE \(url.absoluteString, privacy: .public)")
+            logger.debug("[debug] permanentDeleteCipher → DELETE \(url.absoluteString, privacy: .public)")
         }
 
         var request = baseRequest(url: url)
@@ -512,7 +547,7 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
         try await performEmpty(request: request)
         if DebugConfig.isEnabled {
-            logger.debug("[debug] softDeleteCipher ← ok id=\(id, privacy: .public)")
+            logger.debug("[debug] permanentDeleteCipher ← ok id=\(id, privacy: .public)")
         }
     }
 

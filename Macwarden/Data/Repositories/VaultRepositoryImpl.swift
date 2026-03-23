@@ -181,35 +181,32 @@ final class VaultRepositoryImpl: VaultRepository {
 
     // MARK: - Delete / Restore / Empty Trash
 
-    /// Soft-deletes `id` by calling `DELETE /api/ciphers/{id}`.
+    /// Deletes `id`: soft-delete if active, permanent delete if already in Trash.
     ///
-    /// - Security goal: no vault key material is needed for delete — the request carries only
-    ///   the cipher ID. The access token (held by `MacwardenAPIClientImpl`) authorises the
-    ///   operation. No plaintext data is sent.
-    /// - On success the item is marked deleted in the local cache so the active list updates
-    ///   immediately without waiting for a full re-sync.
+    /// - Security goal: no vault key material is needed — only the cipher ID is sent.
+    ///   The access token (held by `MacwardenAPIClientImpl`) authorises the operation.
+    /// - Bitwarden uses two distinct endpoints:
+    ///   `PUT /ciphers/{id}/delete` for soft-delete and `DELETE /ciphers/{id}` for permanent.
+    /// - On success the local cache is updated immediately so the UI reflects the change
+    ///   without waiting for a full re-sync.
     func deleteItem(id: String) async throws {
-        // The Bitwarden server interprets `DELETE /ciphers/{id}` based on the item's current
-        // state: if `deletedDate` is nil (active item) it soft-deletes (moves to trash);
-        // if `deletedDate` is already set (trashed item) it permanently removes the cipher.
-        // The local cache mirrors this: soft-delete marks `isDeleted = true`; permanent
-        // delete removes the item entry entirely.
-        try await apiClient.softDeleteCipher(id: id)
-        if let idx = items.firstIndex(where: { $0.id == id }) {
-            if items[idx].isDeleted {
-                // Already in trash → server permanently deleted it → remove from cache.
-                items.remove(at: idx)
-                logger.info("Vault item permanently deleted: \(id, privacy: .public)")
-            } else {
-                // Active item → server soft-deleted it → mark as deleted in cache.
-                let old = items[idx]
-                items[idx] = VaultItem(
-                    id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
-                    creationDate: old.creationDate, revisionDate: old.revisionDate,
-                    content: old.content, reprompt: old.reprompt
-                )
-                logger.info("Vault item soft-deleted: \(id, privacy: .public)")
-            }
+        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
+
+        if items[idx].isDeleted {
+            // Already in Trash → permanently remove from server and cache.
+            try await apiClient.permanentDeleteCipher(id: id)
+            items.remove(at: idx)
+            logger.info("Vault item permanently deleted: \(id, privacy: .public)")
+        } else {
+            // Active item → soft-delete (moves to Trash on server).
+            try await apiClient.softDeleteCipher(id: id)
+            let old = items[idx]
+            items[idx] = VaultItem(
+                id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
+                creationDate: old.creationDate, revisionDate: old.revisionDate,
+                content: old.content, reprompt: old.reprompt
+            )
+            logger.info("Vault item soft-deleted: \(id, privacy: .public)")
         }
     }
 

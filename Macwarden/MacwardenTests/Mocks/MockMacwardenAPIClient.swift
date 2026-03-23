@@ -134,6 +134,18 @@ actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
         if let err = softDeleteShouldThrow { throw err }
     }
 
+    // MARK: - Stubs: permanentDeleteCipher
+
+    nonisolated(unsafe) var permanentDeleteShouldThrow: Error?
+    nonisolated(unsafe) var permanentDeleteCallCount: Int = 0
+    nonisolated(unsafe) var lastPermanentDeletedId: String?
+
+    func permanentDeleteCipher(id: String) async throws {
+        permanentDeleteCallCount += 1
+        lastPermanentDeletedId = id
+        if let err = permanentDeleteShouldThrow { throw err }
+    }
+
     // MARK: - Stubs: restoreCipher
 
     nonisolated(unsafe) var restoreShouldThrow: Error?
