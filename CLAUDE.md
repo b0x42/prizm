@@ -40,6 +40,10 @@ specs/
     └── contracts/      # Repository protocol specs
 ```
 
+## Setup
+
+**Team ID (code signing):** The Xcode project requires a valid Apple Developer Team ID for code signing. If the Team ID is not set (empty or `""` in the project file), **ask the user for their Team ID before running any build or test commands** — do not attempt to build without it, as the build will fail with a signing error.
+
 ## Commands
 
 ```bash
