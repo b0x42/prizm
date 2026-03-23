@@ -18,6 +18,13 @@ struct ItemDetailView: View {
     /// Called when the edit sheet opens (`true`) or closes (`false`).
     /// Drives `MenuBarViewModel.canEdit` / `canSave` state (task 9.5).
     var onEditSheetChanged: ((Bool) -> Void)? = nil
+    /// Called to soft-delete the current active item (moves it to Trash).
+    /// Nil when the detail pane does not support delete (e.g. unit-test stubs).
+    var onSoftDelete: ((String) async -> Void)? = nil
+    /// Called to restore the current trashed item back to the active vault.
+    var onRestore: ((String) async -> Void)? = nil
+    /// Called to permanently delete the current trashed item.
+    var onPermanentDelete: ((String) async -> Void)? = nil
 
     /// Incremented by `VaultBrowserViewModel.triggerEdit()` when the "Item > Edit" menu bar
     /// action fires (spec §9.3). `.onChange` opens the edit sheet for the current item.
@@ -33,9 +40,21 @@ struct ItemDetailView: View {
     /// released (nil'd) when the sheet is dismissed to clear the draft from memory (§III).
     @State private var editViewModel: ItemEditViewModel?
 
+    // Confirmation alert state for soft-delete from the detail toolbar.
+    @State private var showSoftDeleteAlert:    Bool = false
+    // Confirmation alert state for permanent delete from the detail toolbar (trashed items).
+    @State private var showPermanentDeleteAlert: Bool = false
+
     var body: some View {
         if let item {
             VStack(spacing: 0) {
+                // Trash status banner — shown when the item is soft-deleted.
+                // Editing is disabled for trashed items (the Bitwarden API rejects PUT on
+                // a deleted cipher); the user must restore before editing.
+                if item.isDeleted {
+                    trashBanner(for: item)
+                }
+
                 // Item name header with favicon/type icon
                 HStack(alignment: .center, spacing: 12) {
                     FaviconView(
@@ -79,17 +98,57 @@ struct ItemDetailView: View {
                 .padding(12)
             }
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    // Edit button — visible only when an item is selected (this branch).
-                    // ⌘E shortcut fires only when the button is enabled (sheet not open).
-                    // spec §8.5, §8.7
-                    Button("Edit") {
-                        openEditSheet(for: item)
+                if item.isDeleted {
+                    // Trashed item toolbar: Restore + Delete Permanently.
+                    // The Edit button is intentionally absent — the Bitwarden API returns
+                    // an error if PUT is called on a cipher with a non-nil deletedDate.
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Button("Restore") {
+                            Task { await onRestore?(item.id) }
+                        }
+                        .accessibilityIdentifier(AccessibilityID.Trash.restoreButton)
+
+                        Button("Delete Permanently", role: .destructive) {
+                            showPermanentDeleteAlert = true
+                        }
+                        .accessibilityIdentifier(AccessibilityID.Trash.permanentDeleteButton)
                     }
-                    .disabled(isEditSheetPresented)
-                    .keyboardShortcut("e", modifiers: .command)
-                    .accessibilityIdentifier(AccessibilityID.Edit.editButton)
+                } else {
+                    // Active item toolbar: Edit + Delete.
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Button("Delete", role: .destructive) {
+                            showSoftDeleteAlert = true
+                        }
+
+                        // Edit button — visible only when an item is selected (this branch).
+                        // ⌘E shortcut fires only when the button is enabled (sheet not open).
+                        // spec §8.5, §8.7
+                        Button("Edit") {
+                            openEditSheet(for: item)
+                        }
+                        .disabled(isEditSheetPresented)
+                        .keyboardShortcut("e", modifiers: .command)
+                        .accessibilityIdentifier(AccessibilityID.Edit.editButton)
+                    }
                 }
+            }
+            // Soft-delete confirmation alert (active items).
+            .alert("Move to Trash?", isPresented: $showSoftDeleteAlert) {
+                Button("Move to Trash", role: .destructive) {
+                    Task { await onSoftDelete?(item.id) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("\"\(item.name)\" will be moved to Trash.")
+            }
+            // Permanent delete confirmation alert (trashed items).
+            .alert("Delete Permanently?", isPresented: $showPermanentDeleteAlert) {
+                Button("Delete Permanently", role: .destructive) {
+                    Task { await onPermanentDelete?(item.id) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("\"\(item.name)\" will be permanently deleted and cannot be recovered.")
             }
             .sheet(isPresented: $isEditSheetPresented, onDismiss: {
                 editViewModel = nil
@@ -100,7 +159,8 @@ struct ItemDetailView: View {
                 }
             }
             // Menu bar "Edit" action — mirrors the toolbar Edit button (spec §9.3).
-            .onChangeCompat(of: editTrigger) { openEditSheet(for: item) }
+            // Guard against trashed items: edit is not permitted while in trash.
+            .onChangeCompat(of: editTrigger) { if !item.isDeleted { openEditSheet(for: item) } }
             // Menu bar "Save" action — mirrors the in-sheet Save button (spec §9.4).
             // `ItemEditViewModel.save()` is a no-op if `canSave` is false, so this is safe
             // even when called while the name is blank or a save is already in-flight.
@@ -113,6 +173,26 @@ struct ItemDetailView: View {
             )
             .accessibilityIdentifier(AccessibilityID.Detail.emptyState)
         }
+    }
+
+    // MARK: - Trash banner
+
+    /// Banner shown at the top of the detail pane when the item is in Trash.
+    /// Communicates that the item is not editable and can be restored or permanently deleted.
+    @ViewBuilder
+    private func trashBanner(for item: VaultItem) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "trash")
+                .foregroundStyle(.secondary)
+            Text("This item is in Trash.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, Spacing.pageMargin)
+        .padding(.vertical, 8)
+        .background(Color.secondary.opacity(0.1))
+        .accessibilityIdentifier(AccessibilityID.Trash.statusBanner)
     }
 
     // MARK: - Edit sheet

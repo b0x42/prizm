@@ -49,6 +49,30 @@ protocol VaultRepository: AnyObject {
     /// - Throws: `VaultError.vaultLocked` if the vault is locked (translated from the Data layer).
     /// - Throws: `APIError` on network or HTTP failure.
     func update(_ draft: DraftVaultItem) async throws -> VaultItem
+
+    /// Soft-deletes the item with `id` by calling `DELETE /ciphers/{id}`.
+    ///
+    /// The item moves to Trash (`isDeleted == true`) on the server and is removed from the
+    /// active vault in the local cache. It remains recoverable until permanently deleted.
+    ///
+    /// - Throws: `APIError` on network or HTTP failure.
+    func deleteItem(id: String) async throws
+
+    /// Restores a trashed item by calling `PUT /ciphers/{id}/restore`.
+    ///
+    /// Clears `isDeleted` on the server and moves the item back to the active vault
+    /// in the local cache.
+    ///
+    /// - Throws: `APIError` on network or HTTP failure.
+    func restoreItem(id: String) async throws
+
+    /// Permanently deletes all items in trash by calling `DELETE /ciphers/purge`.
+    ///
+    /// This operation is irreversible — all trashed items are removed from the server
+    /// and cleared from the local cache.
+    ///
+    /// - Throws: `APIError` on network or HTTP failure.
+    func emptyTrash() async throws
 }
 
 // MARK: - Errors
