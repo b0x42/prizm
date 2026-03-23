@@ -78,4 +78,31 @@ final class MaskedFieldViewTests: XCTestCase {
         XCTAssertFalse(reset.isRevealed)
         XCTAssertEqual(reset.value, "new")
     }
+
+    // MARK: - Option-key peek (displayValue(peeking:))
+
+    /// Peeking reveals a masked field without changing isRevealed.
+    func testDisplayValuePeeking_masked_peekTrue_returnsPlaintext() {
+        let state = MaskedFieldState(value: "secret", isRevealed: false)
+        XCTAssertEqual(state.displayValue(peeking: true), "secret")
+        XCTAssertFalse(state.isRevealed)
+    }
+
+    /// Peeking on an already-revealed field still shows plaintext.
+    func testDisplayValuePeeking_revealed_peekTrue_returnsPlaintext() {
+        let state = MaskedFieldState(value: "secret", isRevealed: true)
+        XCTAssertEqual(state.displayValue(peeking: true), "secret")
+    }
+
+    /// No peek + masked returns placeholder.
+    func testDisplayValuePeeking_masked_peekFalse_returnsPlaceholder() {
+        let state = MaskedFieldState(value: "secret", isRevealed: false)
+        XCTAssertEqual(state.displayValue(peeking: false), MaskedFieldState.maskedPlaceholder)
+    }
+
+    /// Releasing peek on a revealed field keeps it revealed.
+    func testDisplayValuePeeking_revealed_peekFalse_returnsPlaintext() {
+        let state = MaskedFieldState(value: "secret", isRevealed: true)
+        XCTAssertEqual(state.displayValue(peeking: false), "secret")
+    }
 }
