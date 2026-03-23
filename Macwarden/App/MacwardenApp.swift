@@ -16,12 +16,6 @@ struct MacwardenApp: App {
     @StateObject private var container: AppContainer
     @StateObject private var rootVM:    RootViewModel
 
-    // @State on the App struct is the only reliable way to drive SceneBuilder
-    // re-evaluation dynamically. @StateObject changes re-render views inside
-    // scenes (WindowGroup content) but do NOT reliably trigger scene-graph
-    // diffing. This @State is kept in sync via .onChange inside rootView.
-    @State private var menuBarVisible = false
-
     init() {
         let c = AppContainer()
         _container = StateObject(wrappedValue: c)
@@ -33,13 +27,6 @@ struct MacwardenApp: App {
             rootView
                 .frame(minWidth: 480, minHeight: 360)
                 .containerBackground(.thinMaterial, for: .window)
-                // Bridge @StateObject observation into @State so the SceneBuilder
-                // re-evaluates when the vault locks or unlocks (spec §9.2).
-                // onReceive is used instead of onChange because onChange's two-argument
-                // closure form { _, v in } requires macOS 14; onReceive works on macOS 13+.
-                .onReceive(rootVM.$screen) { screen in
-                    menuBarVisible = { if case .vault = screen { return true }; return false }()
-                }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
@@ -51,28 +38,26 @@ struct MacwardenApp: App {
                 .keyboardShortcut("q", modifiers: [.command, .shift])
                 .disabled(!rootVM.isSignedIn)
             }
-        }
 
-        // "Item" menu bar extra — visible only while the vault is unlocked (spec §9.2).
-        // `isInserted` is the documented SceneBuilder API for dynamic visibility; an `if`
-        // block in SceneBuilder causes a compiler diagnostic failure (swift.org bug).
-        // `$menuBarVisible` is the @State var kept in sync by .onReceive above.
-        MenuBarExtra("Item", systemImage: "key.fill", isInserted: $menuBarVisible) {
-            Button("Edit") {
-                container.menuBarViewModel.onEdit?()
-            }
-            .disabled(!rootVM.menuBarCanEdit)
-            // Renders ⌘E inline in the dropdown (spec §9.3).
-            .keyboardShortcut("e", modifiers: .command)
+            // "Item" menu — sits in the standard macOS menu bar next to Edit/View/Window.
+            // Edit opens the edit sheet for the selected vault item (⌘E).
+            // Save persists in-flight edits (⌘S).
+            // Buttons are disabled by `rootVM` Combine subscriptions that track
+            // item selection and edit-sheet state.
+            CommandMenu("Item") {
+                Button("Edit") {
+                    rootVM.vaultBrowserVM.openEditSubject.send()
+                }
+                .disabled(!rootVM.menuBarCanEdit)
+                .keyboardShortcut("e", modifiers: .command)
 
-            Button("Save") {
-                container.menuBarViewModel.onSave?()
+                Button("Save") {
+                    rootVM.vaultBrowserVM.saveSubject.send()
+                }
+                .disabled(!rootVM.menuBarCanSave)
+                .keyboardShortcut("s", modifiers: .command)
             }
-            .disabled(!rootVM.menuBarCanSave)
-            // Renders ⌘S inline in the dropdown (spec §9.4).
-            .keyboardShortcut("s", modifiers: .command)
         }
-        .menuBarExtraStyle(.menu)
     }
 
     @ViewBuilder
@@ -134,23 +119,12 @@ final class RootViewModel: ObservableObject {
 
     @Published var screen: Screen
 
-    // MARK: - Menu bar extra state
+    // MARK: - "Item" menu state
 
-    /// Whether the "Item" MenuBarExtra should be visible.
-    ///
-    /// Derived directly from `screen` (a @Published property on this @StateObject) rather
-    /// than forwarded via Combine from MenuBarViewModel. This guarantees that SwiftUI's
-    /// observation chain fires when `screen` changes — no async Combine sink needed.
-    var menuBarIsVaultUnlocked: Bool {
-        if case .vault = screen { return true }
-        return false
-    }
-
-    /// Whether the Edit action should be enabled (item selected, sheet closed).
-    /// Forwarded from MenuBarViewModel via Combine; see subscribeToFlowStates().
+    /// Whether the Edit command should be enabled: an item is selected and the edit sheet is closed.
     @Published private(set) var menuBarCanEdit: Bool = false
-    /// Whether the Save action should be enabled (sheet open).
-    /// Forwarded from MenuBarViewModel via Combine; see subscribeToFlowStates().
+
+    /// Whether the Save command should be enabled: the edit sheet is currently open.
     @Published private(set) var menuBarCanSave: Bool = false
 
     private let logger = Logger(subsystem: "com.macwarden", category: "RootViewModel")
@@ -199,37 +173,18 @@ final class RootViewModel: ObservableObject {
             .sink { [weak self] state in self?.handleUnlockFlow(state) }
             .store(in: &cancellables)
 
-        // canEdit: item selected AND edit sheet not yet open (spec §9.3).
+        // canEdit: item selected AND edit sheet not yet open.
         vaultBrowserVM.$itemSelection
             .combineLatest(vaultBrowserVM.$editSheetOpen)
             .map { selection, sheetOpen in selection != nil && !sheetOpen }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] canEdit in self?.container.menuBarViewModel.canEdit = canEdit }
+            .sink { [weak self] canEdit in self?.menuBarCanEdit = canEdit }
             .store(in: &cancellables)
 
-        // canSave: edit sheet is open (save guard in ItemEditViewModel handles finer checks).
+        // canSave: edit sheet is open (ItemEditViewModel.save() guards the finer checks).
         vaultBrowserVM.$editSheetOpen
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] open in self?.container.menuBarViewModel.canSave = open }
-            .store(in: &cancellables)
-
-        // Route menu bar actions into the vault browser's relay subjects (spec §9.3–9.4).
-        container.menuBarViewModel.onEdit = { [weak self] in
-            self?.vaultBrowserVM.openEditSubject.send()
-        }
-        container.menuBarViewModel.onSave = { [weak self] in
-            self?.vaultBrowserVM.saveSubject.send()
-        }
-
-        // Forward canEdit/canSave from MenuBarViewModel into RootViewModel @Published
-        // properties so the SceneBuilder button disabled states react correctly.
-        container.menuBarViewModel.$canEdit
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] v in self?.menuBarCanEdit = v }
-            .store(in: &cancellables)
-        container.menuBarViewModel.$canSave
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] v in self?.menuBarCanSave = v }
+            .sink { [weak self] open in self?.menuBarCanSave = open }
             .store(in: &cancellables)
     }
 
@@ -241,7 +196,6 @@ final class RootViewModel: ObservableObject {
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
-            container.menuBarViewModel.setVaultUnlocked(true)
             screen = .vault
         }
         logger.info("Screen transition → \(String(describing: state))")
@@ -288,7 +242,6 @@ final class RootViewModel: ObservableObject {
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
-            container.menuBarViewModel.setVaultUnlocked(true)
             screen = .vault
         case .login:
             // "Sign in with a different account" — reset to login.

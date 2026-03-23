@@ -31,10 +31,6 @@ final class AppContainer: ObservableObject {
     let searchVaultUseCase:   SearchVaultUseCaseImpl
     let editVaultItemUseCase: EditVaultItemUseCaseImpl
 
-    // MARK: - Presentation
-
-    let menuBarViewModel: MenuBarViewModel
-
     // MARK: - Init
 
     init() {
@@ -66,7 +62,6 @@ final class AppContainer: ObservableObject {
         self.unlockUseCase        = UnlockUseCaseImpl(auth: auth, sync: sync)
         self.searchVaultUseCase   = SearchVaultUseCaseImpl(vault: vault)
         self.editVaultItemUseCase = EditVaultItemUseCaseImpl(repository: vault)
-        self.menuBarViewModel     = MenuBarViewModel()
     }
 
     // MARK: - Factories

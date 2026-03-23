@@ -76,8 +76,7 @@
 		C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */; };
 		E5F400A1B2C3D07D70809000 /* SSHKeyEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */; };
 		071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */; };
-		293D4E5F607181B1B1C2D3E4 /* MenuBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4E5F60718292C2C2D3E4F5 /* MenuBarViewModel.swift */; };
-		4B5F6071829303D3D3E4F506 /* MenuBarExtraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C607182930404E4E4E5F607 /* MenuBarExtraView.swift */; };
+
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -161,8 +160,7 @@
 		D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNoteEditForm.swift; sourceTree = "<group>"; };
 		F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyEditForm.swift; sourceTree = "<group>"; };
 		182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsEditSection.swift; sourceTree = "<group>"; };
-		3A4E5F60718292C2C2D3E4F5 /* MenuBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarViewModel.swift; sourceTree = "<group>"; };
-		5C607182930404E4E4E5F607 /* MenuBarExtraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarExtraView.swift; sourceTree = "<group>"; };
+
 		6D7E8F90718293040A1B2C3D /* EditItemJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemJourneyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -342,7 +340,7 @@
 				E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */,
 				4309FCFB2F680CC60031C9F4 /* Detail */,
 				8A9B0C1D2E3F4050A1B2C3D4 /* Edit */,
-				9B0C1D2E3F405060B2C3D4E5 /* MenuBar */,
+
 				4309FCFA2F680CBD0031C9F4 /* ItemList */,
 				4309FCF92F680CB40031C9F4 /* Sidebar */,
 			);
@@ -396,15 +394,7 @@
 			path = Edit;
 			sourceTree = "<group>";
 		};
-		9B0C1D2E3F405060B2C3D4E5 /* MenuBar */ = {
-			isa = PBXGroup;
-			children = (
-				3A4E5F60718292C2C2D3E4F5 /* MenuBarViewModel.swift */,
-				5C607182930404E4E4E5F607 /* MenuBarExtraView.swift */,
-			);
-			path = MenuBar;
-			sourceTree = "<group>";
-		};
+
 		4309FCFC2F680CCD0031C9F4 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -739,8 +729,7 @@
 				C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */,
 				E5F400A1B2C3D07D70809000 /* SSHKeyEditForm.swift in Sources */,
 				071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */,
-				293D4E5F607181B1B1C2D3E4 /* MenuBarViewModel.swift in Sources */,
-				4B5F6071829303D3D3E4F506 /* MenuBarExtraView.swift in Sources */,
+
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
