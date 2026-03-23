@@ -69,7 +69,7 @@ struct TrashView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { item in
-            Text(""\(item.name)" will be permanently deleted and cannot be recovered.")
+            Text("\"\(item.name)\" will be permanently deleted and cannot be recovered.")
         }
         // Confirmation alert: empty trash.
         .alert("Empty Trash?", isPresented: $showEmptyTrashAlert) {

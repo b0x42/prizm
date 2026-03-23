@@ -139,7 +139,7 @@ struct ItemDetailView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text(""\(item.name)" will be moved to Trash.")
+                Text("\"\(item.name)\" will be moved to Trash.")
             }
             // Permanent delete confirmation alert (trashed items).
             .alert("Delete Permanently?", isPresented: $showPermanentDeleteAlert) {
@@ -148,7 +148,7 @@ struct ItemDetailView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text(""\(item.name)" will be permanently deleted and cannot be recovered.")
+                Text("\"\(item.name)\" will be permanently deleted and cannot be recovered.")
             }
             .sheet(isPresented: $isEditSheetPresented, onDismiss: {
                 editViewModel = nil
