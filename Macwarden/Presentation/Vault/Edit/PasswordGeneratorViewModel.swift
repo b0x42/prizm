@@ -33,6 +33,7 @@ final class PasswordGeneratorViewModel: ObservableObject {
     private let generator = PasswordGenerator()
     private let defaults: UserDefaults
     private var clipboardClearTask: Task<Void, Never>?
+    private var isInitializing = true
 
     // MARK: - Init
 
@@ -51,6 +52,7 @@ final class PasswordGeneratorViewModel: ObservableObject {
         self.separator = config.separator
         self.capitalize = config.capitalize
         self.includeNumber = config.includeNumber
+        isInitializing = false
         generate()
     }
 
@@ -61,6 +63,7 @@ final class PasswordGeneratorViewModel: ObservableObject {
     // MARK: - Actions
 
     func generate() {
+        guard !isInitializing else { return }
         do {
             let config = currentConfig()
             switch mode {

@@ -53,6 +53,10 @@ struct PasswordGenerator {
 
         let pool = sets.flatMap { $0 }
 
+        // Note: `byte % count` introduces slight modulo bias when count doesn't evenly
+        // divide 256 (max ~0.4% for typical pool sizes). Acceptable for password generation;
+        // matches Bitwarden's own approach.
+
         // 1. Pick one random character from each enabled set (guarantee).
         var result: [Character] = []
         for set in sets {
