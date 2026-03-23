@@ -56,7 +56,7 @@ struct ItemListView: View {
                     }
                     Button("Cancel", role: .cancel) {}
                 } message: { item in
-                    Text(""\(item.name)" will be moved to Trash.")
+                    Text("\"\(item.name)\" will be moved to Trash.")
                 }
             }
         }
