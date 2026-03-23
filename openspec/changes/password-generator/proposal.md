@@ -7,7 +7,7 @@ The vault edit flow has no way to generate strong passwords or passphrases, forc
 - Introduce a `PasswordGenerator` utility in the Domain layer (pure Swift, no I/O) supporting two modes: random character passwords and word-based passphrases.
 - Add a generator popover to `LoginEditForm` anchored to the password field, and to `SSHKeyEditForm` anchored to the private key field.
 - The popover shows a live-updating preview, all configuration controls, a one-click copy, and a one-click "Use Password" / "Use Passphrase" action that writes the value into the bound field.
-- No API changes. No new use cases. No keychain or persistence changes.
+- No API changes. No new use cases. No Keychain changes. Generator settings are persisted to `UserDefaults` as UI preferences (not vault data).
 
 ## Capabilities
 
@@ -23,7 +23,7 @@ The vault edit flow has no way to generate strong passwords or passphrases, forc
 
 - **New**: `Domain/Utilities/PasswordGenerator.swift` — pure Swift generator, no imports beyond Foundation and Security (for `SecRandomCopyBytes`).
 - **New**: `Presentation/Vault/Edit/PasswordGeneratorView.swift` — SwiftUI popover.
-- **New**: `Presentation/Vault/Edit/PasswordGeneratorViewModel.swift` — `@Observable` or `ObservableObject` owning generator state.
+- **New**: `Presentation/Vault/Edit/PasswordGeneratorViewModel.swift` — `@MainActor ObservableObject` owning generator state.
 - **Modified**: `Presentation/Vault/Edit/LoginEditForm.swift` — generator button on password field.
 - **Modified**: `Presentation/Vault/Edit/SSHKeyEditForm.swift` — generator button on private key field.
 - **Modified**: `Presentation/Vault/Edit/EditFieldRow.swift` — optional generator button slot.

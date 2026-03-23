@@ -21,11 +21,22 @@ The existing `EditFieldRow` / `MaskedFieldView` infrastructure handles all sensi
 
 ## Decisions
 
-### 1. CSPRNG: `SecRandomCopyBytes` over `SystemRandomNumberGenerator`
+### 1. CSPRNG via `RandomnessProvider` protocol (Constitution §II compliance)
 
-`SecRandomCopyBytes` (Security.framework) is explicitly documented as cryptographically secure and is the standard Apple API for this purpose. `SystemRandomNumberGenerator` delegates to the OS CSPRNG in practice but the Swift stdlib API does not formally guarantee cryptographic quality. For a credential vault, the stronger explicit guarantee is preferred. This keeps `PasswordGenerator` in the Domain layer — Security.framework is already imported there via `KeychainService`.
+`CLAUDE.md` explicitly restricts Security.framework to the Data layer. `PasswordGenerator` lives in the Domain layer and therefore cannot call `SecRandomCopyBytes` directly. The solution is a narrow `RandomnessProvider` protocol defined in Domain:
 
-**Rejected alternative:** `arc4random_uniform` — deprecated on Apple platforms; `SystemRandomNumberGenerator` — adequate in practice but weaker documentation guarantee.
+```swift
+// Domain/Utilities/RandomnessProvider.swift
+protocol RandomnessProvider {
+    func randomBytes(count: Int) throws -> [UInt8]
+}
+```
+
+The Data layer provides `CryptographicRandomnessProvider: RandomnessProvider` backed by `SecRandomCopyBytes`. `PasswordGenerator` receives any `RandomnessProvider` via injection (constructor parameter with a default). This keeps the Domain layer free of Security.framework while preserving full cryptographic quality at runtime.
+
+`SecRandomCopyBytes` (Security.framework) is explicitly documented as cryptographically secure and is the standard Apple API for this purpose. `SystemRandomNumberGenerator` delegates to the OS CSPRNG in practice but the Swift stdlib API does not formally guarantee cryptographic quality — the protocol approach lets us be explicit at the injection site.
+
+**Rejected alternative:** Direct `SecRandomCopyBytes` in Domain — violates CLAUDE.md layer boundary rule (Security.framework is Data-layer only). `SystemRandomNumberGenerator` injected as default — weaker documentation guarantee for a security-critical operation.
 
 ### 2. Word list: bundled EFF Large Wordlist (7776 words)
 
@@ -70,8 +81,8 @@ Add an optional `generatorBinding: Binding<String?>?` parameter to `EditFieldRow
 
 ## Risks / Trade-offs
 
-**Passphrase entropy is lower than random passwords**
-3 words from 7776 → ~38.9 bits; 4 words → ~51.8 bits; a 16-char random password with all sets → ~100 bits. The passphrase mode UI should default to at least 3 words. Consider displaying word count minimum guidance. → *Accepted trade-off*: matches Bitwarden's defaults; users wanting high-entropy can increase word count.
+**Passphrase entropy is lower than random passwords per character**
+6 words from 7776 → ~77.4 bits; a 16-char random password with all sets → ~105 bits. The default of 6 words was chosen over Bitwarden's 3-word default (~38.9 bits) to align with our security-first stance and EFF's own recommendation of 6+ words. Users wanting maximum entropy should use Password mode or increase word count further. → *Accepted trade-off*: passphrase mode trades some entropy for memorability, which is its primary use case.
 
 **EFF word list loading latency**
 First-time load parses ~60 KB of text. On modern hardware this is sub-millisecond, but the load should be lazy (on first generator open, not at app startup). → *Mitigation*: Load and cache in `PasswordGenerator.init()` only when the popover first opens; use `lazy var` or a static once-token.

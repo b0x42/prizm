@@ -30,11 +30,11 @@ The system SHALL provide a password generator that produces cryptographically ra
 ---
 
 ### Requirement: User can generate a passphrase with configurable options
-The system SHALL provide a passphrase generator that produces word-based passphrases drawn from the EFF Large Wordlist (7776 words). The generator SHALL support the following configuration options: word count (integer, 3–10 inclusive, default 3), word separator (string, default `"-"`, user-editable), capitalize-each-word toggle (default off), include-number toggle (appends a single random digit 0–9 to one randomly chosen word, default off).
+The system SHALL provide a passphrase generator that produces word-based passphrases drawn from the EFF Large Wordlist (7776 words). The generator SHALL support the following configuration options: word count (integer, 3–10 inclusive, default 6), word separator (string, default `"-"`, user-editable), capitalize-each-word toggle (default off), include-number toggle (appends a single random digit 0–9 to one randomly chosen word, default off).
 
-#### Scenario: Default passphrase has 3 words separated by hyphens
+#### Scenario: Default passphrase has 6 words separated by hyphens
 - **WHEN** the generator opens in passphrase mode with default settings
-- **THEN** it SHALL produce a passphrase of 3 words joined by `"-"`
+- **THEN** it SHALL produce a passphrase of 6 words joined by `"-"`
 
 #### Scenario: Word count change produces the correct number of words
 - **WHEN** the user sets word count to 5
@@ -76,19 +76,25 @@ The system SHALL display the currently generated value in a prominent preview ar
 ---
 
 ### Requirement: User can copy or apply the generated value
-The system SHALL provide two primary actions on the generated value: Copy and Use. Copy SHALL write the generated value to the system clipboard and follow the 30-second auto-clear rule (per `vault-browser-ui` clipboard requirement). Use SHALL write the generated value into the password field that triggered the generator and dismiss the popover.
+The system SHALL provide two primary actions on the generated value: Copy and Use. Copy SHALL write the generated value to the system clipboard and follow the 30-second auto-clear rule (per `vault-browser-ui` clipboard requirement). Use SHALL write the generated value into the password field that triggered the generator and dismiss the popover. The Use button label SHALL reflect the active mode: "Use Password" in Password mode and "Use Passphrase" in Passphrase mode.
 
 #### Scenario: Copy writes to clipboard and auto-clears after 30 seconds
 - **WHEN** the user clicks Copy
 - **THEN** the generated value SHALL be placed on the system clipboard and SHALL be auto-cleared after 30 seconds
 
 #### Scenario: Use writes the value to the triggering field
-- **WHEN** the user clicks Use
+- **WHEN** the user clicks "Use Password" or "Use Passphrase"
 - **THEN** the generated value SHALL be written into the password (or private key) field and the popover SHALL dismiss
 
 #### Scenario: Use replaces any existing field value
-- **WHEN** the password field already contains a value and the user clicks Use
+- **WHEN** the password field already contains a value and the user clicks the Use button
 - **THEN** the field value SHALL be replaced with the generated value
+
+#### Scenario: Use button label reflects active mode
+- **WHEN** the generator is in Password mode
+- **THEN** the Use button SHALL be labelled "Use Password"
+- **WHEN** the generator is in Passphrase mode
+- **THEN** the Use button SHALL be labelled "Use Passphrase"
 
 ---
 
@@ -110,7 +116,7 @@ The system SHALL display a generator trigger button adjacent to the password fie
 
 #### Scenario: Generator button visible on Login edit password field
 - **WHEN** the Login edit sheet is open
-- **THEN** a generator trigger button SHALL be visible alongside the password field
+- **THEN** a generator trigger button SHALL be visible alongside the password field at all times, regardless of pointer position
 
 #### Scenario: Clicking generator button opens the popover
 - **WHEN** the user clicks the generator trigger button on the password field
