@@ -48,6 +48,8 @@ dev-vault/
 dev-vault/
 .claude/
 .specify/
+.kiro/
+.kilocode/
 specs/.claude/
 specs/.specify/
 
