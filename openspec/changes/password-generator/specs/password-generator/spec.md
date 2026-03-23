@@ -33,7 +33,7 @@ The system SHALL provide a password generator that produces cryptographically ra
 The system SHALL provide a passphrase generator that produces word-based passphrases drawn from the EFF Large Wordlist (7776 words). The generator SHALL support the following configuration options: word count (integer, 3–10 inclusive, default 6), word separator (string, default `"-"`, user-editable), capitalize-each-word toggle (default off), include-number toggle (appends a single random digit 0–9 to one randomly chosen word, default off).
 
 #### Scenario: Default passphrase has 6 words separated by hyphens
-- **WHEN** the generator opens in passphrase mode with default settings
+- **WHEN** the generator is in Passphrase mode with default settings
 - **THEN** it SHALL produce a passphrase of 6 words joined by `"-"`
 
 #### Scenario: Word count change produces the correct number of words
@@ -76,6 +76,10 @@ The system SHALL display the currently generated value in a prominent preview ar
 #### Scenario: Mode switch updates the preview
 - **WHEN** the user switches between Password and Passphrase modes
 - **THEN** the preview SHALL immediately show a value in the new mode
+
+#### Scenario: Generation failure surfaces an error to the user
+- **WHEN** the underlying randomness source fails (e.g. `SecRandomCopyBytes` returns an error)
+- **THEN** the preview SHALL display an error message and the Copy and Use buttons SHALL be disabled until a successful generation occurs
 
 ---
 

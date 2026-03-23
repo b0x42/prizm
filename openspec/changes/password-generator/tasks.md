@@ -11,10 +11,11 @@
 
 ## 2. Presentation — PasswordGeneratorViewModel
 
-- [ ] 2.1 Write failing unit tests for `PasswordGeneratorViewModel` — config changes trigger regeneration, copy writes to clipboard, `applyToField` writes through binding, settings persisted to UserDefaults, defaults restored on first launch; inject `MockRandomnessProvider` in tests
-- [ ] 2.2 Implement `PasswordGeneratorViewModel: ObservableObject` — owns `PasswordGeneratorConfig`, `generatedValue: String`, `generate()`, `copyToClipboard()` (30 s auto-clear via `VaultBrowserViewModel`-style `Task`), `applyToField(binding:)`
+- [ ] 2.1 Write failing unit tests for `PasswordGeneratorViewModel` in `MacwardenTests/PasswordGeneratorViewModelTests.swift` — config changes trigger regeneration, copy writes to clipboard, settings persisted to UserDefaults, defaults restored on first launch; inject `MockRandomnessProvider` in tests
+- [ ] 2.2 Implement `PasswordGeneratorViewModel: ObservableObject` — owns `PasswordGeneratorConfig`, `generatedValue: String`, `generate()`, `copyToClipboard()` (30 s auto-clear via `VaultBrowserViewModel`-style `Task`); no `applyToField` method — the View writes through its `Binding<String?>` directly (see design D5)
 - [ ] 2.3 Wire `generate()` call on every `@Published` config property change via `didSet`
 - [ ] 2.4 Wire `CryptographicRandomnessProvider` into `AppContainer` — instantiate once and inject into `PasswordGeneratorViewModel` factory closure; add `makePasswordGeneratorViewModel` factory to `AppContainer`
+- [ ] 2.5 Instantiate `PasswordGeneratorViewModel` as `@StateObject` inside `EditFieldRow` (not in a parent ViewModel) — ensures `generatedValue` plaintext is released when the popover closes, per design D7 and Constitution §III
 
 ## 3. Presentation — PasswordGeneratorView
 

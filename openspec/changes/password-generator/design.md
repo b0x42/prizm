@@ -32,7 +32,7 @@ protocol RandomnessProvider {
 }
 ```
 
-The Data layer provides `CryptographicRandomnessProvider: RandomnessProvider` backed by `SecRandomCopyBytes`. `PasswordGenerator` receives a `RandomnessProvider` via constructor injection — no default, always supplied by `AppContainer`. This keeps the Domain layer free of Security.framework while preserving full cryptographic quality at runtime.
+The Data layer provides `CryptographicRandomnessProvider: RandomnessProvider` backed by `SecRandomCopyBytes`. `PasswordGenerator` receives a `RandomnessProvider` via method parameter injection — `generatePassword(config:provider:)` and `generatePassphrase(config:provider:)` each accept the provider directly, keeping `PasswordGenerator` a stateless struct with no stored dependencies. The caller (`PasswordGeneratorViewModel`) always supplies the provider; there is no default. This keeps the Domain layer free of Security.framework while preserving full cryptographic quality at runtime.
 
 `SecRandomCopyBytes` (Security.framework) is explicitly documented as cryptographically secure and is the standard Apple API for this purpose. `SystemRandomNumberGenerator` delegates to the OS CSPRNG in practice but the Swift stdlib API does not formally guarantee cryptographic quality — the protocol approach lets us be explicit at the injection site.
 
@@ -65,13 +65,23 @@ The generator opens as a `.popover` anchored to the trigger button. Rationale: a
 
 `PasswordGeneratorView` receives a `Binding<String?>` for the target field. On "Use", it writes through the binding and triggers popover dismissal via `@Environment(\.dismiss)`. No callbacks, no delegate protocol, no ViewModel-to-ViewModel communication.
 
+The ViewModel does NOT own an `applyToField(binding:)` method. The View receives the binding as a constructor parameter and writes through it directly on the "Use" button tap — this is a pure View responsibility with no need to route through the ViewModel.
+
 **Rejected alternative:** Callback closure `onUse: (String) -> Void` — achieves the same result but introduces a closure capture where a binding already models the relationship.
 
 ### 6. Generator settings in `UserDefaults` directly
 
 Generator configuration (`PasswordGeneratorConfig`) is serialised to `UserDefaults` as individual keys (not a single encoded struct). This is consistent with how the project handles other UI preferences and avoids adding a repository protocol for trivial persisted UI state. Settings are explicitly scoped as UI preferences (not vault data) and are NOT stored in the Keychain. Default mode is `.password` — random character passwords produce ~105 bits of entropy at 16 chars vs. ~38.9 bits for a 3-word passphrase; for vault-stored credentials memorability is irrelevant so entropy density wins (see NIST SP 800-63B Rev 4; EFF diceware research).
 
-### 7. `PasswordGeneratorViewModel` as `@MainActor ObservableObject`
+### 7. ViewModel ownership — `@StateObject` local to `EditFieldRow` popover (Constitution §III)
+
+`PasswordGeneratorViewModel` is instantiated as `@StateObject` inside `EditFieldRow` (the view that owns the popover anchor). This means the ViewModel — and therefore `generatedValue: String` (a plaintext password or passphrase in memory) — lives only as long as the popover is on screen. When `EditFieldRow` leaves the view hierarchy the `@StateObject` is deallocated and the plaintext is released from memory immediately.
+
+**Rejected alternative:** Owning the ViewModel in `LoginEditForm` or a parent ViewModel — keeps plaintext alive for the full lifetime of the edit sheet, longer than necessary per Constitution §III (minimise plaintext lifetime).
+
+**Rejected alternative:** `@ObservedObject` in `EditFieldRow` with the ViewModel injected from outside — reintroduces long-lived plaintext by putting ownership back in the caller.
+
+### 8. `PasswordGeneratorViewModel` as `@MainActor ObservableObject`
 
 Consistent with `ItemEditViewModel`, `LoginViewModel`, etc. The generator is UI-only and always runs on the main actor. No async work required — generation is synchronous and cheap even at maximum length (128 chars, 7776-word list).
 

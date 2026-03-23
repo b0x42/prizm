@@ -30,4 +30,5 @@ The vault edit flow has no way to generate strong passwords or passphrases, forc
 - **Modified**: `Presentation/Vault/Edit/SSHKeyEditForm.swift` — generator button on private key field.
 - **Modified**: `Presentation/Vault/Edit/EditFieldRow.swift` — optional generator button slot.
 - **New tests**: `MacwardenTests/PasswordGeneratorTests.swift` — unit tests covering character-set composition, length bounds, ambiguous-char exclusion, passphrase word count, separator injection, entropy lower bound.
+- **New tests**: `MacwardenTests/PasswordGeneratorViewModelTests.swift` — unit tests covering config-change regeneration, clipboard copy, UserDefaults persistence, and default-settings restoration on first launch.
 - **No breaking changes.**
