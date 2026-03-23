@@ -312,7 +312,8 @@ final class VaultRepositoryImplTests: XCTestCase {
         let draft = DraftVaultItem(original)
 
         await XCTAssertThrowsErrorAsync(try await sut.update(draft)) { error in
-            guard case APIError.httpError(let code, _) = error as? APIError else {
+            guard let apiError = error as? APIError,
+                  case APIError.httpError(let code, _) = apiError else {
                 return XCTFail("Expected APIError.httpError, got \(error)")
             }
             XCTAssertEqual(code, 500)
