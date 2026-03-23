@@ -37,23 +37,40 @@ protocol KeychainService {
 
 /// Concrete Keychain implementation using Security.framework SecItem APIs.
 ///
-/// Each item is stored as a generic password (`kSecClassGenericPassword`) with:
+/// Items are stored as generic passwords (`kSecClassGenericPassword`) in the
+/// **data protection keychain** (`kSecUseDataProtectionKeychain: true`), which uses
+/// entitlement-based access control instead of per-binary code-signature ACLs.
+/// This means any build signed with the same Team ID and the `keychain-access-groups`
+/// entitlement can read existing items — eliminating the keychain password prompts
+/// that appear on every new debug build when using the legacy login keychain.
+///
+/// Each item carries:
 /// - `kSecAttrService`: `"com.macwarden"` — scopes items to this app.
-/// - `kSecAttrAccount`: the caller-provided `key` — allows multiple distinct items.
+/// - `kSecAttrAccount`: caller-provided `key` — allows multiple distinct items.
 /// - `kSecAttrAccessible`: `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — secrets
-///   are available only while the device is unlocked and are not migrated to new
-///   devices or iCloud backups (per Bitwarden Security Whitepaper §5: Keychain Storage).
+///   are available only while the device is unlocked and are not backed up to iCloud
+///   or migrated to new devices (per Bitwarden Security Whitepaper §5: Keychain Storage).
+/// - `kSecUseDataProtectionKeychain`: `true` — opts into the modern keychain stack;
+///   the access group is inferred from the first entry in the `keychain-access-groups`
+///   entitlement (`$(AppIdentifierPrefix)com.macwarden`).
 final class KeychainServiceImpl: KeychainService {
 
     private let service = "com.macwarden"
     private let logger = Logger(subsystem: "com.macwarden", category: "KeychainService")
 
     /// Returns the base Keychain query dictionary for `key`.
+    ///
+    /// `kSecUseDataProtectionKeychain: true` routes all queries to the modern data
+    /// protection keychain. The access group is not set explicitly — for sandboxed apps,
+    /// Security.framework automatically uses the first entry in the `keychain-access-groups`
+    /// entitlement (`$(AppIdentifierPrefix)com.macwarden`). Setting it explicitly here
+    /// would require embedding the resolved Team ID in source code.
     private func baseQuery(for key: String) -> [CFString: Any] {
         [
-            kSecClass:       kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: key,
+            kSecClass:                   kSecClassGenericPassword,
+            kSecAttrService:             service,
+            kSecAttrAccount:             key,
+            kSecUseDataProtectionKeychain: true,
         ]
     }
 

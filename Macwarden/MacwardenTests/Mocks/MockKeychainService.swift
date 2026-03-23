@@ -15,10 +15,13 @@ final class MockKeychainService: KeychainService {
 
     private(set) var deletedKeys: Set<String> = []
     private(set) var writtenKeys: [String]    = []
+    /// All keys passed to read(key:), in call order. Used to assert no duplicate reads.
+    private(set) var readKeys:   [String]     = []
 
     // MARK: - KeychainService
 
     func read(key: String) throws -> Data {
+        readKeys.append(key)
         guard let value = store[key] else {
             throw KeychainError.itemNotFound
         }

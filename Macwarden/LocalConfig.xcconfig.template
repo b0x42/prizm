@@ -1,0 +1,18 @@
+// LocalConfig.xcconfig — per-developer signing settings
+//
+// Setup:
+//   cp LocalConfig.xcconfig.template LocalConfig.xcconfig
+//   Then fill in your Apple Developer Team ID below.
+//
+// Finding your Team ID:
+//   1. Open Xcode → Settings → Accounts
+//   2. Select your Apple ID → your team appears in the list
+//   3. The Team ID is the 10-character code in parentheses, e.g. AB12CD34EF
+//   Or: developer.apple.com → Account → Membership → Team ID
+//
+// A free Apple ID (Personal Team) works fine for local development.
+// You do NOT need a paid developer account to build and run locally.
+//
+// LocalConfig.xcconfig is git-ignored — your Team ID never touches the repo.
+
+DEVELOPMENT_TEAM =
