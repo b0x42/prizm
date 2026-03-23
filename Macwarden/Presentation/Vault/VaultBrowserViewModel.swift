@@ -42,10 +42,19 @@ final class VaultBrowserViewModel: ObservableObject {
     /// to enable/disable the Edit and Save menu bar actions.
     @Published private(set) var editSheetOpen: Bool = false
 
+    // MARK: - Published state (trash actions)
+
+    /// Set when a delete, restore, or empty-trash operation fails.
+    /// The Presentation layer surfaces this as an alert.
+    @Published var actionError: String? = nil
+
     // MARK: - Dependencies
 
-    private let vault:  any VaultRepository
-    private let search: any SearchVaultUseCase
+    private let vault:           any VaultRepository
+    private let search:          any SearchVaultUseCase
+    private let deleteUseCase:   any DeleteVaultItemUseCase
+    private let restoreUseCase:  any RestoreVaultItemUseCase
+    private let emptyTrashCase:  any EmptyTrashUseCase
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
@@ -69,9 +78,18 @@ final class VaultBrowserViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(vault: any VaultRepository, search: any SearchVaultUseCase) {
-        self.vault  = vault
-        self.search = search
+    init(
+        vault:      any VaultRepository,
+        search:     any SearchVaultUseCase,
+        delete:     any DeleteVaultItemUseCase,
+        restore:    any RestoreVaultItemUseCase,
+        emptyTrash: any EmptyTrashUseCase
+    ) {
+        self.vault          = vault
+        self.search         = search
+        self.deleteUseCase  = delete
+        self.restoreUseCase = restore
+        self.emptyTrashCase = emptyTrash
         refreshItems()
         refreshCounts()
         lastSyncedAt = vault.lastSyncedAt
@@ -153,5 +171,76 @@ final class VaultBrowserViewModel: ObservableObject {
         itemSelection = updatedItem
         refreshItems()
         refreshCounts()
+    }
+
+    // MARK: - Delete / Restore / Empty Trash
+
+    /// Soft-deletes `id`, moving it to Trash.
+    ///
+    /// On success refreshes the active list and sidebar counts. If the deleted item was
+    /// selected in the detail pane, it is deselected so the empty-state appears.
+    /// Errors are surfaced via `actionError` for the Presentation layer to show as an alert.
+    func performSoftDelete(id: String) async {
+        do {
+            try await deleteUseCase.execute(id: id)
+            logger.info("Item soft-deleted: \(id, privacy: .public)")
+            if itemSelection?.id == id { itemSelection = nil }
+            refreshItems()
+            refreshCounts()
+        } catch {
+            logger.error("Soft-delete failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            actionError = error.localizedDescription
+        }
+    }
+
+    /// Restores the trashed item with `id` to the active vault.
+    ///
+    /// On success refreshes the list and sidebar counts. If the restored item was selected
+    /// in the detail pane, deselects it (it has moved to the active vault).
+    func performRestore(id: String) async {
+        do {
+            try await restoreUseCase.execute(id: id)
+            logger.info("Item restored: \(id, privacy: .public)")
+            if itemSelection?.id == id { itemSelection = nil }
+            refreshItems()
+            refreshCounts()
+        } catch {
+            logger.error("Restore failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            actionError = error.localizedDescription
+        }
+    }
+
+    /// Permanently deletes the trashed item with `id`.
+    ///
+    /// The item must already be in Trash (`isDeleted == true`). Calling `DELETE /ciphers/{id}`
+    /// on a trashed item causes the Bitwarden server to permanently remove it.
+    /// The caller is responsible for showing a confirmation alert before invoking this method.
+    func performPermanentDelete(id: String) async {
+        do {
+            try await deleteUseCase.execute(id: id)
+            logger.info("Item permanently deleted: \(id, privacy: .public)")
+            if itemSelection?.id == id { itemSelection = nil }
+            refreshItems()
+            refreshCounts()
+        } catch {
+            logger.error("Permanent delete failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            actionError = error.localizedDescription
+        }
+    }
+
+    /// Permanently deletes all items in Trash.
+    ///
+    /// The caller is responsible for showing a confirmation alert before invoking this method.
+    func performEmptyTrash() async {
+        do {
+            try await emptyTrashCase.execute()
+            logger.info("Trash emptied")
+            if itemSelection?.isDeleted == true { itemSelection = nil }
+            refreshItems()
+            refreshCounts()
+        } catch {
+            logger.error("Empty trash failed: \(error.localizedDescription, privacy: .public)")
+            actionError = error.localizedDescription
+        }
     }
 }

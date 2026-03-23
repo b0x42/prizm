@@ -59,14 +59,23 @@ final class VaultRepositoryImpl: VaultRepository {
     }
 
     func items(for selection: SidebarSelection) throws -> [VaultItem] {
-        let base = items.filter { !$0.isDeleted }
         switch selection {
-        case .allItems:
-            return sorted(base)
-        case .favorites:
-            return sorted(base.filter(\.isFavorite))
-        case .type(let itemType):
-            return sorted(base.filter { $0.content.matchesItemType(itemType) })
+        case .trash:
+            // Trash shows only soft-deleted items; the isDeleted filter is inverted here.
+            return sorted(items.filter(\.isDeleted))
+        default:
+            let base = items.filter { !$0.isDeleted }
+            switch selection {
+            case .allItems:
+                return sorted(base)
+            case .favorites:
+                return sorted(base.filter(\.isFavorite))
+            case .type(let itemType):
+                return sorted(base.filter { $0.content.matchesItemType(itemType) })
+            case .trash:
+                // Handled above — unreachable, but required for exhaustive switch.
+                return []
+            }
         }
     }
 
@@ -83,6 +92,7 @@ final class VaultRepositoryImpl: VaultRepository {
         var counts: [SidebarSelection: Int] = [:]
         counts[.allItems]          = base.count
         counts[.favorites]         = base.filter(\.isFavorite).count
+        counts[.trash]             = items.filter(\.isDeleted).count
         for type in ItemType.allCases {
             counts[.type(type)]    = base.filter { $0.content.matchesItemType(type) }.count
         }
@@ -167,6 +177,67 @@ final class VaultRepositoryImpl: VaultRepository {
         logger.info("Vault item updated: \(draft.id, privacy: .public)")
 
         return updatedItem
+    }
+
+    // MARK: - Delete / Restore / Empty Trash
+
+    /// Soft-deletes `id` by calling `DELETE /api/ciphers/{id}`.
+    ///
+    /// - Security goal: no vault key material is needed for delete — the request carries only
+    ///   the cipher ID. The access token (held by `MacwardenAPIClientImpl`) authorises the
+    ///   operation. No plaintext data is sent.
+    /// - On success the item is marked deleted in the local cache so the active list updates
+    ///   immediately without waiting for a full re-sync.
+    func deleteItem(id: String) async throws {
+        // The Bitwarden server interprets `DELETE /ciphers/{id}` based on the item's current
+        // state: if `deletedDate` is nil (active item) it soft-deletes (moves to trash);
+        // if `deletedDate` is already set (trashed item) it permanently removes the cipher.
+        // The local cache mirrors this: soft-delete marks `isDeleted = true`; permanent
+        // delete removes the item entry entirely.
+        try await apiClient.softDeleteCipher(id: id)
+        if let idx = items.firstIndex(where: { $0.id == id }) {
+            if items[idx].isDeleted {
+                // Already in trash → server permanently deleted it → remove from cache.
+                items.remove(at: idx)
+                logger.info("Vault item permanently deleted: \(id, privacy: .public)")
+            } else {
+                // Active item → server soft-deleted it → mark as deleted in cache.
+                let old = items[idx]
+                items[idx] = VaultItem(
+                    id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
+                    creationDate: old.creationDate, revisionDate: old.revisionDate,
+                    content: old.content, reprompt: old.reprompt
+                )
+                logger.info("Vault item soft-deleted: \(id, privacy: .public)")
+            }
+        }
+    }
+
+    /// Restores the trashed item with `id` by calling `PUT /api/ciphers/{id}/restore`.
+    ///
+    /// - Security goal: same as `deleteItem` — only the cipher ID is sent; no key material.
+    /// - On success the item is marked active in the local cache.
+    func restoreItem(id: String) async throws {
+        try await apiClient.restoreCipher(id: id)
+        if let idx = items.firstIndex(where: { $0.id == id }) {
+            let old = items[idx]
+            items[idx] = VaultItem(
+                id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: false,
+                creationDate: old.creationDate, revisionDate: old.revisionDate,
+                content: old.content, reprompt: old.reprompt
+            )
+        }
+        logger.info("Vault item restored: \(id, privacy: .public)")
+    }
+
+    /// Permanently deletes all trashed items by calling `DELETE /api/ciphers/purge`.
+    ///
+    /// - Security goal: no key material sent; the access token authorises the bulk purge.
+    /// - On success all items with `isDeleted == true` are removed from the local cache.
+    func emptyTrash() async throws {
+        try await apiClient.purgeTrashedCiphers()
+        items.removeAll(where: \.isDeleted)
+        logger.info("Trash emptied (all trashed items permanently deleted)")
     }
 
     // MARK: - Private helpers
