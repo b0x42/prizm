@@ -58,7 +58,7 @@ The generator opens as a `.popover` anchored to the trigger button. Rationale: a
 
 ### 6. Generator settings in `UserDefaults` directly
 
-Generator configuration (`PasswordGeneratorConfig`) is serialised to `UserDefaults` as individual keys (not a single encoded struct). This is consistent with how the project handles other UI preferences and avoids adding a repository protocol for trivial persisted UI state. Settings are explicitly scoped as UI preferences (not vault data) and are NOT stored in the Keychain.
+Generator configuration (`PasswordGeneratorConfig`) is serialised to `UserDefaults` as individual keys (not a single encoded struct). This is consistent with how the project handles other UI preferences and avoids adding a repository protocol for trivial persisted UI state. Settings are explicitly scoped as UI preferences (not vault data) and are NOT stored in the Keychain. Default mode is `.password` — random character passwords produce ~105 bits of entropy at 16 chars vs. ~38.9 bits for a 3-word passphrase; for vault-stored credentials memorability is irrelevant so entropy density wins (see NIST SP 800-63B Rev 4; EFF diceware research).
 
 ### 7. `PasswordGeneratorViewModel` as `@MainActor ObservableObject`
 

@@ -3,7 +3,7 @@
 - [ ] 1.1 Add `eff-large-wordlist.txt` to the app bundle (resource target membership in Xcode)
 - [ ] 1.2 Write failing unit tests for `PasswordGenerator` — random mode: length bounds (5, 128), uppercase-only pool, all-sets pool, at least-one-per-set guarantee, avoid-ambiguous exclusion, last-set lock prevents empty pool
 - [ ] 1.3 Write failing unit tests for `PasswordGenerator` — passphrase mode: word count (3, 10), separator injection, capitalize toggle, include-number toggle, all words from EFF list
-- [ ] 1.4 Implement `PasswordGeneratorConfig` value type — `enum Mode` (default `.passphrase`), all option fields with defaults, `UserDefaults` persistence helpers
+- [ ] 1.4 Implement `PasswordGeneratorConfig` value type — `enum Mode` (default `.password`), all option fields with defaults, `UserDefaults` persistence helpers
 - [ ] 1.5 Implement `PasswordGenerator` struct — `generatePassword(config:)` and `generatePassphrase(config:)` using `SecRandomCopyBytes`; lazy EFF word list loading; Fisher-Yates shuffle; all-sets-disabled guard
 
 ## 2. Presentation — PasswordGeneratorViewModel

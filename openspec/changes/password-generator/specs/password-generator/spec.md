@@ -59,7 +59,7 @@ The system SHALL provide a passphrase generator that produces word-based passphr
 ---
 
 ### Requirement: Generated value preview updates live on every option change
-The system SHALL display the currently generated value in a prominent preview area. The preview SHALL update immediately whenever any configuration option changes or the user explicitly requests a new value. The preview SHALL use a monospaced font to aid readability of passwords. The default mode on first launch SHALL be Passphrase.
+The system SHALL display the currently generated value in a prominent preview area. The preview SHALL update immediately whenever any configuration option changes or the user explicitly requests a new value. The preview SHALL use a monospaced font to aid readability of passwords. The default mode on first launch SHALL be Password.
 
 #### Scenario: Preview updates on toggle change
 - **WHEN** the user changes any configuration toggle or control
@@ -101,7 +101,7 @@ The system SHALL persist the user's last-used generator configuration (mode, all
 
 #### Scenario: Default settings apply on first launch
 - **WHEN** the generator is opened for the first time with no persisted settings
-- **THEN** all controls SHALL show their default values and the mode SHALL be Passphrase
+- **THEN** all controls SHALL show their default values and the mode SHALL be Password
 
 ---
 
