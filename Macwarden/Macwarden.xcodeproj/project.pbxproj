@@ -20,21 +20,27 @@
 		2E8E71AB9E244C56B93F96AD /* CustomFieldsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */; };
 		398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EBA517603CA448A8F9106AF /* SyncUseCase.swift */; };
 		3B3721D2F8C646EC91512FDA /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00802736F25046A0BD600128 /* SidebarView.swift */; };
+		3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */; };
 		3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */; };
 		3E04D7AC0223458CB329663C /* CustomField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB323D45FF2440C95C0BA70 /* CustomField.swift */; };
+		421368787851407FBCA9D99F /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212734E66AE74662AD28E6CB /* TrashView.swift */; };
 		4309FCE32F6807970031C9F4 /* MacwardenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE12F6807970031C9F4 /* MacwardenApp.swift */; };
 		4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE72F6809A40031C9F4 /* AppContainer.swift */; };
 		4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE92F6809C10031C9F4 /* Config.swift */; };
 		43947740EA3343DC9C888402 /* MacwardenAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E819470C1E544509A3DDD52F /* MacwardenAPIClient.swift */; };
 		48716DD27A3B45A6872E0DC2 /* UnlockUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */; };
+		48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */; };
 		4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */; };
 		4B506070809000D3D4E5F607 /* EditFieldRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C607080900A10E4E5F60718 /* EditFieldRow.swift */; };
+		50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */; };
 		56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */; };
 		5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7429BBFA10E247D8AEACA59B /* LoginView.swift */; };
+		5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */; };
 		6A563BC5058D474D9C84561E /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = F557D7298207448A9FBFC676 /* Account.swift */; };
 		6D7080900A1B20F5F6071829 /* LoginEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8090A01B2C300607182930 /* LoginEditForm.swift */; };
 		714B2A1113A34984901FCC03 /* UnlockUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */; };
 		7AE873E2FB0A4DC5BEE93B9A /* LoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F246F209ADA45F99C9B17DB /* LoginDetailView.swift */; };
+		7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */; };
 		7F0FEAC3BB77445D9BCE9F99 /* CardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850DDD79F86D4651A98ADD0A /* CardDetailView.swift */; };
 		87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */; };
 		8F900A1B2C3D401718293040 /* CardEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90A0B1C2D3E4F02829304050 /* CardEditForm.swift */; };
@@ -49,6 +55,13 @@
 		A2B3C4D5E6F74718B9C0D1E2 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8F9A0B1C2D3E4F5A6B7C8D /* KeychainService.swift */; };
 		A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */; };
 		A7E3F19B8C2D4A61B04DE723 /* SearchVaultUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */; };
+		AA0001010000000100000001 /* RandomnessProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002010000000100000001 /* RandomnessProvider.swift */; };
+		AA0001020000000200000002 /* PasswordGeneratorConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002020000000200000002 /* PasswordGeneratorConfig.swift */; };
+		AA0001030000000300000003 /* PasswordGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002030000000300000003 /* PasswordGenerator.swift */; };
+		AA0001040000000400000004 /* CryptographicRandomnessProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002040000000400000004 /* CryptographicRandomnessProvider.swift */; };
+		AA0001050000000500000005 /* PasswordGeneratorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002050000000500000005 /* PasswordGeneratorViewModel.swift */; };
+		AA0001060000000600000006 /* PasswordGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002060000000600000006 /* PasswordGeneratorView.swift */; };
+		AA0001070000000700000007 /* eff-large-wordlist.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA0002070000000700000007 /* eff-large-wordlist.txt */; };
 		AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */; };
 		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
 		B11759DE56D34E4199773C2D /* FieldRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E105187F1E54E0E91E82B14 /* FieldRowView.swift */; };
@@ -60,6 +73,7 @@
 		C3D4E5F6A7B849C0D1E2F3A4 /* MacwardenCryptoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D710BEABBB4ADD9ADFCD1F /* MacwardenCryptoService.swift */; };
 		C3DDB598E8834E85833D86FE /* VaultBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */; };
 		C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */; };
+		C95CAFFEA54E4E66BED34362 /* DeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */; };
 		CB1A2B3C4D5E6F7A8B9C0D1E /* CardBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */; };
 		CE4521A69D3C49298AAC03DF /* SecureNoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F78357C6C424765828B6185 /* SecureNoteDetailView.swift */; };
 		D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF90E0F31DF248FB9D12F74D /* VaultItem.swift */; };
@@ -76,13 +90,6 @@
 		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
 		FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */; };
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
-		48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */; };
-		50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */; };
-		5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */; };
-		C95CAFFEA54E4E66BED34362 /* DeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */; };
-		3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */; };
-		7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */; };
-		421368787851407FBCA9D99F /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212734E66AE74662AD28E6CB /* TrashView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,28 +114,34 @@
 		182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsEditSection.swift; sourceTree = "<group>"; };
 		19616C22B9CF495087EE1F17 /* UnlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockView.swift; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardBackground.swift; sourceTree = "<group>"; };
+		212734E66AE74662AD28E6CB /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
 		226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCaseImpl.swift; sourceTree = "<group>"; };
 		257FAE34CC064783806B6A5C /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
+		2D38B14DD3084CD9A3AA4FFF /* TrashJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashJourneyTests.swift; sourceTree = "<group>"; };
 		3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepository.swift; sourceTree = "<group>"; };
 		3A4050607080902CC3D4E5F6 /* ItemEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditView.swift; sourceTree = "<group>"; };
 		3E105187F1E54E0E91E82B14 /* FieldRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldRowView.swift; sourceTree = "<group>"; };
 		3FBB82A6241244DD890E615C /* EncString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncString.swift; sourceTree = "<group>"; };
 		40543834D81F44848D37A737 /* IdentityDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityDetailView.swift; sourceTree = "<group>"; };
+		42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		4309FCE12F6807970031C9F4 /* MacwardenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacwardenApp.swift; sourceTree = "<group>"; };
 		4309FCE72F6809A40031C9F4 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		4309FCE92F6809C10031C9F4 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		4309FD0D2F68121F0031C9F4 /* MacwardenTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacwardenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		434D9EBA2F670B9C00052BCB /* Macwarden.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Macwarden.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCase.swift; sourceTree = "<group>"; };
 		4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepositoryImpl.swift; sourceTree = "<group>"; };
 		4F246F209ADA45F99C9B17DB /* LoginDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginDetailView.swift; sourceTree = "<group>"; };
 		50445584AD814B6EBD971FDA /* FaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconLoader.swift; sourceTree = "<group>"; };
 		5C607080900A10E4E5F60718 /* EditFieldRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFieldRow.swift; sourceTree = "<group>"; };
 		5EBA517603CA448A8F9106AF /* SyncUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUseCase.swift; sourceTree = "<group>"; };
 		6631A93BC5EA4827BC497076 /* ItemRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRowView.swift; sourceTree = "<group>"; };
+		6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
 		6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCaseImpl.swift; sourceTree = "<group>"; };
 		6D7E8F90718293040A1B2C3D /* EditItemJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemJourneyTests.swift; sourceTree = "<group>"; };
 		713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		7429BBFA10E247D8AEACA59B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockViewModel.swift; sourceTree = "<group>"; };
 		7C40EE0279BE41BE97FC5942 /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
 		7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepository.swift; sourceTree = "<group>"; };
@@ -138,9 +151,17 @@
 		8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncUseCaseImpl.swift; sourceTree = "<group>"; };
 		850DDD79F86D4651A98ADD0A /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
 		87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconView.swift; sourceTree = "<group>"; };
+		8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		90A0B1C2D3E4F02829304050 /* CardEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEditForm.swift; sourceTree = "<group>"; };
 		95E5FF4D219144A18C2BC5AA /* RawCipher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawCipher.swift; sourceTree = "<group>"; };
 		9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepositoryImpl.swift; sourceTree = "<group>"; };
+		AA0002010000000100000001 /* RandomnessProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RandomnessProvider.swift; sourceTree = "<group>"; };
+		AA0002020000000200000002 /* PasswordGeneratorConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordGeneratorConfig.swift; sourceTree = "<group>"; };
+		AA0002030000000300000003 /* PasswordGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordGenerator.swift; sourceTree = "<group>"; };
+		AA0002040000000400000004 /* CryptographicRandomnessProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptographicRandomnessProvider.swift; sourceTree = "<group>"; };
+		AA0002050000000500000005 /* PasswordGeneratorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordGeneratorViewModel.swift; sourceTree = "<group>"; };
+		AA0002060000000600000006 /* PasswordGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordGeneratorView.swift; sourceTree = "<group>"; };
+		AA0002070000000700000007 /* eff-large-wordlist.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "eff-large-wordlist.txt"; sourceTree = "<group>"; };
 		B2C1D2E3F400A04A40506070 /* IdentityEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityEditForm.swift; sourceTree = "<group>"; };
 		B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftVaultItem.swift; sourceTree = "<group>"; };
 		B65E7D6288C347DCA88A20DF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
@@ -156,6 +177,7 @@
 		E312819D0F20492CADB986E4 /* SSHKeyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyDetailView.swift; sourceTree = "<group>"; };
 		E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBrowserView.swift; sourceTree = "<group>"; };
 		E819470C1E544509A3DDD52F /* MacwardenAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacwardenAPIClient.swift; sourceTree = "<group>"; };
+		EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
 		EF90E0F31DF248FB9D12F74D /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
 		F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryImpl.swift; sourceTree = "<group>"; };
 		F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CipherMapper.swift; sourceTree = "<group>"; };
@@ -168,14 +190,6 @@
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
-		EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
-		4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCase.swift; sourceTree = "<group>"; };
-		6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
-		42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
-		75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
-		8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
-		212734E66AE74662AD28E6CB /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
-		2D38B14DD3084CD9A3AA4FFF /* TrashJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashJourneyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -223,6 +237,7 @@
 		4309FCEB2F680ABF0031C9F4 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
+				AA0003010000000100000001 /* Utilities */,
 				4309FCEE2F680ADE0031C9F4 /* UseCases */,
 				4309FCED2F680AD60031C9F4 /* Repositories */,
 				4309FCEC2F680AC80031C9F4 /* Entities */,
@@ -263,7 +278,7 @@
 				D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */,
 				EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */,
 				4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */,
-					6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
+				6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -285,6 +300,7 @@
 			isa = PBXGroup;
 			children = (
 				1307284FEED04829B5C4B587 /* CryptoKeys.swift */,
+				AA0002040000000400000004 /* CryptographicRandomnessProvider.swift */,
 				3FBB82A6241244DD890E615C /* EncString.swift */,
 				D8D710BEABBB4ADD9ADFCD1F /* MacwardenCryptoService.swift */,
 			);
@@ -496,6 +512,7 @@
 				4309FCEF2F680AE70031C9F4 /* Data */,
 				4309FCEB2F680ABF0031C9F4 /* Domain */,
 				4309FCE62F6808620031C9F4 /* App */,
+				AA0003020000000200000002 /* Resources */,
 				434D9EBC2F670B9C00052BCB /* Macwarden */,
 				4309FD0E2F68121F0031C9F4 /* MacwardenTests */,
 				434D9EBB2F670B9C00052BCB /* Products */,
@@ -530,6 +547,14 @@
 			path = Login;
 			sourceTree = "<group>";
 		};
+		7F9C2582320343D997856712 /* Trash */ = {
+			isa = PBXGroup;
+			children = (
+				212734E66AE74662AD28E6CB /* TrashView.swift */,
+			);
+			path = Trash;
+			sourceTree = "<group>";
+		};
 		8A9B0C1D2E3F4050A1B2C3D4 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
@@ -542,8 +567,28 @@
 				D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */,
 				F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */,
 				182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */,
+				AA0002050000000500000005 /* PasswordGeneratorViewModel.swift */,
+				AA0002060000000600000006 /* PasswordGeneratorView.swift */,
 			);
 			path = Edit;
+			sourceTree = "<group>";
+		};
+		AA0003010000000100000001 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				AA0002010000000100000001 /* RandomnessProvider.swift */,
+				AA0002020000000200000002 /* PasswordGeneratorConfig.swift */,
+				AA0002030000000300000003 /* PasswordGenerator.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		AA0003020000000200000002 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AA0002070000000700000007 /* eff-large-wordlist.txt */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		CE7CA2E3F69D4D26BA2E50F2 /* Unlock */ = {
@@ -565,17 +610,9 @@
 				F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */,
 				42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */,
 				75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */,
-					8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
+				8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
 			);
 			path = UseCases;
-			sourceTree = "<group>";
-		};
-		7F9C2582320343D997856712 /* Trash */ = {
-			isa = PBXGroup;
-			children = (
-				212734E66AE74662AD28E6CB /* TrashView.swift */,
-			);
-			path = Trash;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -681,6 +718,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0001070000000700000007 /* eff-large-wordlist.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -768,11 +806,17 @@
 				071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */,
 				48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */,
 				50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */,
-					5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */,
+				5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */,
 				C95CAFFEA54E4E66BED34362 /* DeleteVaultItemUseCaseImpl.swift in Sources */,
 				3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */,
-					7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */,
+				7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */,
 				421368787851407FBCA9D99F /* TrashView.swift in Sources */,
+				AA0001010000000100000001 /* RandomnessProvider.swift in Sources */,
+				AA0001020000000200000002 /* PasswordGeneratorConfig.swift in Sources */,
+				AA0001030000000300000003 /* PasswordGenerator.swift in Sources */,
+				AA0001040000000400000004 /* CryptographicRandomnessProvider.swift in Sources */,
+				AA0001050000000500000005 /* PasswordGeneratorViewModel.swift in Sources */,
+				AA0001060000000600000006 /* PasswordGeneratorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

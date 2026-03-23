@@ -126,4 +126,25 @@ nonisolated enum AccessibilityID {
         /// The "Delete Permanently" toolbar button in ItemDetailView for trashed items.
         static let permanentDeleteButton = "trash.button.permanentDelete"
     }
+
+    // MARK: - Password Generator (password-generator)
+
+    enum Generator {
+        static let modePicker          = "generator.modePicker"
+        static let lengthSlider        = "generator.lengthSlider"
+        static let uppercaseToggle     = "generator.toggle.uppercase"
+        static let lowercaseToggle     = "generator.toggle.lowercase"
+        static let digitsToggle        = "generator.toggle.digits"
+        static let symbolsToggle       = "generator.toggle.symbols"
+        static let avoidAmbiguousToggle = "generator.toggle.avoidAmbiguous"
+        static let wordCountStepper    = "generator.wordCount"
+        static let separatorField      = "generator.separator"
+        static let capitalizeToggle    = "generator.toggle.capitalize"
+        static let includeNumberToggle = "generator.toggle.includeNumber"
+        static let preview             = "generator.preview"
+        static let refreshButton       = "generator.button.refresh"
+        static let copyButton          = "generator.button.copy"
+        static let useButton           = "generator.button.use"
+        static let triggerButton       = "generator.button.trigger"
+    }
 }

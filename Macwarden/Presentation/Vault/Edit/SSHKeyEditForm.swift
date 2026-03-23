@@ -17,7 +17,7 @@ struct SSHKeyEditForm: View {
 
                 DetailSectionCard("SSH Key") {
                     // Private key is sensitive — masked by default with reveal toggle.
-                    MaskedEditFieldRow(label: "Private Key", value: $draft.privateKey)
+                    MaskedEditFieldRow(label: "Private Key", value: $draft.privateKey, generatorBinding: $draft.privateKey)
                     Divider()
                     OptionalEditFieldRow(label: "Public Key", value: $draft.publicKey)
                     Divider()

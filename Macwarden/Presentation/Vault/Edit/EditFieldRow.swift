@@ -68,10 +68,17 @@ struct MaskedEditFieldRow: View {
 
     let label: String
     @Binding var value: String?
+    /// When non-nil, a generator wand button is shown that opens the password generator popover.
+    /// The binding receives the generated value when the user taps "Use".
+    var generatorBinding: Binding<String?>?
 
     @State private var isRevealed = false
     /// Background task that auto-masks after the sensitive-field timeout.
     @State private var maskTask: Task<Void, Never>?
+    @State private var showGenerator = false
+    @StateObject private var generatorVM = PasswordGeneratorViewModel(
+        provider: CryptographicRandomnessProvider()
+    )
 
     // TODO: make the timeout app-wide configurable (UserDefaults pref) — deferred to v2.
     // Using 30 s as a sensible default, matching the clipboard auto-clear interval.
@@ -101,6 +108,24 @@ struct MaskedEditFieldRow: View {
                 }
             }
             Spacer()
+
+            if generatorBinding != nil {
+                Button {
+                    showGenerator.toggle()
+                } label: {
+                    Image(systemName: "wand.and.stars")
+                        .imageScale(.small)
+                }
+                .buttonStyle(.plain)
+                .help("Generate password")
+                .accessibilityIdentifier(AccessibilityID.Generator.triggerButton)
+                .popover(isPresented: $showGenerator) {
+                    PasswordGeneratorView(
+                        viewModel: generatorVM,
+                        targetValue: generatorBinding ?? $value
+                    )
+                }
+            }
 
             Button {
                 if isRevealed {
