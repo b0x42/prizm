@@ -87,7 +87,7 @@ Consistent with `ItemEditViewModel`, `LoginViewModel`, etc. The generator is UI-
 
 ### 8. `EditFieldRow` extension point
 
-Add an optional `generatorBinding: Binding<String?>?` parameter to `EditFieldRow`. When non-nil, a wand SF Symbol button is rendered adjacent to the field. All existing call sites pass `nil` implicitly and are unaffected. Only the two target fields (`LoginEditForm` password, `SSHKeyEditForm` private key) pass a binding.
+Add an optional `generatorBinding: Binding<String?>?` parameter to `EditFieldRow`. When non-nil, a wand SF Symbol button is rendered adjacent to the field. All existing call sites pass `nil` implicitly and are unaffected. Only `LoginEditForm` password passes a binding.
 
 ## Risks / Trade-offs
 
