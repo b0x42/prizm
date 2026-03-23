@@ -204,6 +204,19 @@ nonisolated enum APIError: Error, Equatable {
     case baseURLNotSet
 }
 
+extension APIError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .httpError(let statusCode, let body):
+            return body.isEmpty ? "Server error \(statusCode)." : "Server error \(statusCode): \(body)"
+        case .decodingFailed:
+            return "The server response could not be read. Please try again."
+        case .baseURLNotSet:
+            return "No server URL is configured."
+        }
+    }
+}
+
 // MARK: - Implementation
 
 /// URLSession-backed Bitwarden API client.
@@ -515,12 +528,11 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
         var request = baseRequest(url: url)
         request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        // Empty body — the server identifies the cipher by URL path.
-        request.httpBody = Data("{}".utf8)
+        // No body — the server identifies the cipher by URL path only.
+        // Sending Content-Type: application/json with a body causes Vaultwarden to return 400.
 
         try await performEmpty(request: request)
         if DebugConfig.isEnabled {
