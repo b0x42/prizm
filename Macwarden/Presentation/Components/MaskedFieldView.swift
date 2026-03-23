@@ -24,11 +24,6 @@ struct MaskedFieldState {
         isRevealed ? value : Self.maskedPlaceholder
     }
 
-    /// Display value considering an external peek override (e.g. Option-key held).
-    func displayValue(peeking: Bool) -> String {
-        (isRevealed || peeking) ? value : Self.maskedPlaceholder
-    }
-
     /// Returns a copy with `isRevealed` flipped.
     func toggled() -> MaskedFieldState {
         MaskedFieldState(value: value, isRevealed: !isRevealed)
@@ -59,7 +54,6 @@ struct MaskedFieldView: View {
     let itemId: String
 
     @State private var state: MaskedFieldState
-    @Environment(OptionKeyMonitor.self) private var optionKeyMonitor
 
     init(label: String, value: String?, itemId: String) {
         self.label  = label
@@ -68,18 +62,13 @@ struct MaskedFieldView: View {
         _state = State(initialValue: MaskedFieldState(value: value ?? ""))
     }
 
-    /// Plaintext when revealed via toggle OR Option-key peek.
-    private var effectiveDisplayValue: String {
-        state.displayValue(peeking: optionKeyMonitor.isOptionHeld)
-    }
-
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
-                Text(effectiveDisplayValue)
+                Text(state.displayValue)
                     .font(Typography.fieldValue.monospaced())
                     .textSelection(.enabled)
                     .accessibilityIdentifier(AccessibilityID.Masked.value(label))

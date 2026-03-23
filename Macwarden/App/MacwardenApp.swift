@@ -15,7 +15,6 @@ struct MacwardenApp: App {
 
     @StateObject private var container: AppContainer
     @StateObject private var rootVM:    RootViewModel
-    @State       private var optionKeyMonitor = OptionKeyMonitor()
 
     init() {
         let c = AppContainer()
@@ -28,7 +27,6 @@ struct MacwardenApp: App {
             rootView
                 .frame(minWidth: 480, minHeight: 360)
                 .containerBackground(.thinMaterial, for: .window)
-                .environment(optionKeyMonitor)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
