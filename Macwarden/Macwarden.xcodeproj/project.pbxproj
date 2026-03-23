@@ -62,6 +62,7 @@
 		AA0001050000000500000005 /* PasswordGeneratorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002050000000500000005 /* PasswordGeneratorViewModel.swift */; };
 		AA0001060000000600000006 /* PasswordGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002060000000600000006 /* PasswordGeneratorView.swift */; };
 		AA0001070000000700000007 /* eff-large-wordlist.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA0002070000000700000007 /* eff-large-wordlist.txt */; };
+		AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2233445566778899001122 /* OptionKeyMonitor.swift */; };
 		AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */; };
 		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
 		B11759DE56D34E4199773C2D /* FieldRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E105187F1E54E0E91E82B14 /* FieldRowView.swift */; };
@@ -165,6 +166,7 @@
 		B2C1D2E3F400A04A40506070 /* IdentityEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityEditForm.swift; sourceTree = "<group>"; };
 		B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftVaultItem.swift; sourceTree = "<group>"; };
 		B65E7D6288C347DCA88A20DF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
+		BB2233445566778899001122 /* OptionKeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionKeyMonitor.swift; sourceTree = "<group>"; };
 		BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityIdentifiers.swift; sourceTree = "<group>"; };
 		CAB323D45FF2440C95C0BA70 /* CustomField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomField.swift; sourceTree = "<group>"; };
 		D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalLabeledContentStyle.swift; sourceTree = "<group>"; };
@@ -415,6 +417,7 @@
 			isa = PBXGroup;
 			children = (
 				F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */,
+				BB2233445566778899001122 /* OptionKeyMonitor.swift */,
 				3E105187F1E54E0E91E82B14 /* FieldRowView.swift */,
 				87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */,
 				D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */,
@@ -767,6 +770,7 @@
 				DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */,
 				C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */,
 				FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */,
+				AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */,
 				B11759DE56D34E4199773C2D /* FieldRowView.swift in Sources */,
 				98E8E51C9AD5496C88E0ABD3 /* FaviconView.swift in Sources */,
 				A1B2C3D4E5F64789A1B2C3D4 /* VerticalLabeledContentStyle.swift in Sources */,
