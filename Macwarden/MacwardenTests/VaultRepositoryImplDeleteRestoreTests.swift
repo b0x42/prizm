@@ -73,15 +73,25 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
         XCTAssertEqual(mockAPI.lastSoftDeletedId, "id-1")
     }
 
-    func testDeleteItem_trashedItem_removesFromCachePermanently() async throws {
+    func testPermanentDeleteItem_trashedItem_removesFromCache() async throws {
         let item = makeLogin(id: "id-2", name: "Trashed Item", isDeleted: true)
         sut.populate(items: [item], syncedAt: Date())
 
-        try await sut.deleteItem(id: "id-2")
+        try await sut.permanentDeleteItem(id: "id-2")
 
-        // Item should be completely removed.
+        // Item should be completely removed from the cache.
         let trashed = try sut.items(for: .trash)
         XCTAssertTrue(trashed.isEmpty, "Item should be removed from cache after permanent delete")
+    }
+
+    func testPermanentDeleteItem_callsAPIOnce() async throws {
+        let item = makeLogin(id: "id-2", name: "Trashed Item", isDeleted: true)
+        sut.populate(items: [item], syncedAt: Date())
+
+        try await sut.permanentDeleteItem(id: "id-2")
+
+        XCTAssertEqual(mockAPI.permanentDeleteCallCount, 1)
+        XCTAssertEqual(mockAPI.lastPermanentDeletedId, "id-2")
     }
 
     func testDeleteItem_apiError_doesNotUpdateCache() async throws {

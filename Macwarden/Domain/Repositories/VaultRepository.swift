@@ -50,20 +50,28 @@ protocol VaultRepository: AnyObject {
     /// - Throws: `APIError` on network or HTTP failure.
     func update(_ draft: DraftVaultItem) async throws -> VaultItem
 
-    /// Soft-deletes the item with `id` by calling `DELETE /ciphers/{id}`.
+    /// Soft-deletes the item with `id` by calling `PUT /ciphers/{id}/delete`.
     ///
-    /// The item moves to Trash (`isDeleted == true`) on the server and is removed from the
-    /// active vault in the local cache. It remains recoverable until permanently deleted.
+    /// The item moves to Trash (`isDeleted == true`) on the server and remains in the
+    /// local cache (visible under `.trash`). It can be recovered via `restoreItem(id:)`.
     ///
-    /// - Throws: `APIError` on network or HTTP failure.
+    /// - Throws: `Error` on network or HTTP failure.
     func deleteItem(id: String) async throws
+
+    /// Permanently removes the trashed item with `id` by calling `DELETE /ciphers/{id}`.
+    ///
+    /// **This operation is irreversible.** The item is removed from the server and from
+    /// the local cache. The item must already be in Trash (`isDeleted == true`).
+    ///
+    /// - Throws: `Error` on network or HTTP failure.
+    func permanentDeleteItem(id: String) async throws
 
     /// Restores a trashed item by calling `PUT /ciphers/{id}/restore`.
     ///
     /// Clears `isDeleted` on the server and moves the item back to the active vault
     /// in the local cache.
     ///
-    /// - Throws: `APIError` on network or HTTP failure.
+    /// - Throws: `Error` on network or HTTP failure.
     func restoreItem(id: String) async throws
 
     /// Permanently deletes all items in trash by calling `DELETE /ciphers/purge`.
@@ -71,7 +79,7 @@ protocol VaultRepository: AnyObject {
     /// This operation is irreversible — all trashed items are removed from the server
     /// and cleared from the local cache.
     ///
-    /// - Throws: `APIError` on network or HTTP failure.
+    /// - Throws: `Error` on network or HTTP failure.
     func emptyTrash() async throws
 }
 

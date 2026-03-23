@@ -25,14 +25,15 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Domain use cases
 
-    let syncUseCase:             SyncUseCaseImpl
-    let loginUseCase:            LoginUseCaseImpl
-    let unlockUseCase:           UnlockUseCaseImpl
-    let searchVaultUseCase:      SearchVaultUseCaseImpl
-    let editVaultItemUseCase:    EditVaultItemUseCaseImpl
-    let deleteVaultItemUseCase:  DeleteVaultItemUseCaseImpl
-    let restoreVaultItemUseCase: RestoreVaultItemUseCaseImpl
-    let emptyTrashUseCase:       EmptyTrashUseCaseImpl
+    let syncUseCase:                    SyncUseCaseImpl
+    let loginUseCase:                   LoginUseCaseImpl
+    let unlockUseCase:                  UnlockUseCaseImpl
+    let searchVaultUseCase:             SearchVaultUseCaseImpl
+    let editVaultItemUseCase:           EditVaultItemUseCaseImpl
+    let deleteVaultItemUseCase:         DeleteVaultItemUseCaseImpl
+    let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
+    let restoreVaultItemUseCase:        RestoreVaultItemUseCaseImpl
+    let emptyTrashUseCase:              EmptyTrashUseCaseImpl
 
     // MARK: - Init
 
@@ -64,10 +65,11 @@ final class AppContainer: ObservableObject {
         self.loginUseCase            = LoginUseCaseImpl(auth: auth, sync: sync)
         self.unlockUseCase           = UnlockUseCaseImpl(auth: auth, sync: sync)
         self.searchVaultUseCase      = SearchVaultUseCaseImpl(vault: vault)
-        self.editVaultItemUseCase    = EditVaultItemUseCaseImpl(repository: vault)
-        self.deleteVaultItemUseCase  = DeleteVaultItemUseCaseImpl(repository: vault)
-        self.restoreVaultItemUseCase = RestoreVaultItemUseCaseImpl(repository: vault)
-        self.emptyTrashUseCase       = EmptyTrashUseCaseImpl(repository: vault)
+        self.editVaultItemUseCase            = EditVaultItemUseCaseImpl(repository: vault)
+        self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
+        self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
+        self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
+        self.emptyTrashUseCase               = EmptyTrashUseCaseImpl(repository: vault)
     }
 
     // MARK: - Factories
@@ -85,11 +87,12 @@ final class AppContainer: ObservableObject {
     /// Creates a `VaultBrowserViewModel` backed by the live vault store.
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel {
         VaultBrowserViewModel(
-            vault:   vaultStore,
-            search:  searchVaultUseCase,
-            delete:  deleteVaultItemUseCase,
-            restore: restoreVaultItemUseCase,
-            emptyTrash: emptyTrashUseCase
+            vault:           vaultStore,
+            search:          searchVaultUseCase,
+            delete:          deleteVaultItemUseCase,
+            permanentDelete: permanentDeleteVaultItemUseCase,
+            restore:         restoreVaultItemUseCase,
+            emptyTrash:      emptyTrashUseCase
         )
     }
 

@@ -45,6 +45,8 @@ final class MockVaultRepository: VaultRepository {
             return populatedItems.filter(\.isFavorite)
         case .type(let itemType):
             return populatedItems.filter { $0.content.matchesType(itemType) }
+        case .trash:
+            return populatedItems.filter(\.isDeleted)
         }
     }
 
@@ -83,6 +85,19 @@ final class MockVaultRepository: VaultRepository {
         deleteCallCount += 1
         lastDeletedId = id
         if let error = stubbedDeleteError { throw error }
+        populatedItems.removeAll { $0.id == id }
+    }
+
+    // MARK: - permanentDeleteItem stubbing
+
+    var stubbedPermanentDeleteError: Error?
+    private(set) var permanentDeleteCallCount: Int = 0
+    private(set) var lastPermanentDeletedId: String?
+
+    func permanentDeleteItem(id: String) async throws {
+        permanentDeleteCallCount += 1
+        lastPermanentDeletedId = id
+        if let error = stubbedPermanentDeleteError { throw error }
         populatedItems.removeAll { $0.id == id }
     }
 

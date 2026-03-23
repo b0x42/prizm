@@ -181,16 +181,16 @@ struct ItemDetailView: View {
     /// Communicates that the item is not editable and can be restored or permanently deleted.
     @ViewBuilder
     private func trashBanner(for item: VaultItem) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.headerGap) {
             Image(systemName: "trash")
                 .foregroundStyle(.secondary)
             Text("This item is in Trash.")
-                .font(.callout)
+                .font(Typography.bannerText)
                 .foregroundStyle(.secondary)
             Spacer()
         }
         .padding(.horizontal, Spacing.pageMargin)
-        .padding(.vertical, 8)
+        .padding(.vertical, Spacing.headerGap)
         .background(Color.secondary.opacity(0.1))
         .accessibilityIdentifier(AccessibilityID.Trash.statusBanner)
     }

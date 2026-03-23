@@ -46,6 +46,33 @@ final class DeleteRestoreVaultItemUseCaseTests: XCTestCase {
         }
     }
 
+    // MARK: - PermanentDeleteVaultItemUseCase
+
+    func test_permanentDelete_delegatesToRepository() async throws {
+        let sut = PermanentDeleteVaultItemUseCaseImpl(repository: mockRepo)
+        try await sut.execute(id: "perm-1")
+
+        XCTAssertEqual(mockRepo.permanentDeleteCallCount, 1)
+        XCTAssertEqual(mockRepo.lastPermanentDeletedId, "perm-1")
+    }
+
+    func test_permanentDelete_repositoryThrows_rethrowsError() async {
+        mockRepo.stubbedPermanentDeleteError = APIError.httpError(statusCode: 404, body: "not found")
+        let sut = PermanentDeleteVaultItemUseCaseImpl(repository: mockRepo)
+
+        do {
+            try await sut.execute(id: "perm-1")
+            XCTFail("Expected error to be thrown")
+        } catch let error as APIError {
+            guard case .httpError(let code, _) = error else {
+                return XCTFail("Expected .httpError, got \(error)")
+            }
+            XCTAssertEqual(code, 404)
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
     // MARK: - RestoreVaultItemUseCase
 
     func test_restore_delegatesToRepository() async throws {

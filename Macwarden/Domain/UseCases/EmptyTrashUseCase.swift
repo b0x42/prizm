@@ -10,6 +10,6 @@ import Foundation
 protocol EmptyTrashUseCase: AnyObject {
     /// Permanently deletes every item currently in Trash.
     ///
-    /// - Throws: `APIError` on network or HTTP failure.
+    /// - Throws: `Error` on network or HTTP failure.
     func execute() async throws
 }

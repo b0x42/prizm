@@ -181,49 +181,54 @@ final class VaultRepositoryImpl: VaultRepository {
 
     // MARK: - Delete / Restore / Empty Trash
 
-    /// Deletes `id`: soft-delete if active, permanent delete if already in Trash.
+    /// Soft-deletes the active item with `id` by calling `PUT /ciphers/{id}/delete`.
     ///
     /// - Security goal: no vault key material is needed — only the cipher ID is sent.
     ///   The access token (held by `MacwardenAPIClientImpl`) authorises the operation.
-    /// - Bitwarden uses two distinct endpoints:
-    ///   `PUT /ciphers/{id}/delete` for soft-delete and `DELETE /ciphers/{id}` for permanent.
-    /// - On success the local cache is updated immediately so the UI reflects the change
-    ///   without waiting for a full re-sync.
+    /// - Bitwarden endpoint: `PUT /api/ciphers/{id}/delete` — moves the cipher to Trash.
+    /// - On success the local cache entry is updated (`isDeleted = true`) immediately so
+    ///   the UI reflects the change without waiting for a full re-sync.
     func deleteItem(id: String) async throws {
         guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
+        try await apiClient.softDeleteCipher(id: id)
+        let old = items[idx]
+        items[idx] = VaultItem(
+            id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
+            creationDate: old.creationDate, revisionDate: old.revisionDate,
+            content: old.content, reprompt: old.reprompt
+        )
+        logger.info("Vault item soft-deleted: \(id, privacy: .public)")
+    }
 
-        if items[idx].isDeleted {
-            // Already in Trash → permanently remove from server and cache.
-            try await apiClient.permanentDeleteCipher(id: id)
-            items.remove(at: idx)
-            logger.info("Vault item permanently deleted: \(id, privacy: .public)")
-        } else {
-            // Active item → soft-delete (moves to Trash on server).
-            try await apiClient.softDeleteCipher(id: id)
-            let old = items[idx]
-            items[idx] = VaultItem(
-                id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
-                creationDate: old.creationDate, revisionDate: old.revisionDate,
-                content: old.content, reprompt: old.reprompt
-            )
-            logger.info("Vault item soft-deleted: \(id, privacy: .public)")
-        }
+    /// Permanently deletes the trashed item with `id` by calling `DELETE /ciphers/{id}`.
+    ///
+    /// - Security goal: same as `deleteItem` — only the cipher ID is sent; no key material.
+    /// - Bitwarden endpoint: `DELETE /api/ciphers/{id}` — permanently removes the cipher.
+    ///   This is distinct from the soft-delete endpoint (`PUT .../delete`).
+    /// - On success the item is removed from the local cache entirely.
+    func permanentDeleteItem(id: String) async throws {
+        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
+        try await apiClient.permanentDeleteCipher(id: id)
+        items.remove(at: idx)
+        logger.info("Vault item permanently deleted: \(id, privacy: .public)")
     }
 
     /// Restores the trashed item with `id` by calling `PUT /api/ciphers/{id}/restore`.
     ///
     /// - Security goal: same as `deleteItem` — only the cipher ID is sent; no key material.
+    /// - Guards on the local cache index first so that an API call is never made for an item
+    ///   that is not in the local store (fail-fast; avoids a successful server call with no
+    ///   corresponding cache update).
     /// - On success the item is marked active in the local cache.
     func restoreItem(id: String) async throws {
+        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
         try await apiClient.restoreCipher(id: id)
-        if let idx = items.firstIndex(where: { $0.id == id }) {
-            let old = items[idx]
-            items[idx] = VaultItem(
-                id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: false,
-                creationDate: old.creationDate, revisionDate: old.revisionDate,
-                content: old.content, reprompt: old.reprompt
-            )
-        }
+        let old = items[idx]
+        items[idx] = VaultItem(
+            id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: false,
+            creationDate: old.creationDate, revisionDate: old.revisionDate,
+            content: old.content, reprompt: old.reprompt
+        )
         logger.info("Vault item restored: \(id, privacy: .public)")
     }
 

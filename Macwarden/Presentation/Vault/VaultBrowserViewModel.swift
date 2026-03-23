@@ -50,11 +50,12 @@ final class VaultBrowserViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let vault:           any VaultRepository
-    private let search:          any SearchVaultUseCase
-    private let deleteUseCase:   any DeleteVaultItemUseCase
-    private let restoreUseCase:  any RestoreVaultItemUseCase
-    private let emptyTrashCase:  any EmptyTrashUseCase
+    private let vault:                  any VaultRepository
+    private let search:                 any SearchVaultUseCase
+    private let deleteUseCase:          any DeleteVaultItemUseCase
+    private let permanentDeleteUseCase: any PermanentDeleteVaultItemUseCase
+    private let restoreUseCase:         any RestoreVaultItemUseCase
+    private let emptyTrashCase:         any EmptyTrashUseCase
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
@@ -79,17 +80,19 @@ final class VaultBrowserViewModel: ObservableObject {
     // MARK: - Init
 
     init(
-        vault:      any VaultRepository,
-        search:     any SearchVaultUseCase,
-        delete:     any DeleteVaultItemUseCase,
-        restore:    any RestoreVaultItemUseCase,
-        emptyTrash: any EmptyTrashUseCase
+        vault:           any VaultRepository,
+        search:          any SearchVaultUseCase,
+        delete:          any DeleteVaultItemUseCase,
+        permanentDelete: any PermanentDeleteVaultItemUseCase,
+        restore:         any RestoreVaultItemUseCase,
+        emptyTrash:      any EmptyTrashUseCase
     ) {
-        self.vault          = vault
-        self.search         = search
-        self.deleteUseCase  = delete
-        self.restoreUseCase = restore
-        self.emptyTrashCase = emptyTrash
+        self.vault                  = vault
+        self.search                 = search
+        self.deleteUseCase          = delete
+        self.permanentDeleteUseCase = permanentDelete
+        self.restoreUseCase         = restore
+        self.emptyTrashCase         = emptyTrash
         refreshItems()
         refreshCounts()
         lastSyncedAt = vault.lastSyncedAt
@@ -212,12 +215,12 @@ final class VaultBrowserViewModel: ObservableObject {
 
     /// Permanently deletes the trashed item with `id`.
     ///
-    /// The item must already be in Trash (`isDeleted == true`). Calling `DELETE /ciphers/{id}`
-    /// on a trashed item causes the Bitwarden server to permanently remove it.
+    /// The item must already be in Trash (`isDeleted == true`). Calls `DELETE /ciphers/{id}`
+    /// via `PermanentDeleteVaultItemUseCase`, which permanently removes the cipher from the server.
     /// The caller is responsible for showing a confirmation alert before invoking this method.
     func performPermanentDelete(id: String) async {
         do {
-            try await deleteUseCase.execute(id: id)
+            try await permanentDeleteUseCase.execute(id: id)
             logger.info("Item permanently deleted: \(id, privacy: .public)")
             if itemSelection?.id == id { itemSelection = nil }
             refreshItems()
