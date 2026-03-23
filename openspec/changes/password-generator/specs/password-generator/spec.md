@@ -4,7 +4,7 @@
 The system SHALL provide a password generator that produces cryptographically random character-based passwords. The generator SHALL support the following configuration options: length (integer, 5–128 inclusive, default 16), uppercase letters toggle (A–Z, default on), lowercase letters toggle (a–z, default on), digits toggle (0–9, default on), symbols toggle (`!@#$%^&*()_+-=[]{}|;':",.<>?/`, default on), and avoid-ambiguous-characters toggle (excludes `0`, `O`, `I`, `l`, `1`, `|` from all enabled sets, default off). The generated password SHALL contain at least one character from each enabled character set. The system SHALL prevent the user from disabling all character sets simultaneously — the last remaining enabled set's toggle SHALL be locked and non-interactive.
 
 #### Scenario: Default configuration produces a 16-character password
-- **WHEN** the generator opens with default settings
+- **WHEN** the generator opens in Password mode with default settings
 - **THEN** it SHALL produce a 16-character password containing characters from uppercase, lowercase, digits, and symbols sets
 
 #### Scenario: Disabling a character set excludes those characters
@@ -59,7 +59,7 @@ The system SHALL provide a passphrase generator that produces word-based passphr
 ---
 
 ### Requirement: Generated value preview updates live on every option change
-The system SHALL display the currently generated value in a prominent preview area. The preview SHALL update immediately whenever any configuration option changes or the user explicitly requests a new value. The preview SHALL use a monospaced font to aid readability of passwords.
+The system SHALL display the currently generated value in a prominent preview area. The preview SHALL update immediately whenever any configuration option changes or the user explicitly requests a new value. The preview SHALL use a monospaced font to aid readability of passwords. The default mode on first launch SHALL be Passphrase.
 
 #### Scenario: Preview updates on toggle change
 - **WHEN** the user changes any configuration toggle or control
@@ -101,7 +101,7 @@ The system SHALL persist the user's last-used generator configuration (mode, all
 
 #### Scenario: Default settings apply on first launch
 - **WHEN** the generator is opened for the first time with no persisted settings
-- **THEN** all controls SHALL show their default values
+- **THEN** all controls SHALL show their default values and the mode SHALL be Passphrase
 
 ---
 
