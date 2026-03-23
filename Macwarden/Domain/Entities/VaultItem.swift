@@ -14,8 +14,24 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     /// 0 = disabled (default), 1 = require master password before revealing fields.
     /// Stored here so `CipherMapper.toRawCipher` can round-trip it unchanged on PUT,
     /// preventing silent loss of re-prompt protection during edits.
-    /// Default of 0 (disabled) keeps existing call sites unchanged (SE-0242).
-    let reprompt: Int = 0
+    let reprompt: Int
+
+    /// Custom memberwise init with `reprompt` defaulted to 0 so existing call sites
+    /// that pre-date this field do not need to be updated.
+    init(
+        id: String, name: String, isFavorite: Bool, isDeleted: Bool,
+        creationDate: Date, revisionDate: Date, content: ItemContent,
+        reprompt: Int = 0
+    ) {
+        self.id = id
+        self.name = name
+        self.isFavorite = isFavorite
+        self.isDeleted = isDeleted
+        self.creationDate = creationDate
+        self.revisionDate = revisionDate
+        self.content = content
+        self.reprompt = reprompt
+    }
 }
 
 // MARK: - Item content discriminator
