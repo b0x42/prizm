@@ -64,12 +64,12 @@ struct VaultBrowserView: View {
                         viewModel.handleEditSheetState(open)
                         onEditSheetState?(open)
                     },
-                    // Relay menu bar Edit/Save actions into the detail pane (spec §9.3–9.4).
-                    editTrigger:         viewModel.editTrigger,
-                    saveTrigger:         viewModel.saveTrigger,
                     onSoftDelete:        { id in await viewModel.performSoftDelete(id: id) },
                     onRestore:           { id in await viewModel.performRestore(id: id) },
-                    onPermanentDelete:   { id in await viewModel.performPermanentDelete(id: id) }
+                    onPermanentDelete:   { id in await viewModel.performPermanentDelete(id: id) },
+                    // Relay menu bar Edit/Save actions into the detail pane (spec §9.3–9.4).
+                    editTrigger:         viewModel.editTrigger,
+                    saveTrigger:         viewModel.saveTrigger
                 )
             }
         )
