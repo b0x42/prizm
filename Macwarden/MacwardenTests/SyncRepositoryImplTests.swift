@@ -128,10 +128,11 @@ final class SyncRepositoryImplTests: XCTestCase {
             RawCipher(
                 id:             "cipher-\(i)",
                 organizationId: nil,
-                type:           3,   // secureNote — simplest type
+                type:           2,   // secureNote — simplest type
                 name:           "2.name\(i)==",
                 notes:          nil,
                 favorite:       false,
+                reprompt:       nil,
                 deletedDate:    nil,
                 creationDate:   nil,
                 revisionDate:   nil,

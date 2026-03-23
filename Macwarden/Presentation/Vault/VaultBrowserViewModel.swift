@@ -38,12 +38,30 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
     @Published private(set) var lastSyncedAt: Date?
     @Published var syncErrorMessage: String? = nil
+    /// Reflects whether the edit sheet is currently open. Used by `MenuBarViewModel`
+    /// to enable/disable the Edit and Save menu bar actions.
+    @Published private(set) var editSheetOpen: Bool = false
 
     // MARK: - Dependencies
 
     private let vault:  any VaultRepository
     private let search: any SearchVaultUseCase
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
+
+    // MARK: - Menu bar action relay
+
+    /// Incremented each time the "Item > Edit" menu bar action fires (spec §9.3).
+    /// `ItemDetailView` uses `.onChange(of: editTrigger)` to open the edit sheet.
+    /// An integer counter (rather than a Combine PassthroughSubject) keeps the relay
+    /// within the async/await pattern mandated by CLAUDE.md.
+    @Published private(set) var editTrigger: Int = 0
+
+    /// Incremented each time the "Item > Save" menu bar action fires (spec §9.4).
+    /// `ItemDetailView` uses `.onChange(of: saveTrigger)` to call `save()`.
+    @Published private(set) var saveTrigger: Int = 0
+
+    func triggerEdit() { editTrigger += 1 }
+    func triggerSave() { saveTrigger += 1 }
 
     // MARK: - Clipboard auto-clear
 
@@ -120,5 +138,20 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Called when a sync fails mid-session (FR-049).
     func handleSyncError(_ message: String) {
         syncErrorMessage = message
+    }
+
+    /// Called by `ItemDetailView` when the edit sheet opens or closes.
+    func handleEditSheetState(_ open: Bool) {
+        editSheetOpen = open
+    }
+
+    /// Called after a successful item edit save to refresh the list pane and detail pane.
+    ///
+    /// Updates `itemSelection` so the detail pane reflects the saved values, then
+    /// refreshes the item list and sidebar counts so any name change appears immediately.
+    func handleItemSaved(_ updatedItem: VaultItem) {
+        itemSelection = updatedItem
+        refreshItems()
+        refreshCounts()
     }
 }

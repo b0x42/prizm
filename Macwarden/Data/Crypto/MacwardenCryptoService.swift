@@ -100,6 +100,12 @@ protocol MacwardenCryptoService: Actor {
     /// After this call, `isUnlocked` returns `false` and any attempt to decrypt
     /// vault items will throw `MacwardenCryptoServiceError.vaultLocked`.
     func lockVault() async
+
+    /// Returns the current vault symmetric key pair for callers that need to perform
+    /// encryption (e.g. the reverse cipher mapper for PUT /ciphers/{id}).
+    ///
+    /// - Throws: `MacwardenCryptoServiceError.vaultLocked` if the vault is locked.
+    func currentKeys() async throws -> CryptoKeys
 }
 
 // MARK: - MacwardenCryptoServiceImpl
@@ -139,6 +145,13 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
         // key is readable in a memory dump).
         self.keys = nil
         logger.info("Vault locked — key material zeroed")
+    }
+
+    func currentKeys() throws -> CryptoKeys {
+        guard let vaultKeys = keys else {
+            throw MacwardenCryptoServiceError.vaultLocked
+        }
+        return vaultKeys
     }
 
     // MARK: - decryptList

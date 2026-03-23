@@ -17,10 +17,14 @@ import XCTest
 final class VaultRepositoryImplTests: XCTestCase {
 
     private var sut: VaultRepositoryImpl!
+    private var mockAPI: MockMacwardenAPIClient!
+    private var mockCrypto: MockMacwardenCryptoService!
 
     override func setUp() async throws {
         try await super.setUp()
-        sut = VaultRepositoryImpl()
+        mockAPI    = MockMacwardenAPIClient()
+        mockCrypto = MockMacwardenCryptoService()
+        sut        = VaultRepositoryImpl(apiClient: mockAPI, crypto: mockCrypto)
     }
 
     // MARK: - Helpers
@@ -255,6 +259,64 @@ final class VaultRepositoryImplTests: XCTestCase {
                 return XCTFail("Expected .itemNotFound, got \(error)")
             }
             XCTAssertEqual(id, "missing")
+        }
+    }
+
+    // MARK: - update (task 4.4)
+
+    func testUpdate_success_replacesItemInCacheAndReturnsUpdatedItem() async throws {
+        let original = makeLogin(id: "item-1", name: "Original Name")
+        sut.populate(items: [original], syncedAt: Date())
+
+        // Vault must be unlocked to provide keys to the mapper.
+        await mockCrypto.unlockWith(keys: CryptoKeys(
+            encryptionKey: Data(repeating: 0xDE, count: 32),
+            macKey:        Data(repeating: 0xAD, count: 32)
+        ))
+
+        var draft = DraftVaultItem(original)
+        draft.name = "Updated Name"
+
+        let result = try await sut.update(draft)
+
+        XCTAssertEqual(result.name, "Updated Name")
+        // Verify the in-memory cache was updated.
+        let cached = try sut.allItems().first { $0.id == "item-1" }
+        XCTAssertEqual(cached?.name, "Updated Name")
+    }
+
+    func testUpdate_vaultLocked_throwsVaultLocked() async throws {
+        let original = makeLogin(id: "item-2", name: "Name")
+        sut.populate(items: [original], syncedAt: Date())
+        // mockCrypto is locked by default (not unlocked)
+
+        let draft = DraftVaultItem(original)
+
+        await XCTAssertThrowsErrorAsync(try await sut.update(draft)) { error in
+            guard case VaultError.vaultLocked = error else {
+                return XCTFail("Expected VaultError.vaultLocked, got \(error)")
+            }
+        }
+    }
+
+    func testUpdate_apiError_throws() async throws {
+        let original = makeLogin(id: "item-3", name: "Name")
+        sut.populate(items: [original], syncedAt: Date())
+
+        await mockCrypto.unlockWith(keys: CryptoKeys(
+            encryptionKey: Data(repeating: 0xDE, count: 32),
+            macKey:        Data(repeating: 0xAD, count: 32)
+        ))
+        mockAPI.updateCipherShouldThrow = APIError.httpError(statusCode: 500, body: "Internal Server Error")
+
+        let draft = DraftVaultItem(original)
+
+        await XCTAssertThrowsErrorAsync(try await sut.update(draft)) { error in
+            guard let apiError = error as? APIError,
+                  case APIError.httpError(let code, _) = apiError else {
+                return XCTFail("Expected APIError.httpError, got \(error)")
+            }
+            XCTAssertEqual(code, 500)
         }
     }
 }

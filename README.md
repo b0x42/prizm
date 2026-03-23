@@ -1,12 +1,10 @@
 # Macwarden
 
-[![Swift](https://img.shields.io/badge/Swift-6-orange.svg)](https://swift.org/)
+[![Swift](https://img.shields.io/badge/Swift-5.10-orange.svg)](https://swift.org/)
 [![macOS](https://img.shields.io/badge/macOS-13%2B-blue.svg)](https://www.apple.com/macos/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-4-purple.svg)](https://developer.apple.com/swiftui/)
 
-A native, read-only Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](https://bitwarden.com/) or [Vaultwarden](https://github.com/dani-garcia/vaultwarden) server and browse your vault in a fast, lightweight desktop app.
-
-> **Read-only** — this app displays your vault. It does not create, edit, or delete items.
+A native Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](https://bitwarden.com/) or [Vaultwarden](https://github.com/dani-garcia/vaultwarden) server and browse and edit your vault in a fast, lightweight desktop app.
 
 ## Screenshots
 
@@ -16,6 +14,7 @@ A native, read-only Bitwarden client for macOS. Connect to your self-hosted [Bit
 
 - **Connect to your server** — works with any self-hosted Bitwarden or Vaultwarden instance
 - **Browse everything** — Logins, Cards, Identities, Secure Notes, and SSH Keys
+- **Edit items** — update fields, names, notes, and custom fields; changes sync back to your server
 - **Find items fast** — real-time search across names, usernames, URIs, and more
 - **Native macOS** — built with SwiftUI, feels right at home
 
@@ -60,7 +59,7 @@ Data/             Crypto, network, keychain, mappers, repository implementations
 Presentation/     SwiftUI views and view models
 ```
 
-- Swift 6 strict concurrency (`actor`, `@MainActor`, `nonisolated`)
+- Swift 5.10 strict concurrency (`actor`, `@MainActor`, `nonisolated`)
 - Zero third-party dependencies (except vendored [Argon2Swift](https://github.com/nicklama/Argon2Swift) for KDF)
 - All encryption via CommonCrypto (FIPS 140-2) and CryptoKit
 

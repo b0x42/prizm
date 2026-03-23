@@ -83,7 +83,7 @@ final class SearchVaultTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        vault = VaultRepositoryImpl()
+        vault = VaultRepositoryImpl(apiClient: MockMacwardenAPIClient(), crypto: MockMacwardenCryptoService())
         vault.populate(items: Self.allFixtures, syncedAt: Self.now)
         sut = SearchVaultUseCaseImpl(vault: vault)
     }

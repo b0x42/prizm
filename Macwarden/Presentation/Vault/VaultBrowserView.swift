@@ -16,6 +16,10 @@ struct VaultBrowserView: View {
 
     @ObservedObject var viewModel: VaultBrowserViewModel
     let faviconLoader: FaviconLoader
+    /// Factory closure injected from `AppContainer` so the view layer stays decoupled from Data.
+    let makeEditViewModel: (VaultItem) -> ItemEditViewModel
+    /// Notifies the ViewModel when the edit sheet opens/closes (for menu bar state).
+    var onEditSheetState: ((Bool) -> Void)? = nil
 
     var body: some View {
         NavigationSplitView(
@@ -39,9 +43,17 @@ struct VaultBrowserView: View {
             },
             detail: {
                 ItemDetailView(
-                    item:           viewModel.itemSelection,
-                    faviconLoader:  faviconLoader,
-                    onCopy:         { viewModel.copy($0) }
+                    item:                viewModel.itemSelection,
+                    faviconLoader:       faviconLoader,
+                    onCopy:              { viewModel.copy($0) },
+                    makeEditViewModel:   makeEditViewModel,
+                    onEditSheetChanged:  { open in
+                        viewModel.handleEditSheetState(open)
+                        onEditSheetState?(open)
+                    },
+                    // Relay menu bar Edit/Save actions into the detail pane (spec §9.3–9.4).
+                    editTrigger:         viewModel.editTrigger,
+                    saveTrigger:         viewModel.saveTrigger
                 )
             }
         )

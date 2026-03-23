@@ -34,6 +34,13 @@ actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
     nonisolated(unsafe) var refreshResponse: String?
     nonisolated(unsafe) var refreshShouldThrow: Error?
 
+    // MARK: - Stubs: updateCipher
+
+    nonisolated(unsafe) var updateCipherResponse: RawCipher?
+    nonisolated(unsafe) var updateCipherShouldThrow: Error?
+    nonisolated(unsafe) var updateCipherCallCount: Int = 0
+    nonisolated(unsafe) var lastUpdatedCipherId: String?
+
     // MARK: - Protocol conformance
 
     func setBaseURL(_ url: URL) {
@@ -106,5 +113,12 @@ actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
         let token = refreshResponse ?? "refreshed-access-token"
         storedAccessToken = token
         return (token, nil)
+    }
+
+    func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher {
+        updateCipherCallCount += 1
+        lastUpdatedCipherId = id
+        if let err = updateCipherShouldThrow { throw err }
+        return updateCipherResponse ?? cipher
     }
 }

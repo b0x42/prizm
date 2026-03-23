@@ -62,6 +62,16 @@ protocol MacwardenAPIClientProtocol: Actor {
     /// - Returns: A tuple of (newAccessToken, newRefreshToken). The refresh token may be nil
     ///   if the server does not rotate it.
     func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?)
+
+    /// PUT `/api/ciphers/{id}` — updates an existing cipher with re-encrypted field values.
+    ///
+    /// Requires a valid `Authorization: Bearer <accessToken>` header.
+    /// The request body is a JSON-encoded `RawCipher` with all sensitive fields re-encrypted
+    /// as EncStrings (type-2 AES-256-CBC + HMAC-SHA256).
+    /// On success the server returns the updated cipher, which is decoded back into `RawCipher`.
+    ///
+    /// Reference: Bitwarden Server API PUT /api/ciphers/{id}
+    func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher
 }
 
 // MARK: - Wire Models
@@ -411,6 +421,34 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
             logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
         }
         return response
+    }
+
+    // MARK: - updateCipher
+
+    func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(id)")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] updateCipher → PUT \(url.absoluteString, privacy: .public)")
+        }
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Encode the re-encrypted RawCipher as the request body.
+        // Field values are already EncStrings — no plaintext leaves the device.
+        request.httpBody = try JSONEncoder().encode(cipher)
+
+        let updated: RawCipher = try await perform(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] updateCipher ← id=\(updated.id, privacy: .public)")
+        }
+        return updated
     }
 
     // MARK: - refreshAccessToken

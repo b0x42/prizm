@@ -83,7 +83,8 @@ nonisolated final class CipherMapper {
             isDeleted:    raw.deletedDate != nil,
             creationDate: creationDate,
             revisionDate: revisionDate,
-            content:      content
+            content:      content,
+            reprompt:     raw.reprompt ?? 0
         )
     }
 
@@ -96,11 +97,14 @@ nonisolated final class CipherMapper {
         fields: [CustomField],
         keys:   CryptoKeys
     ) throws -> ItemContent {
+        // Type integers match the Bitwarden server CipherType enum:
+        // 1=Login, 2=SecureNote, 3=Card, 4=Identity, 5=SSHKey.
+        // Reference: github.com/bitwarden/server CipherType.cs; vaultwarden CipherType enum.
         switch type {
         case 1: return try mapLogin(raw.login,       notes: notes, fields: fields, keys: keys)
-        case 2: return try mapIdentity(raw.identity, notes: notes, fields: fields, keys: keys)
-        case 3: return mapSecureNote(                notes: notes, fields: fields)
-        case 4: return try mapCard(raw.card,         notes: notes, fields: fields, keys: keys)
+        case 2: return mapSecureNote(                notes: notes, fields: fields)
+        case 3: return try mapCard(raw.card,         notes: notes, fields: fields, keys: keys)
+        case 4: return try mapIdentity(raw.identity, notes: notes, fields: fields, keys: keys)
         case 5: return try mapSSHKey(raw.sshKey,     notes: notes, fields: fields, keys: keys)
         default:
             throw CipherMapperError.unsupportedCipherType(type)
@@ -231,6 +235,204 @@ nonisolated final class CipherMapper {
             let linkedId = raw.linkedId.flatMap { LinkedFieldId(rawValue: $0) }
             return CustomField(name: name, value: value, type: type, linkedId: linkedId)
         }
+    }
+
+    // MARK: - Reverse mapper (domain → wire)
+
+    /// Converts a mutable `DraftVaultItem` into an encrypted `RawCipher` ready for
+    /// `PUT /ciphers/{id}`.
+    ///
+    /// - Security goal: ensures that no vault secret (password, card number, private key, etc.)
+    ///   ever leaves the device in plaintext. Every string field that is an EncString on the
+    ///   Bitwarden wire format is re-encrypted here before the request body is serialised.
+    ///
+    /// - Algorithm: EncString type-2 — AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC).
+    ///   Spec reference: Bitwarden Security Whitepaper §4 (https://bitwarden.com/images/resources/security-white-paper-download.pdf).
+    ///   Standard reference: AES-CBC per NIST SP 800-38A; HMAC-SHA256 per RFC 2104.
+    ///   Each field gets a cryptographically random 16-byte IV via `SecRandomCopyBytes`
+    ///   (Security.framework). Reusing IVs across fields would break CBC confidentiality;
+    ///   the fresh-IV-per-field approach matches the Bitwarden client reference implementation.
+    ///
+    /// - Deviations from the Bitwarden reference: none. The EncString type-2 format and
+    ///   key material (AES key + MAC key from `CryptoKeys`) are identical to what the
+    ///   official web vault uses when editing an item.
+    ///
+    /// - What is NOT done:
+    ///   • `id`, `type`, `favorite` are plain JSON values (not EncStrings) — sent as-is.
+    ///   • `organizationId` is sent as `nil` — this mapper only handles personal vault items;
+    ///     editing org ciphers is out of scope for v1 and requires org key unwrapping.
+    ///   • `deletedDate`, `creationDate`, `revisionDate` are sent as `nil` — the server is
+    ///     authoritative for these timestamps and ignores client-provided values on PUT.
+    ///   • Biometric re-authentication before re-encryption is not performed here; it is
+    ///     the caller's responsibility (see `VaultRepositoryImpl.update` TODO).
+    ///
+    /// - Parameter draft: The edited item to re-encrypt.
+    /// - Parameter keys:  The symmetric key pair (AES-256 enc key + HMAC-SHA256 MAC key).
+    /// - Returns: A `RawCipher` with all sensitive string fields encrypted as EncStrings.
+    /// - Throws: `EncStringError` if IV generation or AES/HMAC computation fails.
+    func toRawCipher(_ draft: DraftVaultItem, encryptedWith keys: CryptoKeys) throws -> RawCipher {
+        let encName  = try encryptString(draft.name, keys: keys)
+        let encNotes: String? = try {
+            switch draft.content {
+            case .login(let c):      return try c.notes.map { try encryptString($0, keys: keys) }
+            case .secureNote(let c): return try c.notes.map { try encryptString($0, keys: keys) }
+            case .card(let c):       return try c.notes.map { try encryptString($0, keys: keys) }
+            case .identity(let c):   return try c.notes.map { try encryptString($0, keys: keys) }
+            case .sshKey(let c):     return try c.notes.map { try encryptString($0, keys: keys) }
+            }
+        }()
+        let encFields = try toRawFields(customFieldsOf(draft.content), keys: keys)
+
+        let (type, loginData, cardData, identityData, secureNoteData, sshKeyData) =
+            try encryptContent(draft.content, keys: keys)
+
+        return RawCipher(
+            id:             draft.id,
+            organizationId: nil,
+            type:           type,
+            name:           encName,
+            notes:          encNotes,
+            favorite:       draft.isFavorite,
+            reprompt:       draft.reprompt,
+            deletedDate:    nil,
+            creationDate:   nil,
+            revisionDate:   nil,
+            login:          loginData,
+            card:           cardData,
+            identity:       identityData,
+            secureNote:     secureNoteData,
+            sshKey:         sshKeyData,
+            fields:         encFields.isEmpty ? nil : encFields
+        )
+    }
+
+    // MARK: - Private: Reverse content dispatch
+
+    private func encryptContent(
+        _ content: DraftItemContent,
+        keys: CryptoKeys
+    ) throws -> (
+        type: Int,
+        login: RawLoginData?,
+        card: RawCardData?,
+        identity: RawIdentityData?,
+        secureNote: RawSecureNoteData?,
+        sshKey: RawSSHKeyData?
+    ) {
+        // Type integers: 1=Login, 2=SecureNote, 3=Card, 4=Identity, 5=SSHKey.
+        // Must match the forward mapper (mapContent) and the Bitwarden server CipherType enum.
+        switch content {
+        case .login(let c):
+            return (1, try toRawLogin(c, keys: keys), nil, nil, nil, nil)
+        case .secureNote:
+            return (2, nil, nil, nil, RawSecureNoteData(type: 0), nil)
+        case .card(let c):
+            return (3, nil, try toRawCard(c, keys: keys), nil, nil, nil)
+        case .identity(let c):
+            return (4, nil, nil, try toRawIdentity(c, keys: keys), nil, nil)
+        case .sshKey(let c):
+            return (5, nil, nil, nil, nil, try toRawSSHKey(c, keys: keys))
+        }
+    }
+
+    // MARK: - Private: Login reverse map
+
+    private func toRawLogin(_ c: DraftLoginContent, keys: CryptoKeys) throws -> RawLoginData {
+        let rawURIs: [RawURI] = try c.uris.map { uri in
+            let encURI = try encryptString(uri.uri, keys: keys)
+            return RawURI(uri: encURI, match: uri.matchType?.rawValue)
+        }
+        return RawLoginData(
+            username: try c.username.map { try encryptString($0, keys: keys) },
+            password: try c.password.map { try encryptString($0, keys: keys) },
+            uris:     rawURIs,
+            totp:     try c.totp.map { try encryptString($0, keys: keys) }
+        )
+    }
+
+    // MARK: - Private: Card reverse map
+
+    private func toRawCard(_ c: DraftCardContent, keys: CryptoKeys) throws -> RawCardData {
+        RawCardData(
+            cardholderName: try c.cardholderName.map { try encryptString($0, keys: keys) },
+            brand:          try c.brand.map          { try encryptString($0, keys: keys) },
+            number:         try c.number.map         { try encryptString($0, keys: keys) },
+            expMonth:       try c.expMonth.map       { try encryptString($0, keys: keys) },
+            expYear:        try c.expYear.map        { try encryptString($0, keys: keys) },
+            code:           try c.code.map           { try encryptString($0, keys: keys) }
+        )
+    }
+
+    // MARK: - Private: Identity reverse map
+
+    private func toRawIdentity(_ c: DraftIdentityContent, keys: CryptoKeys) throws -> RawIdentityData {
+        func enc(_ s: String?) throws -> String? { try s.map { try encryptString($0, keys: keys) } }
+        return RawIdentityData(
+            title:          try enc(c.title),
+            firstName:      try enc(c.firstName),
+            middleName:     try enc(c.middleName),
+            lastName:       try enc(c.lastName),
+            address1:       try enc(c.address1),
+            address2:       try enc(c.address2),
+            address3:       try enc(c.address3),
+            city:           try enc(c.city),
+            state:          try enc(c.state),
+            postalCode:     try enc(c.postalCode),
+            country:        try enc(c.country),
+            company:        try enc(c.company),
+            email:          try enc(c.email),
+            phone:          try enc(c.phone),
+            ssn:            try enc(c.ssn),
+            username:       try enc(c.username),
+            passportNumber: try enc(c.passportNumber),
+            licenseNumber:  try enc(c.licenseNumber)
+        )
+    }
+
+    // MARK: - Private: SSH Key reverse map
+
+    private func toRawSSHKey(_ c: DraftSSHKeyContent, keys: CryptoKeys) throws -> RawSSHKeyData {
+        // keyFingerprint is auto-derived and not sent to the API — it is server-authoritative.
+        RawSSHKeyData(
+            privateKey:  try c.privateKey.map  { try encryptString($0, keys: keys) },
+            publicKey:   try c.publicKey.map   { try encryptString($0, keys: keys) },
+            fingerprint: nil
+        )
+    }
+
+    // MARK: - Private: Custom fields reverse map
+
+    private func toRawFields(_ fields: [DraftCustomField], keys: CryptoKeys) throws -> [RawField] {
+        try fields.map { f in
+            RawField(
+                type:     f.type.rawValue,
+                name:     try encryptString(f.name, keys: keys),
+                value:    try f.value.map { try encryptString($0, keys: keys) },
+                linkedId: f.linkedId?.rawValue
+            )
+        }
+    }
+
+    // MARK: - Private: Custom field extractor
+
+    private func customFieldsOf(_ content: DraftItemContent) -> [DraftCustomField] {
+        switch content {
+        case .login(let c):      return c.customFields
+        case .secureNote(let c): return c.customFields
+        case .card(let c):       return c.customFields
+        case .identity(let c):   return c.customFields
+        case .sshKey(let c):     return c.customFields
+        }
+    }
+
+    // MARK: - Encrypt helper
+
+    /// Encrypts a plaintext string as a Type-2 EncString and returns its wire representation.
+    private func encryptString(_ plaintext: String, keys: CryptoKeys) throws -> String {
+        guard let data = plaintext.data(using: .utf8) else {
+            throw CipherMapperError.fieldDecryptionFailed("utf8-encode")
+        }
+        return try EncString.encrypt(data: data, keys: keys).toString()
     }
 
     // MARK: - Decrypt helpers

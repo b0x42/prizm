@@ -64,6 +64,19 @@
 		AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */; };
 		CB1A2B3C4D5E6F7A8B9C0D1E /* CardBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */; };
 		EE11223344556677889900BB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00112233445566778899AA /* DesignSystem.swift */; };
+		A1C2D3E4F506172839A4B56C /* DraftVaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */; };
+		C3D4E5F607182940B5C6D7E8 /* EditVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */; };
+		E5F607182930405BD7E8F90A /* EditVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */; };
+		0718293040506070F90A1B2C /* ItemEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18293040506070E0A1B2C3D4 /* ItemEditViewModel.swift */; };
+		29304050607080F1B2C3D4E5 /* ItemEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4050607080902CC3D4E5F6 /* ItemEditView.swift */; };
+		4B506070809000D3D4E5F607 /* EditFieldRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C607080900A10E4E5F60718 /* EditFieldRow.swift */; };
+		6D7080900A1B20F5F6071829 /* LoginEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8090A01B2C300607182930 /* LoginEditForm.swift */; };
+		8F900A1B2C3D401718293040 /* CardEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90A0B1C2D3E4F02829304050 /* CardEditForm.swift */; };
+		A1B0C1D2E3F4003930405060 /* IdentityEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C1D2E3F400A04A40506070 /* IdentityEditForm.swift */; };
+		C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */; };
+		E5F400A1B2C3D07D70809000 /* SSHKeyEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */; };
+		071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */; };
+
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -135,6 +148,20 @@
 		BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityIdentifiers.swift; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardBackground.swift; sourceTree = "<group>"; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftVaultItem.swift; sourceTree = "<group>"; };
+		D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCase.swift; sourceTree = "<group>"; };
+		F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
+		18293040506070E0A1B2C3D4 /* ItemEditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditViewModel.swift; sourceTree = "<group>"; };
+		3A4050607080902CC3D4E5F6 /* ItemEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditView.swift; sourceTree = "<group>"; };
+		5C607080900A10E4E5F60718 /* EditFieldRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFieldRow.swift; sourceTree = "<group>"; };
+		7E8090A01B2C300607182930 /* LoginEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginEditForm.swift; sourceTree = "<group>"; };
+		90A0B1C2D3E4F02829304050 /* CardEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEditForm.swift; sourceTree = "<group>"; };
+		B2C1D2E3F400A04A40506070 /* IdentityEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityEditForm.swift; sourceTree = "<group>"; };
+		D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNoteEditForm.swift; sourceTree = "<group>"; };
+		F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyEditForm.swift; sourceTree = "<group>"; };
+		182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsEditSection.swift; sourceTree = "<group>"; };
+
+		6D7E8F90718293040A1B2C3D /* EditItemJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemJourneyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -197,6 +224,7 @@
 				EF90E0F31DF248FB9D12F74D /* VaultItem.swift */,
 				CAB323D45FF2440C95C0BA70 /* CustomField.swift */,
 				D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */,
+				B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -218,6 +246,7 @@
 				0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */,
 				5EBA517603CA448A8F9106AF /* SyncUseCase.swift */,
 				09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */,
+				D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -310,6 +339,8 @@
 				F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */,
 				E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */,
 				4309FCFB2F680CC60031C9F4 /* Detail */,
+				8A9B0C1D2E3F4050A1B2C3D4 /* Edit */,
+
 				4309FCFA2F680CBD0031C9F4 /* ItemList */,
 				4309FCF92F680CB40031C9F4 /* Sidebar */,
 			);
@@ -347,6 +378,23 @@
 			path = Detail;
 			sourceTree = "<group>";
 		};
+		8A9B0C1D2E3F4050A1B2C3D4 /* Edit */ = {
+			isa = PBXGroup;
+			children = (
+				18293040506070E0A1B2C3D4 /* ItemEditViewModel.swift */,
+				3A4050607080902CC3D4E5F6 /* ItemEditView.swift */,
+				5C607080900A10E4E5F60718 /* EditFieldRow.swift */,
+				7E8090A01B2C300607182930 /* LoginEditForm.swift */,
+				90A0B1C2D3E4F02829304050 /* CardEditForm.swift */,
+				B2C1D2E3F400A04A40506070 /* IdentityEditForm.swift */,
+				D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */,
+				F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */,
+				182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */,
+			);
+			path = Edit;
+			sourceTree = "<group>";
+		};
+
 		4309FCFC2F680CCD0031C9F4 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -426,6 +474,7 @@
 		4309FD052F680D3B0031C9F4 /* UITests */ = {
 			isa = PBXGroup;
 			children = (
+				6D7E8F90718293040A1B2C3D /* EditItemJourneyTests.swift */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -460,6 +509,7 @@
 				14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */,
 				8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */,
 				6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */,
+				F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -667,6 +717,19 @@
 				AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */,
 				CB1A2B3C4D5E6F7A8B9C0D1E /* CardBackground.swift in Sources */,
 				EE11223344556677889900BB /* DesignSystem.swift in Sources */,
+				A1C2D3E4F506172839A4B56C /* DraftVaultItem.swift in Sources */,
+				C3D4E5F607182940B5C6D7E8 /* EditVaultItemUseCase.swift in Sources */,
+				E5F607182930405BD7E8F90A /* EditVaultItemUseCaseImpl.swift in Sources */,
+				0718293040506070F90A1B2C /* ItemEditViewModel.swift in Sources */,
+				29304050607080F1B2C3D4E5 /* ItemEditView.swift in Sources */,
+				4B506070809000D3D4E5F607 /* EditFieldRow.swift in Sources */,
+				6D7080900A1B20F5F6071829 /* LoginEditForm.swift in Sources */,
+				8F900A1B2C3D401718293040 /* CardEditForm.swift in Sources */,
+				A1B0C1D2E3F4003930405060 /* IdentityEditForm.swift in Sources */,
+				C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */,
+				E5F400A1B2C3D07D70809000 /* SSHKeyEditForm.swift in Sources */,
+				071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */,
+
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

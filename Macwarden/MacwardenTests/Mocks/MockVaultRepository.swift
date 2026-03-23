@@ -3,7 +3,8 @@ import Foundation
 
 /// Test double for `VaultRepository`.
 ///
-/// Tracks items stored by `SyncRepositoryImpl` via `populate(items:syncedAt:)`.
+/// Tracks items stored by `SyncRepositoryImpl` via `populate(items:syncedAt:)` and
+/// edit operations via `update(_:)`.
 final class MockVaultRepository: VaultRepository {
 
     // MARK: - State
@@ -11,6 +12,13 @@ final class MockVaultRepository: VaultRepository {
     private(set) var populatedItems: [VaultItem] = []
     private(set) var lastSyncedAt:   Date?        = nil
     private(set) var clearVaultCalled: Bool       = false
+
+    // MARK: - update(_:) stubbing
+
+    var stubbedUpdateResult: VaultItem?
+    var stubbedUpdateError: Error?
+    private(set) var updateCallCount: Int = 0
+    private(set) var lastUpdatedDraft: DraftVaultItem?
 
     // MARK: - VaultRepository (write side)
 
@@ -53,6 +61,16 @@ final class MockVaultRepository: VaultRepository {
             throw VaultError.itemNotFound(id)
         }
         return item
+    }
+
+    func update(_ draft: DraftVaultItem) async throws -> VaultItem {
+        updateCallCount += 1
+        lastUpdatedDraft = draft
+        if let error = stubbedUpdateError { throw error }
+        guard let result = stubbedUpdateResult else {
+            throw VaultError.itemNotFound(draft.id)
+        }
+        return result
     }
 }
 

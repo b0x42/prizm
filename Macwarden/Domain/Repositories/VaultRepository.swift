@@ -40,6 +40,15 @@ protocol VaultRepository: AnyObject {
 
     /// Clears the in-memory vault store. Called on lock and sign-out.
     func clearVault()
+
+    /// Re-encrypts `draft`, calls `PUT /ciphers/{id}`, updates the in-memory cache, and
+    /// returns the server-confirmed `VaultItem` decoded from the API response.
+    ///
+    /// - Parameter draft: The user's edited draft.
+    /// - Returns: The authoritative `VaultItem` as returned by the server.
+    /// - Throws: `VaultError.vaultLocked` if the vault is locked (translated from the Data layer).
+    /// - Throws: `APIError` on network or HTTP failure.
+    func update(_ draft: DraftVaultItem) async throws -> VaultItem
 }
 
 // MARK: - Errors

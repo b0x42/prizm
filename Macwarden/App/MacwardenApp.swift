@@ -38,6 +38,25 @@ struct MacwardenApp: App {
                 .keyboardShortcut("q", modifiers: [.command, .shift])
                 .disabled(!rootVM.isSignedIn)
             }
+
+            // "Item" menu — sits in the standard macOS menu bar next to Edit/View/Window.
+            // Edit opens the edit sheet for the selected vault item (⌘E).
+            // Save persists in-flight edits (⌘S).
+            // Buttons are disabled by `rootVM` Combine subscriptions that track
+            // item selection and edit-sheet state.
+            CommandMenu("Item") {
+                Button("Edit") {
+                    rootVM.vaultBrowserVM.triggerEdit()
+                }
+                .disabled(!rootVM.menuBarCanEdit)
+                .keyboardShortcut("e", modifiers: .command)
+
+                Button("Save") {
+                    rootVM.vaultBrowserVM.triggerSave()
+                }
+                .disabled(!rootVM.menuBarCanSave)
+                .keyboardShortcut("s", modifiers: .command)
+            }
         }
     }
 
@@ -64,8 +83,16 @@ struct MacwardenApp: App {
 
         case .vault:
             VaultBrowserView(
-                viewModel:     rootVM.vaultBrowserVM,
-                faviconLoader: container.faviconLoader
+                viewModel:         rootVM.vaultBrowserVM,
+                faviconLoader:     container.faviconLoader,
+                makeEditViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] item in
+                    let vm = container.makeItemEditViewModel(for: item)
+                    // Wire the list-pane refresh callback to the shared VaultBrowserViewModel.
+                    vm.onSaveSuccess = { [weak vaultBrowserVM] updatedItem in
+                        vaultBrowserVM?.handleItemSaved(updatedItem)
+                    }
+                    return vm
+                }
             )
         }
     }
@@ -91,6 +118,14 @@ final class RootViewModel: ObservableObject {
     }
 
     @Published var screen: Screen
+
+    // MARK: - "Item" menu state
+
+    /// Whether the Edit command should be enabled: an item is selected and the edit sheet is closed.
+    @Published private(set) var menuBarCanEdit: Bool = false
+
+    /// Whether the Save command should be enabled: the edit sheet is currently open.
+    @Published private(set) var menuBarCanSave: Bool = false
 
     private let logger = Logger(subsystem: "com.macwarden", category: "RootViewModel")
 
@@ -137,6 +172,24 @@ final class RootViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in self?.handleUnlockFlow(state) }
             .store(in: &cancellables)
+
+        // canEdit: item selected AND edit sheet not yet open.
+        // canSave: edit sheet is open.
+        // Both are derived by watching editSheetOpen and itemSelection independently.
+        // `for await` on @Published.values avoids Combine callbacks (CLAUDE.md async/await rule).
+        Task { [weak self, vaultBrowserVM] in
+            for await open in vaultBrowserVM.$editSheetOpen.values {
+                guard let self else { break }
+                self.menuBarCanSave = open
+                self.menuBarCanEdit = vaultBrowserVM.itemSelection != nil && !open
+            }
+        }
+        Task { [weak self, vaultBrowserVM] in
+            for await selection in vaultBrowserVM.$itemSelection.values {
+                guard let self else { break }
+                self.menuBarCanEdit = selection != nil && !vaultBrowserVM.editSheetOpen
+            }
+        }
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {

@@ -25,10 +25,11 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Domain use cases
 
-    let syncUseCase:       SyncUseCaseImpl
-    let loginUseCase:      LoginUseCaseImpl
-    let unlockUseCase:     UnlockUseCaseImpl
-    let searchVaultUseCase: SearchVaultUseCaseImpl
+    let syncUseCase:          SyncUseCaseImpl
+    let loginUseCase:         LoginUseCaseImpl
+    let unlockUseCase:        UnlockUseCaseImpl
+    let searchVaultUseCase:   SearchVaultUseCaseImpl
+    let editVaultItemUseCase: EditVaultItemUseCaseImpl
 
     // MARK: - Init
 
@@ -36,7 +37,7 @@ final class AppContainer: ObservableObject {
         let api      = MacwardenAPIClientImpl()
         let crypto   = MacwardenCryptoServiceImpl()
         let keychain = KeychainServiceImpl()
-        let vault    = VaultRepositoryImpl()
+        let vault    = VaultRepositoryImpl(apiClient: api, crypto: crypto)
 
         let auth = AuthRepositoryImpl(
             apiClient: api,
@@ -56,10 +57,11 @@ final class AppContainer: ObservableObject {
         self.faviconLoader   = FaviconLoader()
         self.authRepository  = auth
         self.syncRepository  = sync
-        self.syncUseCase        = SyncUseCaseImpl(sync: sync)
-        self.loginUseCase       = LoginUseCaseImpl(auth: auth, sync: sync)
-        self.unlockUseCase      = UnlockUseCaseImpl(auth: auth, sync: sync)
-        self.searchVaultUseCase = SearchVaultUseCaseImpl(vault: vault)
+        self.syncUseCase          = SyncUseCaseImpl(sync: sync)
+        self.loginUseCase         = LoginUseCaseImpl(auth: auth, sync: sync)
+        self.unlockUseCase        = UnlockUseCaseImpl(auth: auth, sync: sync)
+        self.searchVaultUseCase   = SearchVaultUseCaseImpl(vault: vault)
+        self.editVaultItemUseCase = EditVaultItemUseCaseImpl(repository: vault)
     }
 
     // MARK: - Factories
@@ -77,5 +79,11 @@ final class AppContainer: ObservableObject {
     /// Creates a `VaultBrowserViewModel` backed by the live vault store.
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel {
         VaultBrowserViewModel(vault: vaultStore, search: searchVaultUseCase)
+    }
+
+    /// Creates an `ItemEditViewModel` for the given item, wired with the live edit use case.
+    /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
+    func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
+        ItemEditViewModel(item: item, useCase: editVaultItemUseCase)
     }
 }

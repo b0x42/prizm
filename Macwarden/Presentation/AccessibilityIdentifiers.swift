@@ -99,4 +99,17 @@ nonisolated enum AccessibilityID {
         static func value(_ label: String) -> String { "masked.\(label).value" }
         static func toggle(_ label: String) -> String { "masked.\(label).toggle" }
     }
+
+    // MARK: - Item Edit (edit-vault-items)
+
+    enum Edit {
+        /// The "Edit" toolbar button in ItemDetailView.
+        static let editButton    = "edit.button.edit"
+        /// The "Save" / "Saving…" button in ItemEditView.
+        static let saveButton    = "edit.button.save"
+        /// The "Discard" button in ItemEditView.
+        static let discardButton = "edit.button.discard"
+        /// The inline error banner shown on save failure.
+        static let errorBanner   = "edit.errorBanner"
+    }
 }

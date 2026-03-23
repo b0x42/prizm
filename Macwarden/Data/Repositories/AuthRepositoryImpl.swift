@@ -359,7 +359,10 @@ final class AuthRepositoryImpl: AuthRepository {
             logger.debug("activeUserId delete skipped: \(error.localizedDescription, privacy: .public)")
         }
 
-        await crypto.lockVault()
+        // Use self.lockVault() rather than crypto.lockVault() directly so that the
+        // .vaultDidLock notification is posted — ItemEditViewModel observes it to
+        // dismiss any open edit sheet and clear the plaintext DraftVaultItem (§III).
+        await lockVault()
         serverEnvironment = nil
         pendingTwoFactor  = nil
     }
@@ -368,6 +371,11 @@ final class AuthRepositoryImpl: AuthRepository {
 
     func lockVault() async {
         await crypto.lockVault()
+        // Notify any open edit sheets to dismiss immediately (no confirmation prompt).
+        // Posted on the main queue because subscribers are @MainActor UI components.
+        await MainActor.run {
+            NotificationCenter.default.post(name: .vaultDidLock, object: nil)
+        }
     }
 
     // MARK: - Private helpers

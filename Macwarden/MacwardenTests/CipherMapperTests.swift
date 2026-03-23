@@ -42,6 +42,7 @@ final class CipherMapperTests: XCTestCase {
             name:           name,
             notes:          notes,
             favorite:       favorite,
+            reprompt:       nil,
             deletedDate:    deletedDate,
             creationDate:   nil,
             revisionDate:   nil,
@@ -93,7 +94,7 @@ final class CipherMapperTests: XCTestCase {
     func testMapSecureNoteCipher() throws {
         let raw = makeRawCipher(
             id:         "uuid-note",
-            type:       3,
+            type:       2,
             name:       try enc("My Note"),
             notes:      try enc("Top secret notes"),
             favorite:   true,
@@ -115,7 +116,7 @@ final class CipherMapperTests: XCTestCase {
     func testMapCardCipher() throws {
         let raw = makeRawCipher(
             id:   "uuid-card",
-            type: 4,
+            type: 3,
             name: try enc("Visa"),
             card: RawCardData(
                 cardholderName: try enc("Alice Smith"),
@@ -142,7 +143,7 @@ final class CipherMapperTests: XCTestCase {
     func testMapIdentityCipher() throws {
         let raw = makeRawCipher(
             id:       "uuid-id",
-            type:     2,
+            type:     4,
             name:     try enc("My Identity"),
             identity: RawIdentityData(
                 title:          nil,
@@ -218,7 +219,7 @@ final class CipherMapperTests: XCTestCase {
     func testDeletedCipherIsMarked() throws {
         let raw = makeRawCipher(
             id:          "uuid-del",
-            type:        3,
+            type:        2,
             name:        try enc("Deleted Note"),
             deletedDate: "2025-01-01T00:00:00Z",
             secureNote:  RawSecureNoteData(type: 0)

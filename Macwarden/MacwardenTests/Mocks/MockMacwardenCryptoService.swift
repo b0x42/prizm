@@ -54,4 +54,9 @@ actor MockMacwardenCryptoService: MacwardenCryptoService {
     func lockVault() async {
         _isUnlocked = false
     }
+
+    func currentKeys() throws -> CryptoKeys {
+        guard _isUnlocked else { throw MacwardenCryptoServiceError.vaultLocked }
+        return stubbedVaultKeys
+    }
 }
