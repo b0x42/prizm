@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 // MARK: - ItemDetailView
@@ -20,13 +19,13 @@ struct ItemDetailView: View {
     /// Drives `MenuBarViewModel.canEdit` / `canSave` state (task 9.5).
     var onEditSheetChanged: ((Bool) -> Void)? = nil
 
-    /// Publisher that fires when the "Item > Edit" menu bar action is triggered (spec §9.3).
-    /// On receipt, opens the edit sheet for the current item (same as the toolbar Edit button).
-    var openEditPublisher: AnyPublisher<Void, Never>? = nil
+    /// Incremented by `VaultBrowserViewModel.triggerEdit()` when the "Item > Edit" menu bar
+    /// action fires (spec §9.3). `.onChange` opens the edit sheet for the current item.
+    var editTrigger: Int = 0
 
-    /// Publisher that fires when the "Item > Save" menu bar action is triggered (spec §9.4).
-    /// On receipt, calls `save()` on the active `ItemEditViewModel` if one is open.
-    var savePublisher: AnyPublisher<Void, Never>? = nil
+    /// Incremented by `VaultBrowserViewModel.triggerSave()` when the "Item > Save" menu bar
+    /// action fires (spec §9.4). `.onChange` calls `save()` on the active edit ViewModel.
+    var saveTrigger: Int = 0
 
     /// Tracks whether the edit sheet is currently presented.
     @State private var isEditSheetPresented = false
@@ -101,13 +100,14 @@ struct ItemDetailView: View {
                 }
             }
             // Menu bar "Edit" action — mirrors the toolbar Edit button (spec §9.3).
-            .onReceive(openEditPublisher ?? Empty().eraseToAnyPublisher()) {
+            // `.onChange(of:perform:)` is the macOS 13-compatible two-argument form.
+            .onChange(of: editTrigger) { _ in
                 openEditSheet(for: item)
             }
             // Menu bar "Save" action — mirrors the in-sheet Save button (spec §9.4).
             // `ItemEditViewModel.save()` is a no-op if `canSave` is false, so this is safe
             // even when called while the name is blank or a save is already in-flight.
-            .onReceive(savePublisher ?? Empty().eraseToAnyPublisher()) {
+            .onChange(of: saveTrigger) { _ in
                 editViewModel?.save()
             }
         } else {

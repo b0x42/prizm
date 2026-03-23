@@ -10,6 +10,12 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     let creationDate: Date
     let revisionDate: Date
     let content: ItemContent
+    /// Master-password re-prompt setting mirrored from the Bitwarden wire format.
+    /// 0 = disabled (default), 1 = require master password before revealing fields.
+    /// Stored here so `CipherMapper.toRawCipher` can round-trip it unchanged on PUT,
+    /// preventing silent loss of re-prompt protection during edits.
+    /// Default of 0 (disabled) keeps existing call sites unchanged (SE-0242).
+    let reprompt: Int = 0
 }
 
 // MARK: - Item content discriminator

@@ -18,6 +18,11 @@ nonisolated struct RawCipher: Codable {
     let name:           String          // EncString
     let notes:          String?         // EncString
     let favorite:       Bool
+    /// Master-password re-prompt setting. 0 = disabled, 1 = require master password.
+    /// Must be round-tripped unchanged on PUT — omitting it silently resets re-prompt
+    /// protection for items that have it enabled.
+    /// Reference: Bitwarden server `CipherRepromptType` enum (0 = None, 1 = Password).
+    let reprompt:       Int?
     let deletedDate:    String?         // ISO-8601 UTC, nil if not deleted
     let creationDate:   String?         // ISO-8601 UTC
     let revisionDate:   String?         // ISO-8601 UTC

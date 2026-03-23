@@ -293,8 +293,8 @@ final class VaultRepositoryImplTests: XCTestCase {
         let draft = DraftVaultItem(original)
 
         await XCTAssertThrowsErrorAsync(try await sut.update(draft)) { error in
-            guard let _ = error as? MacwardenCryptoServiceError else {
-                return XCTFail("Expected MacwardenCryptoServiceError, got \(error)")
+            guard case VaultError.vaultLocked = error else {
+                return XCTFail("Expected VaultError.vaultLocked, got \(error)")
             }
         }
     }

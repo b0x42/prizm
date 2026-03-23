@@ -219,6 +219,9 @@ nonisolated struct DraftVaultItem: Equatable {
     let creationDate: Date
     let revisionDate: Date
     var content: DraftItemContent
+    /// Re-prompt setting from `VaultItem.reprompt` — carried through unchanged so PUT
+    /// round-trips it correctly. Not user-editable in v1.
+    let reprompt: Int
 
     /// Converts an immutable `VaultItem` into a mutable draft ready for editing.
     init(_ item: VaultItem) {
@@ -228,6 +231,7 @@ nonisolated struct DraftVaultItem: Equatable {
         self.isDeleted = item.isDeleted
         self.creationDate = item.creationDate
         self.revisionDate = item.revisionDate
+        self.reprompt = item.reprompt
         self.content = {
             switch item.content {
             case .login(let c):      return .login(DraftLoginContent(c))
@@ -255,6 +259,7 @@ extension VaultItem {
         self.isDeleted = draft.isDeleted
         self.creationDate = draft.creationDate
         self.revisionDate = draft.revisionDate
+        self.reprompt = draft.reprompt
         self.content = {
             switch draft.content {
             case .login(let c):

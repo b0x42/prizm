@@ -46,7 +46,7 @@ protocol VaultRepository: AnyObject {
     ///
     /// - Parameter draft: The user's edited draft.
     /// - Returns: The authoritative `VaultItem` as returned by the server.
-    /// - Throws: `VaultError.vaultLocked` if crypto keys are unavailable.
+    /// - Throws: `VaultError.vaultLocked` if the vault is locked (translated from the Data layer).
     /// - Throws: `APIError` on network or HTTP failure.
     func update(_ draft: DraftVaultItem) async throws -> VaultItem
 }

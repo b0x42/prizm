@@ -42,6 +42,7 @@ final class CipherMapperTests: XCTestCase {
             name:           name,
             notes:          notes,
             favorite:       favorite,
+            reprompt:       nil,
             deletedDate:    deletedDate,
             creationDate:   nil,
             revisionDate:   nil,

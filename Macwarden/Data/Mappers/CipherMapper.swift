@@ -83,7 +83,8 @@ nonisolated final class CipherMapper {
             isDeleted:    raw.deletedDate != nil,
             creationDate: creationDate,
             revisionDate: revisionDate,
-            content:      content
+            content:      content,
+            reprompt:     raw.reprompt ?? 0
         )
     }
 
@@ -289,6 +290,7 @@ nonisolated final class CipherMapper {
             name:           encName,
             notes:          encNotes,
             favorite:       draft.isFavorite,
+            reprompt:       draft.reprompt,
             deletedDate:    nil,
             creationDate:   nil,
             revisionDate:   nil,

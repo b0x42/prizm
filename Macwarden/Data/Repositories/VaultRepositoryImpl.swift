@@ -125,7 +125,7 @@ final class VaultRepositoryImpl: VaultRepository {
     ///   • Offline writes are not queued; a network failure surfaces as a thrown error
     ///     and leaves the local cache unchanged (see TODO below).
     ///
-    /// - Throws: `MacwardenCryptoServiceError.vaultLocked` if the vault is locked.
+    /// - Throws: `VaultError.vaultLocked` if the vault is locked (translated from `MacwardenCryptoServiceError`).
     /// - Throws: `APIError` on network or HTTP failure.
     /// - Throws: `CipherMapperError` if the reverse mapper or response mapper fails.
     func update(_ draft: DraftVaultItem) async throws -> VaultItem {
@@ -135,7 +135,15 @@ final class VaultRepositoryImpl: VaultRepository {
         // changes without a second user confirmation.
 
         // Step 1: Obtain current symmetric keys — throws if vault is locked.
-        let keys = try await crypto.currentKeys()
+        // Translate MacwardenCryptoServiceError.vaultLocked → VaultError.vaultLocked so
+        // callers receive the Domain-layer error type promised by the VaultRepository protocol.
+        // Other crypto errors (kdfFailed, invalidEncUserKey, etc.) propagate unchanged.
+        let keys: CryptoKeys
+        do {
+            keys = try await crypto.currentKeys()
+        } catch MacwardenCryptoServiceError.vaultLocked {
+            throw VaultError.vaultLocked
+        }
 
         // Step 2: Re-encrypt all sensitive fields via the reverse cipher mapper.
         let rawCipher = try mapper.toRawCipher(draft, encryptedWith: keys)

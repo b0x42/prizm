@@ -50,13 +50,18 @@ final class VaultBrowserViewModel: ObservableObject {
 
     // MARK: - Menu bar action relay
 
-    /// Fired when the "Item > Edit" menu bar action is triggered (spec §9.3).
-    /// `ItemDetailView` observes this to open the edit sheet for the selected item.
-    let openEditSubject = PassthroughSubject<Void, Never>()
+    /// Incremented each time the "Item > Edit" menu bar action fires (spec §9.3).
+    /// `ItemDetailView` uses `.onChange(of: editTrigger)` to open the edit sheet.
+    /// An integer counter (rather than a Combine PassthroughSubject) keeps the relay
+    /// within the async/await pattern mandated by CLAUDE.md.
+    @Published private(set) var editTrigger: Int = 0
 
-    /// Fired when the "Item > Save" menu bar action is triggered (spec §9.4).
-    /// `ItemDetailView` observes this to call `save()` on the active edit ViewModel.
-    let saveSubject = PassthroughSubject<Void, Never>()
+    /// Incremented each time the "Item > Save" menu bar action fires (spec §9.4).
+    /// `ItemDetailView` uses `.onChange(of: saveTrigger)` to call `save()`.
+    @Published private(set) var saveTrigger: Int = 0
+
+    func triggerEdit() { editTrigger += 1 }
+    func triggerSave() { saveTrigger += 1 }
 
     // MARK: - Clipboard auto-clear
 

@@ -132,6 +132,7 @@ final class SyncRepositoryImplTests: XCTestCase {
                 name:           "2.name\(i)==",
                 notes:          nil,
                 favorite:       false,
+                reprompt:       nil,
                 deletedDate:    nil,
                 creationDate:   nil,
                 revisionDate:   nil,

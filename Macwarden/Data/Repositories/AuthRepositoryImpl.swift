@@ -359,7 +359,10 @@ final class AuthRepositoryImpl: AuthRepository {
             logger.debug("activeUserId delete skipped: \(error.localizedDescription, privacy: .public)")
         }
 
-        await crypto.lockVault()
+        // Use self.lockVault() rather than crypto.lockVault() directly so that the
+        // .vaultDidLock notification is posted — ItemEditViewModel observes it to
+        // dismiss any open edit sheet and clear the plaintext DraftVaultItem (§III).
+        await lockVault()
         serverEnvironment = nil
         pendingTwoFactor  = nil
     }

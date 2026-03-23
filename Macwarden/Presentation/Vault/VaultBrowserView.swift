@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 // MARK: - VaultBrowserView
@@ -53,8 +52,8 @@ struct VaultBrowserView: View {
                         onEditSheetState?(open)
                     },
                     // Relay menu bar Edit/Save actions into the detail pane (spec §9.3–9.4).
-                    openEditPublisher:   viewModel.openEditSubject.eraseToAnyPublisher(),
-                    savePublisher:       viewModel.saveSubject.eraseToAnyPublisher()
+                    editTrigger:         viewModel.editTrigger,
+                    saveTrigger:         viewModel.saveTrigger
                 )
             }
         )

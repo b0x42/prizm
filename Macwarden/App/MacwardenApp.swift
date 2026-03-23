@@ -46,13 +46,13 @@ struct MacwardenApp: App {
             // item selection and edit-sheet state.
             CommandMenu("Item") {
                 Button("Edit") {
-                    rootVM.vaultBrowserVM.openEditSubject.send()
+                    rootVM.vaultBrowserVM.triggerEdit()
                 }
                 .disabled(!rootVM.menuBarCanEdit)
                 .keyboardShortcut("e", modifiers: .command)
 
                 Button("Save") {
-                    rootVM.vaultBrowserVM.saveSubject.send()
+                    rootVM.vaultBrowserVM.triggerSave()
                 }
                 .disabled(!rootVM.menuBarCanSave)
                 .keyboardShortcut("s", modifiers: .command)
@@ -174,18 +174,22 @@ final class RootViewModel: ObservableObject {
             .store(in: &cancellables)
 
         // canEdit: item selected AND edit sheet not yet open.
-        vaultBrowserVM.$itemSelection
-            .combineLatest(vaultBrowserVM.$editSheetOpen)
-            .map { selection, sheetOpen in selection != nil && !sheetOpen }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] canEdit in self?.menuBarCanEdit = canEdit }
-            .store(in: &cancellables)
-
-        // canSave: edit sheet is open (ItemEditViewModel.save() guards the finer checks).
-        vaultBrowserVM.$editSheetOpen
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] open in self?.menuBarCanSave = open }
-            .store(in: &cancellables)
+        // canSave: edit sheet is open.
+        // Both are derived by watching editSheetOpen and itemSelection independently.
+        // `for await` on @Published.values avoids Combine callbacks (CLAUDE.md async/await rule).
+        Task { [weak self, vaultBrowserVM] in
+            for await open in vaultBrowserVM.$editSheetOpen.values {
+                guard let self else { break }
+                self.menuBarCanSave = open
+                self.menuBarCanEdit = vaultBrowserVM.itemSelection != nil && !open
+            }
+        }
+        Task { [weak self, vaultBrowserVM] in
+            for await selection in vaultBrowserVM.$itemSelection.values {
+                guard let self else { break }
+                self.menuBarCanEdit = selection != nil && !vaultBrowserVM.editSheetOpen
+            }
+        }
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {
