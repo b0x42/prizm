@@ -100,16 +100,11 @@ struct ItemDetailView: View {
                 }
             }
             // Menu bar "Edit" action — mirrors the toolbar Edit button (spec §9.3).
-            // `.onChange(of:perform:)` is the macOS 13-compatible two-argument form.
-            .onChange(of: editTrigger) { _ in
-                openEditSheet(for: item)
-            }
+            .onChangeCompat(of: editTrigger) { openEditSheet(for: item) }
             // Menu bar "Save" action — mirrors the in-sheet Save button (spec §9.4).
             // `ItemEditViewModel.save()` is a no-op if `canSave` is false, so this is safe
             // even when called while the name is blank or a save is already in-flight.
-            .onChange(of: saveTrigger) { _ in
-                editViewModel?.save()
-            }
+            .onChangeCompat(of: saveTrigger) { editViewModel?.save() }
         } else {
             ContentUnavailableView(
                 "No Item Selected",
@@ -149,7 +144,6 @@ struct ItemDetailView: View {
     }
 
     // MARK: - Type dispatcher
-
     @ViewBuilder
     private func typeDetailView(for item: VaultItem) -> some View {
         switch item.content {
@@ -167,6 +161,24 @@ struct ItemDetailView: View {
 
         case .sshKey(let k):
             SSHKeyDetailView(item: item, sshKey: k, onCopy: onCopy)
+        }
+    }
+}
+
+// MARK: - macOS version compat
+
+private extension View {
+    /// Calls `action` when `value` changes, without deprecation warnings on either target OS.
+    ///
+    /// macOS 14 deprecated `onChange(of:perform:)` (single-arg closure) in favour of a
+    /// zero-arg form. macOS 13 only has the single-arg form. Branching on `#available`
+    /// keeps both OS versions happy at the two call sites in this file.
+    @ViewBuilder
+    func onChangeCompat<T: Equatable>(of value: T, action: @escaping () -> Void) -> some View {
+        if #available(macOS 14, *) {
+            self.onChange(of: value, action)
+        } else {
+            self.onChange(of: value) { _ in action() }
         }
     }
 }
