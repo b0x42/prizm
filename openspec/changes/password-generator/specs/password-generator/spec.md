@@ -131,16 +131,3 @@ The system SHALL display a generator trigger button adjacent to the password fie
 #### Scenario: Clicking generator button opens the popover
 - **WHEN** the user clicks the generator trigger button on the password field
 - **THEN** the password generator popover SHALL open anchored to the button
-
----
-
-### Requirement: Generator is accessible from the private key field in the SSH Key edit form
-The system SHALL display a generator trigger button adjacent to the private key field in the SSH Key item edit sheet. Clicking the button SHALL open the password generator popover anchored to that button. The trigger button SHALL be visible at all times (not hover-only) within the edit form.
-
-#### Scenario: Generator button visible on SSH Key edit private key field
-- **WHEN** the SSH Key edit sheet is open
-- **THEN** a generator trigger button SHALL be visible alongside the private key field at all times, regardless of pointer position
-
-#### Scenario: Clicking generator button opens the popover
-- **WHEN** the user clicks the generator trigger button on the private key field
-- **THEN** the password generator popover SHALL open anchored to the button

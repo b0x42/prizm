@@ -30,7 +30,6 @@
 
 - [x] 4.1 Add optional `generatorBinding: Binding<String?>?` parameter to `EditFieldRow` (default `nil`); render wand SF Symbol button (`wand.and.stars`) when non-nil — always visible, NOT hover-only (contrast with copy/reveal buttons); existing callers unaffected
 - [x] 4.2 Wire generator popover in `LoginEditForm` — pass `$draft.login.password` binding to the password `EditFieldRow`
-- [x] 4.3 Wire generator popover in `SSHKeyEditForm` — pass `$draft.sshKey.privateKey` binding to the private key `EditFieldRow`
 
 ## 5. Tests & Constitution Check
 
