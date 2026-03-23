@@ -19,6 +19,18 @@ A native Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](htt
 - **Find items fast** — real-time search across names, usernames, URIs, and more
 - **Native macOS** — built with SwiftUI, feels right at home
 
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| ⌘E | Edit selected item |
+| ⌘S | Save edits |
+| ⇧⌘Q | Sign out |
+| ⌥ (hold) | Peek at masked passwords and secrets |
+| ↑ ↓ | Navigate item list |
+| ⇥ | Move between panes |
+| ↩ | Submit (login, unlock, TOTP) |
+
 ## Security
 
 All cryptography runs locally on your device:
