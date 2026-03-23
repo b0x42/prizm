@@ -34,10 +34,6 @@ final class AppContainer: ObservableObject {
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
     let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
 
-    // MARK: - Password generator
-
-    let randomnessProvider: CryptographicRandomnessProvider
-
     // MARK: - Init
 
     init() {
@@ -72,7 +68,6 @@ final class AppContainer: ObservableObject {
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
         self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
         self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
-        self.randomnessProvider              = CryptographicRandomnessProvider()
     }
 
     // MARK: - Factories
@@ -102,10 +97,5 @@ final class AppContainer: ObservableObject {
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
     func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
         ItemEditViewModel(item: item, useCase: editVaultItemUseCase)
-    }
-
-    /// Creates a `PasswordGeneratorViewModel` backed by the cryptographic randomness provider.
-    func makePasswordGeneratorViewModel() -> PasswordGeneratorViewModel {
-        PasswordGeneratorViewModel(provider: randomnessProvider)
     }
 }
