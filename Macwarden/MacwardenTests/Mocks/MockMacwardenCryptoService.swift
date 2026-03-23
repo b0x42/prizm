@@ -59,4 +59,5 @@ actor MockMacwardenCryptoService: MacwardenCryptoService {
         guard _isUnlocked else { throw MacwardenCryptoServiceError.vaultLocked }
         return stubbedVaultKeys
     }
+
 }

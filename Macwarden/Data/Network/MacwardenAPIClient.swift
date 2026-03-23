@@ -72,6 +72,34 @@ protocol MacwardenAPIClientProtocol: Actor {
     ///
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}
     func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher
+
+    /// PUT `/api/ciphers/{id}/delete` — soft-deletes a cipher by moving it to Trash.
+    ///
+    /// Sets `deletedDate` on the server. The item remains in the user's vault data and
+    /// can be restored. Bitwarden cloud auto-purges trashed items after 30 days server-side;
+    /// self-hosted Vaultwarden only auto-purges if `TRASH_AUTO_DELETE_DAYS` is configured.
+    ///
+    /// Note: `DELETE /api/ciphers/{id}` is the *permanent* delete endpoint — do NOT use it
+    /// for soft-delete. The soft-delete endpoint is `PUT /api/ciphers/{id}/delete`.
+    ///
+    /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/delete
+    func softDeleteCipher(id: String) async throws
+
+    /// DELETE `/api/ciphers/{id}` — permanently deletes a cipher.
+    ///
+    /// **Irreversible.** Removes the cipher from the server entirely.
+    /// Used only when deleting an item that is already in Trash.
+    ///
+    /// Reference: Bitwarden Server API DELETE /api/ciphers/{id}
+    func permanentDeleteCipher(id: String) async throws
+
+    /// PUT `/api/ciphers/{id}/restore` — restores a trashed cipher to the active vault.
+    ///
+    /// Clears `deletedDate` on the server. The item becomes visible in the active vault again.
+    ///
+    /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/restore
+    func restoreCipher(id: String) async throws
+
 }
 
 // MARK: - Wire Models
@@ -172,6 +200,19 @@ nonisolated enum APIError: Error, Equatable {
     case decodingFailed
     /// `setBaseURL` was never called before making a request.
     case baseURLNotSet
+}
+
+extension APIError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .httpError(let statusCode, let body):
+            return body.isEmpty ? "Server error \(statusCode)." : "Server error \(statusCode): \(body)"
+        case .decodingFailed:
+            return "The server response could not be read. Please try again."
+        case .baseURLNotSet:
+            return "No server URL is configured."
+        }
+    }
 }
 
 // MARK: - Implementation
@@ -451,6 +492,76 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
         return updated
     }
 
+    // MARK: - softDeleteCipher
+
+    func softDeleteCipher(id: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        // PUT /api/ciphers/{id}/delete — soft-delete (moves to Trash, sets deletedDate).
+        // Do NOT use DELETE /api/ciphers/{id} here; that endpoint permanently removes the cipher.
+        let url = base.appendingPathComponent("api/ciphers/\(id)/delete")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] softDeleteCipher → PUT \(url.absoluteString, privacy: .public)")
+        }
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        try await performEmpty(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] softDeleteCipher ← ok id=\(id, privacy: .public)")
+        }
+    }
+
+    // MARK: - permanentDeleteCipher
+
+    func permanentDeleteCipher(id: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(id)")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] permanentDeleteCipher → DELETE \(url.absoluteString, privacy: .public)")
+        }
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "DELETE"
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        try await performEmpty(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] permanentDeleteCipher ← ok id=\(id, privacy: .public)")
+        }
+    }
+
+    // MARK: - restoreCipher
+
+    func restoreCipher(id: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(id)/restore")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] restoreCipher → PUT \(url.absoluteString, privacy: .public)")
+        }
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        // No body — the server identifies the cipher by URL path only.
+        // Sending Content-Type: application/json with a body causes Vaultwarden to return 400.
+
+        try await performEmpty(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] restoreCipher ← ok id=\(id, privacy: .public)")
+        }
+    }
+
     // MARK: - refreshAccessToken
 
     func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?) {
@@ -542,6 +653,26 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
                 }
             }
             throw APIError.decodingFailed
+        }
+    }
+
+    /// Sends `request` and checks the HTTP status code, discarding the response body.
+    ///
+    /// Used for endpoints that return 200/204 with no meaningful response body
+    /// (soft-delete, restore, purge). Throws `APIError.httpError` on non-2xx responses.
+    private func performEmpty(request: URLRequest) async throws {
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.httpError(statusCode: 0, body: "")
+        }
+
+        logger.debug("[\(http.statusCode)] \(request.httpMethod ?? "?") \(request.url?.path ?? "")")
+
+        guard (200..<300).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            logger.error("HTTP \(http.statusCode) for \(request.url?.path ?? "unknown")")
+            throw APIError.httpError(statusCode: http.statusCode, body: body)
         }
     }
 

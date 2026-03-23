@@ -121,4 +121,41 @@ actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
         if let err = updateCipherShouldThrow { throw err }
         return updateCipherResponse ?? cipher
     }
+
+    // MARK: - Stubs: softDeleteCipher
+
+    nonisolated(unsafe) var softDeleteShouldThrow: Error?
+    nonisolated(unsafe) var softDeleteCallCount: Int = 0
+    nonisolated(unsafe) var lastSoftDeletedId: String?
+
+    func softDeleteCipher(id: String) async throws {
+        softDeleteCallCount += 1
+        lastSoftDeletedId = id
+        if let err = softDeleteShouldThrow { throw err }
+    }
+
+    // MARK: - Stubs: permanentDeleteCipher
+
+    nonisolated(unsafe) var permanentDeleteShouldThrow: Error?
+    nonisolated(unsafe) var permanentDeleteCallCount: Int = 0
+    nonisolated(unsafe) var lastPermanentDeletedId: String?
+
+    func permanentDeleteCipher(id: String) async throws {
+        permanentDeleteCallCount += 1
+        lastPermanentDeletedId = id
+        if let err = permanentDeleteShouldThrow { throw err }
+    }
+
+    // MARK: - Stubs: restoreCipher
+
+    nonisolated(unsafe) var restoreShouldThrow: Error?
+    nonisolated(unsafe) var restoreCallCount: Int = 0
+    nonisolated(unsafe) var lastRestoredId: String?
+
+    func restoreCipher(id: String) async throws {
+        restoreCallCount += 1
+        lastRestoredId = id
+        if let err = restoreShouldThrow { throw err }
+    }
+
 }

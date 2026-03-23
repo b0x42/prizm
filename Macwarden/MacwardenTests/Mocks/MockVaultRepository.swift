@@ -45,6 +45,8 @@ final class MockVaultRepository: VaultRepository {
             return populatedItems.filter(\.isFavorite)
         case .type(let itemType):
             return populatedItems.filter { $0.content.matchesType(itemType) }
+        case .trash:
+            return populatedItems.filter(\.isDeleted)
         }
     }
 
@@ -72,6 +74,45 @@ final class MockVaultRepository: VaultRepository {
         }
         return result
     }
+
+    // MARK: - deleteItem stubbing
+
+    var stubbedDeleteError: Error?
+    private(set) var deleteCallCount: Int = 0
+    private(set) var lastDeletedId: String?
+
+    func deleteItem(id: String) async throws {
+        deleteCallCount += 1
+        lastDeletedId = id
+        if let error = stubbedDeleteError { throw error }
+        populatedItems.removeAll { $0.id == id }
+    }
+
+    // MARK: - permanentDeleteItem stubbing
+
+    var stubbedPermanentDeleteError: Error?
+    private(set) var permanentDeleteCallCount: Int = 0
+    private(set) var lastPermanentDeletedId: String?
+
+    func permanentDeleteItem(id: String) async throws {
+        permanentDeleteCallCount += 1
+        lastPermanentDeletedId = id
+        if let error = stubbedPermanentDeleteError { throw error }
+        populatedItems.removeAll { $0.id == id }
+    }
+
+    // MARK: - restoreItem stubbing
+
+    var stubbedRestoreError: Error?
+    private(set) var restoreCallCount: Int = 0
+    private(set) var lastRestoredId: String?
+
+    func restoreItem(id: String) async throws {
+        restoreCallCount += 1
+        lastRestoredId = id
+        if let error = stubbedRestoreError { throw error }
+    }
+
 }
 
 // MARK: - ItemContent helper

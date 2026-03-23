@@ -76,6 +76,13 @@
 		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
 		FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */; };
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
+		48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */; };
+		50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */; };
+		5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */; };
+		C95CAFFEA54E4E66BED34362 /* DeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */; };
+		3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */; };
+		7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */; };
+		421368787851407FBCA9D99F /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212734E66AE74662AD28E6CB /* TrashView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -161,6 +168,14 @@
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
+		4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCase.swift; sourceTree = "<group>"; };
+		6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
+		42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
+		75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
+		8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
+		212734E66AE74662AD28E6CB /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
+		2D38B14DD3084CD9A3AA4FFF /* TrashJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashJourneyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -246,6 +261,9 @@
 				5EBA517603CA448A8F9106AF /* SyncUseCase.swift */,
 				09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */,
 				D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */,
+				EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */,
+				4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */,
+					6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -341,6 +359,7 @@
 				8A9B0C1D2E3F4050A1B2C3D4 /* Edit */,
 				4309FCFA2F680CBD0031C9F4 /* ItemList */,
 				4309FCF92F680CB40031C9F4 /* Sidebar */,
+				7F9C2582320343D997856712 /* Trash */,
 			);
 			path = Vault;
 			sourceTree = "<group>";
@@ -456,6 +475,7 @@
 			isa = PBXGroup;
 			children = (
 				6D7E8F90718293040A1B2C3D /* EditItemJourneyTests.swift */,
+				2D38B14DD3084CD9A3AA4FFF /* TrashJourneyTests.swift */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -543,8 +563,19 @@
 				8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */,
 				6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */,
 				F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */,
+				42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */,
+				75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */,
+					8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
 			);
 			path = UseCases;
+			sourceTree = "<group>";
+		};
+		7F9C2582320343D997856712 /* Trash */ = {
+			isa = PBXGroup;
+			children = (
+				212734E66AE74662AD28E6CB /* TrashView.swift */,
+			);
+			path = Trash;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -735,6 +766,13 @@
 				C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */,
 				E5F400A1B2C3D07D70809000 /* SSHKeyEditForm.swift in Sources */,
 				071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */,
+				48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */,
+				50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */,
+					5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */,
+				C95CAFFEA54E4E66BED34362 /* DeleteVaultItemUseCaseImpl.swift in Sources */,
+				3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */,
+					7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */,
+				421368787851407FBCA9D99F /* TrashView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

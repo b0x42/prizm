@@ -60,6 +60,7 @@ nonisolated enum AccessibilityID {
         static let list              = "sidebar.list"
         static let allItems          = "sidebar.allItems"
         static let favorites         = "sidebar.favorites"
+        static let trash             = "sidebar.trash"
         static func type(_ name: String) -> String { "sidebar.type.\(name)" }
     }
 
@@ -111,5 +112,18 @@ nonisolated enum AccessibilityID {
         static let discardButton = "edit.button.discard"
         /// The inline error banner shown on save failure.
         static let errorBanner   = "edit.errorBanner"
+    }
+
+    // MARK: - Trash (delete-restore-items)
+
+    enum Trash {
+        /// The empty-state view shown when Trash contains no items.
+        static let emptyState        = "trash.emptyState"
+        /// The banner shown in ItemDetailView when the selected item is in trash.
+        static let statusBanner      = "trash.statusBanner"
+        /// The "Restore" toolbar button in ItemDetailView for trashed items.
+        static let restoreButton     = "trash.button.restore"
+        /// The "Delete Permanently" toolbar button in ItemDetailView for trashed items.
+        static let permanentDeleteButton = "trash.button.permanentDelete"
     }
 }
