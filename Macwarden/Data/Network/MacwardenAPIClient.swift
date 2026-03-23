@@ -105,14 +105,11 @@ protocol MacwardenAPIClientProtocol: Actor {
     /// **Irreversible.** All items with a non-nil `deletedDate` are permanently removed
     /// from the server.
     ///
-    /// Note: The Bitwarden server accepts an optional `masterPasswordHash` body parameter on
-    /// this endpoint as an additional confirmation. v1 omits it and relies on the UI confirmation
-    /// alert instead. A future phase should add master-password re-verification before purge.
-    /// TODO: Add master-password re-prompt before calling this endpoint (deferred — requires
-    /// SecureEnclave entitlement + re-hash flow).
+    /// Bitwarden and Vaultwarden both require the `masterPasswordHash` in the request body
+    /// as a re-authentication confirmation before executing this destructive operation.
     ///
     /// Reference: Bitwarden Server API DELETE /api/ciphers/purge
-    func purgeTrashedCiphers() async throws
+    func purgeTrashedCiphers(masterPasswordHash: String) async throws
 }
 
 // MARK: - Wire Models
@@ -577,7 +574,7 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
     // MARK: - purgeTrashedCiphers
 
-    func purgeTrashedCiphers() async throws {
+    func purgeTrashedCiphers(masterPasswordHash: String) async throws {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/ciphers/purge")
 
@@ -591,9 +588,10 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        // Empty JSON body — masterPasswordHash intentionally omitted in v1.
-        // See TODO in MacwardenAPIClientProtocol.purgeTrashedCiphers for rationale.
-        request.httpBody = Data("{}".utf8)
+        // masterPasswordHash is required by Bitwarden/Vaultwarden as a re-authentication
+        // confirmation before executing this irreversible bulk-delete operation.
+        let body = try JSONSerialization.data(withJSONObject: ["masterPasswordHash": masterPasswordHash])
+        request.httpBody = body
 
         try await performEmpty(request: request)
         if DebugConfig.isEnabled {

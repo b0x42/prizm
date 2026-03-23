@@ -106,6 +106,21 @@ protocol MacwardenCryptoService: Actor {
     ///
     /// - Throws: `MacwardenCryptoServiceError.vaultLocked` if the vault is locked.
     func currentKeys() async throws -> CryptoKeys
+
+    /// Stores the server-side master password hash alongside the vault keys.
+    ///
+    /// Called by `AuthRepositoryImpl` immediately after computing the hash during login
+    /// and unlock, so it remains available for endpoints (e.g. DELETE /ciphers/purge)
+    /// that require it as a re-authentication confirmation.
+    ///
+    /// The hash has the same lifecycle as the vault keys: it is cleared by `lockVault()`.
+    func storePasswordHash(_ hash: String) async
+
+    /// Returns the stored master password hash.
+    ///
+    /// - Throws: `MacwardenCryptoServiceError.vaultLocked` if the vault is locked
+    ///   or the hash was never stored for the current session.
+    func storedPasswordHash() async throws -> String
 }
 
 // MARK: - MacwardenCryptoServiceImpl
@@ -130,6 +145,12 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
     /// Stored as `var` so it can be zeroed on lock.
     private var keys: CryptoKeys?
 
+    /// Server-side master password hash, non-nil after a successful login or unlock.
+    /// Stored so endpoints that require re-authentication (e.g. DELETE /ciphers/purge)
+    /// can include it without prompting the user again.
+    /// Cleared alongside the vault keys when the vault is locked.
+    private var passwordHash: String?
+
     var isUnlocked: Bool { keys != nil }
 
     // MARK: - Lock / Unlock
@@ -143,7 +164,8 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
         // Overwrite with zeros before releasing (best-effort; Swift ARC may still
         // retain copies elsewhere, but this reduces the window during which the
         // key is readable in a memory dump).
-        self.keys = nil
+        self.keys         = nil
+        self.passwordHash = nil
         logger.info("Vault locked — key material zeroed")
     }
 
@@ -152,6 +174,18 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
             throw MacwardenCryptoServiceError.vaultLocked
         }
         return vaultKeys
+    }
+
+    func storePasswordHash(_ hash: String) {
+        self.passwordHash = hash
+    }
+
+    func storedPasswordHash() throws -> String {
+        guard let hash = passwordHash else {
+            // Hash is cleared on lock — treat absence as locked state.
+            throw MacwardenCryptoServiceError.vaultLocked
+        }
+        return hash
     }
 
     // MARK: - decryptList

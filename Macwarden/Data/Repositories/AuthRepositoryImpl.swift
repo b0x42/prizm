@@ -180,6 +180,10 @@ final class AuthRepositoryImpl: AuthRepository {
             stretched:    stretched,
             environment:  env
         )
+        // Store the hash for endpoints (e.g. DELETE /ciphers/purge) that require it
+        // as a re-authentication confirmation. Stored alongside the vault keys and
+        // cleared on lock — same lifecycle and security boundary as the vault keys.
+        await crypto.storePasswordHash(serverHash)
         logger.info("Login succeeded")
         return .success(account)
     }
@@ -217,11 +221,13 @@ final class AuthRepositoryImpl: AuthRepository {
 
         pendingTwoFactor = nil
         logger.info("TOTP accepted")
-        return try await finalizeSession(
+        let account = try await finalizeSession(
             tokenResp:   tokenResp,
             stretched:   pending.stretchedKeys,
             environment: env
         )
+        await crypto.storePasswordHash(pending.passwordHash)
+        return account
     }
 
     // MARK: - Unlock
@@ -286,6 +292,11 @@ final class AuthRepositoryImpl: AuthRepository {
             stretchedKeys: stretched
         )
         await crypto.unlockWith(keys: vaultKeys)
+
+        // Compute and store the server hash so endpoints that require it (e.g. empty trash)
+        // can include it without prompting the user again.
+        let serverHash = try await crypto.makeServerHash(masterKey: masterKey, password: masterPassword)
+        await crypto.storePasswordHash(serverHash)
 
         // Restore API client state so the post-unlock sync can make authenticated requests.
         // Both baseURL and accessToken are nil on a fresh app launch until restored here.
