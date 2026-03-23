@@ -21,7 +21,9 @@ The vault edit flow has no way to generate strong passwords or passphrases, forc
 
 ## Impact
 
-- **New**: `Domain/Utilities/PasswordGenerator.swift` — pure Swift generator, no imports beyond Foundation and Security (for `SecRandomCopyBytes`).
+- **New**: `Domain/Utilities/RandomnessProvider.swift` — protocol with a single `randomBytes(count:)` method; keeps Domain free of Security.framework.
+- **New**: `Data/Crypto/CryptographicRandomnessProvider.swift` — `RandomnessProvider` implementation backed by `SecRandomCopyBytes`.
+- **New**: `Domain/Utilities/PasswordGenerator.swift` — pure Swift generator, imports Foundation only; receives `RandomnessProvider` via injection.
 - **New**: `Presentation/Vault/Edit/PasswordGeneratorView.swift` — SwiftUI popover.
 - **New**: `Presentation/Vault/Edit/PasswordGeneratorViewModel.swift` — `@MainActor ObservableObject` owning generator state.
 - **Modified**: `Presentation/Vault/Edit/LoginEditForm.swift` — generator button on password field.

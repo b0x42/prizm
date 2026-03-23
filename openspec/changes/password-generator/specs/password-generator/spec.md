@@ -52,6 +52,10 @@ The system SHALL provide a passphrase generator that produces word-based passphr
 - **WHEN** the include-number toggle is enabled
 - **THEN** exactly one word in the passphrase SHALL have a single random digit (0–9) appended to it
 
+#### Scenario: Word count is clamped to valid range
+- **WHEN** the user adjusts the word count
+- **THEN** the count SHALL be constrained to the range 3–10 inclusive
+
 #### Scenario: Words are drawn from the EFF Large Wordlist
 - **WHEN** any passphrase is generated
 - **THEN** every word SHALL be a member of the EFF Large Wordlist
@@ -90,9 +94,11 @@ The system SHALL provide two primary actions on the generated value: Copy and Us
 - **WHEN** the password field already contains a value and the user clicks the Use button
 - **THEN** the field value SHALL be replaced with the generated value
 
-#### Scenario: Use button label reflects active mode
+#### Scenario: Use button labelled "Use Password" in Password mode
 - **WHEN** the generator is in Password mode
 - **THEN** the Use button SHALL be labelled "Use Password"
+
+#### Scenario: Use button labelled "Use Passphrase" in Passphrase mode
 - **WHEN** the generator is in Passphrase mode
 - **THEN** the Use button SHALL be labelled "Use Passphrase"
 
@@ -125,11 +131,11 @@ The system SHALL display a generator trigger button adjacent to the password fie
 ---
 
 ### Requirement: Generator is accessible from the private key field in the SSH Key edit form
-The system SHALL display a generator trigger button adjacent to the private key field in the SSH Key item edit sheet. Clicking the button SHALL open the password generator popover anchored to that button.
+The system SHALL display a generator trigger button adjacent to the private key field in the SSH Key item edit sheet. Clicking the button SHALL open the password generator popover anchored to that button. The trigger button SHALL be visible at all times (not hover-only) within the edit form.
 
 #### Scenario: Generator button visible on SSH Key edit private key field
 - **WHEN** the SSH Key edit sheet is open
-- **THEN** a generator trigger button SHALL be visible alongside the private key field
+- **THEN** a generator trigger button SHALL be visible alongside the private key field at all times, regardless of pointer position
 
 #### Scenario: Clicking generator button opens the popover
 - **WHEN** the user clicks the generator trigger button on the private key field

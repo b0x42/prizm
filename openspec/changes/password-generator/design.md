@@ -32,7 +32,7 @@ protocol RandomnessProvider {
 }
 ```
 
-The Data layer provides `CryptographicRandomnessProvider: RandomnessProvider` backed by `SecRandomCopyBytes`. `PasswordGenerator` receives any `RandomnessProvider` via injection (constructor parameter with a default). This keeps the Domain layer free of Security.framework while preserving full cryptographic quality at runtime.
+The Data layer provides `CryptographicRandomnessProvider: RandomnessProvider` backed by `SecRandomCopyBytes`. `PasswordGenerator` receives a `RandomnessProvider` via constructor injection — no default, always supplied by `AppContainer`. This keeps the Domain layer free of Security.framework while preserving full cryptographic quality at runtime.
 
 `SecRandomCopyBytes` (Security.framework) is explicitly documented as cryptographically secure and is the standard Apple API for this purpose. `SystemRandomNumberGenerator` delegates to the OS CSPRNG in practice but the Swift stdlib API does not formally guarantee cryptographic quality — the protocol approach lets us be explicit at the injection site.
 
@@ -49,7 +49,7 @@ The EFF Large Wordlist is the industry standard for diceware-style passphrases a
 To guarantee at least one character from every enabled set:
 1. Pick one random character from each enabled set.
 2. Fill remaining slots with random characters drawn from the full union of enabled sets.
-3. Shuffle the complete array using Fisher-Yates (via `SecRandomCopyBytes`).
+3. Shuffle the complete array using Fisher-Yates (via `provider.randomBytes(count:)`).
 
 This distributes all character types uniformly rather than front-loading the required characters, which would produce a biased distribution.
 
@@ -85,7 +85,7 @@ Add an optional `generatorBinding: Binding<String?>?` parameter to `EditFieldRow
 6 words from 7776 → ~77.4 bits; a 16-char random password with all sets → ~105 bits. The default of 6 words was chosen over Bitwarden's 3-word default (~38.9 bits) to align with our security-first stance and EFF's own recommendation of 6+ words. Users wanting maximum entropy should use Password mode or increase word count further. → *Accepted trade-off*: passphrase mode trades some entropy for memorability, which is its primary use case.
 
 **EFF word list loading latency**
-First-time load parses ~60 KB of text. On modern hardware this is sub-millisecond, but the load should be lazy (on first generator open, not at app startup). → *Mitigation*: Load and cache in `PasswordGenerator.init()` only when the popover first opens; use `lazy var` or a static once-token.
+First-time load parses ~60 KB of text. On modern hardware this is sub-millisecond, but the load should not happen at app startup. → *Mitigation*: Store the word list as a `static let` on `PasswordGenerator` — loaded once on first access, shared across all instances, compatible with struct value semantics. `lazy var` is intentionally avoided: it requires `mutating` on structs and is not thread-safe without additional locking.
 
 **Ambiguous-character set interaction with limited character pool**
 If avoid-ambiguous is on and only digits are enabled, the pool reduces to `{2,3,4,5,6,7,8,9}` (8 chars). At length > 8 characters, repetition is inevitable. This is a valid but edge case the user has deliberately constructed. → *Accepted*: no special handling needed; repetition in this scenario is expected.
