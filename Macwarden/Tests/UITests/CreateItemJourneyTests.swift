@@ -38,16 +38,17 @@ final class CreateItemJourneyTests: XCTestCase {
 
     // MARK: - Button hidden in Trash
 
-    /// Verifies the "+" button is completely absent from the hierarchy while Trash is selected.
-    /// The ToolbarItem slot is kept via a zero-size placeholder, but the interactive Menu
-    /// with its accessibility identifier is not installed.
+    /// Verifies the "+" button is not rendered while Trash is selected.
+    /// The button is in the view body (not a toolbar item), so it is simply absent
+    /// from the else-branch when Trash is active — no frame, no icon, no chrome.
     func testNewItemButton_hiddenInTrash() throws {
         let trashRow = app.buttons["sidebar.trash"]
         XCTAssertTrue(trashRow.waitForExistence(timeout: 5))
         trashRow.click()
 
         let newItemButton = app.buttons["create.button.newItem"]
-        XCTAssertFalse(newItemButton.waitForExistence(timeout: 2), "+ button must not exist in hierarchy while Trash is selected")
+        XCTAssertFalse(newItemButton.waitForExistence(timeout: 2),
+                       "+ button must not exist in view hierarchy while Trash is selected")
     }
 
     // MARK: - Button reappears after leaving Trash

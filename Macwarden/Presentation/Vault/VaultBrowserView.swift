@@ -45,55 +45,20 @@ struct VaultBrowserView: View {
                             onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) }
                         )
                     } else {
+                        // The + button is embedded in the view body (not a ToolbarItem) so its
+                        // position never shifts with NavigationSplitView column focus. macOS uses
+                        // a single unified NSToolbar for the entire window; ToolbarItem placements
+                        // like .primaryAction and .automatic resolve relative to whichever column
+                        // currently holds focus, so clicking a sidebar row would drift the button
+                        // to the search-bar area. Embedding it here makes it unconditionally above
+                        // the list. .keyboardShortcut still works on non-toolbar views.
+                        newItemBar
                         ItemListView(
                             items:        viewModel.displayedItems,
                             selection:    $viewModel.itemSelection,
                             faviconLoader: faviconLoader,
                             onDelete:     { id in await viewModel.performSoftDelete(id: id) }
                         )
-                    }
-                }
-                // .toolbar is on the always-present VStack so the ToolbarItem stays registered
-                // across all category switches — removing it from ItemListView (inside the else
-                // branch) caused SwiftUI to re-resolve the placement every time Trash was exited.
-                //
-                // Placement: .automatic rather than .primaryAction. .primaryAction follows the
-                // NavigationSplitView column that currently holds keyboard focus, so clicking a
-                // sidebar row moved the button to the search-bar area. .automatic resolves to a
-                // stable position in the content column's portion of the unified macOS toolbar
-                // regardless of which column is focused.
-                .toolbar {
-                    ToolbarItem(placement: .automatic) {
-                        // The ToolbarItem is always present (placement stays registered), but its
-                        // content switches based on Trash state. Using .disabled(true) on a macOS
-                        // Menu with an image-only label causes NSMenuButton to suppress the SF
-                        // Symbol while keeping the button frame visible — not truly hidden. Instead,
-                        // swap the content: show an invisible placeholder in Trash so the item
-                        // slot is kept, and show the real Menu with its ⌘N shortcut otherwise.
-                        if viewModel.sidebarSelection == .trash {
-                            // Zero-size placeholder keeps the ToolbarItem registered without
-                            // rendering anything visible or interactive.
-                            Color.clear
-                                .frame(width: 0, height: 0)
-                                .accessibilityHidden(true)
-                        } else {
-                            Menu {
-                                ForEach(ItemType.allCases) { type in
-                                    Button {
-                                        viewModel.createItemType = type
-                                    } label: {
-                                        Label(type.displayName, systemImage: type.sfSymbol)
-                                    }
-                                }
-                            } label: {
-                                Image(systemName: "plus")
-                            }
-                            .help("New Item")
-                            .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
-                            // ⌘N shortcut is only registered when not in Trash — the conditional
-                            // above ensures it is never installed for Trash, so no .disabled needed.
-                            .keyboardShortcut("n", modifiers: .command)
-                        }
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280)
@@ -146,6 +111,42 @@ struct VaultBrowserView: View {
     }
 
     // MARK: - Subviews
+
+    /// A thin action bar rendered immediately above the item list.
+    ///
+    /// Embedding this in the view body rather than as a ToolbarItem is intentional:
+    /// macOS NavigationSplitView uses a single unified NSToolbar, and ToolbarItem
+    /// placements shift based on which column holds focus — clicking a sidebar row
+    /// would drift the button next to the search field. A view-body button has a
+    /// fixed, stable position regardless of focus or selection state.
+    @ViewBuilder
+    private var newItemBar: some View {
+        HStack(spacing: 0) {
+            Spacer()
+            Menu {
+                ForEach(ItemType.allCases) { type in
+                    Button {
+                        viewModel.createItemType = type
+                    } label: {
+                        Label(type.displayName, systemImage: type.sfSymbol)
+                    }
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .imageScale(.medium)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help("New Item (⌘N)")
+            .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
+            // .keyboardShortcut works on any view — no ToolbarItem required.
+            .keyboardShortcut("n", modifiers: .command)
+            .padding(.trailing, Spacing.rowHorizontal)
+        }
+        .frame(height: 28)
+        .background(.bar)
+        Divider()
+    }
 
     @ViewBuilder
     private var syncErrorBanner: some View {
