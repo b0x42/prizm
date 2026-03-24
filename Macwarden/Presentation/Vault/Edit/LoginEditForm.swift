@@ -15,8 +15,6 @@ struct LoginEditForm: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
 
-
-
                 DetailSectionCard("Credentials") {
                     OptionalEditFieldRow(label: "Username", value: $draft.username)
                     Divider()
@@ -101,7 +99,9 @@ private struct URIEditRow: View {
                 EditFieldRow(label: "Website", text: $uri.uri)
 
                 Button {
-                    showMatchType.toggle()
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showMatchType.toggle()
+                    }
                 } label: {
                     Image(systemName: "gearshape")
                         .foregroundStyle(showMatchType ? Color.accentColor : Color.secondary)
