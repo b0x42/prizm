@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: User can create a new vault item from the vault browser
-The system SHALL provide a "+" button permanently anchored at the top of the content column, immediately above the item list rows, in `VaultBrowserView`. The button SHALL be embedded in the content column's view body — not in the window toolbar — so its position is completely fixed regardless of which sidebar category is selected, whether an item is selected in the item list, or which column holds keyboard focus. It SHALL not be rendered at all when the Trash category is active, and SHALL reappear in the same fixed position when the user leaves Trash. Clicking the button OR pressing ⌘N SHALL present a menu listing all five item types: Login, Card, Identity, Secure Note, and SSH Key. Selecting a type SHALL open the edit sheet pre-populated with a blank draft of that type. The edit sheet SHALL reuse the same form fields, validation, and save flow as the existing item edit feature. Once the type picker is open, the user SHALL be able to navigate types with ↑/↓ arrow keys and confirm with Enter, without touching the mouse.
+The system SHALL provide a "+" button permanently anchored at the top of the content column, immediately above the item list rows, in `VaultBrowserView`. The button SHALL be embedded in the content column's view body — not in the window toolbar — so its position is completely fixed regardless of which sidebar category is selected, whether an item is selected in the item list, or which column holds keyboard focus. It SHALL not be rendered at all when the Trash category is active, and SHALL reappear in the same fixed position when the user leaves Trash. Clicking the button OR pressing ⌘N SHALL open a type picker listing all five item types: Login, Card, Identity, Secure Note, and SSH Key. The ⌘N shortcut SHALL appear only on the "+" button itself — it SHALL NOT appear as an annotation on any individual item type inside the picker. When the picker opens, the first item (Login) SHALL be pre-selected. The user SHALL be able to navigate types with ↑/↓ arrow keys and confirm with Enter, without touching the mouse. Selecting a type SHALL open the edit sheet pre-populated with a blank draft of that type. The edit sheet SHALL reuse the same form fields, validation, and save flow as the existing item edit feature.
 
 #### Scenario: New Item button is always above the item list regardless of selection or focus state
 - **WHEN** the vault browser is displayed with any category selected except Trash
@@ -20,25 +20,37 @@ The system SHALL provide a "+" button permanently anchored at the top of the con
 
 #### Scenario: ⌘N opens the type picker in a non-Trash category
 - **WHEN** the user presses ⌘N with any non-Trash category selected
-- **THEN** the New Item type picker menu SHALL open, listing Login, Card, Identity, Secure Note, and SSH Key
+- **THEN** the type picker SHALL open with the first item (Login) pre-selected
+- **AND** ⌘N SHALL NOT appear as a keyboard shortcut label on any item inside the picker
 
 #### Scenario: ⌘N is a no-op in Trash
 - **WHEN** the user presses ⌘N with the Trash category selected
 - **THEN** nothing SHALL happen — the type picker SHALL NOT open
 
-#### Scenario: Arrow keys navigate the type picker, Enter confirms
-- **GIVEN** the type picker menu is open
-- **WHEN** the user presses ↓ to move the highlight then presses Enter
-- **THEN** the edit sheet for the highlighted item type SHALL open
+#### Scenario: First item is pre-selected when the picker opens
+- **GIVEN** the type picker is opened (via + click or ⌘N)
+- **THEN** Login SHALL be highlighted/selected immediately — the user does not need to press ↓ before pressing Enter
+
+#### Scenario: Arrow keys navigate the type picker
+- **GIVEN** the type picker is open
+- **WHEN** the user presses ↓ once
+- **THEN** Card SHALL become selected
+- **WHEN** the user presses ↑
+- **THEN** Login SHALL become selected again
+
+#### Scenario: Enter confirms the selected type
+- **GIVEN** the type picker is open and a type is selected
+- **WHEN** the user presses Enter
+- **THEN** the edit sheet for the selected type SHALL open
 
 #### Scenario: ⌘N then immediate Enter opens the Login edit sheet
 - **WHEN** the user presses ⌘N and then immediately presses Enter without pressing any arrow key
-- **THEN** the Login edit sheet SHALL open (Login is the first type in the list)
+- **THEN** the Login edit sheet SHALL open (Login is pre-selected when the picker opens)
 
 #### Scenario: Escape dismisses the type picker without creating an item
-- **GIVEN** the type picker menu is open
+- **GIVEN** the type picker is open
 - **WHEN** the user presses Escape
-- **THEN** the menu SHALL close and no edit sheet SHALL open
+- **THEN** the picker SHALL close and no edit sheet SHALL open
 
 #### Scenario: Type picker shows all five item types
 - **WHEN** the user clicks the New Item button

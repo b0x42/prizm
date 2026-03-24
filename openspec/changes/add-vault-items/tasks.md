@@ -34,8 +34,8 @@
 
 ## 7. ⌘N keyboard shortcut
 
-- [x] 7.1 Add `.keyboardShortcut(.n, modifiers: .command)` to the `Menu` in `VaultBrowserView` so ⌘N opens the type picker
-- [x] 7.2 Add `.disabled(viewModel.sidebarSelection == .trash)` to the same `Menu` so ⌘N is a no-op in Trash and the menu bar entry is greyed out
+- [x] 7.1 Replace `Menu` in `newItemBar` with `Button` + `.popover(NewItemTypePickerView)` so `.keyboardShortcut("n")` lives on the trigger only and does not annotate individual item-type rows
+- [x] 7.2 Add `NewItemTypePickerView` — `List` with single-selection binding, pre-selects Login on open, ↑/↓ via native List, Enter confirms via `.onKeyPress(.return)`
 - [x] 7.3 Add `testCmdN_opensPicker_inNonTrashCategory` to `CreateItemJourneyTests` — press ⌘N, assert the type picker menu appears (check for "Login" menu item)
 - [x] 7.4 Add `testCmdN_isNoOp_inTrash` to `CreateItemJourneyTests` — select Trash, press ⌘N, assert no type picker / edit sheet appears
 - [x] 7.5 Add `testCmdN_thenEnter_opensLoginSheet` to `CreateItemJourneyTests` — press ⌘N then Enter, assert the Login edit sheet opens (check for Save button)

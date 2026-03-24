@@ -23,6 +23,11 @@ struct VaultBrowserView: View {
     /// Notifies the ViewModel when the edit sheet opens/closes (for menu bar state).
     var onEditSheetState: ((Bool) -> Void)? = nil
 
+    /// Controls visibility of the type picker popover (opened by + click or ⌘N).
+    @State private var showingTypePicker = false
+    /// Tracks which item type is currently highlighted in the picker; pre-set to Login on open.
+    @State private var typePickerSelection: ItemType? = ItemType.allCases.first
+
     var body: some View {
         NavigationSplitView(
             sidebar: {
@@ -114,33 +119,37 @@ struct VaultBrowserView: View {
 
     /// A thin action bar rendered immediately above the item list.
     ///
-    /// Embedding this in the view body rather than as a ToolbarItem is intentional:
-    /// macOS NavigationSplitView uses a single unified NSToolbar, and ToolbarItem
-    /// placements shift based on which column holds focus — clicking a sidebar row
-    /// would drift the button next to the search field. A view-body button has a
-    /// fixed, stable position regardless of focus or selection state.
+    /// Embedding this in the view body (not a ToolbarItem) keeps the button's position
+    /// stable regardless of which NavigationSplitView column holds focus.
+    ///
+    /// The trigger is a plain Button + popover rather than a SwiftUI Menu. SwiftUI Menu
+    /// propagates .keyboardShortcut to every child Button, which would annotate each
+    /// item type row with "⌘N" — the shortcut would appear on Login, Card, Identity, etc.
+    /// A Button + popover keeps ⌘N on the trigger only. The popover's List provides
+    /// native macOS arrow-key navigation and Enter-to-confirm via .onKeyPress.
     @ViewBuilder
     private var newItemBar: some View {
         HStack(spacing: 0) {
             Spacer()
-            Menu {
-                ForEach(ItemType.allCases) { type in
-                    Button {
-                        viewModel.createItemType = type
-                    } label: {
-                        Label(type.displayName, systemImage: type.sfSymbol)
-                    }
-                }
+            Button {
+                // Reset to Login so the picker always opens with the first row selected.
+                typePickerSelection = ItemType.allCases.first
+                showingTypePicker = true
             } label: {
                 Image(systemName: "plus")
                     .imageScale(.medium)
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
+            .buttonStyle(.borderless)
             .help("New Item (⌘N)")
             .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
-            // .keyboardShortcut works on any view — no ToolbarItem required.
+            // ⌘N is on the button only — not propagated into the picker rows.
             .keyboardShortcut("n", modifiers: .command)
+            .popover(isPresented: $showingTypePicker, arrowEdge: .top) {
+                NewItemTypePickerView(selection: $typePickerSelection) { type in
+                    showingTypePicker = false
+                    viewModel.createItemType = type
+                }
+            }
             .padding(.trailing, Spacing.rowHorizontal)
         }
         .frame(height: 28)
@@ -192,4 +201,37 @@ struct VaultBrowserView: View {
         f.unitsStyle = .full
         return f
     }()
+}
+
+// MARK: - NewItemTypePickerView
+
+/// Popover content for the "+" / ⌘N type picker.
+///
+/// Uses a native List with a single-selection binding so ↑/↓ arrow navigation
+/// and visual highlight are handled by AppKit with no custom key handling needed.
+/// Enter confirms the current selection via .onKeyPress(.return).
+///
+/// This is separate from SwiftUI Menu intentionally: attaching .keyboardShortcut
+/// to a Menu propagates the shortcut annotation to every child Button, making
+/// ⌘N appear next to every item type in the dropdown. A plain Button + popover
+/// keeps the shortcut on the trigger only.
+private struct NewItemTypePickerView: View {
+
+    @Binding var selection: ItemType?
+    let onConfirm: (ItemType) -> Void
+
+    var body: some View {
+        List(ItemType.allCases, id: \.self, selection: $selection) { type in
+            Label(type.displayName, systemImage: type.sfSymbol)
+                .tag(type)
+        }
+        .frame(width: 220, height: CGFloat(ItemType.allCases.count) * 32 + 8)
+        // Confirm the highlighted row when the user presses Enter.
+        // .onKeyPress requires the List to be focused; macOS focuses popover
+        // content automatically on open, so no explicit .focusable() is needed.
+        .onKeyPress(.return) {
+            if let type = selection { onConfirm(type) }
+            return .handled
+        }
+    }
 }
