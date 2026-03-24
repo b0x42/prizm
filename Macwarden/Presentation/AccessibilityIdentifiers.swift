@@ -127,6 +127,13 @@ nonisolated enum AccessibilityID {
         static let permanentDeleteButton = "trash.button.permanentDelete"
     }
 
+    // MARK: - Create Item (add-vault-items)
+
+    enum Create {
+        /// The "+" menu button in the content column toolbar used to create a new vault item.
+        static let newItemButton = "create.button.newItem"
+    }
+
     // MARK: - Password Generator (password-generator)
 
     enum Generator {

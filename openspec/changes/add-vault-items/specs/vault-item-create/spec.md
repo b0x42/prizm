@@ -1,11 +1,43 @@
 ## ADDED Requirements
 
 ### Requirement: User can create a new vault item from the vault browser
-The system SHALL provide a "+" button in the content column toolbar (above the item list, alongside the search bar) in `VaultBrowserView`. Clicking the button SHALL present a menu listing all five item types: Login, Card, Identity, Secure Note, and SSH Key. Selecting a type SHALL open the edit sheet pre-populated with a blank draft of that type. The edit sheet SHALL reuse the same form fields, validation, and save flow as the existing item edit feature.
+The system SHALL provide a "+" button permanently anchored in the content column toolbar (above the item list, alongside the search bar) in `VaultBrowserView`. The button SHALL never move to any other toolbar position regardless of which category is selected or how the user navigates. It SHALL be hidden only when the Trash category is active, and SHALL reappear in the same position when the user leaves Trash. Clicking the button OR pressing ⌘N SHALL present a menu listing all five item types: Login, Card, Identity, Secure Note, and SSH Key. Selecting a type SHALL open the edit sheet pre-populated with a blank draft of that type. The edit sheet SHALL reuse the same form fields, validation, and save flow as the existing item edit feature. Once the type picker is open, the user SHALL be able to navigate types with ↑/↓ arrow keys and confirm with Enter, without touching the mouse.
 
-#### Scenario: New Item button is visible in the content column toolbar
-- **WHEN** the vault browser is displayed
+#### Scenario: New Item button is always above the item list
+- **WHEN** the vault browser is displayed with any category selected except Trash
 - **THEN** a "+" button (SF Symbol `plus`) SHALL be visible in the content column toolbar above the item list
+- **AND** the button SHALL remain in that position regardless of category switches or navigation history
+
+#### Scenario: New Item button is hidden when Trash is selected
+- **WHEN** the user selects the Trash category
+- **THEN** the "+" button SHALL NOT be visible
+
+#### Scenario: New Item button reappears after leaving Trash
+- **GIVEN** the user has the Trash category selected
+- **WHEN** the user navigates to any non-Trash category
+- **THEN** the "+" button SHALL be visible in the content column toolbar above the item list
+
+#### Scenario: ⌘N opens the type picker in a non-Trash category
+- **WHEN** the user presses ⌘N with any non-Trash category selected
+- **THEN** the New Item type picker menu SHALL open, listing Login, Card, Identity, Secure Note, and SSH Key
+
+#### Scenario: ⌘N is a no-op in Trash
+- **WHEN** the user presses ⌘N with the Trash category selected
+- **THEN** nothing SHALL happen — the type picker SHALL NOT open
+
+#### Scenario: Arrow keys navigate the type picker, Enter confirms
+- **GIVEN** the type picker menu is open
+- **WHEN** the user presses ↓ to move the highlight then presses Enter
+- **THEN** the edit sheet for the highlighted item type SHALL open
+
+#### Scenario: ⌘N then immediate Enter opens the Login edit sheet
+- **WHEN** the user presses ⌘N and then immediately presses Enter without pressing any arrow key
+- **THEN** the Login edit sheet SHALL open (Login is the first type in the list)
+
+#### Scenario: Escape dismisses the type picker without creating an item
+- **GIVEN** the type picker menu is open
+- **WHEN** the user presses Escape
+- **THEN** the menu SHALL close and no edit sheet SHALL open
 
 #### Scenario: Type picker shows all five item types
 - **WHEN** the user clicks the New Item button

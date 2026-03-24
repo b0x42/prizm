@@ -51,22 +51,38 @@ struct VaultBrowserView: View {
                             faviconLoader: faviconLoader,
                             onDelete:     { id in await viewModel.performSoftDelete(id: id) }
                         )
-                        .toolbar {
-                            ToolbarItem(placement: .primaryAction) {
-                                Menu {
-                                    ForEach(ItemType.allCases) { type in
-                                        Button {
-                                            viewModel.createItemType = type
-                                        } label: {
-                                            Label(type.displayName, systemImage: type.sfSymbol)
-                                        }
-                                    }
+                    }
+                }
+                // The toolbar modifier is on the always-present VStack rather than on ItemListView
+                // so the ToolbarItem stays registered when switching between categories. Attaching it
+                // to ItemListView caused the item to leave and re-enter the hierarchy on every
+                // Trash ↔ non-Trash transition, which made SwiftUI resolve .primaryAction to the
+                // trailing window edge instead of the content column on the return trip.
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            ForEach(ItemType.allCases) { type in
+                                Button {
+                                    viewModel.createItemType = type
                                 } label: {
-                                    Image(systemName: "plus")
+                                    Label(type.displayName, systemImage: type.sfSymbol)
                                 }
-                                .help("New Item")
                             }
+                        } label: {
+                            Image(systemName: "plus")
                         }
+                        .help("New Item")
+                        .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
+                        // ⌘N opens the type picker from the keyboard. .disabled gates both the
+                        // shortcut and the menu bar entry when Trash is active, so the greyed-out
+                        // menu bar item reinforces the visual hidden state of the toolbar button.
+                        .keyboardShortcut(.n, modifiers: .command)
+                        .disabled(viewModel.sidebarSelection == .trash)
+                        // Hidden in Trash — creation is not allowed for deleted items.
+                        // Opacity+allowsHitTesting keeps the ToolbarItem registered so placement
+                        // never drifts; simply omitting the view here would re-introduce the bug.
+                        .opacity(viewModel.sidebarSelection == .trash ? 0 : 1)
+                        .allowsHitTesting(viewModel.sidebarSelection != .trash)
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280)

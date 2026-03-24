@@ -13,7 +13,7 @@
 
 ## 3. Presentation layer
 
-- [x] 3.1 Add `+` button to `VaultBrowserView` content column toolbar (above the item list, next to the search bar) — `Menu` with SF Symbol `plus` listing Login, Card, Identity, Secure Note, SSH Key; hidden when `sidebarSelection == .trash`
+- [x] 3.1 Add `+` button to `VaultBrowserView` content column toolbar (above the item list, next to the search bar) — `Menu` with SF Symbol `plus` listing Login, Card, Identity, Secure Note, SSH Key; permanently anchored on the always-present `VStack` (not on `ItemListView`) so the `ToolbarItem` stays registered across category switches; hidden in Trash via `.opacity(0)` + `.allowsHitTesting(false)` to avoid toolbar placement drift
 - [x] 3.2 Add `createItem(type:)` method to `VaultBrowserViewModel` that creates a blank draft and presents the edit sheet in create mode
 - [x] 3.3 Adapt `ItemEditViewModel` to accept an optional `VaultItem?` — when `nil`, use `CreateVaultItemUseCase` instead of `EditVaultItemUseCase` for save
 - [x] 3.4 Add `makeItemCreateViewModel(for type: ItemType)` factory to `AppContainer`
@@ -31,3 +31,11 @@
 ## 6. Password field focus and input
 
 - [x] 6.1 Replace static `Text` placeholder in `MaskedEditFieldRow` with `SecureField` when masked, so the password field is focusable via Tab and accepts direct keyboard input
+
+## 7. ⌘N keyboard shortcut
+
+- [x] 7.1 Add `.keyboardShortcut(.n, modifiers: .command)` to the `Menu` in `VaultBrowserView` so ⌘N opens the type picker
+- [x] 7.2 Add `.disabled(viewModel.sidebarSelection == .trash)` to the same `Menu` so ⌘N is a no-op in Trash and the menu bar entry is greyed out
+- [x] 7.3 Add `testCmdN_opensPicker_inNonTrashCategory` to `CreateItemJourneyTests` — press ⌘N, assert the type picker menu appears (check for "Login" menu item)
+- [x] 7.4 Add `testCmdN_isNoOp_inTrash` to `CreateItemJourneyTests` — select Trash, press ⌘N, assert no type picker / edit sheet appears
+- [x] 7.5 Add `testCmdN_thenEnter_opensLoginSheet` to `CreateItemJourneyTests` — press ⌘N then Enter, assert the Login edit sheet opens (check for Save button)
