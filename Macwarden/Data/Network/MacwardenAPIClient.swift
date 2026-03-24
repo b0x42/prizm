@@ -5,8 +5,8 @@ import os.log
 
 /// Bitwarden REST API client for auth and vault sync operations.
 ///
-/// All requests require the `X-Client-Id`, `X-Client-Version`, and `Device-Type` headers
-/// that Bitwarden mandates for all client integrations.
+/// All requests include the `X-Client-Version` and `Bitwarden-Client-Version` headers.
+/// The identity token request additionally sends `client_id` and `deviceType` as form parameters.
 /// Reference: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 /// Missing or invalid headers result in `400 Bad Request` / `403 Forbidden` from the server.
 ///
@@ -220,10 +220,12 @@ extension APIError: LocalizedError {
 /// URLSession-backed Bitwarden API client.
 ///
 /// All requests include the required Bitwarden client identification headers:
-/// - `X-Client-Id: "desktop"`       (registered client identifier for third-party clients)
-/// - `X-Client-Version: "2024.12.0"` (version string)
+/// - `X-Client-Version: "2024.12.0"` (version string, required by upstream Bitwarden)
 /// - `Bitwarden-Client-Version: "2024.12.0"` (>= 2024.12.0 required for SSH key support on Vaultwarden)
-/// - `Device-Type: "7"`             (7 = macOS desktop, per Bitwarden DeviceType enum)
+///
+/// The identity token request additionally sends these as form body parameters:
+/// - `client_id: "desktop"`   (registered client identifier)
+/// - `deviceType: "7"`        (7 = macOS desktop, per Bitwarden DeviceType enum)
 ///
 /// Header requirements: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 /// DeviceType enum values: https://github.com/bitwarden/server/blob/main/src/Core/Enums/DeviceType.cs
