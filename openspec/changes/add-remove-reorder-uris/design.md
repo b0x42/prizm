@@ -40,6 +40,14 @@ Add `init(uri: String = "", matchType: URIMatchType? = nil)` so blank URIs can b
 
 Remove the `if !draft.uris.isEmpty` guard so the section always renders. When empty, it shows only the "Add Website" button.
 
+**Decision 5: Gear icon toggle for match type**
+
+Match type picker is hidden by default to reduce visual noise. A gear icon button (left of the remove button) toggles it with an animated transition. Gear tints accent color when expanded, secondary when collapsed.
+
+**Decision 6: Identifiable conformance on DraftLoginURI**
+
+`DraftLoginURI` conforms to `Identifiable` with a `UUID` to provide stable identity for SwiftUI `ForEach`. Without this, using integer indices as identity caused out-of-bounds crashes when adding/removing URIs. The `id` is excluded from `Equatable` so existing round-trip tests remain unaffected.
+
 ## Risks / Trade-offs
 
 **[Risk] Accidental removal with no undo** → The edit sheet already has a Cancel button that discards all changes. Removing a URI is not persisted until Save. This is sufficient protection.

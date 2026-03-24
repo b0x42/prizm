@@ -16,3 +16,12 @@
 - [x] 3.2 Add "Add Website" button at the bottom of the Websites section that appends a blank `DraftLoginURI()`
 - [x] 3.3 Add inline remove (−) button to each `URIEditRow`
 - [x] 3.4 Add ▲▼ reorder buttons to each `URIEditRow` — disabled at boundaries, hidden when only one URI exists
+
+## 4. Match Type Toggle
+
+- [x] 4.1 Hide match type picker by default behind a gear icon button with animated reveal
+- [x] 4.2 Tint gear icon accent color when expanded, secondary when collapsed
+
+## 5. Stability Fix
+
+- [x] 5.1 Add `Identifiable` conformance with `UUID` to `DraftLoginURI` for stable ForEach identity

@@ -9,6 +9,8 @@ Login vault items store one or more website URIs that serve two purposes: lettin
 - Add ▲▼ reorder buttons on each URI row to move it up/down in the list
 - Always show the Websites section in the edit form (even when no URIs exist yet)
 - Add an empty initializer to `DraftLoginURI` so blank rows can be created
+- Hide match type picker behind a gear icon toggle with animated reveal
+- Add `Identifiable` conformance to `DraftLoginURI` for stable SwiftUI ForEach identity
 
 ## Capabilities
 
