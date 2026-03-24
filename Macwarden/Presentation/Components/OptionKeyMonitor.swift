@@ -5,7 +5,7 @@ import Observation
 @MainActor
 final class OptionKeyMonitor {
     private(set) var isOptionHeld = false
-    @ObservationIgnored private var monitor: Any?
+    @ObservationIgnored private nonisolated(unsafe) var monitor: Any?
 
     init() {
         monitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in

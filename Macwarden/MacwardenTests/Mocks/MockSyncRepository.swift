@@ -21,7 +21,7 @@ actor MockSyncRepository: SyncRepository {
 
     // MARK: - SyncRepository
 
-    func sync(progress: @escaping (String) -> Void) async throws -> SyncResult {
+    func sync(progress: @Sendable @escaping (String) -> Void) async throws -> SyncResult {
         syncCalled = true
         if let err = syncShouldThrow { throw err }
         progress("Syncing vault…")

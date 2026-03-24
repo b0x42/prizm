@@ -12,7 +12,7 @@ final class SyncUseCaseImpl: SyncUseCase {
         self.sync = sync
     }
 
-    func execute(progress: @escaping (String) -> Void) async throws -> SyncResult {
+    func execute(progress: @Sendable @escaping (String) -> Void) async throws -> SyncResult {
         try await sync.sync(progress: progress)
     }
 }

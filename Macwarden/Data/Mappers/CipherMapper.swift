@@ -37,7 +37,7 @@ nonisolated final class CipherMapper {
 
     private static let logger = Logger(subsystem: "com.macwarden", category: "CipherMapper")
 
-    private static let iso8601: ISO8601DateFormatter = {
+    private nonisolated(unsafe) static let iso8601: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f

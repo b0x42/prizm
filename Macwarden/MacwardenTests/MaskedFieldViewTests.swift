@@ -13,6 +13,7 @@ import XCTest
 ///   - Masked state always renders exactly 8 bullet characters ("••••••••")
 ///   - Toggling reveal shows plaintext; toggling again re-masks
 ///   - When the bound item identity changes, isRevealed resets to false
+@MainActor
 final class MaskedFieldViewTests: XCTestCase {
 
     // MARK: - Masked placeholder

@@ -5,6 +5,7 @@ import Foundation
 ///
 /// Tracks items stored by `SyncRepositoryImpl` via `populate(items:syncedAt:)` and
 /// edit operations via `update(_:)`.
+@MainActor
 final class MockVaultRepository: VaultRepository {
 
     // MARK: - State

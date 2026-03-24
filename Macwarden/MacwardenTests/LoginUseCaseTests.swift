@@ -47,6 +47,7 @@ final class LoginUseCaseTests: XCTestCase {
     func testExecute_invalidURL_throwsBeforeNetwork() async throws {
         mockAuth.validateServerURLError = AuthError.invalidURL
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(
                 serverURL:      "not-a-url",
@@ -85,6 +86,7 @@ final class LoginUseCaseTests: XCTestCase {
     func testExecute_invalidCredentials_throws() async throws {
         mockAuth.loginWithPasswordError = AuthError.invalidCredentials
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(
                 serverURL:      serverURL,

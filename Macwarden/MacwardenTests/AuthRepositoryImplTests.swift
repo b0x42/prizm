@@ -186,6 +186,7 @@ final class AuthRepositoryImplTests: XCTestCase {
 
         mockAPI.tokenShouldThrow = AuthError.invalidTwoFactorCode
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.loginWithTOTP(code: "000000", rememberDevice: false)
         ) { error in
@@ -262,6 +263,7 @@ final class AuthRepositoryImplTests: XCTestCase {
 
     /// unlockWithPassword throws .invalidCredentials when no active session exists.
     func testUnlockWithPassword_noSession_throws() async throws {
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.unlockWithPassword("any")
         ) { error in

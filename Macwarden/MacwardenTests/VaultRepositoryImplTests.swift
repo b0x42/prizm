@@ -252,6 +252,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     }
 
     func testItemDetail_missingId_throwsItemNotFound() async throws {
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.itemDetail(id: "missing")
         ) { error in
@@ -292,6 +293,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
         let draft = DraftVaultItem(original)
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(try await sut.update(draft)) { error in
             guard case VaultError.vaultLocked = error else {
                 return XCTFail("Expected VaultError.vaultLocked, got \(error)")
@@ -311,6 +313,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
         let draft = DraftVaultItem(original)
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(try await sut.update(draft)) { error in
             guard let apiError = error as? APIError,
                   case APIError.httpError(let code, _) = apiError else {

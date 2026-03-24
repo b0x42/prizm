@@ -1,6 +1,7 @@
 import XCTest
 @testable import Macwarden
 
+@MainActor
 final class PasswordGeneratorTests: XCTestCase {
 
     private var generator: PasswordGenerator!

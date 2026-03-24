@@ -4,13 +4,13 @@ Auto-generated from feature plans. Last updated: 2026-03-21
 Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
 
 ## Active Technologies
-- Swift 5.10 (latest stable) + SwiftUI, CommonCrypto, CryptoKit, Security.framework, `Argon2Swift` 1.0.1-bw2 (local vendored at `LocalPackages/Argon2Swift/`) (001-vault-browser-ui)
+- Swift 6.2 + SwiftUI, CommonCrypto, CryptoKit, Security.framework, `Argon2Swift` 1.0.1-bw2 (local vendored at `LocalPackages/Argon2Swift/`) (001-vault-browser-ui)
 - macOS Keychain (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), UserDefaults (UI prefs), in-memory (decrypted vault) (001-vault-browser-ui)
 
-- **Language**: Swift 5.10 (latest stable)
+- **Language**: Swift 6.2 (Swift 6 language mode)
 - **UI Framework**: SwiftUI (`NavigationSplitView` for three-pane layout)
 - **Concurrency**: Swift async/await + Structured Concurrency
-- **Platform**: macOS 14 (Sonoma) + macOS 13 (Ventura, n-1)
+- **Platform**: macOS 26+
 - **Project type**: macOS desktop app (App Sandbox + Hardened Runtime)
 - **Crypto/Vault**: CommonCrypto + CryptoKit + Security.framework + `Argon2Swift` (Argon2id only) — Data layer only, behind `BitwardenCryptoService` protocol. sdk-swift has no macOS slice.
 - **Storage**: macOS Keychain (secrets), UserDefaults (UI prefs), in-memory (decrypted vault)

@@ -1,3 +1,4 @@
+import Synchronization
 import XCTest
 @testable import Macwarden
 
@@ -30,9 +31,12 @@ final class SyncRepositoryImplTests: XCTestCase {
         mockAPI.syncResponse          = makeSyncResponse(cipherCount: 0)
         mockCrypto.stubbedDecryptList = []
 
-        var messages: [String] = []
-        _ = try await sut.sync(progress: { messages.append($0) })
+        let collected = Mutex<[String]>([])
+        _ = try await sut.sync(progress: { msg in
+            collected.withLock { $0.append(msg) }
+        })
 
+        let messages = collected.withLock { $0 }
         XCTAssertTrue(
             messages.contains(where: { $0.localizedCaseInsensitiveContains("Syncing") }),
             "Expected a 'Syncing vault' progress message; got: \(messages)"
@@ -84,7 +88,8 @@ final class SyncRepositoryImplTests: XCTestCase {
         // Add a small delay so the first sync stays "in flight" long enough for the second call.
         mockAPI.syncDelay = 0.3
 
-        let firstTask = Task { [self] in
+        let sut = self.sut!
+        let firstTask = Task { @MainActor in
             try await sut.sync(progress: { _ in })
         }
         // Let the first sync begin.
@@ -103,6 +108,7 @@ final class SyncRepositoryImplTests: XCTestCase {
     func testSync_propagatesUnauthorizedError() async throws {
         mockAPI.syncShouldThrow = APIError.httpError(statusCode: 401, body: "")
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.sync(progress: { _ in })
         ) { error in

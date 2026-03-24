@@ -3,7 +3,7 @@ import Foundation
 /// In-memory vault store: write side used by `SyncRepositoryImpl`, read side used by use cases.
 /// Throws `VaultError.vaultLocked` when read methods are called before a successful unlock + sync.
 /// Implemented by `VaultRepositoryImpl` in the Data layer.
-protocol VaultRepository: AnyObject {
+protocol VaultRepository: AnyObject, Sendable {
 
     /// Timestamp of the last successful sync, or nil if no sync has occurred this session.
     var lastSyncedAt: Date? { get }

@@ -18,7 +18,7 @@ protocol SyncRepository: Actor {
     /// - Returns: `SyncResult` with counts of synced and failed ciphers.
     /// - Throws: `SyncError` on catastrophic failure. Individual cipher failures
     ///   are skipped and counted in `SyncResult.failedDecryptionCount`.
-    func sync(progress: @escaping (String) -> Void) async throws -> SyncResult
+    func sync(progress: @Sendable @escaping (String) -> Void) async throws -> SyncResult
 }
 
 // MARK: - Supporting types

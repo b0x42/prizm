@@ -46,7 +46,7 @@ actor SyncRepositoryImpl: SyncRepository {
 
     // MARK: - SyncRepository
 
-    func sync(progress: @escaping (String) -> Void) async throws -> SyncResult {
+    func sync(progress: @Sendable @escaping (String) -> Void) async throws -> SyncResult {
         guard !isSyncing else {
             logger.info("sync() called while already in progress")
             throw SyncError.syncInProgress

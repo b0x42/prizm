@@ -1,7 +1,7 @@
 # Macwarden
 
-[![Swift](https://img.shields.io/badge/Swift-5.10-orange.svg)](https://swift.org/)
-[![macOS](https://img.shields.io/badge/macOS-13%2B-blue.svg)](https://www.apple.com/macos/)
+[![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org/)
+[![macOS](https://img.shields.io/badge/macOS-26%2B-blue.svg)](https://www.apple.com/macos/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-4-purple.svg)](https://developer.apple.com/swiftui/)
 
 A native Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](https://bitwarden.com/) or [Vaultwarden](https://github.com/dani-garcia/vaultwarden) server and browse and edit your vault in a fast, lightweight desktop app.
@@ -45,7 +45,7 @@ All cryptography runs locally on your device:
 
 ## Requirements
 
-- macOS 13 (Ventura) or later
+- macOS 26 or later
 - A self-hosted Bitwarden or Vaultwarden server
 
 ## Getting Started for Development
@@ -81,7 +81,7 @@ Data/             Crypto, network, keychain, mappers, repository implementations
 Presentation/     SwiftUI views and view models
 ```
 
-- Swift 5.10 strict concurrency (`actor`, `@MainActor`, `nonisolated`)
+- Swift 6 strict concurrency (`actor`, `@MainActor`, `nonisolated`)
 - Zero third-party dependencies (except vendored [Argon2Swift](https://github.com/nicklama/Argon2Swift) for KDF)
 - All encryption via CommonCrypto (FIPS 140-2) and CryptoKit
 

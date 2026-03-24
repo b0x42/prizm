@@ -37,6 +37,7 @@ final class UnlockUseCaseTests: XCTestCase {
     func testExecute_wrongPassword_throwsWithoutSync() async throws {
         mockAuth.unlockWithPasswordError = AuthError.invalidCredentials
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(masterPassword: "wrong!")
         ) { error in
@@ -50,6 +51,7 @@ final class UnlockUseCaseTests: XCTestCase {
         mockAuth.stubbedLoginResult = .success(makeAccount())
         mockSync.syncShouldThrow    = SyncError.networkUnavailable
 
+        let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(masterPassword: masterPassword)
         ) { error in

@@ -16,7 +16,7 @@ Hi, I'm Benjamin ([@b0x42](https://github.com/b0x42)). I build tools that scratc
 
 ### Prerequisites
 
-- macOS 13+ (Ventura or later)
+- macOS 26 or later
 - Xcode 15+
 - A self-hosted Bitwarden or Vaultwarden server for testing
 

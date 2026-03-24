@@ -65,7 +65,7 @@ final class ItemEditViewModel: ObservableObject {
     var onSaveSuccess: ((VaultItem) -> Void)?
 
     /// Retain token for the vault-lock observer.
-    private var lockObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var lockObserver: NSObjectProtocol?
 
     // MARK: - Init
 

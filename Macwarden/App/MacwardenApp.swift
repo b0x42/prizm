@@ -21,6 +21,7 @@ struct MacwardenApp: App {
         let c = AppContainer()
         _container = StateObject(wrappedValue: c)
         _rootVM    = StateObject(wrappedValue: RootViewModel(container: c))
+        NSApplication.shared.activate()
     }
 
     var body: some Scene {
