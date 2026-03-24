@@ -34,19 +34,23 @@ Each URI row in the Login edit form SHALL display an inline remove button. Click
 Each URI row in the Login edit form SHALL display move-up (▲) and move-down (▼) buttons. The move-up button on the first row SHALL be disabled. The move-down button on the last row SHALL be disabled. When only one URI exists, both buttons SHALL be hidden. Clicking a move button SHALL swap the URI with its neighbor in the indicated direction.
 
 #### Scenario: Reorder buttons shown when multiple URIs exist
-- **GIVEN** a Login item with two or more URIs in the edit form
+- **GIVEN** a Login item with two or more URIs
+- **WHEN** the edit form renders
 - **THEN** each URI row SHALL display ▲ and ▼ buttons
 
 #### Scenario: Reorder buttons hidden for single URI
-- **GIVEN** a Login item with exactly one URI in the edit form
+- **GIVEN** a Login item with exactly one URI
+- **WHEN** the edit form renders
 - **THEN** the ▲ and ▼ buttons SHALL NOT be displayed
 
 #### Scenario: First row move-up disabled
 - **GIVEN** a Login item with multiple URIs
+- **WHEN** the edit form renders
 - **THEN** the ▲ button on the first URI row SHALL be disabled
 
 #### Scenario: Last row move-down disabled
 - **GIVEN** a Login item with multiple URIs
+- **WHEN** the edit form renders
 - **THEN** the ▼ button on the last URI row SHALL be disabled
 
 #### Scenario: Moving a URI up
