@@ -68,6 +68,16 @@ Pure SwiftUI changes — no data model, no keychain, no network. No migration ne
 
 Rollback: revert the three modified files (`MacwardenApp.swift`, `VaultBrowserView.swift`, `ItemDetailView.swift`).
 
+## Complexity Tracking
+
+Non-obvious decisions that required explicit justification, per Constitution §I and §VI.
+
+| Decision | Justification | Rejected simpler alternative |
+|---|---|---|
+| `NSSearchField` via `NSViewRepresentable` | SwiftUI has no API to place a native search field with focus restoration outside a toolbar. `NSViewRepresentable` is the only path. Usage scoped to one wrapper component in `Presentation/Components/`. | Plain SwiftUI `TextField` — loses native focus restoration and clear-button animation, noticeable UX regression |
+| `cancelOperation(_:)` override on `NSSearchField` subclass | Only reliable hook for intercepting ESC before the field clears itself. Delegate `control(_:textView:doCommandBy:)` fires after the default handler, too late to capture the original responder. | `onKeyPress(.escape)` in SwiftUI — does not fire when an `NSViewRepresentable` holds first-responder |
+| Confirmation alerts moved to `VaultBrowserView` | Avoids a new trigger-Int pattern per destructive action. State co-locates with the buttons that set it. | Keep alerts in `ItemDetailView` and add `deleteTrigger`/`permanentDeleteTrigger` Int vars — more indirection for no benefit |
+
 ## Open Questions
 
 - None — all decisions made during explore session.

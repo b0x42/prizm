@@ -8,7 +8,7 @@ The list column SHALL display a persistent header above the item list containing
 
 The header SHALL use `.background(.bar)` so list content blurs beneath it on scroll. The `[+]` button SHALL be conditionally rendered (not merely hidden) when `Trash` is selected — it must be absent from the view tree so that the ⌘N keyboard shortcut is also disabled in Trash. The `[+]` button SHALL carry `AccessibilityID.Create.newItemButton` to preserve existing UI test queries.
 
-The item count label SHALL use the correct grammatical number: "1 item" (singular) and "N items" (plural).
+The item count label SHALL use the correct grammatical number: "1 item" (singular) and "N items" (plural). The app is English-only in v1; a simple ternary is sufficient — no `LocalizedStringResource` required at this stage.
 
 #### Scenario: Header reflects sidebar selection
 - **WHEN** the user selects "Logins" in the sidebar

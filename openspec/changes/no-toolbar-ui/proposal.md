@@ -27,4 +27,5 @@ The current vault browser uses a standard macOS unified toolbar with a floating 
 - `VaultBrowserView.swift`: remove `.searchable()`, `.toolbar`, `newItemBar`, `lastSyncedLabel`; add `listColumnHeader` and `detailColumnHeader` subviews
 - `ItemDetailView.swift`: remove `.toolbar {}` block; Edit/Delete/Restore/Permanent Delete actions now driven by parent via existing callback props (`onSoftDelete`, `onRestore`, `onPermanentDelete`) and `editTrigger`
 - `VaultBrowserViewModel.swift`: `sidebarSelection.displayName` used for header title; `displayedItems.count` used for item count
+- `MacwardenApp.swift` `CommandMenu("Item")` — Edit/Save menu bar buttons are **unchanged**; they continue to call `rootVM.vaultBrowserVM.triggerEdit()` and are enabled/disabled by `RootViewModel.menuBarCanEdit / menuBarCanSave` as before
 - No new dependencies; no data layer changes

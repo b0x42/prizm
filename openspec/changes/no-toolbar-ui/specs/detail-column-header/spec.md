@@ -72,3 +72,7 @@ When the sidebar selection changes to `Trash`, `searchQuery` SHALL be cleared so
 #### Scenario: Search query cleared on entering Trash
 - **WHEN** the user selects Trash in the sidebar while a search query is active
 - **THEN** the search query is cleared and the full trash item list is shown
+
+#### Scenario: Search field reappears after leaving Trash
+- **WHEN** the user navigates from Trash to any non-Trash category
+- **THEN** the search field is visible again in the detail column header
