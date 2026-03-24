@@ -30,6 +30,7 @@ final class AppContainer: ObservableObject {
     let unlockUseCase:                   UnlockUseCaseImpl
     let searchVaultUseCase:              SearchVaultUseCaseImpl
     let editVaultItemUseCase:            EditVaultItemUseCaseImpl
+    let createVaultItemUseCase:          CreateVaultItemUseCaseImpl
     let deleteVaultItemUseCase:          DeleteVaultItemUseCaseImpl
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
     let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
@@ -65,6 +66,7 @@ final class AppContainer: ObservableObject {
         self.unlockUseCase           = UnlockUseCaseImpl(auth: auth, sync: sync)
         self.searchVaultUseCase      = SearchVaultUseCaseImpl(vault: vault)
         self.editVaultItemUseCase            = EditVaultItemUseCaseImpl(repository: vault)
+        self.createVaultItemUseCase          = CreateVaultItemUseCaseImpl(repository: vault)
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
         self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
         self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
@@ -97,5 +99,10 @@ final class AppContainer: ObservableObject {
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
     func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
         ItemEditViewModel(item: item, useCase: editVaultItemUseCase)
+    }
+
+    /// Creates an `ItemEditViewModel` in create mode for the given item type.
+    func makeItemCreateViewModel(for type: ItemType) -> ItemEditViewModel {
+        ItemEditViewModel(type: type, useCase: createVaultItemUseCase)
     }
 }

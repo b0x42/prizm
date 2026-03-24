@@ -179,6 +179,26 @@ final class VaultRepositoryImpl: VaultRepository {
         return updatedItem
     }
 
+    // MARK: - Create (write path)
+
+    func create(_ draft: DraftVaultItem) async throws -> VaultItem {
+        let keys: CryptoKeys
+        do {
+            keys = try await crypto.currentKeys()
+        } catch MacwardenCryptoServiceError.vaultLocked {
+            throw VaultError.vaultLocked
+        }
+
+        let rawCipher = try mapper.toRawCipher(draft, encryptedWith: keys)
+        let createdRaw = try await apiClient.createCipher(cipher: rawCipher)
+        let createdItem = try mapper.map(raw: createdRaw, keys: keys)
+        items.append(createdItem)
+        // Note: sidebar counts are refreshed by the caller (VaultBrowserViewModel.handleItemSaved)
+        // via the onSaveSuccess callback — same pattern as update().
+        logger.info("Vault item created: \(createdItem.id, privacy: .public)")
+        return createdItem
+    }
+
     // MARK: - Delete / Restore / Empty Trash
 
     /// Soft-deletes the active item with `id` by calling `PUT /ciphers/{id}/delete`.

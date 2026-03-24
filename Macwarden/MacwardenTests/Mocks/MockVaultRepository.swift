@@ -76,6 +76,23 @@ final class MockVaultRepository: VaultRepository {
         return result
     }
 
+    // MARK: - create(_:) stubbing
+
+    var stubbedCreateResult: VaultItem?
+    var stubbedCreateError: Error?
+    private(set) var createCallCount: Int = 0
+    private(set) var lastCreatedDraft: DraftVaultItem?
+
+    func create(_ draft: DraftVaultItem) async throws -> VaultItem {
+        createCallCount += 1
+        lastCreatedDraft = draft
+        if let error = stubbedCreateError { throw error }
+        guard let result = stubbedCreateResult else {
+            return VaultItem(draft)
+        }
+        return result
+    }
+
     // MARK: - deleteItem stubbing
 
     var stubbedDeleteError: Error?

@@ -100,9 +100,15 @@ struct MaskedEditFieldRow: View {
                     .font(Typography.fieldValue.monospaced())
                     .textFieldStyle(.plain)
                 } else {
-                    Text(MaskedFieldState.maskedPlaceholder)
-                        .font(Typography.fieldValue.monospaced())
-                        .foregroundStyle(.secondary)
+                    SecureField(
+                        label,
+                        text: Binding(
+                            get:  { value ?? "" },
+                            set:  { value = $0.isEmpty ? nil : $0 }
+                        )
+                    )
+                    .font(Typography.fieldValue.monospaced())
+                    .textFieldStyle(.plain)
                 }
             }
             Spacer()

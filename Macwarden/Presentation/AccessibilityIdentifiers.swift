@@ -127,6 +127,17 @@ nonisolated enum AccessibilityID {
         static let permanentDeleteButton = "trash.button.permanentDelete"
     }
 
+    // MARK: - Create Item (add-vault-items)
+
+    enum Create {
+        /// The "+" button that opens the new-item type picker popover.
+        static let newItemButton = "create.button.newItem"
+        /// The List inside the type picker popover.
+        static let pickerList    = "typePicker.list"
+        /// A row inside the type picker; `typeName` is the `ItemType.rawValue` (e.g. "login", "card").
+        static func pickerRow(_ typeName: String) -> String { "typePicker.row.\(typeName)" }
+    }
+
     // MARK: - Password Generator (password-generator)
 
     enum Generator {

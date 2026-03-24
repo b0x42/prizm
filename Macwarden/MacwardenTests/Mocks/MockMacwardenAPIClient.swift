@@ -122,6 +122,18 @@ actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
         return updateCipherResponse ?? cipher
     }
 
+    // MARK: - Stubs: createCipher
+
+    nonisolated(unsafe) var createCipherResponse: RawCipher?
+    nonisolated(unsafe) var createCipherShouldThrow: Error?
+    nonisolated(unsafe) var createCipherCallCount: Int = 0
+
+    func createCipher(cipher: RawCipher) async throws -> RawCipher {
+        createCipherCallCount += 1
+        if let err = createCipherShouldThrow { throw err }
+        return createCipherResponse ?? cipher
+    }
+
     // MARK: - Stubs: softDeleteCipher
 
     nonisolated(unsafe) var softDeleteShouldThrow: Error?
