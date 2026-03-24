@@ -72,6 +72,8 @@ private struct URIEditRow: View {
     let onMoveDown: () -> Void
     let onRemove: () -> Void
 
+    @State private var showMatchType = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
@@ -96,6 +98,16 @@ private struct URIEditRow: View {
 
                 EditFieldRow(label: "Website", text: $uri.uri)
 
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showMatchType.toggle()
+                    }
+                } label: {
+                    Image(systemName: "gearshape")
+                        .foregroundStyle(showMatchType ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.borderless)
+
                 Button(action: onRemove) {
                     Image(systemName: "minus.circle.fill")
                         .foregroundStyle(.red)
@@ -103,23 +115,26 @@ private struct URIEditRow: View {
                 .buttonStyle(.borderless)
                 .padding(.trailing, Spacing.rowHorizontal)
             }
-            Divider()
-            HStack {
-                Text("Match Type")
-                    .font(Typography.fieldLabel)
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, Spacing.rowHorizontal)
-                Spacer()
-                Picker("Match Type", selection: $uri.matchType) {
-                    Text("Default").tag(URIMatchType?.none)
-                    ForEach(URIMatchType.allCases, id: \.self) { type in
-                        Text(type.displayName).tag(URIMatchType?.some(type))
+            if showMatchType {
+                Divider()
+                HStack {
+                    Text("Match Type")
+                        .font(Typography.fieldLabel)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, Spacing.rowHorizontal)
+                    Spacer()
+                    Picker("Match Type", selection: $uri.matchType) {
+                        Text("Default").tag(URIMatchType?.none)
+                        ForEach(URIMatchType.allCases, id: \.self) { type in
+                            Text(type.displayName).tag(URIMatchType?.some(type))
+                        }
                     }
+                    .labelsHidden()
+                    .padding(.trailing, Spacing.rowHorizontal)
                 }
-                .labelsHidden()
-                .padding(.trailing, Spacing.rowHorizontal)
+                .padding(.vertical, Spacing.rowVertical)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .padding(.vertical, Spacing.rowVertical)
         }
     }
 }
