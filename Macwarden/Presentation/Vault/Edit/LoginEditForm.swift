@@ -30,13 +30,22 @@ struct LoginEditForm: View {
                                 canMoveUp: index > 0,
                                 canMoveDown: index < draft.uris.count - 1,
                                 showReorderButtons: draft.uris.count > 1,
-                                onMoveUp: { draft.uris.swapAt(index, index - 1) },
-                                onMoveDown: { draft.uris.swapAt(index, index + 1) },
-                                onRemove: { draft.uris.remove(at: index) }
+                                onMoveUp: {
+                                    guard let i = draft.uris.firstIndex(where: { $0.id == uri.id }), i > 0 else { return }
+                                    draft.uris.swapAt(i, i - 1)
+                                },
+                                onMoveDown: {
+                                    guard let i = draft.uris.firstIndex(where: { $0.id == uri.id }), i < draft.uris.count - 1 else { return }
+                                    draft.uris.swapAt(i, i + 1)
+                                },
+                                onRemove: {
+                                    guard let i = draft.uris.firstIndex(where: { $0.id == uri.id }) else { return }
+                                    draft.uris.remove(at: i)
+                                }
                             )
                         }
                     }
-                    Divider()
+                    if !draft.uris.isEmpty { Divider() }
                     Button {
                         draft.uris.append(DraftLoginURI())
                     } label: {
