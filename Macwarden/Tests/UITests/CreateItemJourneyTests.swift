@@ -87,13 +87,14 @@ final class CreateItemJourneyTests: XCTestCase {
 
     // MARK: - ⌘N keyboard shortcut
 
-    /// Presses ⌘N and verifies the type picker menu opens with all item types listed.
+    /// Presses ⌘N and verifies the type picker popover opens with Login pre-selected.
+    /// The picker is a SwiftUI List in a popover (not an NSMenu), so rows are queried
+    /// as List cells via their "typePicker.row.<rawValue>" accessibility identifiers.
     func testCmdN_opensPicker_inNonTrashCategory() throws {
         app.typeKey("n", modifierFlags: .command)
 
-        // The menu should appear with Login as one of its items.
-        let loginMenuItem = app.menuItems["Login"]
-        XCTAssertTrue(loginMenuItem.waitForExistence(timeout: 3), "⌘N must open the type picker with Login listed")
+        let loginRow = app.cells["typePicker.row.login"]
+        XCTAssertTrue(loginRow.waitForExistence(timeout: 3), "⌘N must open the type picker with Login row visible")
 
         // Dismiss without creating.
         app.typeKey(.escape, modifierFlags: [])
@@ -107,28 +108,51 @@ final class CreateItemJourneyTests: XCTestCase {
 
         app.typeKey("n", modifierFlags: .command)
 
-        // No type picker or edit sheet should appear.
-        let loginMenuItem = app.menuItems["Login"]
-        XCTAssertFalse(loginMenuItem.waitForExistence(timeout: 2), "⌘N must not open the type picker in Trash")
+        // The picker list must not appear, and no edit sheet must open.
+        let pickerList = app.tables["typePicker.list"]
+        XCTAssertFalse(pickerList.waitForExistence(timeout: 2), "⌘N must not open the type picker in Trash")
 
         let saveButton = app.buttons["edit.button.save"]
         XCTAssertFalse(saveButton.waitForExistence(timeout: 2), "⌘N must not open the edit sheet in Trash")
     }
 
     /// Presses ⌘N then immediately Enter (no arrow key) and verifies the Login edit sheet opens.
-    /// macOS NSMenu pre-selects the first item when opened via keyboard, so Enter confirms Login.
+    /// Login is pre-selected when the picker opens, so Enter confirms it without navigation.
     func testCmdN_thenEnter_opensLoginSheet() throws {
         app.typeKey("n", modifierFlags: .command)
 
-        // Wait for the menu to appear.
-        let loginMenuItem = app.menuItems["Login"]
-        XCTAssertTrue(loginMenuItem.waitForExistence(timeout: 3), "Type picker must appear after ⌘N")
+        // Wait for the picker to appear.
+        let loginRow = app.cells["typePicker.row.login"]
+        XCTAssertTrue(loginRow.waitForExistence(timeout: 3), "Type picker must appear after ⌘N")
 
         app.typeKey(.return, modifierFlags: [])
 
         // The Login edit sheet should now be open.
         let saveButton = app.buttons["edit.button.save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 3), "Login edit sheet must open after ⌘N + Enter")
+
+        // Dismiss without saving.
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
+    /// Presses ⌘N, navigates down once with ↓ to select Card, then confirms with Enter.
+    /// Verifies the Card edit sheet opens — covering the arrow-key navigation scenario.
+    func testCmdN_arrowDown_thenEnter_opensCardSheet() throws {
+        app.typeKey("n", modifierFlags: .command)
+
+        // Wait for the picker to appear with Login pre-selected.
+        let loginRow = app.cells["typePicker.row.login"]
+        XCTAssertTrue(loginRow.waitForExistence(timeout: 3), "Type picker must appear after ⌘N")
+
+        // Press ↓ to move selection from Login to Card (second item).
+        app.typeKey(.downArrow, modifierFlags: [])
+
+        // Confirm Card with Enter.
+        app.typeKey(.return, modifierFlags: [])
+
+        // The edit sheet must open — Card form is identified by the Save button.
+        let saveButton = app.buttons["edit.button.save"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 3), "Card edit sheet must open after ⌘N + ↓ + Enter")
 
         // Dismiss without saving.
         app.typeKey(.escape, modifierFlags: [])

@@ -28,7 +28,7 @@ The edit sheet (`ItemEditView`) and all per-type edit forms (`LoginEditForm`, `C
 
 - **New `CreateVaultItemUseCase`** rather than overloading `EditVaultItemUseCase`. Create and update are semantically different operations (POST vs PUT, no pre-existing ID). Keeping them separate follows the existing single-responsibility pattern.
 
-- **Type picker as a `+` button in the content column toolbar** (above the item list, alongside the search bar) rather than in the main window toolbar or a multi-step wizard. This keeps the action close to the list it affects. The button opens a menu listing all five types; selecting one opens the edit sheet immediately.
+- **Type picker as a `+` button embedded in the content column view body** (not a `ToolbarItem`) immediately above the item list. macOS `NavigationSplitView` uses a single unified `NSToolbar`; `ToolbarItem` placements such as `.primaryAction` and `.automatic` resolve relative to whichever column currently holds keyboard focus, so clicking a sidebar row drifted the button to the search-bar area. Embedding it in the `VStack` view body keeps its position unconditionally stable. The button is a plain `Button` (not SwiftUI `Menu`) that opens a `popover` containing `NewItemTypePickerView` — a `List` with single-selection binding. Using `Menu` was rejected because SwiftUI propagates `.keyboardShortcut` to every child `Button` inside a `Menu`, which caused ⌘N to appear as a shortcut annotation on every item-type row. The `Button` + popover approach keeps ⌘N on the trigger only; `List` provides native ↑/↓ navigation and Enter-to-confirm via `.onKeyPress(.return)`.
 
 ## Risks / Trade-offs
 

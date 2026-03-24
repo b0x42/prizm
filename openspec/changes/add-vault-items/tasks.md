@@ -13,7 +13,7 @@
 
 ## 3. Presentation layer
 
-- [x] 3.1 Add `+` button to `VaultBrowserView` content column toolbar (above the item list, next to the search bar) — `Menu` with SF Symbol `plus` listing Login, Card, Identity, Secure Note, SSH Key; permanently anchored on the always-present `VStack` (not on `ItemListView`) so the `ToolbarItem` stays registered across category switches; hidden in Trash via `.opacity(0)` + `.allowsHitTesting(false)` to avoid toolbar placement drift
+- [x] 3.1 Add `newItemBar` to `VaultBrowserView` view body (not a ToolbarItem) — a `Button` + `.popover(NewItemTypePickerView)` embedded in the `else` branch of the Trash conditional so it is simply not rendered in Trash; stable position regardless of column focus because it is a plain view, not a toolbar item
 - [x] 3.2 Add `createItem(type:)` method to `VaultBrowserViewModel` that creates a blank draft and presents the edit sheet in create mode
 - [x] 3.3 Adapt `ItemEditViewModel` to accept an optional `VaultItem?` — when `nil`, use `CreateVaultItemUseCase` instead of `EditVaultItemUseCase` for save
 - [x] 3.4 Add `makeItemCreateViewModel(for type: ItemType)` factory to `AppContainer`

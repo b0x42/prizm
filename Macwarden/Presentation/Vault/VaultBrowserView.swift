@@ -224,7 +224,11 @@ private struct NewItemTypePickerView: View {
         List(ItemType.allCases, id: \.self, selection: $selection) { type in
             Label(type.displayName, systemImage: type.sfSymbol)
                 .tag(type)
+                // Row identifier uses ItemType.rawValue ("login", "card", etc.) so
+                // XCUITests can query specific rows as app.cells["typePicker.row.login"].
+                .accessibilityIdentifier(AccessibilityID.Create.pickerRow(type.rawValue))
         }
+        .accessibilityIdentifier(AccessibilityID.Create.pickerList)
         .frame(width: 220, height: CGFloat(ItemType.allCases.count) * 32 + 8)
         // Confirm the highlighted row when the user presses Enter.
         // .onKeyPress requires the List to be focused; macOS focuses popover
