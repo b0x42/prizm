@@ -27,3 +27,7 @@
 ## 5. Blank Login URI
 
 - [x] 5.1 Change `DraftVaultItem.blank(type: .login)` to include one empty `DraftLoginURI` (blank URI, nil match type) so the Website field is pre-expanded with match type hidden
+
+## 6. Password field focus and input
+
+- [x] 6.1 Replace static `Text` placeholder in `MaskedEditFieldRow` with `SecureField` when masked, so the password field is focusable via Tab and accepts direct keyboard input
