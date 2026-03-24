@@ -115,7 +115,6 @@ Keep PRs focused — one feature or fix per PR.
 
 ### What's Out of Scope (for now)
 
-- Write/edit operations (this is a read-only client)
 - Organisation vault support
 - Browser extension or iOS port
 
