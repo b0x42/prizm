@@ -178,9 +178,9 @@ final class CipherMapperTests: XCTestCase {
             type:   5,
             name:   try enc("My SSH Key"),
             sshKey: RawSSHKeyData(
-                privateKey:  try enc("-----BEGIN OPENSSH PRIVATE KEY-----\n..."),
-                publicKey:   try enc("ssh-ed25519 AAAA..."),
-                fingerprint: try enc("SHA256:abc123")
+                privateKey:     try enc("-----BEGIN OPENSSH PRIVATE KEY-----\n..."),
+                publicKey:      try enc("ssh-ed25519 AAAA..."),
+                keyFingerprint: try enc("SHA256:abc123")
             )
         )
 

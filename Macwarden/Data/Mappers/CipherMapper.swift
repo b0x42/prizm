@@ -213,11 +213,11 @@ nonisolated final class CipherMapper {
         fields: [CustomField],
         keys:   CryptoKeys
     ) throws -> ItemContent {
-        let ssh = data ?? RawSSHKeyData(privateKey: nil, publicKey: nil, fingerprint: nil)
+        let ssh = data ?? RawSSHKeyData(privateKey: nil, publicKey: nil, keyFingerprint: nil)
         return .sshKey(SSHKeyContent(
             privateKey:     try ssh.privateKey.map  { try decryptRequired($0, field: "privateKey",  keys: keys) },
             publicKey:      try ssh.publicKey.map   { try decryptRequired($0, field: "publicKey",   keys: keys) },
-            keyFingerprint: try ssh.fingerprint.map { try decryptRequired($0, field: "fingerprint", keys: keys) },
+            keyFingerprint: try ssh.keyFingerprint.map { try decryptRequired($0, field: "keyFingerprint", keys: keys) },
             notes:          notes,
             customFields:   fields
         ))
@@ -394,9 +394,9 @@ nonisolated final class CipherMapper {
     private func toRawSSHKey(_ c: DraftSSHKeyContent, keys: CryptoKeys) throws -> RawSSHKeyData {
         // keyFingerprint is auto-derived and not sent to the API — it is server-authoritative.
         RawSSHKeyData(
-            privateKey:  try c.privateKey.map  { try encryptString($0, keys: keys) },
-            publicKey:   try c.publicKey.map   { try encryptString($0, keys: keys) },
-            fingerprint: nil
+            privateKey:     try c.privateKey.map  { try encryptString($0, keys: keys) },
+            publicKey:      try c.publicKey.map   { try encryptString($0, keys: keys) },
+            keyFingerprint: nil
         )
     }
 
