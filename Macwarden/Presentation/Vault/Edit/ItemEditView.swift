@@ -61,6 +61,7 @@ struct ItemEditView: View {
 
             // Per-type edit form.
             typeEditForm
+                .frame(maxHeight: .infinity)
         }
         .frame(minWidth: 480, minHeight: 400)
         .toolbar {
