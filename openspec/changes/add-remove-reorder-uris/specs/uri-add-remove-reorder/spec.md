@@ -60,3 +60,25 @@ Each URI row in the Login edit form SHALL display move-up (▲) and move-down (�
 #### Scenario: Moving a URI down
 - **WHEN** the user clicks ▼ on a URI row that is not the last
 - **THEN** that URI SHALL swap positions with the URI below it
+
+### Requirement: Match type is hidden behind a configure toggle
+Each URI row SHALL hide the match type picker by default. A gear icon button SHALL be displayed to the left of the remove button. Clicking the gear icon SHALL toggle the match type picker row with an animated transition. The gear icon SHALL be tinted with the accent color when the match type row is visible, and secondary color when hidden.
+
+#### Scenario: Match type hidden by default
+- **WHEN** the edit form displays a URI row
+- **THEN** the match type picker SHALL NOT be visible
+
+#### Scenario: Gear icon toggles match type visibility
+- **WHEN** the user clicks the gear icon on a URI row
+- **THEN** the match type picker row SHALL appear with an animated transition
+
+#### Scenario: Gear icon hides match type
+- **GIVEN** the match type row is visible
+- **WHEN** the user clicks the gear icon again
+- **THEN** the match type picker row SHALL hide with an animated transition
+
+#### Scenario: Gear icon tint reflects state
+- **WHEN** the match type row is visible
+- **THEN** the gear icon SHALL be tinted with the accent color
+- **WHEN** the match type row is hidden
+- **THEN** the gear icon SHALL be tinted with the secondary color
