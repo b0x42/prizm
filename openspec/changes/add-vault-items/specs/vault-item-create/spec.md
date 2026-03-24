@@ -1,0 +1,74 @@
+## ADDED Requirements
+
+### Requirement: User can create a new vault item from the vault browser
+The system SHALL provide a "+" button in the content column toolbar (above the item list, alongside the search bar) in `VaultBrowserView`. Clicking the button SHALL present a menu listing all five item types: Login, Card, Identity, Secure Note, and SSH Key. Selecting a type SHALL open the edit sheet pre-populated with a blank draft of that type. The edit sheet SHALL reuse the same form fields, validation, and save flow as the existing item edit feature.
+
+#### Scenario: New Item button is visible in the content column toolbar
+- **WHEN** the vault browser is displayed
+- **THEN** a "+" button (SF Symbol `plus`) SHALL be visible in the content column toolbar above the item list
+
+#### Scenario: Type picker shows all five item types
+- **WHEN** the user clicks the New Item button
+- **THEN** a menu SHALL appear listing Login, Card, Identity, Secure Note, and SSH Key
+
+#### Scenario: Selecting a type opens a blank edit sheet
+- **WHEN** the user selects "Login" from the type picker
+- **THEN** the edit sheet SHALL open with an empty Login draft (blank name, blank username, blank password, no URIs, no notes, no custom fields)
+
+#### Scenario: Selecting Card opens a blank Card edit sheet
+- **WHEN** the user selects "Card" from the type picker
+- **THEN** the edit sheet SHALL open with an empty Card draft (blank cardholder name, blank number, no expiry, no CVV, no notes, no custom fields)
+
+#### Scenario: Selecting Identity opens a blank Identity edit sheet
+- **WHEN** the user selects "Identity" from the type picker
+- **THEN** the edit sheet SHALL open with an empty Identity draft (all identity fields blank, no notes, no custom fields)
+
+#### Scenario: Selecting Secure Note opens a blank Secure Note edit sheet
+- **WHEN** the user selects "Secure Note" from the type picker
+- **THEN** the edit sheet SHALL open with an empty Secure Note draft (blank notes, no custom fields)
+
+#### Scenario: Selecting SSH Key opens a blank SSH Key edit sheet
+- **WHEN** the user selects "SSH Key" from the type picker
+- **THEN** the edit sheet SHALL open with an empty SSH Key draft (blank private key, blank public key, no notes, no custom fields)
+
+---
+
+### Requirement: Saving a new item creates it on the server and adds it to the local vault
+The system SHALL encrypt all sensitive fields of the new item using the vault's symmetric keys and send a `POST /api/ciphers` request to the server. On success, the server-returned item (with server-assigned ID and timestamps) SHALL be inserted into the in-memory vault cache. The item list SHALL update immediately without requiring a full re-sync. The edit sheet SHALL dismiss on successful save.
+
+#### Scenario: Successful creation persists to server
+- **WHEN** the user fills in the Name field and clicks Save
+- **THEN** the system SHALL encrypt the draft, POST it to the server, insert the server-confirmed item into the cache, and dismiss the sheet
+
+#### Scenario: Created item appears in the item list immediately
+- **WHEN** a new item is successfully created
+- **THEN** the item SHALL appear in the vault item list sorted alphabetically without a manual refresh or re-sync
+
+#### Scenario: Name is required for creation
+- **WHEN** the user attempts to save a new item with a blank Name field
+- **THEN** the Save button SHALL be disabled and an inline validation message ("Name is required") SHALL be shown
+
+#### Scenario: Save failure shows inline error
+- **WHEN** the server returns an error during creation
+- **THEN** the edit sheet SHALL remain open with an inline error banner displaying the error message
+
+#### Scenario: Vault lock during creation dismisses the sheet
+- **WHEN** the vault locks while the create edit sheet is open
+- **THEN** the sheet SHALL dismiss immediately without a discard confirmation prompt and the draft SHALL be cleared from memory
+
+---
+
+### Requirement: Discarding an unsaved new item prompts for confirmation if changes were made
+The system SHALL track whether the user has modified any field from the blank default state. If changes exist and the user attempts to dismiss the sheet (Escape key, Discard button, or clicking outside), a confirmation alert SHALL be shown. If no changes were made, the sheet SHALL dismiss without confirmation.
+
+#### Scenario: Discard with changes shows confirmation
+- **WHEN** the user has typed into any field of a new item and presses Escape
+- **THEN** a confirmation alert SHALL ask whether to discard changes
+
+#### Scenario: Discard without changes dismisses silently
+- **WHEN** the user opens a new item sheet and immediately presses Escape without editing
+- **THEN** the sheet SHALL dismiss without a confirmation prompt
+
+#### Scenario: Confirming discard clears the draft from memory
+- **WHEN** the user confirms the discard prompt
+- **THEN** the draft's plaintext field values SHALL be cleared from memory and the sheet SHALL dismiss
