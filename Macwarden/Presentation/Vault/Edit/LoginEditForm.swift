@@ -22,17 +22,19 @@ struct LoginEditForm: View {
                 }
 
                 DetailSectionCard("Websites") {
-                    ForEach(draft.uris.indices, id: \.self) { index in
-                        if index > 0 { Divider() }
-                        URIEditRow(
-                            uri: $draft.uris[index],
-                            canMoveUp: index > 0,
-                            canMoveDown: index < draft.uris.count - 1,
-                            showReorderButtons: draft.uris.count > 1,
-                            onMoveUp: { draft.uris.swapAt(index, index - 1) },
-                            onMoveDown: { draft.uris.swapAt(index, index + 1) },
-                            onRemove: { draft.uris.remove(at: index) }
-                        )
+                    ForEach(draft.uris) { uri in
+                        if let index = draft.uris.firstIndex(where: { $0.id == uri.id }) {
+                            if index > 0 { Divider() }
+                            URIEditRow(
+                                uri: $draft.uris[index],
+                                canMoveUp: index > 0,
+                                canMoveDown: index < draft.uris.count - 1,
+                                showReorderButtons: draft.uris.count > 1,
+                                onMoveUp: { draft.uris.swapAt(index, index - 1) },
+                                onMoveDown: { draft.uris.swapAt(index, index + 1) },
+                                onRemove: { draft.uris.remove(at: index) }
+                            )
+                        }
                     }
                     Divider()
                     Button {
@@ -40,6 +42,7 @@ struct LoginEditForm: View {
                     } label: {
                         Label("Add Website", systemImage: "plus")
                             .font(Typography.fieldValue)
+                            .foregroundStyle(.tint)
                     }
                     .buttonStyle(.borderless)
                     .padding(.vertical, Spacing.rowVertical)
