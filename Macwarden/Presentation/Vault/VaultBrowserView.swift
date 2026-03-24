@@ -76,7 +76,7 @@ struct VaultBrowserView: View {
                         // ⌘N opens the type picker from the keyboard. .disabled gates both the
                         // shortcut and the menu bar entry when Trash is active, so the greyed-out
                         // menu bar item reinforces the visual hidden state of the toolbar button.
-                        .keyboardShortcut(.n, modifiers: .command)
+                        .keyboardShortcut("n", modifiers: .command)
                         .disabled(viewModel.sidebarSelection == .trash)
                         // Hidden in Trash — creation is not allowed for deleted items.
                         // Opacity+allowsHitTesting keeps the ToolbarItem registered so placement
