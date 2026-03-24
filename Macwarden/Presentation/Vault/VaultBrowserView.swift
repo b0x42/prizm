@@ -53,36 +53,47 @@ struct VaultBrowserView: View {
                         )
                     }
                 }
-                // The toolbar modifier is on the always-present VStack rather than on ItemListView
-                // so the ToolbarItem stays registered when switching between categories. Attaching it
-                // to ItemListView caused the item to leave and re-enter the hierarchy on every
-                // Trash ↔ non-Trash transition, which made SwiftUI resolve .primaryAction to the
-                // trailing window edge instead of the content column on the return trip.
+                // .toolbar is on the always-present VStack so the ToolbarItem stays registered
+                // across all category switches — removing it from ItemListView (inside the else
+                // branch) caused SwiftUI to re-resolve the placement every time Trash was exited.
+                //
+                // Placement: .automatic rather than .primaryAction. .primaryAction follows the
+                // NavigationSplitView column that currently holds keyboard focus, so clicking a
+                // sidebar row moved the button to the search-bar area. .automatic resolves to a
+                // stable position in the content column's portion of the unified macOS toolbar
+                // regardless of which column is focused.
                 .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            ForEach(ItemType.allCases) { type in
-                                Button {
-                                    viewModel.createItemType = type
-                                } label: {
-                                    Label(type.displayName, systemImage: type.sfSymbol)
+                    ToolbarItem(placement: .automatic) {
+                        // The ToolbarItem is always present (placement stays registered), but its
+                        // content switches based on Trash state. Using .disabled(true) on a macOS
+                        // Menu with an image-only label causes NSMenuButton to suppress the SF
+                        // Symbol while keeping the button frame visible — not truly hidden. Instead,
+                        // swap the content: show an invisible placeholder in Trash so the item
+                        // slot is kept, and show the real Menu with its ⌘N shortcut otherwise.
+                        if viewModel.sidebarSelection == .trash {
+                            // Zero-size placeholder keeps the ToolbarItem registered without
+                            // rendering anything visible or interactive.
+                            Color.clear
+                                .frame(width: 0, height: 0)
+                                .accessibilityHidden(true)
+                        } else {
+                            Menu {
+                                ForEach(ItemType.allCases) { type in
+                                    Button {
+                                        viewModel.createItemType = type
+                                    } label: {
+                                        Label(type.displayName, systemImage: type.sfSymbol)
+                                    }
                                 }
+                            } label: {
+                                Image(systemName: "plus")
                             }
-                        } label: {
-                            Image(systemName: "plus")
+                            .help("New Item")
+                            .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
+                            // ⌘N shortcut is only registered when not in Trash — the conditional
+                            // above ensures it is never installed for Trash, so no .disabled needed.
+                            .keyboardShortcut("n", modifiers: .command)
                         }
-                        .help("New Item")
-                        .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
-                        // ⌘N opens the type picker from the keyboard. .disabled gates both the
-                        // shortcut and the menu bar entry when Trash is active, so the greyed-out
-                        // menu bar item reinforces the visual hidden state of the toolbar button.
-                        .keyboardShortcut("n", modifiers: .command)
-                        .disabled(viewModel.sidebarSelection == .trash)
-                        // Hidden in Trash — creation is not allowed for deleted items.
-                        // Opacity+allowsHitTesting keeps the ToolbarItem registered so placement
-                        // never drifts; simply omitting the view here would re-introduce the bug.
-                        .opacity(viewModel.sidebarSelection == .trash ? 0 : 1)
-                        .allowsHitTesting(viewModel.sidebarSelection != .trash)
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280)

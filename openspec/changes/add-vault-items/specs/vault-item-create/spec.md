@@ -1,16 +1,17 @@
 ## ADDED Requirements
 
 ### Requirement: User can create a new vault item from the vault browser
-The system SHALL provide a "+" button permanently anchored in the content column toolbar (above the item list, alongside the search bar) in `VaultBrowserView`. The button SHALL never move to any other toolbar position regardless of which category is selected or how the user navigates. It SHALL be hidden only when the Trash category is active, and SHALL reappear in the same position when the user leaves Trash. Clicking the button OR pressing ⌘N SHALL present a menu listing all five item types: Login, Card, Identity, Secure Note, and SSH Key. Selecting a type SHALL open the edit sheet pre-populated with a blank draft of that type. The edit sheet SHALL reuse the same form fields, validation, and save flow as the existing item edit feature. Once the type picker is open, the user SHALL be able to navigate types with ↑/↓ arrow keys and confirm with Enter, without touching the mouse.
+The system SHALL provide a "+" button permanently anchored in the content column toolbar (above the item list) in `VaultBrowserView`. The button SHALL never move to any other toolbar position regardless of which sidebar category is selected, whether an item is selected in the item list, or how the user navigates. It SHALL be completely invisible (no button frame, no icon) only when the Trash category is active, and SHALL reappear in the same position when the user leaves Trash. Clicking the button OR pressing ⌘N SHALL present a menu listing all five item types: Login, Card, Identity, Secure Note, and SSH Key. Selecting a type SHALL open the edit sheet pre-populated with a blank draft of that type. The edit sheet SHALL reuse the same form fields, validation, and save flow as the existing item edit feature. Once the type picker is open, the user SHALL be able to navigate types with ↑/↓ arrow keys and confirm with Enter, without touching the mouse.
 
-#### Scenario: New Item button is always above the item list
+#### Scenario: New Item button is always above the item list regardless of selection state
 - **WHEN** the vault browser is displayed with any category selected except Trash
 - **THEN** a "+" button (SF Symbol `plus`) SHALL be visible in the content column toolbar above the item list
-- **AND** the button SHALL remain in that position regardless of category switches or navigation history
+- **AND** the button SHALL be in the same position whether or not an item is selected in the item list
+- **AND** the button SHALL be in the same position whether a sidebar category (All Items, Favorites, Login, etc.) or an item list row is the last-focused element
 
-#### Scenario: New Item button is hidden when Trash is selected
+#### Scenario: New Item button is completely invisible when Trash is selected
 - **WHEN** the user selects the Trash category
-- **THEN** the "+" button SHALL NOT be visible
+- **THEN** the "+" button SHALL NOT be visible — no button frame, no icon, no chrome of any kind
 
 #### Scenario: New Item button reappears after leaving Trash
 - **GIVEN** the user has the Trash category selected
