@@ -99,9 +99,7 @@ private struct URIEditRow: View {
                 EditFieldRow(label: "Website", text: $uri.uri)
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showMatchType.toggle()
-                    }
+                    showMatchType.toggle()
                 } label: {
                     Image(systemName: "gearshape")
                         .foregroundStyle(showMatchType ? Color.accentColor : Color.secondary)
