@@ -221,7 +221,8 @@ extension APIError: LocalizedError {
 ///
 /// All requests include the required Bitwarden client identification headers:
 /// - `X-Client-Id: "desktop"`       (registered client identifier for third-party clients)
-/// - `X-Client-Version: "2024.12.0"` (version string; >= 2024.12.0 required for SSH key support)
+/// - `X-Client-Version: "2024.12.0"` (version string)
+/// - `Bitwarden-Client-Version: "2024.12.0"` (>= 2024.12.0 required for SSH key support on Vaultwarden)
 /// - `Device-Type: "7"`             (7 = macOS desktop, per Bitwarden DeviceType enum)
 ///
 /// Header requirements: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
@@ -601,6 +602,7 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
         req.setValue(ClientHeaders.userAgent,     forHTTPHeaderField: "User-Agent")
         req.setValue("application/json",          forHTTPHeaderField: "Accept")
         req.setValue(ClientHeaders.clientVersion, forHTTPHeaderField: "X-Client-Version")
+        req.setValue(ClientHeaders.clientVersion, forHTTPHeaderField: "Bitwarden-Client-Version")
         return req
     }
 

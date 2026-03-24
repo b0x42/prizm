@@ -94,9 +94,9 @@ nonisolated struct RawSecureNoteData: Codable {
 // MARK: - SSH Key
 
 nonisolated struct RawSSHKeyData: Codable {
-    let privateKey:  String?    // EncString
-    let publicKey:   String?    // EncString
-    let fingerprint: String?    // EncString
+    let privateKey:     String?    // EncString
+    let publicKey:      String?    // EncString
+    let keyFingerprint: String?    // EncString
 }
 
 // MARK: - Custom Field
