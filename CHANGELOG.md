@@ -2,7 +2,11 @@
 
 All notable changes to Macwarden are documented here.
 
-## Unreleased
+## v0.3
+
+### Added
+
+- **Add, remove, and reorder website URIs** on Login items in the edit form — includes inline match-type configuration behind a gear toggle
 
 ### Changed
 

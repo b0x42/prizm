@@ -14,7 +14,8 @@ A native Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](htt
 
 - **Connect to your server** — works with any self-hosted Bitwarden or Vaultwarden instance
 - **Browse everything** — Logins, Cards, Identities, Secure Notes, and SSH Keys
-- **Edit items** — update fields, names, notes, and custom fields; changes sync back to your server
+- **Edit items** — update fields, names, notes, custom fields, and website URIs; changes sync back to your server
+- **Manage website URIs** — add, remove, and reorder URIs on Login items with inline match-type configuration
 - **Delete and restore** — move items to Trash, restore accidental deletions, or permanently delete individual items
 - **Find items fast** — real-time search across names, usernames, URIs, and more
 - **Native macOS** — built with SwiftUI, feels right at home
