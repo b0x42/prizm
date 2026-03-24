@@ -22,7 +22,7 @@ The edit sheet (`ItemEditView`) and all per-type edit forms (`LoginEditForm`, `C
 
 ## Decisions
 
-- **Reuse `ItemEditView` in a "create" mode** rather than building a separate creation form. The view model receives an optional `VaultItem?` — `nil` means create mode. This avoids duplicating form UI and validation logic. Alternative: a separate `ItemCreateView` — rejected because the fields are identical.
+- **Reuse `ItemEditView` in a "create" mode** rather than building a separate creation form. The view model has two initialisers — `init(item:useCase:)` for edit mode and `init(type:useCase:)` for create mode — so the type system enforces the correct use case at compile time. This avoids duplicating form UI and validation logic. Alternative: a separate `ItemCreateView` — rejected because the fields are identical.
 
 - **Blank draft factory on `DraftVaultItem`** (`DraftVaultItem.blank(type:)`) rather than on the view model. This keeps the domain layer responsible for default values and makes it testable without UI. The factory generates a temporary UUID as the `id` which is discarded when the server assigns the real one.
 

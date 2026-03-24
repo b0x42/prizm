@@ -18,6 +18,8 @@ struct VaultBrowserView: View {
     let faviconLoader: FaviconLoader
     /// Factory closure injected from `AppContainer` so the view layer stays decoupled from Data.
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
+    /// Factory closure for creating a new item edit view model in create mode.
+    let makeCreateViewModel: (ItemType) -> ItemEditViewModel
     /// Notifies the ViewModel when the edit sheet opens/closes (for menu bar state).
     var onEditSheetState: ((Bool) -> Void)? = nil
 
@@ -49,6 +51,22 @@ struct VaultBrowserView: View {
                             faviconLoader: faviconLoader,
                             onDelete:     { id in await viewModel.performSoftDelete(id: id) }
                         )
+                        .toolbar {
+                            ToolbarItem(placement: .primaryAction) {
+                                Menu {
+                                    ForEach(ItemType.allCases) { type in
+                                        Button {
+                                            viewModel.createItemType = type
+                                        } label: {
+                                            Label(type.displayName, systemImage: type.sfSymbol)
+                                        }
+                                    }
+                                } label: {
+                                    Image(systemName: "plus")
+                                }
+                                .help("New Item")
+                            }
+                        }
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280)
@@ -88,6 +106,15 @@ struct VaultBrowserView: View {
             ToolbarItem(placement: .automatic) {
                 lastSyncedLabel
             }
+        }
+        .sheet(item: $viewModel.createItemType) { type in
+            ItemEditView(
+                viewModel: makeCreateViewModel(type),
+                isPresented: Binding(
+                    get: { viewModel.createItemType != nil },
+                    set: { if !$0 { viewModel.createItemType = nil } }
+                )
+            )
         }
     }
 

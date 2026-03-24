@@ -4,12 +4,14 @@ import Foundation
 /// `CaseIterable` enables the sidebar to iterate all types without a hardcoded list.
 /// `Hashable` is required because `SidebarSelection.type(ItemType)` uses this as an
 /// associated value, and `[SidebarSelection: Int]` is used for item counts.
-nonisolated enum ItemType: String, Equatable, Hashable, CaseIterable {
+nonisolated enum ItemType: String, Equatable, Hashable, CaseIterable, Identifiable {
     case login
     case card
     case identity
     case secureNote
     case sshKey
+
+    var id: String { rawValue }
 
     var displayName: String {
         switch self {

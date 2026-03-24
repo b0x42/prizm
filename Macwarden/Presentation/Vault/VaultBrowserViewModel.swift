@@ -48,6 +48,14 @@ final class VaultBrowserViewModel: ObservableObject {
     /// The Presentation layer surfaces this as an alert.
     @Published var actionError: String? = nil
 
+    /// Set to a non-nil `ItemType` to present the create sheet for that type.
+    /// Automatically cleared if the user switches to Trash.
+    @Published var createItemType: ItemType? = nil {
+        didSet {
+            if sidebarSelection == .trash { createItemType = nil }
+        }
+    }
+
     // MARK: - Dependencies
 
     private let vault:                  any VaultRepository

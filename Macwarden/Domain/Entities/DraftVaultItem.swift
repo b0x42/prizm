@@ -233,6 +233,41 @@ nonisolated struct DraftVaultItem: Equatable {
     /// round-trips it correctly. Not user-editable in v1.
     let reprompt: Int
 
+    /// Creates a blank draft for a new item of the given type.
+    static func blank(type: ItemType) -> DraftVaultItem {
+        let now = Date()
+        let content: DraftItemContent = switch type {
+        case .login:      .login(DraftLoginContent(LoginContent(username: nil, password: nil, uris: [], totp: nil, notes: nil, customFields: [])))
+        case .card:       .card(DraftCardContent(CardContent(cardholderName: nil, brand: nil, number: nil, expMonth: nil, expYear: nil, code: nil, notes: nil, customFields: [])))
+        case .identity:   .identity(DraftIdentityContent(IdentityContent(title: nil, firstName: nil, middleName: nil, lastName: nil, address1: nil, address2: nil, address3: nil, city: nil, state: nil, postalCode: nil, country: nil, company: nil, email: nil, phone: nil, ssn: nil, username: nil, passportNumber: nil, licenseNumber: nil, notes: nil, customFields: [])))
+        case .secureNote: .secureNote(DraftSecureNoteContent(SecureNoteContent(notes: nil, customFields: [])))
+        case .sshKey:     .sshKey(DraftSSHKeyContent(SSHKeyContent(privateKey: nil, publicKey: nil, keyFingerprint: nil, notes: nil, customFields: [])))
+        }
+        return DraftVaultItem(
+            id: UUID().uuidString,
+            name: "",
+            isFavorite: false,
+            isDeleted: false,
+            creationDate: now,
+            revisionDate: now,
+            content: content,
+            reprompt: 0
+        )
+    }
+
+    /// Memberwise initialiser for programmatic construction (blank drafts, tests).
+    init(id: String, name: String, isFavorite: Bool, isDeleted: Bool,
+         creationDate: Date, revisionDate: Date, content: DraftItemContent, reprompt: Int) {
+        self.id = id
+        self.name = name
+        self.isFavorite = isFavorite
+        self.isDeleted = isDeleted
+        self.creationDate = creationDate
+        self.revisionDate = revisionDate
+        self.content = content
+        self.reprompt = reprompt
+    }
+
     /// Converts an immutable `VaultItem` into a mutable draft ready for editing.
     init(_ item: VaultItem) {
         self.id = item.id

@@ -74,6 +74,10 @@ protocol VaultRepository: AnyObject, Sendable {
     /// - Throws: `Error` on network or HTTP failure.
     func restoreItem(id: String) async throws
 
+    /// Encrypts a new `draft`, calls `POST /api/ciphers`, inserts the server-confirmed item
+    /// into the in-memory cache, and returns it.
+    func create(_ draft: DraftVaultItem) async throws -> VaultItem
+
 }
 
 // MARK: - Errors

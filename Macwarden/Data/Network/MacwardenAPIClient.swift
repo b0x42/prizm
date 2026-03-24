@@ -100,6 +100,13 @@ protocol MacwardenAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/restore
     func restoreCipher(id: String) async throws
 
+    /// POST `/api/ciphers` — creates a new cipher with encrypted field values.
+    ///
+    /// Requires a valid `Authorization: Bearer <accessToken>` header.
+    /// The request body is a JSON-encoded `RawCipher`. The server assigns the ID and timestamps.
+    /// On success the server returns the created cipher, decoded back into `RawCipher`.
+    func createCipher(cipher: RawCipher) async throws -> RawCipher
+
 }
 
 // MARK: - Wire Models
@@ -567,6 +574,31 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
     }
 
     // MARK: - refreshAccessToken
+
+    // MARK: - createCipher
+
+    func createCipher(cipher: RawCipher) async throws -> RawCipher {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] createCipher → POST \(url.absoluteString, privacy: .public)")
+        }
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(cipher)
+
+        let created: RawCipher = try await perform(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] createCipher ← id=\(created.id, privacy: .public)")
+        }
+        return created
+    }
 
     func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?) {
         guard let base = baseURL else { throw APIError.baseURLNotSet }

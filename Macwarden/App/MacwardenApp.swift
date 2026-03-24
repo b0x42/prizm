@@ -95,6 +95,13 @@ struct MacwardenApp: App {
                         vaultBrowserVM?.handleItemSaved(updatedItem)
                     }
                     return vm
+                },
+                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type in
+                    let vm = container.makeItemCreateViewModel(for: type)
+                    vm.onSaveSuccess = { [weak vaultBrowserVM] item in
+                        vaultBrowserVM?.handleItemSaved(item)
+                    }
+                    return vm
                 }
             )
         }

@@ -57,7 +57,8 @@ final class ItemEditViewModel: ObservableObject {
     /// Snapshot of the item as it was when the sheet opened — used for `hasChanges`.
     private let original: DraftVaultItem
 
-    private let useCase: any EditVaultItemUseCase
+    private let editUseCase: (any EditVaultItemUseCase)?
+    private let createUseCase: (any CreateVaultItemUseCase)?
     private let logger  = Logger(subsystem: "com.macwarden", category: "ItemEditViewModel")
 
     /// Called on save success with the server-confirmed `VaultItem` so the caller
@@ -69,11 +70,22 @@ final class ItemEditViewModel: ObservableObject {
 
     // MARK: - Init
 
+    /// Edit mode: initialised with an existing item.
     init(item: VaultItem, useCase: any EditVaultItemUseCase) {
         self.draft    = DraftVaultItem(item)
         self.original = DraftVaultItem(item)
-        self.useCase  = useCase
+        self.editUseCase  = useCase
+        self.createUseCase = nil
+        subscribeToVaultLock()
+    }
 
+    /// Create mode: initialised with a blank draft for the given type.
+    init(type: ItemType, useCase: any CreateVaultItemUseCase) {
+        let blank = DraftVaultItem.blank(type: type)
+        self.draft    = blank
+        self.original = blank
+        self.editUseCase  = nil
+        self.createUseCase = useCase
         subscribeToVaultLock()
     }
 
@@ -87,7 +99,14 @@ final class ItemEditViewModel: ObservableObject {
             isSaving  = true
             saveError = nil
             do {
-                let saved = try await useCase.execute(draft: draft)
+                let saved: VaultItem
+                if let createUseCase {
+                    saved = try await createUseCase.execute(draft: draft)
+                } else if let editUseCase {
+                    saved = try await editUseCase.execute(draft: draft)
+                } else {
+                    preconditionFailure("ItemEditViewModel: no use case configured")
+                }
                 onSaveSuccess?(saved)
                 clearDraft()
                 isDismissed = true

@@ -71,6 +71,7 @@
 		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
 		C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */; };
 		C3D4E5F607182940B5C6D7E8 /* EditVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */; };
+		AC3EC95F694247B5A5809233 /* CreateVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A335CC7B3C743B59A7630D8 /* CreateVaultItemUseCase.swift */; };
 		C3D4E5F6A7B849C0D1E2F3A4 /* MacwardenCryptoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D710BEABBB4ADD9ADFCD1F /* MacwardenCryptoService.swift */; };
 		C3DDB598E8834E85833D86FE /* VaultBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */; };
 		C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */; };
@@ -84,6 +85,7 @@
 		E17D4DA652374B49BC2CD6B1 /* VaultBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */; };
 		E5F400A1B2C3D07D70809000 /* SSHKeyEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */; };
 		E5F607182930405BD7E8F90A /* EditVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */; };
+		A96C7D84DE3B404CA450285C /* CreateVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B465482A0CFB4710AD4727CB /* CreateVaultItemUseCaseImpl.swift */; };
 		E5F6A7B8C9D04BE2F3A4B5C6 /* SyncResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15F3A553820942CF9B3935FD /* SyncResponse.swift */; };
 		E7772DAF3F324B8A807B7491 /* ItemRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6631A93BC5EA4827BC497076 /* ItemRowView.swift */; };
 		EE11223344556677889900BB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00112233445566778899AA /* DesignSystem.swift */; };
@@ -172,6 +174,7 @@
 		D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalLabeledContentStyle.swift; sourceTree = "<group>"; };
 		D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNoteEditForm.swift; sourceTree = "<group>"; };
 		D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCase.swift; sourceTree = "<group>"; };
+		5A335CC7B3C743B59A7630D8 /* CreateVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateVaultItemUseCase.swift; sourceTree = "<group>"; };
 		D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelection.swift; sourceTree = "<group>"; };
 		D8D710BEABBB4ADD9ADFCD1F /* MacwardenCryptoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacwardenCryptoService.swift; sourceTree = "<group>"; };
 		DF8949A6D242488CBEC15CC0 /* ItemListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemListView.swift; sourceTree = "<group>"; };
@@ -187,6 +190,7 @@
 		F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBrowserViewModel.swift; sourceTree = "<group>"; };
 		F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyEditForm.swift; sourceTree = "<group>"; };
 		F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
+		B465482A0CFB4710AD4727CB /* CreateVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPPromptView.swift; sourceTree = "<group>"; };
 		F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskedFieldView.swift; sourceTree = "<group>"; };
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
@@ -278,6 +282,7 @@
 				5EBA517603CA448A8F9106AF /* SyncUseCase.swift */,
 				09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */,
 				D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */,
+				5A335CC7B3C743B59A7630D8 /* CreateVaultItemUseCase.swift */,
 				EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */,
 				4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */,
 				6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
@@ -611,6 +616,7 @@
 				8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */,
 				6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */,
 				F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */,
+				B465482A0CFB4710AD4727CB /* CreateVaultItemUseCaseImpl.swift */,
 				42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */,
 				75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */,
 				8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
@@ -798,7 +804,9 @@
 				EE11223344556677889900BB /* DesignSystem.swift in Sources */,
 				A1C2D3E4F506172839A4B56C /* DraftVaultItem.swift in Sources */,
 				C3D4E5F607182940B5C6D7E8 /* EditVaultItemUseCase.swift in Sources */,
+				AC3EC95F694247B5A5809233 /* CreateVaultItemUseCase.swift in Sources */,
 				E5F607182930405BD7E8F90A /* EditVaultItemUseCaseImpl.swift in Sources */,
+				A96C7D84DE3B404CA450285C /* CreateVaultItemUseCaseImpl.swift in Sources */,
 				0718293040506070F90A1B2C /* ItemEditViewModel.swift in Sources */,
 				29304050607080F1B2C3D4E5 /* ItemEditView.swift in Sources */,
 				4B506070809000D3D4E5F607 /* EditFieldRow.swift in Sources */,
