@@ -23,3 +23,7 @@
 - [x] 4.1 Add `createCipher` stub to `MockMacwardenAPIClient`
 - [x] 4.2 Add `create` stub to `MockVaultRepository`
 - [x] 4.3 Wire `CreateVaultItemUseCaseImpl` in `AppContainer`
+
+## 5. Blank Login URI
+
+- [x] 5.1 Change `DraftVaultItem.blank(type: .login)` to include one empty `DraftLoginURI` (blank URI, nil match type) so the Website field is pre-expanded with match type hidden

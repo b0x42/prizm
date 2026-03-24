@@ -13,7 +13,7 @@ The system SHALL provide a "+" button in the content column toolbar (above the i
 
 #### Scenario: Selecting a type opens a blank edit sheet
 - **WHEN** the user selects "Login" from the type picker
-- **THEN** the edit sheet SHALL open with an empty Login draft (blank name, blank username, blank password, no URIs, no notes, no custom fields)
+- **THEN** the edit sheet SHALL open with an empty Login draft (blank name, blank username, blank password, one empty URI row with match type hidden, no notes, no custom fields)
 
 #### Scenario: Selecting Card opens a blank Card edit sheet
 - **WHEN** the user selects "Card" from the type picker

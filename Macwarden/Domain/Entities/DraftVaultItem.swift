@@ -237,7 +237,7 @@ nonisolated struct DraftVaultItem: Equatable {
     static func blank(type: ItemType) -> DraftVaultItem {
         let now = Date()
         let content: DraftItemContent = switch type {
-        case .login:      .login(DraftLoginContent(LoginContent(username: nil, password: nil, uris: [], totp: nil, notes: nil, customFields: [])))
+        case .login:      .login(DraftLoginContent(LoginContent(username: nil, password: nil, uris: [LoginURI(uri: "", matchType: nil)], totp: nil, notes: nil, customFields: [])))
         case .card:       .card(DraftCardContent(CardContent(cardholderName: nil, brand: nil, number: nil, expMonth: nil, expYear: nil, code: nil, notes: nil, customFields: [])))
         case .identity:   .identity(DraftIdentityContent(IdentityContent(title: nil, firstName: nil, middleName: nil, lastName: nil, address1: nil, address2: nil, address3: nil, city: nil, state: nil, postalCode: nil, country: nil, company: nil, email: nil, phone: nil, ssn: nil, username: nil, passportNumber: nil, licenseNumber: nil, notes: nil, customFields: [])))
         case .secureNote: .secureNote(DraftSecureNoteContent(SecureNoteContent(notes: nil, customFields: [])))
