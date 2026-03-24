@@ -7,13 +7,24 @@ import Foundation
 /// Why mutable mirror instead of mutating `LoginURI` directly: `LoginURI` is a value type with
 /// `let` fields, which prevents accidental mutation in read-only views. By introducing a separate
 /// `DraftLoginURI` we confine mutability to the edit sheet and keep the read path immutable.
-nonisolated struct DraftLoginURI: Equatable {
+nonisolated struct DraftLoginURI: Equatable, Identifiable {
+    let id = UUID()
     var uri: String
     var matchType: URIMatchType?
+
+    init(uri: String = "", matchType: URIMatchType? = nil) {
+        self.uri = uri
+        self.matchType = matchType
+    }
 
     init(_ source: LoginURI) {
         self.uri = source.uri
         self.matchType = source.matchType
+    }
+
+    // Exclude `id` from equality — two drafts with the same content are equal regardless of identity.
+    static func == (lhs: DraftLoginURI, rhs: DraftLoginURI) -> Bool {
+        lhs.uri == rhs.uri && lhs.matchType == rhs.matchType
     }
 }
 
@@ -49,7 +60,6 @@ nonisolated struct DraftCustomField: Equatable {
 nonisolated struct DraftLoginContent: Equatable {
     var username: String?
     var password: String?
-    /// URIs are editable in v1; adding/removing URIs is out of scope.
     var uris: [DraftLoginURI]
     /// TOTP seed is not editable in v1.
     let totp: String?
