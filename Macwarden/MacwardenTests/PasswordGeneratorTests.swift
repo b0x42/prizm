@@ -92,6 +92,19 @@ final class PasswordGeneratorTests: XCTestCase {
         }
     }
 
+    func testPassword_noWhitespace_withSymbolsEnabled() throws {
+        var config = PasswordGeneratorConfig()
+        config.length = 128
+        for seed in [Array<UInt8>(repeating: 0, count: 256),
+                     Array<UInt8>(repeating: 127, count: 256),
+                     Array<UInt8>(repeating: 255, count: 256),
+                     Array<UInt8>(0...255)] {
+            let p = MockRandomnessProvider(seed: seed)
+            let result = try generator.generatePassword(config: config, provider: p)
+            XCTAssertFalse(result.contains(where: { $0.isWhitespace }), "Password contains whitespace: \(result)")
+        }
+    }
+
     func testPassword_lastSetLock_preventsEmptyPool() throws {
         // All sets disabled — generator should fall back to lowercase.
         var config = PasswordGeneratorConfig()

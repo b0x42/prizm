@@ -9,7 +9,7 @@ struct PasswordGenerator {
     private static let uppercaseChars = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     private static let lowercaseChars = Array("abcdefghijklmnopqrstuvwxyz")
     private static let digitChars     = Array("0123456789")
-    private static let symbolChars    = Array("!@#$%^&*()_+-=[]{}|;':\",.< >?/")
+    private static let symbolChars    = Array("!@#$%^&*()_+-=[]{}|;':\",.<>?/")
     private static let ambiguousChars: Set<Character> = ["0", "O", "I", "l", "1", "|"]
 
     // MARK: - EFF word list (loaded once, cached)
