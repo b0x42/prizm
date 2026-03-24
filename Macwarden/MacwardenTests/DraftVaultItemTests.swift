@@ -202,4 +202,53 @@ final class DraftVaultItemTests: XCTestCase {
         XCTAssertEqual(draftURI.uri, "https://example.com")
         XCTAssertNil(draftURI.matchType)
     }
+
+    // MARK: - DraftLoginURI empty initializer
+
+    func test_draftLoginURI_emptyInit_defaultsToEmptyStringAndNilMatchType() {
+        let uri = DraftLoginURI()
+        XCTAssertEqual(uri.uri, "")
+        XCTAssertNil(uri.matchType)
+    }
+
+    // MARK: - URI list mutations (add / remove / reorder)
+
+    func test_appendingBlankURI_increasesCount() {
+        var content = DraftLoginContent(LoginContent(
+            username: nil, password: nil,
+            uris: [LoginURI(uri: "https://a.com", matchType: nil)],
+            totp: nil, notes: nil, customFields: []
+        ))
+        content.uris.append(DraftLoginURI())
+        XCTAssertEqual(content.uris.count, 2)
+        XCTAssertEqual(content.uris[1].uri, "")
+    }
+
+    func test_removingURI_decreasesCount() {
+        var content = DraftLoginContent(LoginContent(
+            username: nil, password: nil,
+            uris: [
+                LoginURI(uri: "https://a.com", matchType: nil),
+                LoginURI(uri: "https://b.com", matchType: nil)
+            ],
+            totp: nil, notes: nil, customFields: []
+        ))
+        content.uris.remove(at: 0)
+        XCTAssertEqual(content.uris.count, 1)
+        XCTAssertEqual(content.uris[0].uri, "https://b.com")
+    }
+
+    func test_swappingAdjacentURIs_reorders() {
+        var content = DraftLoginContent(LoginContent(
+            username: nil, password: nil,
+            uris: [
+                LoginURI(uri: "https://first.com", matchType: nil),
+                LoginURI(uri: "https://second.com", matchType: nil)
+            ],
+            totp: nil, notes: nil, customFields: []
+        ))
+        content.uris.swapAt(0, 1)
+        XCTAssertEqual(content.uris[0].uri, "https://second.com")
+        XCTAssertEqual(content.uris[1].uri, "https://first.com")
+    }
 }

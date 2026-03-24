@@ -5,8 +5,8 @@ import SwiftUI
 /// Edit form for Login vault items.
 ///
 /// Mirrors the layout of `LoginDetailView`: Credentials card, Websites card,
-/// Notes card, Custom Fields card. All existing URI rows are editable (adding
-/// and removing URIs is out of scope for v1). Password is masked by default.
+/// Notes card, Custom Fields card. URIs can be added, removed, and reordered.
+/// Password is masked by default.
 struct LoginEditForm: View {
 
     @Binding var draft: DraftLoginContent
@@ -21,13 +21,29 @@ struct LoginEditForm: View {
                     MaskedEditFieldRow(label: "Password", value: $draft.password, generatorBinding: $draft.password)
                 }
 
-                if !draft.uris.isEmpty {
-                    DetailSectionCard("Websites") {
-                        ForEach(draft.uris.indices, id: \.self) { index in
-                            if index > 0 { Divider() }
-                            URIEditRow(uri: $draft.uris[index])
-                        }
+                DetailSectionCard("Websites") {
+                    ForEach(draft.uris.indices, id: \.self) { index in
+                        if index > 0 { Divider() }
+                        URIEditRow(
+                            uri: $draft.uris[index],
+                            canMoveUp: index > 0,
+                            canMoveDown: index < draft.uris.count - 1,
+                            showReorderButtons: draft.uris.count > 1,
+                            onMoveUp: { draft.uris.swapAt(index, index - 1) },
+                            onMoveDown: { draft.uris.swapAt(index, index + 1) },
+                            onRemove: { draft.uris.remove(at: index) }
+                        )
                     }
+                    Divider()
+                    Button {
+                        draft.uris.append(DraftLoginURI())
+                    } label: {
+                        Label("Add Website", systemImage: "plus")
+                            .font(Typography.fieldValue)
+                    }
+                    .buttonStyle(.borderless)
+                    .padding(.vertical, Spacing.rowVertical)
+                    .padding(.horizontal, Spacing.rowHorizontal)
                 }
 
                 DetailSectionCard("Notes") {
@@ -42,14 +58,48 @@ struct LoginEditForm: View {
 
 // MARK: - URIEditRow
 
-/// An editable row for a single LoginURI, with a match-type picker.
+/// An editable row for a single LoginURI, with match-type picker, reorder, and remove controls.
 private struct URIEditRow: View {
 
     @Binding var uri: DraftLoginURI
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let showReorderButtons: Bool
+    let onMoveUp: () -> Void
+    let onMoveDown: () -> Void
+    let onRemove: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            EditFieldRow(label: "Website", text: $uri.uri)
+            HStack {
+                if showReorderButtons {
+                    VStack(spacing: 2) {
+                        Button(action: onMoveUp) {
+                            Image(systemName: "chevron.up")
+                                .font(Typography.utility)
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(!canMoveUp)
+
+                        Button(action: onMoveDown) {
+                            Image(systemName: "chevron.down")
+                                .font(Typography.utility)
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(!canMoveDown)
+                    }
+                    .padding(.leading, Spacing.rowHorizontal)
+                }
+
+                EditFieldRow(label: "Website", text: $uri.uri)
+
+                Button(action: onRemove) {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.red)
+                }
+                .buttonStyle(.borderless)
+                .padding(.trailing, Spacing.rowHorizontal)
+            }
             Divider()
             HStack {
                 Text("Match Type")

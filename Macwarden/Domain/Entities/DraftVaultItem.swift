@@ -11,6 +11,11 @@ nonisolated struct DraftLoginURI: Equatable {
     var uri: String
     var matchType: URIMatchType?
 
+    init(uri: String = "", matchType: URIMatchType? = nil) {
+        self.uri = uri
+        self.matchType = matchType
+    }
+
     init(_ source: LoginURI) {
         self.uri = source.uri
         self.matchType = source.matchType
@@ -49,7 +54,6 @@ nonisolated struct DraftCustomField: Equatable {
 nonisolated struct DraftLoginContent: Equatable {
     var username: String?
     var password: String?
-    /// URIs are editable in v1; adding/removing URIs is out of scope.
     var uris: [DraftLoginURI]
     /// TOTP seed is not editable in v1.
     let totp: String?
