@@ -50,11 +50,7 @@ struct VaultBrowserView: View {
                         )
                     }
                 }
-                .searchable(
-                    text: $viewModel.searchQuery,
-                    placement: .sidebar,
-                    prompt: "Search vault"
-                )
+                .navigationTitle(viewModel.sidebarSelection.displayName)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         if viewModel.sidebarSelection != .trash {
@@ -131,6 +127,11 @@ struct VaultBrowserView: View {
                         }
                     }
                 }
+                .searchable(
+                    text: $viewModel.searchQuery,
+                    placement: .toolbar,
+                    prompt: "Search vault"
+                )
             }
         )
         .navigationSplitViewStyle(.balanced)
