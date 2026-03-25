@@ -31,8 +31,7 @@ struct MacwardenApp: App {
                 .containerBackground(.thinMaterial, for: .window)
                 .environment(optionKeyMonitor)
         }
-        .windowStyle(.titleBar)
-        .windowToolbarStyle(.unified)
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(after: .appInfo) {
                 Button("Sign Out…") {

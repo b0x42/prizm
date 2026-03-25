@@ -158,12 +158,14 @@ Text custom fields SHALL show a plain copyable value. Hidden fields SHALL show a
 ---
 
 ### Requirement: Real-time search filters the item list within the active category
-The system SHALL provide a persistent search bar that filters the item list in real time on every keystroke. Search SHALL be scoped to the currently selected sidebar category. The search term SHALL be preserved when the user switches categories and re-filtered against the new category's items.
+The system SHALL provide search via the native `.searchable(text:placement:prompt:)` modifier with `.sidebar` placement on the content column. Search SHALL filter the item list in real time on every keystroke, scoped to the currently selected sidebar category.
 
 Fields searched per type: Login (name, username, URIs, notes), Card (name, cardholderName, notes), Identity (name, firstName, lastName, email, company, notes), Secure Note (name, notes), SSH Key (name only).
 
+When the sidebar selection changes to Trash, the search query SHALL be cleared so that no invisible filter is applied to the trash item list.
+
 #### Scenario: Real-time filtering
-- **WHEN** the user types in the search bar
+- **WHEN** the user types in the search field
 - **THEN** the item list immediately updates to show only matching items within the active category
 
 #### Scenario: Empty search results
@@ -171,12 +173,12 @@ Fields searched per type: Login (name, username, URIs, notes), Card (name, cardh
 - **THEN** a clear "no results" empty state is shown
 
 #### Scenario: Clear search restores full list
-- **WHEN** the user clears the search bar
+- **WHEN** the user clears the search field
 - **THEN** the middle pane shows all items for the active category
 
-#### Scenario: Search term preserved on category switch
-- **WHEN** a search is active and the user selects a different sidebar category
-- **THEN** the search term is preserved and results are re-filtered against the new category
+#### Scenario: Search query cleared on entering Trash
+- **WHEN** the user selects Trash in the sidebar while a search query is active
+- **THEN** the search query is cleared
 
 ---
 
@@ -192,11 +194,6 @@ If vault data cannot be refreshed during an active session, the system SHALL dis
 
 ### Requirement: Sign Out clears all local data
 The system SHALL provide a Sign Out option in the application menu. Selecting it SHALL present a confirmation dialog warning that all locally stored session data and vault content will be cleared. On confirmation, all data is cleared and the login screen is shown completely blank (no pre-filled email or server URL).
-
----
-
-### Requirement: "Last synced" timestamp shown in toolbar
-The vault browser toolbar SHALL display a right-aligned "Last synced: [time]" label showing the time of the last successful sync as a relative timestamp (e.g. "2 minutes ago").
 
 ---
 

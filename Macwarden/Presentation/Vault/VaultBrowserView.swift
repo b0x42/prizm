@@ -1,32 +1,25 @@
 import SwiftUI
+import os.log
 
 // MARK: - VaultBrowserView
 
-/// Three-pane vault browser (User Story 3).
+/// Three-pane vault browser using `NavigationSplitView`.
 ///
-/// Layout: `NavigationSplitView` in `.balanced` column mode.
-/// - Sidebar:     `SidebarView` (categories + counts)
-/// - Content/List: `ItemListView` (filtered item rows)
-/// - Detail:      `ItemDetailView` (selected item detail or empty state)
-///
-/// Search bar in the toolbar filters `ItemListView` in real time (FR-012).
-/// Sync error banner appears at the top of the content area (FR-049).
-/// Last-synced timestamp in the toolbar (FR-037, FR-041).
+/// - Sidebar:  `SidebarView` (categories + counts)
+/// - Content:  `ItemListView` with native search and `+` button
+/// - Detail:   `ItemDetailView` with Edit / Delete buttons
 struct VaultBrowserView: View {
 
     @ObservedObject var viewModel: VaultBrowserViewModel
     let faviconLoader: FaviconLoader
-    /// Factory closure injected from `AppContainer` so the view layer stays decoupled from Data.
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
-    /// Factory closure for creating a new item edit view model in create mode.
     let makeCreateViewModel: (ItemType) -> ItemEditViewModel
-    /// Notifies the ViewModel when the edit sheet opens/closes (for menu bar state).
     var onEditSheetState: ((Bool) -> Void)? = nil
 
-    /// Controls visibility of the type picker popover (opened by + click or ⌘N).
-    @State private var showingTypePicker = false
-    /// Tracks which item type is currently highlighted in the picker; pre-set to Login on open.
-    @State private var typePickerSelection: ItemType? = ItemType.allCases.first
+    @State private var showSoftDeleteAlert = false
+    @State private var showPermanentDeleteAlert = false
+
+    private let logger = Logger(subsystem: "com.macwarden", category: "UI.VaultBrowser")
 
     var body: some View {
         NavigationSplitView(
@@ -41,7 +34,6 @@ struct VaultBrowserView: View {
                 VStack(spacing: 0) {
                     syncErrorBanner
                     if viewModel.sidebarSelection == .trash {
-                        // Trash pane — shows soft-deleted items with restore/permanent-delete actions.
                         TrashView(
                             items:             viewModel.displayedItems,
                             selection:         $viewModel.itemSelection,
@@ -50,20 +42,43 @@ struct VaultBrowserView: View {
                             onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) }
                         )
                     } else {
-                        // The + button is embedded in the view body (not a ToolbarItem) so its
-                        // position never shifts with NavigationSplitView column focus. macOS uses
-                        // a single unified NSToolbar for the entire window; ToolbarItem placements
-                        // like .primaryAction and .automatic resolve relative to whichever column
-                        // currently holds focus, so clicking a sidebar row would drift the button
-                        // to the search-bar area. Embedding it here makes it unconditionally above
-                        // the list. .keyboardShortcut still works on non-toolbar views.
-                        newItemBar
                         ItemListView(
-                            items:        viewModel.displayedItems,
-                            selection:    $viewModel.itemSelection,
+                            items:         viewModel.displayedItems,
+                            selection:     $viewModel.itemSelection,
                             faviconLoader: faviconLoader,
-                            onDelete:     { id in await viewModel.performSoftDelete(id: id) }
+                            onDelete:      { id in await viewModel.performSoftDelete(id: id) }
                         )
+                    }
+                }
+                .searchable(
+                    text: $viewModel.searchQuery,
+                    placement: .sidebar,
+                    prompt: "Search vault"
+                )
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        if viewModel.sidebarSelection != .trash {
+                            Menu {
+                                ForEach(ItemType.allCases) { type in
+                                    Button {
+                                        viewModel.createItemType = type
+                                    } label: {
+                                        Label(type.displayName, systemImage: type.sfSymbol)
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .help("New Item (⌘N)")
+                            .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
+                            .menuIndicator(.visible)
+                            .background {
+                                Button("") { viewModel.createItemType = .login }
+                                    .keyboardShortcut("n", modifiers: .command)
+                                    .frame(width: 0, height: 0)
+                                    .opacity(0)
+                            }
+                        }
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280)
@@ -81,15 +96,44 @@ struct VaultBrowserView: View {
                     onSoftDelete:        { id in await viewModel.performSoftDelete(id: id) },
                     onRestore:           { id in await viewModel.performRestore(id: id) },
                     onPermanentDelete:   { id in await viewModel.performPermanentDelete(id: id) },
-                    // Relay menu bar Edit/Save actions into the detail pane (spec §9.3–9.4).
                     editTrigger:         viewModel.editTrigger,
                     saveTrigger:         viewModel.saveTrigger
                 )
+                .toolbar {
+                    if let item = viewModel.itemSelection {
+                        if item.isDeleted {
+                            ToolbarItem(placement: .primaryAction) {
+                                Button("Restore") {
+                                    Task { await viewModel.performRestore(id: item.id) }
+                                }
+                                .accessibilityIdentifier(AccessibilityID.Trash.restoreButton)
+                            }
+                            ToolbarItem(placement: .destructiveAction) {
+                                Button("Delete Permanently", role: .destructive) {
+                                    showPermanentDeleteAlert = true
+                                }
+                                .accessibilityIdentifier(AccessibilityID.Trash.permanentDeleteButton)
+                            }
+                        } else {
+                            ToolbarItem(placement: .primaryAction) {
+                                Button("Edit") {
+                                    viewModel.triggerEdit()
+                                }
+                                .disabled(viewModel.editSheetOpen)
+                                .keyboardShortcut("e", modifiers: .command)
+                                .accessibilityIdentifier(AccessibilityID.Edit.editButton)
+                            }
+                            ToolbarItem(placement: .destructiveAction) {
+                                Button("Delete", role: .destructive) {
+                                    showSoftDeleteAlert = true
+                                }
+                            }
+                        }
+                    }
+                }
             }
         )
         .navigationSplitViewStyle(.balanced)
-        .searchable(text: $viewModel.searchQuery, prompt: "Search vault")
-        // Error alert for delete / restore failures.
         .alert("Action Failed", isPresented: Binding(
             get:  { viewModel.actionError != nil },
             set:  { if !$0 { viewModel.actionError = nil } }
@@ -98,11 +142,29 @@ struct VaultBrowserView: View {
         } message: {
             Text(viewModel.actionError ?? "")
         }
-        .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                lastSyncedLabel
+        .alert("Move to Trash?", isPresented: $showSoftDeleteAlert) {
+            Button("Move to Trash", role: .destructive) {
+                if let item = viewModel.itemSelection {
+                    Task { await viewModel.performSoftDelete(id: item.id) }
+                }
             }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("\"\(viewModel.itemSelection?.name ?? "")\" will be moved to Trash.")
+        }
+        .alert("Delete Permanently?", isPresented: $showPermanentDeleteAlert) {
+            Button("Delete Permanently", role: .destructive) {
+                if let item = viewModel.itemSelection {
+                    Task { await viewModel.performPermanentDelete(id: item.id) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("\"\(viewModel.itemSelection?.name ?? "")\" will be permanently deleted and cannot be recovered.")
+        }
+        .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
+        .onChange(of: viewModel.sidebarSelection) { _, newValue in
+            if newValue == .trash { viewModel.searchQuery = "" }
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(
@@ -115,47 +177,7 @@ struct VaultBrowserView: View {
         }
     }
 
-    // MARK: - Subviews
-
-    /// A thin action bar rendered immediately above the item list.
-    ///
-    /// Embedding this in the view body (not a ToolbarItem) keeps the button's position
-    /// stable regardless of which NavigationSplitView column holds focus.
-    ///
-    /// The trigger is a plain Button + popover rather than a SwiftUI Menu. SwiftUI Menu
-    /// propagates .keyboardShortcut to every child Button, which would annotate each
-    /// item type row with "⌘N" — the shortcut would appear on Login, Card, Identity, etc.
-    /// A Button + popover keeps ⌘N on the trigger only. The popover's List provides
-    /// native macOS arrow-key navigation and Enter-to-confirm via .onKeyPress.
-    @ViewBuilder
-    private var newItemBar: some View {
-        HStack(spacing: 0) {
-            Spacer()
-            Button {
-                // Reset to Login so the picker always opens with the first row selected.
-                typePickerSelection = ItemType.allCases.first
-                showingTypePicker = true
-            } label: {
-                Image(systemName: "plus")
-                    .imageScale(.medium)
-            }
-            .buttonStyle(.borderless)
-            .help("New Item (⌘N)")
-            .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
-            // ⌘N is on the button only — not propagated into the picker rows.
-            .keyboardShortcut("n", modifiers: .command)
-            .popover(isPresented: $showingTypePicker, arrowEdge: .top) {
-                NewItemTypePickerView(selection: $typePickerSelection) { type in
-                    showingTypePicker = false
-                    viewModel.createItemType = type
-                }
-            }
-            .padding(.trailing, Spacing.rowHorizontal)
-        }
-        .frame(height: 28)
-        .background(.bar)
-        Divider()
-    }
+    // MARK: - Sync Error Banner
 
     @ViewBuilder
     private var syncErrorBanner: some View {
@@ -181,61 +203,6 @@ struct VaultBrowserView: View {
             .background(Color.yellow.opacity(0.15))
             .frame(maxHeight: 44)
             .accessibilityIdentifier(AccessibilityID.Vault.syncErrorBanner)
-        }
-    }
-
-    @ViewBuilder
-    private var lastSyncedLabel: some View {
-        if let date = viewModel.lastSyncedAt {
-            Text("Last synced: \(date, formatter: Self.relativeDateFormatter)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier(AccessibilityID.Vault.lastSyncedLabel)
-        }
-    }
-
-    // MARK: - Formatters
-
-    private static let relativeDateFormatter: RelativeDateTimeFormatter = {
-        let f = RelativeDateTimeFormatter()
-        f.unitsStyle = .full
-        return f
-    }()
-}
-
-// MARK: - NewItemTypePickerView
-
-/// Popover content for the "+" / ⌘N type picker.
-///
-/// Uses a native List with a single-selection binding so ↑/↓ arrow navigation
-/// and visual highlight are handled by AppKit with no custom key handling needed.
-/// Enter confirms the current selection via .onKeyPress(.return).
-///
-/// This is separate from SwiftUI Menu intentionally: attaching .keyboardShortcut
-/// to a Menu propagates the shortcut annotation to every child Button, making
-/// ⌘N appear next to every item type in the dropdown. A plain Button + popover
-/// keeps the shortcut on the trigger only.
-private struct NewItemTypePickerView: View {
-
-    @Binding var selection: ItemType?
-    let onConfirm: (ItemType) -> Void
-
-    var body: some View {
-        List(ItemType.allCases, id: \.self, selection: $selection) { type in
-            Label(type.displayName, systemImage: type.sfSymbol)
-                .tag(type)
-                // Row identifier uses ItemType.rawValue ("login", "card", etc.) so
-                // XCUITests can query specific rows as app.cells["typePicker.row.login"].
-                .accessibilityIdentifier(AccessibilityID.Create.pickerRow(type.rawValue))
-        }
-        .accessibilityIdentifier(AccessibilityID.Create.pickerList)
-        .frame(width: 220, height: CGFloat(ItemType.allCases.count) * 32 + 8)
-        // Confirm the highlighted row when the user presses Enter.
-        // .onKeyPress requires the List to be focused; macOS focuses popover
-        // content automatically on open, so no explicit .focusable() is needed.
-        .onKeyPress(.return) {
-            if let type = selection { onConfirm(type) }
-            return .handled
         }
     }
 }
