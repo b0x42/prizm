@@ -1,31 +1,30 @@
 ## Why
 
-The current vault browser uses a standard macOS unified toolbar with a floating search bar and toolbar buttons, which feels generic and dated. Adopting the borderless, column-header-driven layout used by Apple's Passwords app creates a cleaner, more native macOS 26 experience that aligns with what users expect from a modern password manager.
+The current vault browser uses a standard macOS unified toolbar with a floating search bar and toolbar buttons, which feels generic and dated. Adopting a cleaner layout with native SwiftUI toolbar and searchable APIs creates a simpler, more native macOS experience while removing unnecessary custom chrome.
 
 ## What Changes
 
 - Remove the macOS title bar and unified toolbar chrome (hidden title bar window style)
-- Remove `.searchable()` toolbar search; replace with a custom search field in the detail column header
-- Replace the minimal `+` icon bar above the item list with a proper list column header: bold category title, item count below it, and a bordered `[+]` button top-right
-- Move Edit and Delete toolbar buttons from `ItemDetailView`'s `.toolbar {}` block into a new detail column header bar (left-aligned), with the search field right-aligned
-- Trash state: detail header shows `[Restore]` and `[Delete Permanently]` instead of Edit/Delete, no search field
+- Replace `.searchable()` toolbar placement with `.searchable(placement: .sidebar)` on the content column for native search
+- Remove the custom `listColumnHeader` and `detailColumnHeader` subviews
+- Remove the custom `NativeSearchField` (`NSViewRepresentable` wrapper)
+- Place `[+]` button in the content pane toolbar via `ToolbarItem(placement: .primaryAction)`
+- Place Edit/Delete/Restore/Permanent Delete buttons in the detail pane toolbar via `ToolbarItem`
+- Move confirmation alert state from `ItemDetailView` to `VaultBrowserView`
 - Remove "Last synced" toolbar label entirely
-- **BREAKING**: `ItemDetailView` no longer owns its Edit/Delete/Restore/Permanent Delete toolbar buttons — callers must render them via the new detail header
+- Remove `DetailColumnHeaderTests` and `ListColumnHeaderTests` (tested removed custom headers)
 
 ## Capabilities
 
-### New Capabilities
-- `list-column-header`: Bold category title + item count label + bordered [+] button rendered above the item list, replacing the old `newItemBar`
-- `detail-column-header`: Contextual action bar above the detail pane — shows Edit/Delete (active items), Restore/Permanent Delete (trash items), and a search field; replaces toolbar buttons from `ItemDetailView`
-
 ### Modified Capabilities
-- `vault-browser-ui`: Window chrome changes (hidden title bar), removal of `.searchable()` and `.toolbar` modifiers, integration of the two new column headers
+- `vault-browser-ui`: Window chrome changes (hidden title bar), native `.searchable` on content column, toolbar-based action buttons on detail column, removal of custom column headers and `NativeSearchField`
 
 ## Impact
 
 - `MacwardenApp.swift`: window style + toolbar style modifiers
-- `VaultBrowserView.swift`: remove `.searchable()`, `.toolbar`, `newItemBar`, `lastSyncedLabel`; add `listColumnHeader` and `detailColumnHeader` subviews
-- `ItemDetailView.swift`: remove `.toolbar {}` block; Edit/Delete/Restore/Permanent Delete actions now driven by parent via existing callback props (`onSoftDelete`, `onRestore`, `onPermanentDelete`) and `editTrigger`
-- `VaultBrowserViewModel.swift`: `sidebarSelection.displayName` used for header title; `displayedItems.count` used for item count
-- `MacwardenApp.swift` `CommandMenu("Item")` — Edit/Save menu bar buttons are **unchanged**; they continue to call `rootVM.vaultBrowserVM.triggerEdit()` and are enabled/disabled by `RootViewModel.menuBarCanEdit / menuBarCanSave` as before
+- `VaultBrowserView.swift`: remove custom `listColumnHeader`, `detailColumnHeader`, `NativeSearchField` usage; use native `.searchable` and `.toolbar` for all controls
+- `ItemDetailView.swift`: remove `.toolbar {}` block; actions driven by parent via existing callback props and `editTrigger`
+- `NativeSearchField.swift`: deleted (replaced by native `.searchable`)
+- `DetailColumnHeaderTests.swift`: deleted (tested removed custom header)
+- `ListColumnHeaderTests.swift`: deleted (tested removed custom header)
 - No new dependencies; no data layer changes

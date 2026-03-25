@@ -1,83 +1,52 @@
 ## Context
 
-Macwarden currently uses the standard macOS unified toolbar pattern: `.windowStyle(.titleBar)` + `.windowToolbarStyle(.unified)` gives a single combined title/toolbar bar across the top. Search (`searchable`) and the "Last synced" label live in that toolbar. Edit/Delete/Restore/Permanent Delete buttons live in `ItemDetailView`'s own `.toolbar {}` block.
+Macwarden previously used custom column headers (`listColumnHeader`, `detailColumnHeader`) with a custom `NativeSearchField` (`NSViewRepresentable` wrapping `NSSearchField`) and manually positioned action buttons. This added complexity without meaningful UX benefit over native SwiftUI APIs.
 
-Apple's Passwords app on macOS 26 uses a different chrome: no visible title bar, no toolbar bar — all controls are embedded directly in column headers. This is achieved via `.windowStyle(.hiddenTitleBar)`, with traffic light buttons floating over the sidebar.
-
-The goal is to replicate this layout. Three surfaces change:
-1. **Window level** — strip chrome
-2. **List column** — new header with title, count, and `[+]`
-3. **Detail column** — new header with action buttons and search field
+The implementation now uses native SwiftUI `.searchable(placement: .sidebar)` for search and `.toolbar` with `ToolbarItem` for action buttons, which is simpler, more maintainable, and automatically adapts to macOS conventions.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Remove toolbar chrome entirely (hidden title bar, no unified toolbar bar)
-- Replace `.searchable()` with `NSSearchField` in the detail column header
-- Show bold category title + item count above the item list
-- Show contextual action buttons (Edit/Delete or Restore/Perm.Delete) left-aligned in the detail header
-- Show search field right-aligned in the detail header
-- ⌘F jumps focus to the search field
+- Use native `.searchable` modifier for search (no custom `NSSearchField` wrapper)
+- Use native `.toolbar` with `ToolbarItem` for `+`, Edit, Delete, Restore, and Permanent Delete buttons
+- Keep hidden title bar window style for clean chrome
+- Maintain all existing functionality: search, create, edit, delete, restore, permanent delete
 
 **Non-Goals:**
-- Sort button or sort functionality (explicitly out of scope)
+- Sort button or sort functionality
+- Custom column header styling or translucent material effects
 - Any changes to the sidebar, item list rows, or detail content views
-- Animation or transition polish beyond what SwiftUI provides by default
 
 ## Decisions
 
 ### 1. `.windowStyle(.hiddenTitleBar)` — not `.plain`
 
-`.plain` removes the traffic lights entirely, which is too bare. `.hiddenTitleBar` keeps the traffic lights floating over the content (exactly what Passwords does) while eliminating the title bar chrome. Drop `.windowToolbarStyle(.unified)` alongside it — it has no effect without `.titleBar` but is noisy to keep.
+`.plain` removes the traffic lights entirely. `.hiddenTitleBar` keeps them floating over the sidebar while eliminating title bar chrome.
 
-### 2. Use `NSSearchField` via `NSViewRepresentable` for the search field
+### 2. Native `.searchable` instead of custom `NSSearchField`
 
-`.searchable()` places its field in the toolbar/navigation bar; without a unified toolbar there is no natural SwiftUI host in the detail column header. A plain SwiftUI `TextField` replicates the visual but loses native macOS focus restoration (the system restores the field's first-responder status when navigating back) and the built-in clear animation.
+The original design used `NSSearchField` via `NSViewRepresentable` to get native focus restoration outside a toolbar. With the simplified approach, `.searchable(text:placement:prompt:)` with `.sidebar` placement provides the standard macOS search experience with zero custom code. The `NativeSearchField.swift` component and its `FocusRestoringSearchField` subclass are deleted.
 
-`NSSearchField` wrapped in `NSViewRepresentable` gives the full native experience — correct focus restoration, native clear button animation, correct search-field bezeling — while being placeable exactly where the detail column header needs it. This is the approach used to get identical behaviour to `.searchable()` without being tied to the toolbar.
+### 3. Native `.toolbar` for action buttons
 
-**AppKit justification** (Constitution §I — AppKit permitted only when SwiftUI has no equivalent API): SwiftUI provides no API to place a `searchable`-quality search field at an arbitrary position within a view hierarchy on macOS. `NSViewRepresentable` wrapping `NSSearchField` is the only way to achieve native focus restoration and animation outside a toolbar context. Usage is limited to this one wrapper component.
+Instead of manually positioning buttons in custom header views, all action buttons use `ToolbarItem`:
+- Content pane: `+` button via `ToolbarItem(placement: .primaryAction)`
+- Detail pane: Edit/Delete via `ToolbarItem(placement: .primaryAction)` and `ToolbarItem(placement: .destructiveAction)`
+- Trash state: Restore/Permanent Delete replace Edit/Delete
 
-### 3. Edit/Delete buttons and confirmation alerts move to `VaultBrowserView`
+### 4. Confirmation alerts owned by `VaultBrowserView`
 
-`ItemDetailView` currently owns its Edit/Delete toolbar buttons and the associated confirmation alert state. Both move to `VaultBrowserView`:
-- The header bar is owned by `VaultBrowserView`, which already holds `viewModel` with access to `performSoftDelete`, `triggerEdit`, etc.
-- The existing `editTrigger` pattern already lets the menu bar drive edit from outside `ItemDetailView` — the header Edit button uses the same path.
-- Confirmation alerts (`showSoftDeleteAlert`, `showPermanentDeleteAlert`) move to `VaultBrowserView` alongside the buttons that trigger them. Keeping alerts in `ItemDetailView` while the buttons are in `VaultBrowserView` would require a trigger-Int pattern for each destructive action — unnecessary complexity when the state can simply move with the buttons.
-- `ItemDetailView` retains `onSoftDelete` / `onPermanentDelete` / `onRestore` callback props (used by the trash banner) but its own `showSoftDeleteAlert` / `showPermanentDeleteAlert` `@State` vars are removed.
+`showSoftDeleteAlert` and `showPermanentDeleteAlert` state lives in `VaultBrowserView` alongside the toolbar buttons that trigger them. `ItemDetailView` retains callback props but no longer owns alert state.
 
-### 4. Trash column header omits search
+### 5. Trash hides search and `+` button
 
-When `sidebarSelection == .trash`, the detail header shows `[Restore]` and `[Delete Permanently]` with no search field. This matches Passwords and avoids the complexity of searching across trash separately.
-
-### 5. List column header replaces `newItemBar`
-
-`newItemBar` is a thin `.background(.bar)` strip with only the `+` button. It is replaced by `listColumnHeader`: a taller area with a `VStack` (bold name + caption count) on the left and a bordered `[+]` button on the right. The `.background(.bar)` material is retained so it blurs the list content when scrolled beneath it — the same visual as before, just taller.
+When `sidebarSelection == .trash`, the `+` button is conditionally removed from the view tree (not hidden) so ⌘N is also disabled. Search query is cleared via `.onChange` when entering Trash.
 
 ## Risks / Trade-offs
 
-- **UITest accessibility IDs on toolbar buttons** → The `AccessibilityID.Edit.editButton` is currently on the `ItemDetailView` toolbar `Button("Edit")`. After the move it will be on the header button in `VaultBrowserView`. XCUITests that query `app.buttons[AccessibilityID.Edit.editButton]` will still find the button — no ID change needed, just verify the UI tests pass.
-- **`NSSearchField` focus behaviour** → `NSViewRepresentable` components require careful `makeNSView`/`updateNSView` implementation to avoid double-update cycles. Verify first-responder handoff works correctly with `NavigationSplitView` column focus changes.
-- **⌘F conflicts** → ⌘F is used by some system services (e.g. browser find). In a sandboxed macOS app it is generally safe to claim, but verify no conflict with existing app shortcuts.
-- **Traffic lights overlap sidebar content** → `NavigationSplitView` respects `.safeAreaInset` for the traffic light area automatically on macOS 26. No manual padding needed, but verify visually.
-- **`newItemBar` height change** → The list column header is taller than the old `newItemBar` (28pt). XCUITests that measure geometry will need re-baselining; behaviour tests are unaffected.
+- **Toolbar button placement**: macOS `NavigationSplitView` shares a single window toolbar across columns. Button placement is controlled by the system based on which column's `.toolbar` block defines them, but exact positioning may vary across macOS versions.
+- **No custom search field styling**: Native `.searchable` doesn't support custom positioning within a column header. The search field appears in the system-determined location for `.sidebar` placement.
 
 ## Migration Plan
 
-Pure SwiftUI changes — no data model, no keychain, no network. No migration needed. The change is self-contained and ships as a single PR.
-
-Rollback: revert the three modified files (`MacwardenApp.swift`, `VaultBrowserView.swift`, `ItemDetailView.swift`).
-
-## Complexity Tracking
-
-Non-obvious decisions that required explicit justification, per Constitution §I and §VI.
-
-| Decision | Justification | Rejected simpler alternative |
-|---|---|---|
-| `NSSearchField` via `NSViewRepresentable` | SwiftUI has no API to place a native search field with focus restoration outside a toolbar. `NSViewRepresentable` is the only path. Usage scoped to one wrapper component in `Presentation/Components/`. | Plain SwiftUI `TextField` — loses native focus restoration and clear-button animation, noticeable UX regression |
-| `cancelOperation(_:)` override on `NSSearchField` subclass | Only reliable hook for intercepting ESC before the field clears itself. Delegate `control(_:textView:doCommandBy:)` fires after the default handler, too late to capture the original responder. | `onKeyPress(.escape)` in SwiftUI — does not fire when an `NSViewRepresentable` holds first-responder |
-| Confirmation alerts moved to `VaultBrowserView` | Avoids a new trigger-Int pattern per destructive action. State co-locates with the buttons that set it. | Keep alerts in `ItemDetailView` and add `deleteTrigger`/`permanentDeleteTrigger` Int vars — more indirection for no benefit |
-
-## Open Questions
-
-- None — all decisions made during explore session.
+Pure SwiftUI changes — no data model, no keychain, no network. No migration needed. Rollback: revert modified files and restore deleted files from git.

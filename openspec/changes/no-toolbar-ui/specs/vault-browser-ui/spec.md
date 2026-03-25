@@ -1,12 +1,14 @@
 ## MODIFIED Requirements
 
 ### Requirement: Real-time search filters the item list within the active category
-The system SHALL provide a persistent search field in the detail column header that filters the item list in real time on every keystroke. Search SHALL be scoped to the currently selected sidebar category. The search term SHALL be preserved when the user switches categories and re-filtered against the new category's items.
+The system SHALL provide search via the native `.searchable(text:placement:prompt:)` modifier with `.sidebar` placement on the content column. Search SHALL filter the item list in real time on every keystroke, scoped to the currently selected sidebar category.
 
 Fields searched per type: Login (name, username, URIs, notes), Card (name, cardholderName, notes), Identity (name, firstName, lastName, email, company, notes), Secure Note (name, notes), SSH Key (name only).
 
+When the sidebar selection changes to Trash, the search query SHALL be cleared so that no invisible filter is applied to the trash item list.
+
 #### Scenario: Search filters item list
-- **WHEN** the user types in the detail column header search field
+- **WHEN** the user types in the search field
 - **THEN** the item list updates in real time to show only matching items
 
 #### Scenario: Empty search results
@@ -17,12 +19,16 @@ Fields searched per type: Login (name, username, URIs, notes), Card (name, cardh
 - **WHEN** the user clears the search field
 - **THEN** the full item list for the active category is restored
 
-#### Scenario: Search term preserved across category switches
-- **WHEN** a search is active and the user selects a different sidebar category
-- **THEN** the search term is preserved and results are re-filtered against the new category
+#### Scenario: Search query cleared on entering Trash
+- **WHEN** the user selects Trash in the sidebar while a search query is active
+- **THEN** the search query is cleared
 
 ## REMOVED Requirements
 
 ### Requirement: "Last synced" timestamp shown in toolbar
-**Reason**: The toolbar is removed as part of the no-toolbar UI redesign. The "Last synced" label has no appropriate host in the new column-header layout and is removed entirely from the UI.
-**Migration**: No user-facing migration needed. The underlying `lastSyncedAt` state in `VaultBrowserViewModel` is retained for potential future use.
+**Reason**: The toolbar is simplified as part of the no-toolbar UI redesign. The "Last synced" label is removed from the UI.
+**Migration**: The underlying `lastSyncedAt` state in `VaultBrowserViewModel` is retained for potential future use.
+
+### Requirement: Custom NativeSearchField with focus restoration
+**Reason**: Replaced by native `.searchable` modifier. The custom `NSSearchField` wrapper, `FocusRestoringSearchField` subclass, and ⌘F focus hack are no longer needed.
+**Migration**: `NativeSearchField.swift` deleted. Search is handled entirely by SwiftUI.
