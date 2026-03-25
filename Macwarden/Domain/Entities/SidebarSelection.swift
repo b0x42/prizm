@@ -50,6 +50,17 @@ nonisolated enum SidebarSelection {
     case trash
 }
 
+extension SidebarSelection {
+    var displayName: String {
+        switch self {
+        case .allItems:        return "All Items"
+        case .favorites:       return "Favorites"
+        case .type(let type):  return type.displayName
+        case .trash:           return "Trash"
+        }
+    }
+}
+
 extension SidebarSelection: Hashable {
     nonisolated static func == (lhs: SidebarSelection, rhs: SidebarSelection) -> Bool {
         switch (lhs, rhs) {

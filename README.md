@@ -25,7 +25,7 @@ A native Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](htt
 
 | Shortcut | Action |
 |---|---|
-| ⌘N | New item — opens type picker; ↑ ↓ to navigate, ↩ to create |
+| ⌘N | New Login item |
 | ⌘E | Edit selected item |
 | ⌘S | Save edits |
 | ⇧⌘Q | Sign out |

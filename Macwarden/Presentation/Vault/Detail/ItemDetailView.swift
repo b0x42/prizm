@@ -40,11 +40,6 @@ struct ItemDetailView: View {
     /// released (nil'd) when the sheet is dismissed to clear the draft from memory (§III).
     @State private var editViewModel: ItemEditViewModel?
 
-    // Confirmation alert state for soft-delete from the detail toolbar.
-    @State private var showSoftDeleteAlert:    Bool = false
-    // Confirmation alert state for permanent delete from the detail toolbar (trashed items).
-    @State private var showPermanentDeleteAlert: Bool = false
-
     var body: some View {
         if let item {
             VStack(spacing: 0) {
@@ -96,59 +91,6 @@ struct ItemDetailView: View {
                     .foregroundStyle(.secondary)
                 }
                 .padding(12)
-            }
-            .toolbar {
-                if item.isDeleted {
-                    // Trashed item toolbar: Restore + Delete Permanently.
-                    // The Edit button is intentionally absent — the Bitwarden API returns
-                    // an error if PUT is called on a cipher with a non-nil deletedDate.
-                    ToolbarItemGroup(placement: .primaryAction) {
-                        Button("Restore") {
-                            Task { await onRestore?(item.id) }
-                        }
-                        .accessibilityIdentifier(AccessibilityID.Trash.restoreButton)
-
-                        Button("Delete Permanently", role: .destructive) {
-                            showPermanentDeleteAlert = true
-                        }
-                        .accessibilityIdentifier(AccessibilityID.Trash.permanentDeleteButton)
-                    }
-                } else {
-                    // Active item toolbar: Edit + Delete.
-                    ToolbarItemGroup(placement: .primaryAction) {
-                        Button("Delete", role: .destructive) {
-                            showSoftDeleteAlert = true
-                        }
-
-                        // Edit button — visible only when an item is selected (this branch).
-                        // ⌘E shortcut fires only when the button is enabled (sheet not open).
-                        // spec §8.5, §8.7
-                        Button("Edit") {
-                            openEditSheet(for: item)
-                        }
-                        .disabled(isEditSheetPresented)
-                        .keyboardShortcut("e", modifiers: .command)
-                        .accessibilityIdentifier(AccessibilityID.Edit.editButton)
-                    }
-                }
-            }
-            // Soft-delete confirmation alert (active items).
-            .alert("Move to Trash?", isPresented: $showSoftDeleteAlert) {
-                Button("Move to Trash", role: .destructive) {
-                    Task { await onSoftDelete?(item.id) }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("\"\(item.name)\" will be moved to Trash.")
-            }
-            // Permanent delete confirmation alert (trashed items).
-            .alert("Delete Permanently?", isPresented: $showPermanentDeleteAlert) {
-                Button("Delete Permanently", role: .destructive) {
-                    Task { await onPermanentDelete?(item.id) }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("\"\(item.name)\" will be permanently deleted and cannot be recovered.")
             }
             .sheet(isPresented: $isEditSheetPresented, onDismiss: {
                 editViewModel = nil

@@ -203,15 +203,14 @@ final class VaultBrowserJourneyTests: XCTestCase {
         }
     }
 
-    // MARK: - US3 Scenario 8: Last synced timestamp visible
+    // MARK: - US3 Scenario 8: Last synced timestamp removed (no-toolbar-ui)
 
-    /// Verifies the "Last synced: ..." label is visible in the toolbar (FR-037, FR-041).
+    /// The "Last synced" label was removed as part of the no-toolbar UI redesign.
+    /// This test is retained as a regression check to confirm it is absent.
     func testLastSyncedTimestampVisible() {
         let label = app.staticTexts["vault.lastSynced"]
-        // May not exist if no sync has occurred in test mode.
-        if label.waitForExistence(timeout: 5) {
-            XCTAssertTrue(label.label.contains("Last synced"), "Should show last synced timestamp")
-        }
+        XCTAssertFalse(label.waitForExistence(timeout: 2),
+                       "Last synced label should not exist after toolbar removal")
     }
 
     // MARK: - US3 Scenario 9: Sidebar categories always visible

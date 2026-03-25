@@ -13,6 +13,9 @@ import SwiftUI
 //   .headline 13 semibold · .body 13 · .callout 12
 //   .subheadline 11 · .footnote 10 · .caption 10
 enum Typography {
+    /// Bold category title in the list column header — smaller than pageTitle, heavier than listTitle.
+    static let columnHeader: Font  = .headline
+
     /// Item name in the detail pane — the largest text on screen.
     static let pageTitle: Font     = .largeTitle.bold()
 
