@@ -31,7 +31,7 @@ struct MacwardenApp: App {
                 .environment(optionKeyMonitor)
         }
         .windowStyle(.titleBar)
-        .windowToolbarStyle(.unified)
+        .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             CommandGroup(after: .appInfo) {
                 Button("Sign Out…") {

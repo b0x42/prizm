@@ -50,8 +50,6 @@ struct VaultBrowserView: View {
                         )
                     }
                 }
-                .navigationTitle(viewModel.sidebarSelection.displayName)
-                .navigationSubtitle("\(viewModel.displayedItems.count) Items")
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
