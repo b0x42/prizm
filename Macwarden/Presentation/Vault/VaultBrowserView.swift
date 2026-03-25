@@ -51,29 +51,28 @@ struct VaultBrowserView: View {
                     }
                 }
                 .navigationTitle(viewModel.sidebarSelection.displayName)
+                .navigationSubtitle("\(viewModel.displayedItems.count) Items")
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        if viewModel.sidebarSelection != .trash {
-                            Menu {
-                                ForEach(ItemType.allCases) { type in
-                                    Button {
-                                        viewModel.createItemType = type
-                                    } label: {
-                                        Label(type.displayName, systemImage: type.sfSymbol)
-                                    }
+                        Menu {
+                            ForEach(ItemType.allCases) { type in
+                                Button {
+                                    viewModel.createItemType = type
+                                } label: {
+                                    Label(type.displayName, systemImage: type.sfSymbol)
                                 }
-                            } label: {
-                                Image(systemName: "plus")
                             }
-                            .help("New Item (⌘N)")
-                            .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
-                            .menuIndicator(.visible)
-                            .background {
-                                Button("") { viewModel.createItemType = .login }
-                                    .keyboardShortcut("n", modifiers: .command)
-                                    .frame(width: 0, height: 0)
-                                    .opacity(0)
-                            }
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .help("New Item (⌘N)")
+                        .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
+                        .menuIndicator(.visible)
+                        .background {
+                            Button("") { viewModel.createItemType = .login }
+                                .keyboardShortcut("n", modifiers: .command)
+                                .frame(width: 0, height: 0)
+                                .opacity(0)
                         }
                     }
                 }
