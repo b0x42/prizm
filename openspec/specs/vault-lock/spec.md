@@ -50,3 +50,18 @@ The system SHALL observe the screensaver start event and lock the vault automati
 - **GIVEN** the vault is not currently unlocked (unlock screen or login screen is shown)
 - **WHEN** the screensaver activates
 - **THEN** no state change SHALL occur
+
+---
+
+### Requirement: Vault locks automatically when the screen is locked
+The system SHALL observe the macOS screen lock event (⌃⌘Q or Lock Screen menu) and lock the vault automatically. The lock SHALL fire whenever the vault is unlocked — including during an active vault sync.
+
+#### Scenario: Vault locks on screen lock
+- **GIVEN** the vault browser is visible
+- **WHEN** the user locks the screen via ⌃⌘Q or the Lock Screen menu item
+- **THEN** the vault SHALL be locked immediately, all in-memory key material SHALL be zeroed, the vault item cache SHALL be cleared, and the unlock screen SHALL be visible when the screen is unlocked
+
+#### Scenario: Screen lock while vault is already locked is a no-op
+- **GIVEN** the vault is not currently unlocked (unlock screen or login screen is shown)
+- **WHEN** the screen is locked
+- **THEN** no state change SHALL occur

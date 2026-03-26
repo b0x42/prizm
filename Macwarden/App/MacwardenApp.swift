@@ -168,9 +168,10 @@ final class RootViewModel: ObservableObject {
     /// Using Combine (not SwiftUI .onChange) so transitions fire regardless
     /// of whether the source view is currently in the view hierarchy.
     private var cancellables = Set<AnyCancellable>()
-    /// System notification observers for auto-lock (sleep + screensaver).
+    /// System notification observers for auto-lock (sleep, screensaver, screen lock).
     nonisolated(unsafe) private var sleepObserver: NSObjectProtocol?
     nonisolated(unsafe) private var screensaverObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var screenLockObserver: NSObjectProtocol?
 
     init(container: any RootViewModelDependencies) {
         self.container      = container
@@ -192,6 +193,7 @@ final class RootViewModel: ObservableObject {
     deinit {
         if let sleepObserver { NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver) }
         if let screensaverObserver { DistributedNotificationCenter.default().removeObserver(screensaverObserver) }
+        if let screenLockObserver { DistributedNotificationCenter.default().removeObserver(screenLockObserver) }
     }
 
     // MARK: - Combine subscriptions
@@ -239,6 +241,13 @@ final class RootViewModel: ObservableObject {
         // Auto-lock on screensaver start.
         screensaverObserver = DistributedNotificationCenter.default().addObserver(
             forName: .init("com.apple.screensaver.didstart"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.lockVault() } }
+
+        // Auto-lock on screen lock (⌃⌘Q / Lock Screen menu).
+        screenLockObserver = DistributedNotificationCenter.default().addObserver(
+            forName: .init("com.apple.screenIsLocked"),
             object: nil,
             queue: .main
         ) { [weak self] _ in MainActor.assumeIsolated { self?.lockVault() } }
