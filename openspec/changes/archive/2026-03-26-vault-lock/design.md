@@ -59,6 +59,7 @@ What is missing is a `lockVault()` entry point on `RootViewModel` and the system
 
 ## Risks / Trade-offs
 
+- **`RootViewModelDependencies` protocol added for testability** — `RootViewModel` originally took `AppContainer` directly. During implementation, a `RootViewModelDependencies` protocol was extracted so tests can inject mocks without a real `AppContainer`. `AppContainer` conforms via a thin extension. No functional change; the protocol is purely a testing seam.
 - **Sleep fires before the vault is reached** — if the user triggers sleep from the login screen, the guard handles it silently. No risk.
 - **Race between sleep and sign-out** — if the user signs out while sleep fires concurrently, both paths call `lockVault()`; the guard on `screen == .vault` means only one will proceed. Safe.
 - **`vaultStore` exposed on `AppContainer`** — `AppContainer` already exposes `vaultStore: VaultRepositoryImpl` directly. This is used here; no new coupling introduced.
