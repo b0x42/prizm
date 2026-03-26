@@ -4,10 +4,11 @@
 - [ ] 1.2 Add unit test: `lockVault()` is a no-op when `screen != .vault`
 - [ ] 1.3 Add unit test: `lockVault()` calls `authRepository.lockVault()` and `vaultStore.clearVault()`
 - [ ] 1.4 Add unit test: `lockVault()` creates a new `unlockVM` from the stored account
+- [ ] 1.5 Add unit test: `lockVault()` falls back to `screen = .login` when `storedAccount()` returns nil
 
 ## 2. RootViewModel — lockVault()
 
-- [ ] 2.1 Add `lockVault()` method to `RootViewModel` that guards on `screen == .vault`, then calls `await container.authRepository.lockVault()` and `container.vaultStore.clearVault()`
+- [ ] 2.1 Add `lockVault()` method to `RootViewModel` that guards on `screen == .vault || screen == .syncing`, then calls `await container.authRepository.lockVault()` and `container.vaultStore.clearVault()`
 - [ ] 2.2 After clearing, retrieve the stored account via `container.authRepository.storedAccount()`, create a new `unlockVM`, and set `screen = .unlock`
 
 ## 3. Sleep and Screensaver Observers

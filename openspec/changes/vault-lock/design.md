@@ -35,6 +35,8 @@ What is missing is a `lockVault()` entry point on `RootViewModel` and the system
 
 **Alternative considered:** A dedicated `LockUseCase` in the Domain layer. Rejected — lock is not a domain operation (it has no server interaction), it is a local session lifecycle event. The Domain layer would only add indirection with no benefit.
 
+**Constitution §II note:** Having `RootViewModel` call `authRepository.lockVault()` and `vaultStore.clearVault()` directly is a known deviation from §II ("all data access flows through Domain use cases"). This is an acknowledged existing pattern — `signOut()` already does the same. A `LockUseCase` was explicitly considered and rejected above.
+
 ### Decision 2: Call both `authRepository.lockVault()` and `vaultStore.clearVault()`
 
 **Chosen:** `RootViewModel.lockVault()` calls both explicitly.
@@ -51,9 +53,9 @@ What is missing is a `lockVault()` entry point on `RootViewModel` and the system
 
 ### Decision 4: Guard with `screen == .vault` check
 
-**Chosen:** `lockVault()` returns early if `screen != .vault`.
+**Chosen:** `lockVault()` proceeds if `screen == .vault || screen == .syncing`, and is a no-op otherwise.
 
-**Rationale:** Sleep and screensaver notifications fire regardless of app state. If the vault is already locked or the user is on the login screen, calling `lockVault()` again should be a silent no-op. The underlying `crypto.lockVault()` is safe to call when already locked (zeroing already-zero keys), but the screen transition and `unlockVM` creation must be guarded.
+**Rationale:** Sleep and screensaver notifications fire regardless of app state. The guard must cover both `.vault` (fully loaded) and `.syncing` (unlocked but sync still running) — in both states vault keys are in memory and must be zeroed. Any other screen (`.login`, `.unlock`, `.loading`, `.totpPrompt`) means no keys are in memory; locking would be a no-op or incorrect. The underlying `crypto.lockVault()` is safe to call when already locked, but the screen transition and `unlockVM` creation must be guarded.
 
 ## Risks / Trade-offs
 

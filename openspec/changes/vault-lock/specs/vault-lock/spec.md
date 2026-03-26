@@ -24,29 +24,29 @@ The system SHALL provide a **Lock Vault** command in the application menu with t
 ---
 
 ### Requirement: Vault locks automatically when the Mac goes to sleep
-The system SHALL observe the Mac sleep event and lock the vault automatically before the system sleeps. No user interaction is required.
+The system SHALL observe the Mac sleep event and lock the vault automatically before the system sleeps. No user interaction is required. The lock SHALL fire whenever the vault is unlocked — including during an active vault sync — not only when the vault browser is fully loaded.
 
 #### Scenario: Vault locks on Mac sleep
 - **GIVEN** the vault browser is visible
 - **WHEN** the Mac goes to sleep (lid close, sleep menu item, or inactivity sleep)
-- **THEN** the vault SHALL be locked, all in-memory key material SHALL be zeroed, the vault item cache SHALL be cleared, and the unlock screen SHALL be shown when the Mac wakes
+- **THEN** the vault SHALL be locked immediately, all in-memory key material SHALL be zeroed, the vault item cache SHALL be cleared, and the unlock screen SHALL be visible when the Mac wakes
 
 #### Scenario: Sleep while vault is already locked is a no-op
-- **GIVEN** the vault is already locked or the login screen is shown
+- **GIVEN** the vault is not currently unlocked (unlock screen or login screen is shown)
 - **WHEN** the Mac goes to sleep
 - **THEN** no state change SHALL occur
 
 ---
 
 ### Requirement: Vault locks automatically when the screensaver starts
-The system SHALL observe the screensaver start event and lock the vault automatically.
+The system SHALL observe the screensaver start event and lock the vault automatically. The lock SHALL fire whenever the vault is unlocked — including during an active vault sync — not only when the vault browser is fully loaded.
 
 #### Scenario: Vault locks when screensaver starts
 - **GIVEN** the vault browser is visible
 - **WHEN** the macOS screensaver activates
-- **THEN** the vault SHALL be locked, all in-memory key material SHALL be zeroed, the vault item cache SHALL be cleared, and the unlock screen SHALL be shown when the screensaver is dismissed
+- **THEN** the vault SHALL be locked immediately, all in-memory key material SHALL be zeroed, the vault item cache SHALL be cleared, and the unlock screen SHALL be visible when the screensaver is dismissed
 
 #### Scenario: Screensaver start while vault is already locked is a no-op
-- **GIVEN** the vault is already locked or the login screen is shown
+- **GIVEN** the vault is not currently unlocked (unlock screen or login screen is shown)
 - **WHEN** the screensaver activates
 - **THEN** no state change SHALL occur
