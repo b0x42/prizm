@@ -36,6 +36,15 @@ enum Typography {
 
     /// Status banner text (e.g. "This item is in Trash.") — slightly larger than utility/caption.
     static let bannerText: Font    = .callout
+
+    /// Large icon on the Login, TOTP, and Unlock screens (keyhole / app symbol).
+    static let screenIcon: Font    = .system(size: 48)
+
+    /// Primary heading on the Login, TOTP, and Unlock screens ("Welcome to Macwarden").
+    static let screenHeading: Font = .title.bold()
+
+    /// Secondary body copy on the Login, TOTP, and Unlock screens.
+    static let screenBody: Font    = .callout
 }
 
 // MARK: - Spacing
@@ -68,4 +77,13 @@ enum Spacing {
 
     /// Horizontal padding inside a field row (left and right).
     static let rowHorizontal: CGFloat = 12
+
+    /// Uniform padding inside the item metadata footer (created / updated dates).
+    static let footerPadding: CGFloat = 12
+
+    /// Horizontal padding inside status banners (sync error, trash banner).
+    static let bannerHorizontal: CGFloat = 12
+
+    /// Vertical padding inside status banners.
+    static let bannerVertical: CGFloat = 8
 }

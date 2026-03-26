@@ -31,6 +31,8 @@ nonisolated enum EncStringError: Error, Equatable {
     case macMismatch
     /// AES decryption failed (CommonCrypto returned an error status).
     case decryptionFailed
+    /// AES encryption or IV generation failed.
+    case encryptionFailed
     /// Encrypted data is shorter than the required IV length (16 bytes).
     case invalidIVLength
 }
@@ -184,11 +186,12 @@ nonisolated struct EncString {
     ///   - keys: Symmetric key pair.
     /// - Returns: A new `EncString` of type `.aes256Cbc_HmacSha256_B64`.
     static func encrypt(data: Data, keys: CryptoKeys) throws -> EncString {
-        // Random IV (16 bytes)
+        // Random IV (16 bytes) — SecRandomCopyBytes is backed by /dev/urandom and is
+        // the correct API for generating cryptographic IVs on Apple platforms.
         var ivBytes = [UInt8](repeating: 0, count: 16)
         let status = SecRandomCopyBytes(kSecRandomDefault, 16, &ivBytes)
         guard status == errSecSuccess else {
-            throw EncStringError.decryptionFailed
+            throw EncStringError.encryptionFailed
         }
         let iv = Data(ivBytes)
 
@@ -270,7 +273,7 @@ nonisolated struct EncString {
         }
 
         guard status == kCCSuccess else {
-            throw EncStringError.decryptionFailed
+            throw EncStringError.encryptionFailed
         }
         outData.removeSubrange(outLength...)
         return outData

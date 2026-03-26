@@ -14,7 +14,6 @@ struct VaultBrowserView: View {
     let faviconLoader: FaviconLoader
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
     let makeCreateViewModel: (ItemType) -> ItemEditViewModel
-    var onEditSheetState: ((Bool) -> Void)? = nil
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
@@ -82,10 +81,7 @@ struct VaultBrowserView: View {
                     faviconLoader:       faviconLoader,
                     onCopy:              { viewModel.copy($0) },
                     makeEditViewModel:   makeEditViewModel,
-                    onEditSheetChanged:  { open in
-                        viewModel.handleEditSheetState(open)
-                        onEditSheetState?(open)
-                    },
+                    onEditSheetChanged: { viewModel.handleEditSheetState($0) },
                     onSoftDelete:        { id in await viewModel.performSoftDelete(id: id) },
                     onRestore:           { id in await viewModel.performRestore(id: id) },
                     onPermanentDelete:   { id in await viewModel.performPermanentDelete(id: id) },
@@ -196,8 +192,8 @@ struct VaultBrowserView: View {
                 .help("Dismiss")
                 .accessibilityIdentifier(AccessibilityID.Vault.syncErrorDismiss)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.bannerHorizontal)
+            .padding(.vertical, Spacing.bannerVertical)
             .background(Color.yellow.opacity(0.15))
             .frame(maxHeight: 44)
             .accessibilityIdentifier(AccessibilityID.Vault.syncErrorBanner)

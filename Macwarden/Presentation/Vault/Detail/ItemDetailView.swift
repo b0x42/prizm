@@ -82,7 +82,7 @@ struct ItemDetailView: View {
             Label("Updated \(item.revisionDate.formatted(date: .abbreviated, time: .omitted))", systemImage: "clock")
                 .font(Typography.utility).foregroundStyle(.secondary)
         }
-        .padding(12)
+        .padding(Spacing.footerPadding)
     }
 
     @ViewBuilder

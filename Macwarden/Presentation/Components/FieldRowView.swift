@@ -1,14 +1,5 @@
 import SwiftUI
 
-// MARK: - FieldRowAction
-
-/// Actions that can appear on hover for a field row.
-enum FieldRowAction {
-    case copy
-    case reveal
-    case openInBrowser(URL)
-}
-
 // MARK: - FieldRowView
 
 /// A single labeled field row with hover-activated action buttons (FR-023, FR-025).

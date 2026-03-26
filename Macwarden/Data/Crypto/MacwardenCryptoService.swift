@@ -180,7 +180,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
                 }
             } catch {
                 failedCount += 1
-                logger.debug("decryptList: Cipher skipped at index \(index)")
+                logger.error("decryptList: Cipher decryption failed at index \(index, privacy: .public)")
                 if DebugConfig.isEnabled {
                     logger.debug("[debug] cipher[\(index, privacy: .public)] FAILED — type=\(cipher.type, privacy: .public) error=\(error, privacy: .public)")
                 }

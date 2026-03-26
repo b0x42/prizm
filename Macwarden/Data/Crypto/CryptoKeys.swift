@@ -40,8 +40,10 @@ nonisolated extension CryptoKeys {
 
     /// Performs a constant-time comparison of two HMAC-SHA256 MACs.
     ///
-    /// CryptoKit's `HMAC.isValidAuthenticationCode` uses a constant-time algorithm
-    /// to prevent timing side-channel attacks (per NIST SP 800-107 §5.3.1).
+    /// Uses `HMAC<SHA256>.isValidAuthenticationCode(_:authenticating:using:)` which
+    /// performs a constant-time comparison to prevent timing side-channel attacks —
+    /// an attacker who can measure verification time must not be able to infer how
+    /// many bytes of a forged MAC matched before rejection (NIST SP 800-107 §5.3.1).
     ///
     /// - Parameters:
     ///   - key:      32-byte MAC key.
@@ -50,7 +52,6 @@ nonisolated extension CryptoKeys {
     /// - Returns: `true` if the computed MAC equals `expected`.
     static func verifyHmacSHA256(key: Data, data: Data, expected: Data) -> Bool {
         let symmetricKey = SymmetricKey(data: key)
-        let mac = HMAC<SHA256>.authenticationCode(for: data, using: symmetricKey)
-        return Data(mac) == expected
+        return HMAC<SHA256>.isValidAuthenticationCode(expected, authenticating: data, using: symmetricKey)
     }
 }

@@ -62,9 +62,11 @@ final class AuthRepositoryImpl: AuthRepository {
     func validateServerURL(_ urlString: String) throws {
         // Strip trailing slash for normalisation.
         let trimmed = urlString.hasSuffix("/") ? String(urlString.dropLast()) : urlString
+        // Only HTTPS is permitted — Constitution §III requires all vault communication
+        // to use TLS. Allowing http:// would expose the master password hash and tokens
+        // to network interception even on "trusted" local networks.
         guard let url = URL(string: trimmed),
-              let scheme = url.scheme,
-              (scheme == "https" || scheme == "http"),
+              url.scheme == "https",
               url.host != nil else {
             throw AuthError.invalidURL
         }

@@ -63,19 +63,12 @@ final class VaultRepositoryImpl: VaultRepository {
         case .trash:
             // Trash shows only soft-deleted items; the isDeleted filter is inverted here.
             return sorted(items.filter(\.isDeleted))
-        default:
-            let base = items.filter { !$0.isDeleted }
-            switch selection {
-            case .allItems:
-                return sorted(base)
-            case .favorites:
-                return sorted(base.filter(\.isFavorite))
-            case .type(let itemType):
-                return sorted(base.filter { $0.content.matchesItemType(itemType) })
-            case .trash:
-                // Handled above — unreachable, but required for exhaustive switch.
-                return []
-            }
+        case .allItems:
+            return sorted(items.filter { !$0.isDeleted })
+        case .favorites:
+            return sorted(items.filter { !$0.isDeleted && $0.isFavorite })
+        case .type(let itemType):
+            return sorted(items.filter { !$0.isDeleted && $0.content.matchesItemType(itemType) })
         }
     }
 
