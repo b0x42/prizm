@@ -37,11 +37,13 @@ final class AuthRepositoryImpl: AuthRepository {
     // Set by loginWithPassword when the server requests 2FA; consumed by loginWithTOTP.
 
     private struct PendingTwoFactor {
-        let email:        String
-        let passwordHash: String
-        let kdfParams:    KdfParams
-        let stretchedKeys: CryptoKeys
-        let deviceId:     String
+        let email:         String
+        let passwordHash:  String
+        let kdfParams:     KdfParams
+        // `var` so cancelTwoFactor() can zero the key buffers before releasing the struct
+        // (Constitution §III). Swift ARC does not guarantee immediate deallocation on nil.
+        var stretchedKeys: CryptoKeys
+        let deviceId:      String
     }
     private var pendingTwoFactor: PendingTwoFactor?
 
@@ -230,11 +232,21 @@ final class AuthRepositoryImpl: AuthRepository {
     // MARK: - Unlock
 
     func cancelTwoFactor() {
-        // Zero the stretched keys held in pendingTwoFactor before releasing the struct.
-        // This reduces the window during which the derived key material lives in the heap
-        // after the user cancels the TOTP prompt (Constitution §III).
+        // Explicitly zero the stretched key buffers before releasing the struct.
+        // Setting pendingTwoFactor = nil alone does not guarantee immediate deallocation —
+        // ARC may defer it. Zeroing the Data buffers in-place reduces the window during
+        // which derived key material lives in the heap (Constitution §III).
+        // Note: passwordHash (String) cannot be zeroed — String storage is immutable.
+        if pendingTwoFactor != nil {
+            pendingTwoFactor!.stretchedKeys.encryptionKey.resetBytes(
+                in: 0..<pendingTwoFactor!.stretchedKeys.encryptionKey.count
+            )
+            pendingTwoFactor!.stretchedKeys.macKey.resetBytes(
+                in: 0..<pendingTwoFactor!.stretchedKeys.macKey.count
+            )
+        }
         pendingTwoFactor = nil
-        logger.info("Pending 2FA state cleared")
+        logger.info("Pending 2FA state cleared — stretched keys zeroed")
     }
 
     func unlockWithPassword(_ masterPassword: Data) async throws -> Account {
@@ -312,7 +324,11 @@ final class AuthRepositoryImpl: AuthRepository {
 
             // The stored access token may be expired. Attempt a refresh using the stored
             // refresh token so the post-unlock sync doesn't fail with 401.
-            if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
+            let refreshTokenOpt = try? readString(key: KeychainKey.user(userId, "refreshToken"))
+            if refreshTokenOpt == nil {
+                logger.debug("Unlock: no refresh token in Keychain — skipping token refresh")
+            }
+            if let refreshToken = refreshTokenOpt {
                 do {
                     let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
                     do {

@@ -41,6 +41,10 @@ enum Typography {
     /// Semibold weight distinguishes it from regular body copy in loading contexts.
     static let progressLabel: Font = .headline
 
+    /// Inline field label shown above a form input (e.g. "Authentication code").
+    /// Slightly heavier than `fieldLabel` to visually separate it from body content.
+    static let fieldLabelProminent: Font = .callout.weight(.medium)
+
     /// Large icon on the Login, TOTP, and Unlock screens (keyhole / app symbol).
     static let screenIcon: Font    = .system(size: 48)
 
@@ -93,4 +97,7 @@ enum Spacing {
 
     /// Inner padding for read-only display fields (e.g. the email chip on UnlockView).
     static let readOnlyField: CGFloat = 6
+
+    /// Horizontal padding on full-screen auth/sync flows (Login, TOTP, Unlock, SyncProgress).
+    static let screenHorizontal: CGFloat = 40
 }

@@ -196,6 +196,33 @@ final class AuthRepositoryImplTests: XCTestCase {
         }
     }
 
+    // MARK: - cancelTwoFactor
+
+    /// cancelTwoFactor clears pendingTwoFactor so a subsequent loginWithTOTP throws .invalidCredentials.
+    func testCancelTwoFactor_clearsPendingState() async throws {
+        let serverEnv = ServerEnvironment(
+            base: URL(string: "https://vault.example.com")!,
+            overrides: nil
+        )
+        try await sut.setServerEnvironment(serverEnv)
+        mockAPI.preLoginResponse       = PreLoginResponse(kdf: 0, kdfIterations: 600_000, kdfMemory: nil, kdfParallelism: nil)
+        mockAPI.tokenTwoFactorProviders = [0]
+        mockCrypto.stubbedServerHash   = "hash=="
+        _ = try await sut.loginWithPassword(email: "alice@example.com", masterPassword: Data("pw!".utf8))
+
+        // Cancel before entering the TOTP code.
+        sut.cancelTwoFactor()
+
+        // A subsequent TOTP attempt must fail because pending state was cleared.
+        let sut = self.sut!
+        await XCTAssertThrowsErrorAsync(
+            try await sut.loginWithTOTP(code: "123456", rememberDevice: false)
+        ) { error in
+            XCTAssertEqual(error as? AuthError, .invalidCredentials,
+                           "loginWithTOTP must throw .invalidCredentials when no pending state exists")
+        }
+    }
+
     // MARK: - storedAccount
 
     /// storedAccount returns nil when no activeUserId is in Keychain.

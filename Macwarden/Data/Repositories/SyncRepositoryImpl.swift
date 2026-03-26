@@ -12,7 +12,9 @@ import os.log
 /// private key needed to decrypt per-org symmetric keys is present in the token response
 /// (`PrivateKey` field) but RSA decryption is not yet implemented.
 // TODO: support organisation ciphers — requires RSA private-key decryption of the
-// per-org symmetric key wrapped in the account's RSA keypair. No issue filed yet.
+// per-org symmetric key wrapped in the account's RSA keypair.
+// Deferred: Security.framework RSA-OAEP + the user's private key (from tokenResponse.privateKey)
+// must be decrypted with the vault symmetric key before org ciphers can be read.
 ///
 /// Individual cipher decryption failures are non-fatal — they are counted and logged
 /// but the remaining ciphers are still stored.

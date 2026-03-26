@@ -26,6 +26,6 @@ struct SyncProgressView: View {
                 .accessibilityIdentifier(AccessibilityID.Sync.progressMessage)
         }
         .frame(minWidth: 480, minHeight: 320)
-        .padding(40)
+        .padding(Spacing.screenHorizontal)
     }
 }

@@ -34,7 +34,7 @@ struct TOTPPromptView: View {
             // MARK: Code field
             VStack(alignment: .leading, spacing: 4) {
                 Text("Authentication code")
-                    .font(.callout.weight(.medium))
+                    .font(Typography.fieldLabelProminent)
                     .foregroundStyle(.secondary)
                 TextField("000000", text: $totpCode)
                     .textFieldStyle(.roundedBorder)
@@ -91,7 +91,7 @@ struct TOTPPromptView: View {
 
             Spacer()
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, Spacing.screenHorizontal)
         .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 360)
         .onAppear { codeFieldFocused = true }

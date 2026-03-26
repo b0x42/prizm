@@ -91,7 +91,7 @@ struct UnlockView: View {
 
             Spacer()
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, Spacing.screenHorizontal)
         .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 400)
         .onAppear { passwordFocused = true }
