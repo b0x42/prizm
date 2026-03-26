@@ -140,10 +140,16 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
     }
 
     func lockVault() {
-        // Overwrite with zeros before releasing (best-effort; Swift ARC may still
-        // retain copies elsewhere, but this reduces the window during which the
-        // key is readable in a memory dump).
-        self.keys = nil
+        // Zero both key buffers in the actor's stored property before releasing.
+        // `self.keys` is the primary reference — zeroing it reduces the window during
+        // which key material exists in a heap dump (Constitution §III). Any Data copies
+        // passed to in-flight decryption tasks retain their own CoW buffers until those
+        // tasks complete; those copies cannot be zeroed here.
+        if keys != nil {
+            keys!.encryptionKey.resetBytes(in: 0..<keys!.encryptionKey.count)
+            keys!.macKey.resetBytes(in: 0..<keys!.macKey.count)
+        }
+        keys = nil
         logger.info("Vault locked — key material zeroed")
     }
 

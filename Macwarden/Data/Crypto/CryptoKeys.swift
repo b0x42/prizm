@@ -13,9 +13,11 @@ import CommonCrypto
 /// authentication are independent (per NIST SP 800-107 §5.3).
 nonisolated struct CryptoKeys {
     /// 32-byte AES-256-CBC encryption key.
-    let encryptionKey: Data
+    /// `var` so `lockVault()` can zero the bytes before releasing (Constitution §III).
+    var encryptionKey: Data
     /// 32-byte HMAC-SHA256 MAC key (used for authenticated encryption).
-    let macKey: Data
+    /// `var` so `lockVault()` can zero the bytes before releasing (Constitution §III).
+    var macKey: Data
 }
 
 // MARK: - Static HMAC helper

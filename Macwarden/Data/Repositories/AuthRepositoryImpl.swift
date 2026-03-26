@@ -305,9 +305,15 @@ final class AuthRepositoryImpl: AuthRepository {
             if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
                 do {
                     let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
-                    try? writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
-                    if let newRefresh = tokens.refreshToken {
-                        try? writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                    do {
+                        try writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                        if let newRefresh = tokens.refreshToken {
+                            try writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                        }
+                    } catch {
+                        // Persisting the refreshed token failed — the next launch will use
+                        // the old (expired) token and the user may be signed out unexpectedly.
+                        logger.error("Unlock: failed to persist refreshed tokens — next launch may require re-auth: \(error.localizedDescription, privacy: .public)")
                     }
                     if DebugConfig.isEnabled {
                         logger.debug("[debug] unlock: access token refreshed successfully")
