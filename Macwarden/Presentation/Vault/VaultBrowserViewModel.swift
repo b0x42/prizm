@@ -39,7 +39,7 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published private(set) var isGlobalSearch: Bool = false
 
     /// The sidebar selection that was active before global search was activated.
-    @Published private(set) var previousSelection: SidebarSelection?
+    private(set) var previousSelection: SidebarSelection?
 
     @Published private(set) var displayedItems: [VaultItem] = []
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
@@ -125,12 +125,13 @@ final class VaultBrowserViewModel: ObservableObject {
     ///   that was active before global search. Pass `false` when the caller already set a new selection.
     func deactivateGlobalSearch(restoreSelection: Bool = true) {
         guard isGlobalSearch else { return }
+        let saved = previousSelection
         isGlobalSearch = false
-        searchQuery = ""
-        if restoreSelection, let previous = previousSelection {
+        previousSelection = nil
+        if restoreSelection, let previous = saved {
             sidebarSelection = previous
         }
-        previousSelection = nil
+        searchQuery = ""
     }
 
     /// Copies `value` to the pasteboard and schedules a 30-second auto-clear (FR-011).

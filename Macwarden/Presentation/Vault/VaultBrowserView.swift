@@ -175,7 +175,11 @@ struct VaultBrowserView: View {
         .onChange(of: viewModel.searchQuery) { _, newValue in
             if newValue.isEmpty && viewModel.isGlobalSearch {
                 viewModel.deactivateGlobalSearch()
+                isSearchFieldFocused = false
             }
+        }
+        .onChange(of: viewModel.isGlobalSearch) { _, isActive in
+            if !isActive { isSearchFieldFocused = false }
         }
         .background {
             Button("") {
