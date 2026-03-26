@@ -40,26 +40,53 @@ The `cipherKey` parameter SHALL be a raw `Data` value (the 64-byte vault symmetr
 
 ---
 
+### Requirement: VaultKeyService protocol in Domain layer
+The Domain layer SHALL define a `VaultKeyService` protocol that provides the symmetric key for a given cipher on demand:
+
+```
+func cipherKey(for cipherId: String) async throws -> Data
+```
+
+The protocol SHALL return raw `Data` (64-byte enc ‖ mac key material) and SHALL compile with `import Foundation` only. The Data layer implements this by reading the in-memory decrypted vault key. If the vault is locked, the call SHALL throw a typed error.
+
+This protocol exists so Use Cases can resolve cipher keys internally without the Presentation layer ever handling key material, satisfying §II and §III.
+
+#### Scenario: VaultKeyService is a pure Domain protocol
+- **WHEN** the Domain layer is compiled
+- **THEN** `VaultKeyService` SHALL compile with `import Foundation` only
+
+#### Scenario: VaultKeyService throws when vault is locked
+- **WHEN** `cipherKey(for:)` is called while the vault is locked
+- **THEN** it SHALL throw a typed error — the use case propagates this to the ViewModel as a display error, never as raw key material
+
+---
+
 ### Requirement: Attachment use cases in Domain layer
-The Domain layer SHALL define three use cases that the Presentation layer calls exclusively — ViewModels MUST NOT import or reference `AttachmentRepository` or any Data layer type directly (§II). Use cases translate between domain entities and raw types at the layer boundary:
+The Domain layer SHALL define three use cases that the Presentation layer calls exclusively — ViewModels MUST NOT import or reference `AttachmentRepository`, `VaultKeyService`, or any Data layer type directly (§II). Use cases resolve the cipher key internally via an injected `VaultKeyService`; key material MUST NOT be passed through or held by the Presentation layer (§III).
 
-- `UploadAttachmentUseCase`: accepts `cipherId: String`, `fileName: String`, `data: Data`, `cipherKey: Data`; delegates to `AttachmentRepository.upload`; returns `Attachment`
-- `DownloadAttachmentUseCase`: accepts `cipherId: String`, `attachment: Attachment`, `cipherKey: Data`; delegates to `AttachmentRepository.download`; returns `Data`
-- `DeleteAttachmentUseCase`: accepts `cipherId: String`, `attachmentId: String`; delegates to `AttachmentRepository.delete`
+Use case signatures (no `cipherKey` parameter — the use case fetches it internally):
 
-Each use case SHALL be a struct or final class in `Domain/UseCases/` that holds an `AttachmentRepository` reference via protocol (injected at construction). No use case SHALL import URLSession, CryptoKit, or any Data layer module.
+- `UploadAttachmentUseCase.execute(cipherId: String, fileName: String, data: Data) async throws -> Attachment`
+- `DownloadAttachmentUseCase.execute(cipherId: String, attachment: Attachment) async throws -> Data`
+- `DeleteAttachmentUseCase.execute(cipherId: String, attachmentId: String) async throws`
 
-#### Scenario: ViewModel calls upload use case, not repository
+Each use case SHALL be a struct or final class in `Domain/UseCases/` holding injected `AttachmentRepository` and `VaultKeyService` references (protocol types only). No use case SHALL import URLSession, CryptoKit, or any Data layer module. Internally, each relevant use case calls `vaultKeyService.cipherKey(for: cipherId)` and forwards the result to the repository — the key is never surfaced to the caller.
+
+#### Scenario: ViewModel calls upload use case with no key parameter
 - **WHEN** the Presentation layer initiates an attachment upload
-- **THEN** it SHALL call `UploadAttachmentUseCase.execute(...)` — never `AttachmentRepository.upload` directly
+- **THEN** it SHALL call `UploadAttachmentUseCase.execute(cipherId:fileName:data:)` — never passing a key, never calling `AttachmentRepository.upload` directly
 
-#### Scenario: ViewModel calls download use case, not repository
+#### Scenario: ViewModel calls download use case with no key parameter
 - **WHEN** the Presentation layer requests an attachment download
-- **THEN** it SHALL call `DownloadAttachmentUseCase.execute(...)` — never `AttachmentRepository.download` directly
+- **THEN** it SHALL call `DownloadAttachmentUseCase.execute(cipherId:attachment:)` — no key parameter; the use case resolves it internally
 
 #### Scenario: ViewModel calls delete use case, not repository
 - **WHEN** the Presentation layer deletes an attachment
-- **THEN** it SHALL call `DeleteAttachmentUseCase.execute(...)` — never `AttachmentRepository.delete` directly
+- **THEN** it SHALL call `DeleteAttachmentUseCase.execute(cipherId:attachmentId:)` — never `AttachmentRepository.delete` directly
+
+#### Scenario: Key material is never held by a ViewModel
+- **WHEN** any attachment use case executes
+- **THEN** the calling ViewModel SHALL receive only domain entities or errors — never raw key bytes
 
 ---
 

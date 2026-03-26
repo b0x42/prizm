@@ -2,10 +2,11 @@
 
 - [ ] 1.1 Add `Attachment` struct to `Domain/Entities/` with fields: `id`, `fileName`, `encryptedFileName`, `encryptedKey`, `size`, `url`
 - [ ] 1.2 Add `attachments: [Attachment]` field to the cipher detail entity (or equivalent `VaultItem` sub-type); treat `null` from server as `[]`
-- [ ] 1.3 Define `AttachmentRepository` protocol in `Domain/` with `upload`, `download`, and `delete` methods
-- [ ] 1.4 Implement `UploadAttachmentUseCase`, `DownloadAttachmentUseCase`, `DeleteAttachmentUseCase` in `Domain/UseCases/`; each holds an injected `AttachmentRepository` and exposes a single `execute(...)` method; no CryptoKit or URLSession imports
-- [ ] 1.5 Write unit tests for `Attachment` value semantics and null-attachments-as-empty-array mapping
-- [ ] 1.6 Write unit tests for all three use cases with a mock `AttachmentRepository` — verify correct delegation and error propagation
+- [ ] 1.3 Define `AttachmentRepository` protocol in `Domain/` with `upload(cipherId:fileName:data:cipherKey:)`, `download(cipherId:attachment:cipherKey:)`, and `delete(cipherId:attachmentId:)` methods
+- [ ] 1.4 Define `VaultKeyService` protocol in `Domain/` with `cipherKey(for cipherId: String) async throws -> Data`; Foundation-only; throws when vault is locked
+- [ ] 1.5 Implement `UploadAttachmentUseCase`, `DownloadAttachmentUseCase`, `DeleteAttachmentUseCase` in `Domain/UseCases/`; each injects `AttachmentRepository` + `VaultKeyService`; use case calls `vaultKeyService.cipherKey(for:)` internally and forwards to repository — `cipherKey` is never a parameter on the `execute(...)` method visible to callers
+- [ ] 1.6 Write unit tests for `Attachment` value semantics and null-attachments-as-empty-array mapping
+- [ ] 1.7 Write unit tests for all three use cases with mock `AttachmentRepository` + `VaultKeyService` — verify key is fetched internally and never appears in `execute(...)` parameter; verify vault-locked error propagates correctly
 
 ## 2. Crypto Layer
 
@@ -46,14 +47,14 @@
 - [ ] 6.1 Create `AttachmentAddViewModel` (`@Observable`) with state: `selectedFileURL`, `fileName`, `fileSizeBytes`, `isConfirming`, `isUploading`, `sizeError`, `uploadError`
 - [ ] 6.2 Implement file selection via `NSOpenPanel`; read file size only (not contents) to validate ≤500 MB before reading bytes
 - [ ] 6.3 Create `AttachmentConfirmSheet` — shows file name, size, size/advisory messages, progress indicator, Confirm/Cancel buttons; wired to `AttachmentAddViewModel`
-- [ ] 6.4 Implement Confirm action — background `Task`, call `UploadAttachmentUseCase.execute(...)` (never the repository directly — §II), handle 402 (premium), handle vault lock (cancel task + zero buffers + dismiss), show progress
+- [ ] 6.4 Implement Confirm action — background `Task`, call `UploadAttachmentUseCase.execute(cipherId:fileName:data:)` with no key parameter (key resolved internally by use case — §II/§III), handle 402 (premium), handle vault lock (cancel task + zero buffers + dismiss), show progress
 - [ ] 6.5 Write unit tests for `AttachmentAddViewModel`: 500 MB rejection, 50–500 MB advisory, successful upload path, vault lock abort, premium error display
 
 ## 7. Presentation — View / Download / Delete Flow
 
 - [ ] 7.1 Create `AttachmentRowViewModel` per attachment row (`@Observable`) with state: `isLoading`, `actionError`
-- [ ] 7.2 Implement Open action — background `Task`, call `DownloadAttachmentUseCase.execute(...)` (never the repository directly — §II), write plaintext to `FileManager.default.temporaryDirectory/<uuid>.<ext>`, `NSWorkspace.shared.open`, schedule 30-second zero+delete of temp file
-- [ ] 7.3 Implement Save to Disk action — `NSSavePanel` pre-filled with `attachment.fileName`, on confirm call `DownloadAttachmentUseCase.execute(...)`, write to chosen path, zero buffer; no-op on cancel
+- [ ] 7.2 Implement Open action — background `Task`, call `DownloadAttachmentUseCase.execute(cipherId:attachment:)` with no key parameter (§II/§III), write plaintext to `FileManager.default.temporaryDirectory/<uuid>.<ext>`, `NSWorkspace.shared.open`, schedule 30-second zero+delete of temp file
+- [ ] 7.3 Implement Save to Disk action — `NSSavePanel` pre-filled with `attachment.fileName`, on confirm call `DownloadAttachmentUseCase.execute(cipherId:attachment:)` with no key parameter, write to chosen path, zero buffer; no-op on cancel
 - [ ] 7.4 Implement Delete action — show confirmation alert with file name, call `DeleteAttachmentUseCase.execute(...)` on confirm, remove row from list on success, show inline error on failure
 - [ ] 7.5 Write unit tests for `AttachmentRowViewModel`: Open error path, Save to Disk cancel (no download triggered), Delete confirm vs cancel
 
