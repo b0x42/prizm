@@ -23,11 +23,7 @@ final class MacwardenCryptoServiceTests: XCTestCase {
     /// Expected output is the SHA-256 PBKDF2 result (verified against Bitwarden web vault).
     func testPbkdf2MasterKeyLength() async throws {
         let kdf = KdfParams(type: .pbkdf2, iterations: 600_000, memory: nil, parallelism: nil)
-        let masterKey = try await sut.makeMasterKey(
-            password: "Password1",
-            email: "user@bitwarden.com",
-            kdf: kdf
-        )
+        let masterKey = try await sut.makeMasterKey(password: Data("Password1".utf8), email: "user@bitwarden.com", kdf: kdf)
         // Must be exactly 32 bytes (256-bit)
         XCTAssertEqual(masterKey.count, 32)
     }
@@ -35,16 +31,16 @@ final class MacwardenCryptoServiceTests: XCTestCase {
     /// PBKDF2 derivation must be deterministic.
     func testPbkdf2IsDeterministic() async throws {
         let kdf = KdfParams(type: .pbkdf2, iterations: 10_000, memory: nil, parallelism: nil)
-        let k1 = try await sut.makeMasterKey(password: "pw", email: "a@b.com", kdf: kdf)
-        let k2 = try await sut.makeMasterKey(password: "pw", email: "a@b.com", kdf: kdf)
+        let k1 = try await sut.makeMasterKey(password: Data("pw".utf8), email: "a@b.com", kdf: kdf)
+        let k2 = try await sut.makeMasterKey(password: Data("pw".utf8), email: "a@b.com", kdf: kdf)
         XCTAssertEqual(k1, k2)
     }
 
     /// Different passwords must produce different keys.
     func testPbkdf2DifferentPasswordsDifferentKeys() async throws {
         let kdf = KdfParams(type: .pbkdf2, iterations: 10_000, memory: nil, parallelism: nil)
-        let k1 = try await sut.makeMasterKey(password: "alpha", email: "x@y.com", kdf: kdf)
-        let k2 = try await sut.makeMasterKey(password: "beta",  email: "x@y.com", kdf: kdf)
+        let k1 = try await sut.makeMasterKey(password: Data("alpha".utf8), email: "x@y.com", kdf: kdf)
+        let k2 = try await sut.makeMasterKey(password: Data("beta".utf8), email: "x@y.com", kdf: kdf)
         XCTAssertNotEqual(k1, k2)
     }
 
@@ -75,22 +71,22 @@ final class MacwardenCryptoServiceTests: XCTestCase {
     /// Used to authenticate with the Bitwarden identity server without sending the raw master key.
     func testServerHashLength() async throws {
         let masterKey = Data(repeating: 0x42, count: 32)
-        let hash = try await sut.makeServerHash(masterKey: masterKey, password: "MyPassword")
+        let hash = try await sut.makeServerHash(masterKey: masterKey, password: Data("MyPassword".utf8))
         // Base64 of 32 bytes = 44 chars (with padding)
         XCTAssertEqual(hash.count, 44)
     }
 
     func testServerHashIsDeterministic() async throws {
         let masterKey = Data(repeating: 0x42, count: 32)
-        let h1 = try await sut.makeServerHash(masterKey: masterKey, password: "pw")
-        let h2 = try await sut.makeServerHash(masterKey: masterKey, password: "pw")
+        let h1 = try await sut.makeServerHash(masterKey: masterKey, password: Data("pw".utf8))
+        let h2 = try await sut.makeServerHash(masterKey: masterKey, password: Data("pw".utf8))
         XCTAssertEqual(h1, h2)
     }
 
     func testServerHashDifferentPasswordsDifferentHashes() async throws {
         let masterKey = Data(repeating: 0x42, count: 32)
-        let h1 = try await sut.makeServerHash(masterKey: masterKey, password: "pw1")
-        let h2 = try await sut.makeServerHash(masterKey: masterKey, password: "pw2")
+        let h1 = try await sut.makeServerHash(masterKey: masterKey, password: Data("pw1".utf8))
+        let h2 = try await sut.makeServerHash(masterKey: masterKey, password: Data("pw2".utf8))
         XCTAssertNotEqual(h1, h2)
     }
 

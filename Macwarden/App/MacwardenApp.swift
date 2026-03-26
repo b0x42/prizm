@@ -39,6 +39,12 @@ struct MacwardenApp: App {
                 }
                 .keyboardShortcut("q", modifiers: [.command, .shift])
                 .disabled(!rootVM.isSignedIn)
+
+                Button("Lock Vault") {
+                    rootVM.lockVault()
+                }
+                .keyboardShortcut("l", modifiers: .command)
+                .disabled(!rootVM.isVaultUnlocked)
             }
 
             // "Item" menu — sits in the standard macOS menu bar next to Edit/View/Window.
@@ -109,6 +115,21 @@ struct MacwardenApp: App {
 
 // MARK: - RootViewModel
 
+/// Dependencies required by `RootViewModel` — extracted for testability.
+@MainActor
+protocol RootViewModelDependencies: AnyObject {
+    var authRepo: any AuthRepository { get }
+    var vaultRepo: any VaultRepository { get }
+    func makeLoginViewModel() -> LoginViewModel
+    func makeUnlockViewModel(account: Account) -> UnlockViewModel
+    func makeVaultBrowserViewModel() -> VaultBrowserViewModel
+}
+
+extension AppContainer: RootViewModelDependencies {
+    var authRepo: any AuthRepository { authRepository }
+    var vaultRepo: any VaultRepository { vaultStore }
+}
+
 /// Top-level state machine that decides which screen to show.
 ///
 /// On launch: checks for a stored session via `AuthRepository.storedAccount()`.
@@ -142,19 +163,23 @@ final class RootViewModel: ObservableObject {
     @Published var unlockVM: UnlockViewModel?
     let vaultBrowserVM:   VaultBrowserViewModel
 
-    private let container: AppContainer
+    private let container: any RootViewModelDependencies
     /// Combine subscriptions — held for the lifetime of this object.
     /// Using Combine (not SwiftUI .onChange) so transitions fire regardless
     /// of whether the source view is currently in the view hierarchy.
     private var cancellables = Set<AnyCancellable>()
+    /// System notification observers for auto-lock (sleep, screensaver, screen lock).
+    nonisolated(unsafe) private var sleepObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var screensaverObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var screenLockObserver: NSObjectProtocol?
 
-    init(container: AppContainer) {
+    init(container: any RootViewModelDependencies) {
         self.container      = container
         self.loginVM        = container.makeLoginViewModel()
         self.vaultBrowserVM = container.makeVaultBrowserViewModel()
 
         // Check for stored session at launch.
-        if let account = container.authRepository.storedAccount() {
+        if let account = container.authRepo.storedAccount() {
             self.screen   = .unlock
             self.unlockVM = container.makeUnlockViewModel(account: account)
         } else {
@@ -163,6 +188,12 @@ final class RootViewModel: ObservableObject {
         }
 
         subscribeToFlowStates()
+    }
+
+    deinit {
+        if let sleepObserver { NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver) }
+        if let screensaverObserver { DistributedNotificationCenter.default().removeObserver(screensaverObserver) }
+        if let screenLockObserver { DistributedNotificationCenter.default().removeObserver(screenLockObserver) }
     }
 
     // MARK: - Combine subscriptions
@@ -199,6 +230,27 @@ final class RootViewModel: ObservableObject {
                 self.menuBarCanEdit = selection != nil && !vaultBrowserVM.editSheetOpen
             }
         }
+
+        // Auto-lock on Mac sleep.
+        sleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.lockVault() } }
+
+        // Auto-lock on screensaver start.
+        screensaverObserver = DistributedNotificationCenter.default().addObserver(
+            forName: .init("com.apple.screensaver.didstart"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.lockVault() } }
+
+        // Auto-lock on screen lock (⌃⌘Q / Lock Screen menu).
+        screenLockObserver = DistributedNotificationCenter.default().addObserver(
+            forName: .init("com.apple.screenIsLocked"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.lockVault() } }
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {
@@ -238,13 +290,40 @@ final class RootViewModel: ObservableObject {
     func signOut() {
         Task {
             do {
-                try await container.authRepository.signOut()
+                try await container.authRepo.signOut()
             } catch {
                 logger.error("Sign-out error: \(error.localizedDescription, privacy: .public)")
             }
             unlockVM = nil
             screen   = .login
             logger.info("Sign out completed")
+        }
+    }
+
+    // MARK: - Lock
+
+    /// Zeros in-memory key material, clears the vault cache, and transitions to the unlock screen.
+    /// No-op if the vault is not currently unlocked.
+    func lockVault() {
+        guard isVaultUnlocked else { return }
+        Task {
+            await container.authRepo.lockVault()
+            container.vaultRepo.clearVault()
+            if let account = container.authRepo.storedAccount() {
+                unlockVM = container.makeUnlockViewModel(account: account)
+                screen = .unlock
+            } else {
+                screen = .login
+            }
+            logger.info("Vault locked")
+        }
+    }
+
+    /// Whether the vault is currently unlocked (vault browser or sync in progress).
+    var isVaultUnlocked: Bool {
+        switch screen {
+        case .vault, .syncing: return true
+        default: return false
         }
     }
 
