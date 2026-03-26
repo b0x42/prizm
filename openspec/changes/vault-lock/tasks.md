@@ -24,3 +24,7 @@
 ## 5. UI Test
 
 - [ ] 5.1 Add `testLockVault_withCmdL_transitionsToUnlockScreen` to `VaultBrowserJourneyTests` — unlock vault, press ⌘L, assert unlock screen is shown
+
+## 6. Documentation
+
+- [ ] 6.1 Add ⌘L to the keyboard shortcuts table in README.md
