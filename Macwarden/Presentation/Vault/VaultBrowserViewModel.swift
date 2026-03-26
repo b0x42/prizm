@@ -21,6 +21,7 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published var sidebarSelection: SidebarSelection = .allItems {
         didSet {
             if oldValue != sidebarSelection {
+                if isGlobalSearch { deactivateGlobalSearch(restoreSelection: false) }
                 Task { @MainActor [weak self] in
                     self?.itemSelection = nil
                     self?.refreshItems()
@@ -33,6 +34,12 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published var searchQuery:   String = "" {
         didSet { Task { @MainActor in refreshItems() } }
     }
+
+    /// When true, search queries are scoped to `.allItems` regardless of sidebar selection.
+    @Published private(set) var isGlobalSearch: Bool = false
+
+    /// The sidebar selection that was active before global search was activated.
+    private(set) var previousSelection: SidebarSelection?
 
     @Published private(set) var displayedItems: [VaultItem] = []
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
@@ -105,6 +112,28 @@ final class VaultBrowserViewModel: ObservableObject {
 
     // MARK: - Actions
 
+    /// Activates global search mode: stores the current sidebar selection and sets the flag.
+    func activateGlobalSearch() {
+        guard !isGlobalSearch else { return }
+        previousSelection = sidebarSelection
+        isGlobalSearch = true
+        refreshItems()
+    }
+
+    /// Deactivates global search mode: restores the previous sidebar selection and clears the query.
+    /// - Parameter restoreSelection: When `true` (default), restores the sidebar selection
+    ///   that was active before global search. Pass `false` when the caller already set a new selection.
+    func deactivateGlobalSearch(restoreSelection: Bool = true) {
+        guard isGlobalSearch else { return }
+        let saved = previousSelection
+        isGlobalSearch = false
+        previousSelection = nil
+        if restoreSelection, let previous = saved {
+            sidebarSelection = previous
+        }
+        searchQuery = ""
+    }
+
     /// Copies `value` to the pasteboard and schedules a 30-second auto-clear (FR-011).
     func copy(_ value: String) {
         let pasteboard = NSPasteboard.general
@@ -137,7 +166,8 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Refreshes `displayedItems` from the vault store based on current selection + search query.
     func refreshItems() {
         do {
-            displayedItems = try search.execute(query: searchQuery, in: sidebarSelection)
+            let scope = isGlobalSearch ? .allItems : sidebarSelection
+            displayedItems = try search.execute(query: searchQuery, in: scope)
         } catch {
             logger.error("Failed to load vault items: \(error.localizedDescription, privacy: .public)")
             displayedItems = []

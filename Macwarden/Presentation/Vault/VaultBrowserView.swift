@@ -17,6 +17,7 @@ struct VaultBrowserView: View {
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
+    @State private var isSearchFieldFocused = false
 
     private let logger = Logger(subsystem: "com.macwarden", category: "UI.VaultBrowser")
 
@@ -24,7 +25,14 @@ struct VaultBrowserView: View {
         NavigationSplitView(
             sidebar: {
                 SidebarView(
-                    selection:  $viewModel.sidebarSelection,
+                    selection: Binding(
+                        get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
+                        set: { newValue in
+                            if let value = newValue {
+                                viewModel.sidebarSelection = value
+                            }
+                        }
+                    ),
                     itemCounts: viewModel.itemCounts
                 )
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
@@ -45,6 +53,7 @@ struct VaultBrowserView: View {
                             items:         viewModel.displayedItems,
                             selection:     $viewModel.itemSelection,
                             faviconLoader: faviconLoader,
+                            searchQuery:   viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
                             onDelete:      { id in await viewModel.performSoftDelete(id: id) }
                         )
                     }
@@ -122,6 +131,7 @@ struct VaultBrowserView: View {
                 }
                 .searchable(
                     text: $viewModel.searchQuery,
+                    isPresented: $isSearchFieldFocused,
                     placement: .toolbar,
                     prompt: "Search vault"
                 )
@@ -158,7 +168,26 @@ struct VaultBrowserView: View {
         }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in
-            if newValue == .trash { viewModel.searchQuery = "" }
+            if newValue == .trash {
+                viewModel.searchQuery = ""
+            }
+        }
+        .onChange(of: viewModel.searchQuery) { _, newValue in
+            if newValue.isEmpty && viewModel.isGlobalSearch {
+                viewModel.deactivateGlobalSearch()
+            }
+        }
+        .onChange(of: viewModel.isGlobalSearch) { _, isActive in
+            if !isActive { isSearchFieldFocused = false }
+        }
+        .background {
+            Button("") {
+                viewModel.activateGlobalSearch()
+                isSearchFieldFocused = true
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .frame(width: 0, height: 0)
+            .opacity(0)
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(
