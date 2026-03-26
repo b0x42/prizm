@@ -43,6 +43,26 @@ The system SHALL encrypt the 64-byte attachment key with the cipher's symmetric 
 
 ---
 
+### Requirement: Known-answer tests against published vectors
+The attachment crypto implementation SHALL include known-answer tests (KATs) validating the AES-256-CBC + HMAC-SHA256 scheme against published test vectors. Per §IV of the Constitution, KATs are mandatory for all crypto implementations. The following sources SHALL be used:
+- AES-CBC: NIST SP 800-38A test vectors (CBC-AES256)
+- HMAC-SHA256: RFC 4231 test vectors
+- Full EncString round-trip: Bitwarden Security Whitepaper test vectors if published; otherwise use a vector derived from the official Bitwarden iOS client test suite
+
+#### Scenario: AES-CBC encryption matches NIST SP 800-38A vector
+- **WHEN** the encrypt function is called with a known key, IV, and plaintext from NIST SP 800-38A
+- **THEN** the output ciphertext SHALL exactly match the published expected value
+
+#### Scenario: HMAC-SHA256 matches RFC 4231 vector
+- **WHEN** HMAC-SHA256 is computed over a known key and message from RFC 4231
+- **THEN** the output MAC SHALL exactly match the published expected value
+
+#### Scenario: EncString round-trip KAT
+- **WHEN** a known plaintext blob is encrypted then decrypted with a fixed key
+- **THEN** the decrypted output SHALL be byte-for-byte identical to the original and SHALL match the expected ciphertext from a reference implementation
+
+---
+
 ### Requirement: Attachment key material is zeroed after use
 The system SHALL zero the in-memory attachment key and decrypted file data buffers as soon as they are no longer needed (after encryption completes, or after the decrypted bytes are written to disk/opened). Swift `Data` buffers containing key material SHALL be zeroed using `withUnsafeMutableBytes` before release.
 

@@ -28,15 +28,15 @@ The system SHALL add an `attachments: [Attachment]` field to the cipher detail e
 
 ### Requirement: AttachmentRepository protocol
 The Domain layer SHALL define an `AttachmentRepository` protocol with:
-- `func upload(cipherId: String, fileName: String, data: Data, cipherKey: SymmetricKey) async throws -> Attachment`
-- `func download(cipherId: String, attachment: Attachment, cipherKey: SymmetricKey) async throws -> Data`
+- `func upload(cipherId: String, fileName: String, data: Data, cipherKey: Data) async throws -> Attachment`
+- `func download(cipherId: String, attachment: Attachment, cipherKey: Data) async throws -> Data`
 - `func delete(cipherId: String, attachmentId: String) async throws`
 
-The protocol SHALL NOT reference `URLSession`, `URLRequest`, or any concrete network type.
+The `cipherKey` parameter SHALL be a raw `Data` value (the 64-byte vault symmetric key material) — NOT a `SymmetricKey` or any other CryptoKit type. Using a CryptoKit type in a Domain protocol would require importing CryptoKit in the Domain layer, violating the clean architecture boundary (§II). The Data layer is responsible for interpreting the raw bytes as a `SymmetricKey` at the point of use. The protocol SHALL NOT reference `URLSession`, `URLRequest`, or any concrete network type.
 
 #### Scenario: AttachmentRepository is a pure protocol
 - **WHEN** the Domain layer is compiled
-- **THEN** `AttachmentRepository` SHALL compile with `import Foundation` only
+- **THEN** `AttachmentRepository` SHALL compile with `import Foundation` only — no CryptoKit, CommonCrypto, or Security imports
 
 ---
 

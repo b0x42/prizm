@@ -56,6 +56,19 @@ The system SHALL delete an attachment via `DELETE /api/ciphers/{cipherId}/attach
 
 ---
 
+### Requirement: Structured logging for all attachment operations
+All attachment network and crypto operations SHALL emit structured log entries via `os.Logger` with subsystem `com.macwarden` and category `attachments`. Log levels SHALL follow §V of the Constitution: `.debug` for trace (e.g. "starting upload for cipherId X"), `.info` for normal flow completion (e.g. "attachment uploaded successfully"), `.error` for recoverable faults (e.g. network failure, 402 response), `.fault` for unrecoverable states. Secrets (attachment keys, file contents, access tokens) MUST NOT appear in any log output.
+
+#### Scenario: Upload start and success are logged at correct levels
+- **WHEN** an upload begins
+- **THEN** a `.debug` entry SHALL be emitted; on success a `.info` entry SHALL be emitted; neither SHALL contain key material or file contents
+
+#### Scenario: Network failure during upload is logged at .error
+- **WHEN** a network error occurs during upload
+- **THEN** a `.error` entry SHALL be emitted with a description of the failure but no secret data
+
+---
+
 ### Requirement: Premium gate — surface server error, don't pre-check
 The system SHALL NOT call any profile or billing API to check premium status before showing the Add Attachment UI. If the server returns HTTP 402 or an error body indicating a premium subscription is required, the system SHALL display: "Attachments require a Bitwarden Premium account." Vaultwarden users are unaffected.
 

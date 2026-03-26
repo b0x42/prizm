@@ -14,6 +14,7 @@
 - [ ] 2.5 Add `decryptAttachmentKey(_ encString: String, cipherKey: SymmetricKey) throws -> Data` — unwraps EncString → raw 64-byte key
 - [ ] 2.6 Add `encryptFileName(_ name: String, cipherKey: SymmetricKey) throws -> String` — encrypt file name as EncString for upload metadata
 - [ ] 2.7 Write unit tests: round-trip encrypt/decrypt of binary data; MAC tampering throws; attachment key wrap/unwrap round-trip; key zeroisation after use
+- [ ] 2.8 Write Known-Answer Tests (KATs) — AES-CBC against NIST SP 800-38A vectors, HMAC-SHA256 against RFC 4231 vectors, and a full EncString round-trip KAT against a reference vector (required by §IV)
 
 ## 3. Data Layer — Network
 
@@ -23,7 +24,8 @@
 - [ ] 3.4 Implement `delete` — DELETE `/api/ciphers/{id}/attachment/{attachmentId}`, remove from in-memory cache on 200
 - [ ] 3.5 Handle HTTP 402 response from upload → throw typed `AttachmentError.premiumRequired`
 - [ ] 3.6 Register `AttachmentRepositoryImpl` in `AppContainer` (DI)
-- [ ] 3.7 Write integration tests for upload (mock server, both fileUploadType 0 and 1), download (mock signed URL), delete, and 402 premium error path
+- [ ] 3.7 Add `os.Logger(subsystem: "com.macwarden", category: "attachments")` to `AttachmentRepositoryImpl`; log upload start/success at `.debug`/`.info`, network failures at `.error`, unrecoverable states at `.fault`; confirm no key material appears in any log message (§V)
+- [ ] 3.8 Write integration tests for upload (mock server, both fileUploadType 0 and 1), download (mock signed URL), delete, and 402 premium error path
 
 ## 4. Data Layer — Sync Mapping
 
@@ -53,6 +55,10 @@
 - [ ] 7.4 Implement Delete action — show confirmation alert with file name, call `AttachmentRepository.delete` on confirm, remove row from list on success, show inline error on failure
 - [ ] 7.5 Write unit tests for `AttachmentRowViewModel`: Open error path, Save to Disk cancel (no download triggered), Delete confirm vs cancel
 
-## 8. XCUITest
+## 8. Documentation & Transparency
 
-- [ ] 8.1 Write UI journey: open a vault item → click Add Attachment → select a small test file → confirm → verify attachment row appears with correct name → click Open → verify temp file exists → click Delete → confirm → verify row is gone
+- [ ] 8.1 Update `SECURITY.md` at repo root to document: attachment encryption scheme (AES-256-CBC + HMAC-SHA256 two-layer), where keys live (cipher key from Keychain → attachment key in memory only), temp file lifetime, and attachment-specific threat model additions (§VII)
+
+## 9. XCUITest
+
+- [ ] 9.1 Write UI journey: open a vault item → click Add Attachment → select a small test file → confirm → verify attachment row appears with correct name → click Open → verify temp file exists → click Delete → confirm → verify row is gone

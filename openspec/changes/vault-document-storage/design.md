@@ -78,6 +78,24 @@ An earlier draft of this design proposed local-only encrypted file storage in th
 | Bitwarden cloud rejects upload with 402 (premium required) | Catch HTTP 402, show localised "Attachments require a Bitwarden Premium account" message |
 | Signed upload URL expiry during slow upload | Re-request a new signed URL and retry once on 403 from the upload endpoint |
 
+## Complexity Tracking
+
+Per §I of the Constitution, AppKit usage must be documented and justified here.
+
+| AppKit API | Used in | Justification |
+|---|---|---|
+| `NSOpenPanel` | `attachment-add-flow` | SwiftUI has no equivalent file-open panel API on macOS that allows "any file type" with a native sheet presentation. `fileImporter()` (SwiftUI) is limited to `UTType` allowlists and does not support the same UX flexibility. AppKit is the correct choice per §I. |
+| `NSSavePanel` | `attachment-view-flow` | SwiftUI `fileExporter()` requires a `FileDocument` conformance which is inappropriate for arbitrary binary data being written outside the app's document model. `NSSavePanel` is the correct choice. |
+| `NSWorkspace.shared.open(_:)` | `attachment-view-flow` | SwiftUI and Foundation have no equivalent API for opening a file with the system default application on macOS. This is the only sanctioned approach. |
+
+## SECURITY.md
+
+This change adds a new class of encrypted data (file attachments) to the app. Before merging, `SECURITY.md` at the repo root MUST be updated to:
+- Document that file attachments are encrypted using AES-256-CBC + HMAC-SHA256 with per-attachment keys
+- Explain the two-layer key scheme (attachment key wrapped by cipher key)
+- Note that attachment file data is never cached unencrypted on disk (temp file lifecycle described)
+- Update the threat model to cover attachment-specific risks (temp file exposure window, upload interruption)
+
 ## Open Questions
 
 - Should attachment metadata (fileName, size) be shown in search results? (Assumed no for v1 — search operates on vault item name/username/URL only)
