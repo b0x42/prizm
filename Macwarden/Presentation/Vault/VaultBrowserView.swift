@@ -17,6 +17,7 @@ struct VaultBrowserView: View {
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
+    @State private var isSearchFieldFocused = false
 
     private let logger = Logger(subsystem: "com.macwarden", category: "UI.VaultBrowser")
 
@@ -130,6 +131,7 @@ struct VaultBrowserView: View {
                 }
                 .searchable(
                     text: $viewModel.searchQuery,
+                    isPresented: $isSearchFieldFocused,
                     placement: .toolbar,
                     prompt: "Search vault"
                 )
@@ -176,10 +178,13 @@ struct VaultBrowserView: View {
             }
         }
         .background {
-            Button("") { viewModel.activateGlobalSearch() }
-                .keyboardShortcut("f", modifiers: .command)
-                .frame(width: 0, height: 0)
-                .opacity(0)
+            Button("") {
+                viewModel.activateGlobalSearch()
+                isSearchFieldFocused = true
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .frame(width: 0, height: 0)
+            .opacity(0)
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(
