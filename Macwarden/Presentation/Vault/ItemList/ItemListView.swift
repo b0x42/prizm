@@ -12,6 +12,7 @@ struct ItemListView: View {
     let items:         [VaultItem]
     @Binding var selection: VaultItem?
     let faviconLoader: FaviconLoader
+    var searchQuery:   String? = nil
     /// Called when the user confirms moving an item to Trash from the row context menu.
     /// Nil disables the delete context-menu action (e.g. when trash actions are unavailable).
     var onDelete: ((String) async -> Void)? = nil
@@ -31,7 +32,7 @@ struct ItemListView: View {
                 .accessibilityIdentifier(AccessibilityID.ItemList.emptyState)
             } else {
                 List(items, id: \.id, selection: $selection) { item in
-                    ItemRowView(item: item, faviconLoader: faviconLoader)
+                    ItemRowView(item: item, faviconLoader: faviconLoader, searchQuery: searchQuery)
                         .tag(item)
                         .accessibilityIdentifier(AccessibilityID.ItemList.row(item.id))
                         .contextMenu {

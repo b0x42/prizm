@@ -24,7 +24,14 @@ struct VaultBrowserView: View {
         NavigationSplitView(
             sidebar: {
                 SidebarView(
-                    selection:  $viewModel.sidebarSelection,
+                    selection: Binding(
+                        get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
+                        set: { newValue in
+                            if let value = newValue {
+                                viewModel.sidebarSelection = value
+                            }
+                        }
+                    ),
                     itemCounts: viewModel.itemCounts
                 )
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
@@ -45,6 +52,7 @@ struct VaultBrowserView: View {
                             items:         viewModel.displayedItems,
                             selection:     $viewModel.itemSelection,
                             faviconLoader: faviconLoader,
+                            searchQuery:   viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
                             onDelete:      { id in await viewModel.performSoftDelete(id: id) }
                         )
                     }
@@ -158,7 +166,20 @@ struct VaultBrowserView: View {
         }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in
-            if newValue == .trash { viewModel.searchQuery = "" }
+            if newValue == .trash {
+                viewModel.searchQuery = ""
+            }
+        }
+        .onChange(of: viewModel.searchQuery) { _, newValue in
+            if newValue.isEmpty && viewModel.isGlobalSearch {
+                viewModel.deactivateGlobalSearch()
+            }
+        }
+        .background {
+            Button("") { viewModel.activateGlobalSearch() }
+                .keyboardShortcut("f", modifiers: .command)
+                .frame(width: 0, height: 0)
+                .opacity(0)
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(

@@ -8,7 +8,7 @@ import SwiftUI
 /// The sidebar is always visible, even when a category is empty (FR-006, FR-042).
 struct SidebarView: View {
 
-    @Binding var selection: SidebarSelection
+    @Binding var selection: SidebarSelection?
     let itemCounts: [SidebarSelection: Int]
 
     var body: some View {
