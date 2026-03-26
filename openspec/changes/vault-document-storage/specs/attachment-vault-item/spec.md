@@ -40,6 +40,29 @@ The `cipherKey` parameter SHALL be a raw `Data` value (the 64-byte vault symmetr
 
 ---
 
+### Requirement: Attachment use cases in Domain layer
+The Domain layer SHALL define three use cases that the Presentation layer calls exclusively — ViewModels MUST NOT import or reference `AttachmentRepository` or any Data layer type directly (§II). Use cases translate between domain entities and raw types at the layer boundary:
+
+- `UploadAttachmentUseCase`: accepts `cipherId: String`, `fileName: String`, `data: Data`, `cipherKey: Data`; delegates to `AttachmentRepository.upload`; returns `Attachment`
+- `DownloadAttachmentUseCase`: accepts `cipherId: String`, `attachment: Attachment`, `cipherKey: Data`; delegates to `AttachmentRepository.download`; returns `Data`
+- `DeleteAttachmentUseCase`: accepts `cipherId: String`, `attachmentId: String`; delegates to `AttachmentRepository.delete`
+
+Each use case SHALL be a struct or final class in `Domain/UseCases/` that holds an `AttachmentRepository` reference via protocol (injected at construction). No use case SHALL import URLSession, CryptoKit, or any Data layer module.
+
+#### Scenario: ViewModel calls upload use case, not repository
+- **WHEN** the Presentation layer initiates an attachment upload
+- **THEN** it SHALL call `UploadAttachmentUseCase.execute(...)` — never `AttachmentRepository.upload` directly
+
+#### Scenario: ViewModel calls download use case, not repository
+- **WHEN** the Presentation layer requests an attachment download
+- **THEN** it SHALL call `DownloadAttachmentUseCase.execute(...)` — never `AttachmentRepository.download` directly
+
+#### Scenario: ViewModel calls delete use case, not repository
+- **WHEN** the Presentation layer deletes an attachment
+- **THEN** it SHALL call `DeleteAttachmentUseCase.execute(...)` — never `AttachmentRepository.delete` directly
+
+---
+
 ### Requirement: AttachmentMapper translates sync payload to Attachment entity
 The Data layer SHALL provide an `AttachmentMapper` that converts the raw sync JSON object for an attachment into an `Attachment` domain entity, decrypting `fileName` from its EncString form using the provided cipher key.
 
