@@ -55,9 +55,20 @@ final class UnlockViewModel: ObservableObject {
         errorMessage = nil
         flowState    = .loading
 
+        // Convert the password String to Data at this boundary so the KDF stack
+        // receives `Data` that can be zeroed after use (Constitution §III).
+        guard let passwordData = password.data(using: .utf8) else {
+            errorMessage = "Invalid password encoding."
+            flowState    = .unlock
+            return
+        }
+
         Task {
             do {
-                _ = try await auth.unlockWithPassword(password)
+                _ = try await auth.unlockWithPassword(passwordData)
+                // Clear the password field after a successful unlock so the plaintext
+                // does not linger in the published property.
+                password = ""
                 await performSync()
             } catch let err as AuthError {
                 logger.error("Unlock failed: \(err.localizedDescription, privacy: .public)")

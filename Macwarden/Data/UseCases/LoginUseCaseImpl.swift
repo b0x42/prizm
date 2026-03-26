@@ -23,7 +23,7 @@ final class LoginUseCaseImpl: LoginUseCase {
         self.sync = sync
     }
 
-    func execute(serverURL: String, email: String, masterPassword: String) async throws -> LoginResult {
+    func execute(serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
         // Step 1: Validate URL (throws AuthError.invalidURL on failure).
         try auth.validateServerURL(serverURL)
 
@@ -71,5 +71,9 @@ final class LoginUseCaseImpl: LoginUseCase {
             logger.error("Post-TOTP sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
         }
         return account
+    }
+
+    func cancelTOTP() {
+        auth.cancelTwoFactor()
     }
 }

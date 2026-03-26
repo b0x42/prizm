@@ -9,6 +9,7 @@ final class MockAuthRepository: AuthRepository {
     private(set) var setServerEnvironmentCalled:   Bool = false
     private(set) var loginWithPasswordCalled:      Bool = false
     private(set) var unlockWithPasswordCalled:     Bool = false
+    private(set) var cancelTwoFactorCalled:        Bool = false
     private(set) var signOutCalled:                Bool = false
     var             lockVaultCalledCount:           Int  = 0
 
@@ -49,7 +50,7 @@ final class MockAuthRepository: AuthRepository {
         setServerEnvironmentCalled   = true
     }
 
-    func loginWithPassword(email: String, masterPassword: String) async throws -> LoginResult {
+    func loginWithPassword(email: String, masterPassword: Data) async throws -> LoginResult {
         loginWithPasswordCalled = true
         if let err = loginWithPasswordError { throw err }
         return stubbedLoginResult
@@ -62,7 +63,11 @@ final class MockAuthRepository: AuthRepository {
         return account
     }
 
-    func unlockWithPassword(_ masterPassword: String) async throws -> Account {
+    func cancelTwoFactor() {
+        cancelTwoFactorCalled = true
+    }
+
+    func unlockWithPassword(_ masterPassword: Data) async throws -> Account {
         unlockWithPasswordCalled = true
         if let err = unlockWithPasswordError { throw err }
         guard case .success(let account) = stubbedLoginResult else {

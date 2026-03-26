@@ -51,6 +51,10 @@ actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
         storedAccessToken = token
     }
 
+    func clearAccessToken() {
+        storedAccessToken = nil
+    }
+
     func preLogin(email: String) async throws -> PreLoginResponse {
         if let err = preLoginShouldThrow { throw err }
         return preLoginResponse ?? PreLoginResponse(

@@ -25,7 +25,7 @@ final class UnlockUseCaseImpl: UnlockUseCase {
         self.sync = sync
     }
 
-    func execute(masterPassword: String) async throws -> Account {
+    func execute(masterPassword: Data) async throws -> Account {
         // Step 1: Derive master key locally and unlock the crypto service.
         logger.info("Attempting vault unlock")
         let account = try await auth.unlockWithPassword(masterPassword)

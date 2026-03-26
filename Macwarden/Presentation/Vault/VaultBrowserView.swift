@@ -180,7 +180,7 @@ struct VaultBrowserView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)
                 Text(message)
-                    .font(.callout)
+                    .font(Typography.bannerText)
                 Spacer()
                 Button {
                     viewModel.dismissSyncError()

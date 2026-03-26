@@ -19,13 +19,13 @@ struct TOTPPromptView: View {
             // MARK: Header
             VStack(spacing: 4) {
                 Image(systemName: "key.2.on.ring.fill")
-                    .font(.system(size: 48))
+                    .font(Typography.screenIcon)
                     .foregroundStyle(.tint)
                 Text("Two-step login")
-                    .font(.title.bold())
+                    .font(Typography.screenHeading)
                     .accessibilityIdentifier(AccessibilityID.TOTP.headerTitle)
                 Text("Enter the 6-digit code from your authenticator app.")
-                    .font(.subheadline)
+                    .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -56,7 +56,7 @@ struct TOTPPromptView: View {
             // MARK: Error message
             if let error = viewModel.errorMessage {
                 Text(error)
-                    .font(.callout)
+                    .font(Typography.screenBody)
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
@@ -78,6 +78,16 @@ struct TOTPPromptView: View {
             .disabled(isSubmitDisabled)
             .keyboardShortcut(.return, modifiers: [])
             .accessibilityIdentifier(AccessibilityID.TOTP.continueButton)
+
+            // MARK: Cancel button
+            // Cancelling clears in-memory key material (stretched keys + password hash)
+            // that was retained from the initial password-login step (Constitution §III).
+            Button("Cancel") {
+                viewModel.cancelTOTP()
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier(AccessibilityID.TOTP.cancelButton)
 
             Spacer()
         }

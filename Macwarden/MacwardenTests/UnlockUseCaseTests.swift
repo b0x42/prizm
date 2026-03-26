@@ -10,7 +10,7 @@ final class UnlockUseCaseTests: XCTestCase {
     private var mockAuth: MockAuthRepository!
     private var mockSync: MockSyncRepository!
 
-    private let masterPassword = "masterPassword1!"
+    private let masterPassword = Data("masterPassword1!".utf8)
 
     override func setUp() async throws {
         try await super.setUp()
@@ -39,7 +39,7 @@ final class UnlockUseCaseTests: XCTestCase {
 
         let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
-            try await sut.execute(masterPassword: "wrong!")
+            try await sut.execute(masterPassword: Data("wrong!".utf8))
         ) { error in
             XCTAssertEqual(error as? AuthError, .invalidCredentials)
         }
@@ -64,7 +64,7 @@ final class UnlockUseCaseTests: XCTestCase {
         mockAuth.unlockWithPasswordError   = AuthError.invalidCredentials
         mockAuth.lockVaultCalledCount      = 0
 
-        _ = try? await sut.execute(masterPassword: "wrong!")
+        _ = try? await sut.execute(masterPassword: Data("wrong!".utf8))
 
         XCTAssertEqual(mockAuth.lockVaultCalledCount, 0,
                        "lockVault must not be called on wrong password — session stays intact")

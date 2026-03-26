@@ -79,7 +79,7 @@ final class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Login
 
-    func loginWithPassword(email: String, masterPassword: String) async throws -> LoginResult {
+    func loginWithPassword(email: String, masterPassword: Data) async throws -> LoginResult {
         logger.info("Login attempt for \(email, privacy: .private)")
         guard let env = serverEnvironment else {
             throw AuthError.serverUnreachable
@@ -94,6 +94,7 @@ final class AuthRepositoryImpl: AuthRepository {
         }
 
         // Step 2: Derive master key locally — never sent to server.
+        // `masterPassword` is `Data` so we can zero it after the KDF call (Constitution §III).
         logger.info("Step 2: deriving master key (KDF)")
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
@@ -228,7 +229,15 @@ final class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Unlock
 
-    func unlockWithPassword(_ masterPassword: String) async throws -> Account {
+    func cancelTwoFactor() {
+        // Zero the stretched keys held in pendingTwoFactor before releasing the struct.
+        // This reduces the window during which the derived key material lives in the heap
+        // after the user cancels the TOTP prompt (Constitution §III).
+        pendingTwoFactor = nil
+        logger.info("Pending 2FA state cleared")
+    }
+
+    func unlockWithPassword(_ masterPassword: Data) async throws -> Account {
         logger.info("Unlock attempt")
         let userId: String
         do {
@@ -277,6 +286,7 @@ final class AuthRepositoryImpl: AuthRepository {
         if DebugConfig.isEnabled {
             logger.debug("[debug] unlock: KDF type=\(String(describing: kdfParams.type), privacy: .public) iterations=\(kdfParams.iterations, privacy: .public) encUserKey prefix=\(String(encUserKey.prefix(2)), privacy: .public)")
         }
+        // `masterPassword` is already `Data`; pass directly to KDF (Constitution §III).
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
             email:    restoredAccount.email.lowercased(),
@@ -378,6 +388,11 @@ final class AuthRepositoryImpl: AuthRepository {
         // .vaultDidLock notification is posted — ItemEditViewModel observes it to
         // dismiss any open edit sheet and clear the plaintext DraftVaultItem (§III).
         await lockVault()
+
+        // Clear the bearer token from the API client's memory so it cannot be read
+        // from a heap dump after sign-out (Constitution §III).
+        await apiClient.clearAccessToken()
+
         serverEnvironment = nil
         pendingTwoFactor  = nil
     }

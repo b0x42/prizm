@@ -37,9 +37,11 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertNoThrow(try sut.validateServerURL("https://vault.example.com/"))
     }
 
-    /// validateServerURL accepts http:// (for local dev).
-    func testValidateServerURL_validHTTP_succeeds() throws {
-        XCTAssertNoThrow(try sut.validateServerURL("http://192.168.1.100"))
+    /// validateServerURL rejects http:// — HTTPS only (Constitution §III).
+    func testValidateServerURL_httpURL_throws() throws {
+        XCTAssertThrowsError(try sut.validateServerURL("http://192.168.1.100")) { error in
+            XCTAssertEqual(error as? AuthError, .invalidURL)
+        }
     }
 
     /// Full loginWithPassword: preLogin → hashPassword → identityToken → initializeUserCrypto.
@@ -76,7 +78,7 @@ final class AuthRepositoryImplTests: XCTestCase {
 
         let result = try await sut.loginWithPassword(
             email: "alice@example.com",
-            masterPassword: "masterPassword1!"
+            masterPassword: Data("masterPassword1!".utf8)
         )
 
         guard case .success(let account) = result else {
@@ -103,7 +105,7 @@ final class AuthRepositoryImplTests: XCTestCase {
 
         let result = try await sut.loginWithPassword(
             email: "alice@example.com",
-            masterPassword: "masterPassword1!"
+            masterPassword: Data("masterPassword1!".utf8)
         )
 
         guard case .requiresTwoFactor(let method) = result else {
@@ -130,7 +132,7 @@ final class AuthRepositoryImplTests: XCTestCase {
 
         let result = try await sut.loginWithPassword(
             email: "alice@example.com",
-            masterPassword: "masterPassword1!"
+            masterPassword: Data("masterPassword1!".utf8)
         )
 
         guard case .requiresTwoFactor(let method) = result else {
@@ -157,7 +159,7 @@ final class AuthRepositoryImplTests: XCTestCase {
         )
         mockAPI.tokenTwoFactorProviders = [0]
         mockCrypto.stubbedServerHash = "hash=="
-        _ = try await sut.loginWithPassword(email: "alice@example.com", masterPassword: "pw!")
+        _ = try await sut.loginWithPassword(email: "alice@example.com", masterPassword: Data("pw!".utf8))
 
         // Now provide the TOTP code
         mockAPI.tokenResponse = TokenResponse(
@@ -182,7 +184,7 @@ final class AuthRepositoryImplTests: XCTestCase {
         mockAPI.preLoginResponse = PreLoginResponse(kdf: 0, kdfIterations: 600_000, kdfMemory: nil, kdfParallelism: nil)
         mockAPI.tokenTwoFactorProviders = [0]
         mockCrypto.stubbedServerHash = "hash=="
-        _ = try await sut.loginWithPassword(email: "alice@example.com", masterPassword: "pw!")
+        _ = try await sut.loginWithPassword(email: "alice@example.com", masterPassword: Data("pw!".utf8))
 
         mockAPI.tokenShouldThrow = AuthError.invalidTwoFactorCode
 
@@ -231,7 +233,7 @@ final class AuthRepositoryImplTests: XCTestCase {
         mockKeychain.seed(key: "bw.macos:\(userId):serverEnvironment",
                           value: String(data: try JSONEncoder().encode(env), encoding: .utf8)!)
 
-        let account = try await sut.unlockWithPassword("masterPassword1!")
+        let account = try await sut.unlockWithPassword(Data("masterPassword1!".utf8))
 
         XCTAssertEqual(account.email, "alice@example.com")
         XCTAssertEqual(account.userId, userId)
@@ -254,7 +256,7 @@ final class AuthRepositoryImplTests: XCTestCase {
         mockKeychain.seed(key: "bw.macos:\(userId):serverEnvironment",
                           value: String(data: try JSONEncoder().encode(env), encoding: .utf8)!)
 
-        _ = try await sut.unlockWithPassword("masterPassword1!")
+        _ = try await sut.unlockWithPassword(Data("masterPassword1!".utf8))
 
         let emailKey   = "bw.macos:\(userId):email"
         let emailReads = mockKeychain.readKeys.filter { $0 == emailKey }.count
@@ -265,7 +267,7 @@ final class AuthRepositoryImplTests: XCTestCase {
     func testUnlockWithPassword_noSession_throws() async throws {
         let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
-            try await sut.unlockWithPassword("any")
+            try await sut.unlockWithPassword(Data("any".utf8))
         ) { error in
             XCTAssertEqual(error as? AuthError, .invalidCredentials)
         }

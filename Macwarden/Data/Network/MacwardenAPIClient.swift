@@ -22,6 +22,12 @@ protocol MacwardenAPIClientProtocol: Actor {
     /// Stores the access token used for subsequent authenticated requests.
     func setAccessToken(_ token: String)
 
+    /// Clears the in-memory access token.
+    ///
+    /// - Security goal: removes the bearer token from memory on sign-out so it cannot
+    ///   be read from a heap dump after the session ends (Constitution §III).
+    func clearAccessToken()
+
     /// POST `/accounts/prelogin` — returns KDF parameters for the given email.
     /// Used to derive the master key before posting credentials to `/connect/token`.
     ///
@@ -275,6 +281,10 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
     func setAccessToken(_ token: String) {
         accessToken = token
+    }
+
+    func clearAccessToken() {
+        accessToken = nil
     }
 
     // MARK: - preLogin

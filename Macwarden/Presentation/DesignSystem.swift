@@ -37,6 +37,10 @@ enum Typography {
     /// Status banner text (e.g. "This item is in Trash.") — slightly larger than utility/caption.
     static let bannerText: Font    = .callout
 
+    /// Prominent status label on loading/syncing screens (e.g. "Fetching vault…").
+    /// Semibold weight distinguishes it from regular body copy in loading contexts.
+    static let progressLabel: Font = .headline
+
     /// Large icon on the Login, TOTP, and Unlock screens (keyhole / app symbol).
     static let screenIcon: Font    = .system(size: 48)
 
@@ -86,4 +90,7 @@ enum Spacing {
 
     /// Vertical padding inside status banners.
     static let bannerVertical: CGFloat = 8
+
+    /// Inner padding for read-only display fields (e.g. the email chip on UnlockView).
+    static let readOnlyField: CGFloat = 6
 }
