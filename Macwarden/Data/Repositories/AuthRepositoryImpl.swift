@@ -237,12 +237,16 @@ final class AuthRepositoryImpl: AuthRepository {
         // ARC may defer it. Zeroing the Data buffers in-place reduces the window during
         // which derived key material lives in the heap (Constitution §III).
         // Note: passwordHash (String) cannot be zeroed — String storage is immutable.
-        if pendingTwoFactor != nil {
+        // `pendingTwoFactor!` is used for the mutations rather than the local `pending`
+        // copy produced by `if let` — zeroing `pending` would only zero the copy's CoW
+        // buffer, not the stored struct's. In-place mutation through `pendingTwoFactor!`
+        // is safe here because we verified non-nil one line above.
+        if let pending = pendingTwoFactor {
             pendingTwoFactor!.stretchedKeys.encryptionKey.resetBytes(
-                in: 0..<pendingTwoFactor!.stretchedKeys.encryptionKey.count
+                in: 0..<pending.stretchedKeys.encryptionKey.count
             )
             pendingTwoFactor!.stretchedKeys.macKey.resetBytes(
-                in: 0..<pendingTwoFactor!.stretchedKeys.macKey.count
+                in: 0..<pending.stretchedKeys.macKey.count
             )
         }
         pendingTwoFactor = nil

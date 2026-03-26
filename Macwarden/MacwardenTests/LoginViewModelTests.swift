@@ -1,11 +1,13 @@
 import XCTest
+import Combine
 @testable import Macwarden
 
 @MainActor
 final class LoginViewModelTests: XCTestCase {
 
-    private var sut:           LoginViewModel!
-    private var mockUseCase:   MockLoginUseCase!
+    private var sut:          LoginViewModel!
+    private var mockUseCase:  MockLoginUseCase!
+    private var cancellables: Set<AnyCancellable> = []
 
     private func makeAccount() -> Account {
         Account(
@@ -25,6 +27,11 @@ final class LoginViewModelTests: XCTestCase {
         sut         = LoginViewModel(loginUseCase: mockUseCase)
     }
 
+    override func tearDown() async throws {
+        cancellables.removeAll()
+        try await super.tearDown()
+    }
+
     // MARK: - signIn: password cleared on success
 
     /// signIn() clears the password field after a successful login (Constitution §III).
@@ -34,12 +41,17 @@ final class LoginViewModelTests: XCTestCase {
         sut.email     = "alice@example.com"
         sut.password  = "SuperSecret1!"
 
+        let exp = expectation(description: "password cleared after sign-in")
+        sut.$password
+            .dropFirst()
+            .filter { $0.isEmpty }
+            .first()
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
         sut.signIn()
 
-        // Allow the Task to complete.
-        await Task.yield()
-        try await Task.sleep(nanoseconds: 10_000_000)
-
+        await fulfillment(of: [exp], timeout: 2.0)
         XCTAssertEqual(sut.password, "", "Password field must be cleared after successful login")
     }
 
@@ -50,25 +62,30 @@ final class LoginViewModelTests: XCTestCase {
         sut.email     = "alice@example.com"
         sut.password  = "SuperSecret1!"
 
+        let exp = expectation(description: "flow transitions to 2FA prompt")
+        sut.$flowState
+            .dropFirst()
+            .filter { $0 == .totpPrompt }
+            .first()
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
         sut.signIn()
 
-        await Task.yield()
-        try await Task.sleep(nanoseconds: 10_000_000)
-
+        await fulfillment(of: [exp], timeout: 2.0)
         XCTAssertEqual(sut.password, "", "Password field must be cleared on 2FA prompt transition")
     }
 
-    /// signIn() with an invalid password encoding does not call the use case.
-    func testSignIn_emptyPassword_disabledState_doesNotCallUseCase() {
+    /// signIn() does not call the use case when password is empty (matches UI disabled-button guard).
+    func testSignIn_emptyPassword_doesNotCallUseCase() {
         sut.serverURL = "https://vault.example.com"
         sut.email     = "alice@example.com"
-        sut.password  = ""   // empty — button would be disabled
+        sut.password  = ""   // empty — guarded before Task is spawned
 
-        // signIn() is guarded by isSignInDisabled, so call it directly to confirm
-        // the use case is never reached when the button should be disabled.
         sut.signIn()
+
         XCTAssertEqual(mockUseCase.executeCallCount, 0,
-                       "execute must not be called when inputs are incomplete")
+                       "execute must not be called when password is empty")
     }
 
     // MARK: - cancelTOTP
