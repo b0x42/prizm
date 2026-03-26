@@ -23,6 +23,7 @@ nonisolated enum AccessibilityID {
         static let codeField         = "totp.code"
         static let rememberToggle    = "totp.remember"
         static let continueButton    = "totp.continue"
+        static let cancelButton      = "totp.cancel"
         static let errorMessage      = "totp.error"
         static let headerTitle       = "totp.headerTitle"
     }

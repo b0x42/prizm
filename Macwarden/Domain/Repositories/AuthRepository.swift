@@ -24,9 +24,11 @@ protocol AuthRepository: AnyObject {
     /// 3. POST `/connect/token` → obtain access + refresh tokens.
     /// 4. Persist tokens + encrypted user key in Keychain.
     ///
+    /// - Security goal: `masterPassword` is `Data` so the caller can zero the bytes
+    ///   after the call returns, reducing heap exposure (Constitution §III).
     /// - Returns: `.success(Account)` or `.requiresTwoFactor(method:)`.
     /// - Throws: `AuthError` on network or credential failure.
-    func loginWithPassword(email: String, masterPassword: String) async throws -> LoginResult
+    func loginWithPassword(email: String, masterPassword: Data) async throws -> LoginResult
 
     /// Completes a pending TOTP two-factor challenge.
     /// - Parameters:
@@ -36,13 +38,24 @@ protocol AuthRepository: AnyObject {
     /// - Throws: `AuthError.invalidTwoFactorCode` on wrong code.
     func loginWithTOTP(code: String, rememberDevice: Bool) async throws -> Account
 
+    /// Cancels a pending TOTP challenge and discards the in-memory `PendingTwoFactor`
+    /// state (stretched keys + password hash) held from the initial password login step.
+    ///
+    /// - Security goal: without this call the derived key material lives in memory until
+    ///   the next login attempt or app restart (Constitution §III). Call this whenever the
+    ///   user dismisses the TOTP prompt without submitting a code.
+    func cancelTwoFactor()
+
     // MARK: - Unlock
 
     /// Re-derives the symmetric key from `masterPassword` using stored KDF params.
     /// No network request is made — purely local crypto.
+    ///
+    /// - Security goal: `masterPassword` is `Data` so the caller can zero the bytes
+    ///   after the call returns (Constitution §III).
     /// - Returns: The unlocked `Account`.
     /// - Throws: `AuthError.invalidCredentials` on wrong password.
-    func unlockWithPassword(_ masterPassword: String) async throws -> Account
+    func unlockWithPassword(_ masterPassword: Data) async throws -> Account
 
     // MARK: - Session
 

@@ -22,10 +22,10 @@ struct LoginView: View {
             // MARK: Header
             VStack(spacing: 4) {
                 Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 48))
+                    .font(Typography.screenIcon)
                     .foregroundStyle(.tint)
                 Text("Macwarden")
-                    .font(.title.bold())
+                    .font(Typography.screenHeading)
                 Text("Self-hosted vault")
                     .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
@@ -69,7 +69,7 @@ struct LoginView: View {
             // MARK: Error message
             if let error = viewModel.errorMessage {
                 Text(error)
-                    .font(.callout)
+                    .font(Typography.screenBody)
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
@@ -96,7 +96,7 @@ struct LoginView: View {
 
             Spacer()
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, Spacing.screenHorizontal)
         .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 400)
         .onAppear { focusedField = .serverURL }

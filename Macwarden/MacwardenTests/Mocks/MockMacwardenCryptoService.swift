@@ -27,7 +27,7 @@ actor MockMacwardenCryptoService: MacwardenCryptoService {
 
     // MARK: - MacwardenCryptoService
 
-    func makeMasterKey(password: String, email: String, kdf: KdfParams) async throws -> Data {
+    func makeMasterKey(password: Data, email: String, kdf: KdfParams) async throws -> Data {
         stubbedMasterKey
     }
 
@@ -35,7 +35,7 @@ actor MockMacwardenCryptoService: MacwardenCryptoService {
         stubbedStretchedKeys
     }
 
-    func makeServerHash(masterKey: Data, password: String) async throws -> String {
+    func makeServerHash(masterKey: Data, password: Data) async throws -> String {
         stubbedServerHash
     }
 

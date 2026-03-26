@@ -20,12 +20,12 @@ struct SyncProgressView: View {
                 .padding(.bottom, 8)
 
             Text(message)
-                .font(.headline)
+                .font(Typography.progressLabel)
                 .foregroundStyle(.secondary)
                 .animation(.easeInOut, value: message)
                 .accessibilityIdentifier(AccessibilityID.Sync.progressMessage)
         }
         .frame(minWidth: 480, minHeight: 320)
-        .padding(40)
+        .padding(Spacing.screenHorizontal)
     }
 }

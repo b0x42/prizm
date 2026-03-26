@@ -10,9 +10,9 @@ final class LoginUseCaseTests: XCTestCase {
     private var mockAuth: MockAuthRepository!
     private var mockSync: MockSyncRepository!
 
-    private let serverURL     = "https://vault.example.com"
-    private let email         = "alice@example.com"
-    private let masterPassword = "masterPassword1!"
+    private let serverURL      = "https://vault.example.com"
+    private let email          = "alice@example.com"
+    private let masterPassword = Data("masterPassword1!".utf8)
 
     override func setUp() async throws {
         try await super.setUp()
@@ -115,6 +115,23 @@ final class LoginUseCaseTests: XCTestCase {
             return
         }
         XCTAssertTrue(mockSync.syncCalled, "Sync should still be attempted")
+    }
+
+    // MARK: - cancelTOTP
+
+    /// cancelTOTP delegates to auth.cancelTwoFactor() — clears pending in-memory key material.
+    func testCancelTOTP_callsCancelTwoFactor() async throws {
+        mockAuth.stubbedLoginResult = .requiresTwoFactor(.authenticatorApp)
+        _ = try await sut.execute(
+            serverURL:      serverURL,
+            email:          email,
+            masterPassword: masterPassword
+        )
+
+        sut.cancelTOTP()
+
+        XCTAssertTrue(mockAuth.cancelTwoFactorCalled,
+                      "cancelTOTP must forward to auth.cancelTwoFactor to clear pending key material")
     }
 
     // MARK: - Helpers

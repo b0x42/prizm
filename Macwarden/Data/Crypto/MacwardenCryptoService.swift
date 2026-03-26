@@ -38,12 +38,17 @@ protocol MacwardenCryptoService: Actor {
     /// Per the Bitwarden Security Whitepaper §4: the master key is the root secret
     /// from which all other keys are derived.  It is **never** sent to the server.
     ///
+    /// - Security goal: accepting `Data` (not `String`) lets the caller zero the
+    ///   password bytes after the KDF call returns, reducing the window during which
+    ///   plaintext password bytes live in the heap (Constitution §III). `String` is
+    ///   immutable and cannot be reliably zeroed.
+    ///
     /// - Parameters:
-    ///   - password: The user's master password (UTF-8 encoded).
+    ///   - password: The user's master password as UTF-8 bytes.
     ///   - email:    The user's lowercase email address (used as the PBKDF2 salt).
     ///   - kdf:      KDF parameters (algorithm, iterations, optional memory/parallelism).
     /// - Returns: 32-byte master key `Data`.
-    func makeMasterKey(password: String, email: String, kdf: KdfParams) async throws -> Data
+    func makeMasterKey(password: Data, email: String, kdf: KdfParams) async throws -> Data
 
     /// Stretches a 32-byte master key into a 64-byte `CryptoKeys` pair using HKDF
     /// (RFC 5869) with independent "enc" and "mac" info labels.
@@ -66,9 +71,9 @@ protocol MacwardenCryptoService: Actor {
     ///
     /// - Parameters:
     ///   - masterKey: 32-byte derived master key.
-    ///   - password:  The user's master password (used as the PBKDF2 "salt" in this step).
+    ///   - password:  The user's master password as UTF-8 bytes (used as the PBKDF2 "salt").
     /// - Returns: Base64-encoded 32-byte hash string (44 chars with padding).
-    func makeServerHash(masterKey: Data, password: String) async throws -> String
+    func makeServerHash(masterKey: Data, password: Data) async throws -> String
 
     /// Decrypts the `encUserKey` EncString (from the sync response profile) using the
     /// stretched master keys, and returns the 64-byte vault symmetric `CryptoKeys`.
@@ -140,10 +145,16 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
     }
 
     func lockVault() {
-        // Overwrite with zeros before releasing (best-effort; Swift ARC may still
-        // retain copies elsewhere, but this reduces the window during which the
-        // key is readable in a memory dump).
-        self.keys = nil
+        // Zero both key buffers in the actor's stored property before releasing.
+        // `self.keys` is the primary reference — zeroing it reduces the window during
+        // which key material exists in a heap dump (Constitution §III). Any Data copies
+        // passed to in-flight decryption tasks retain their own CoW buffers until those
+        // tasks complete; those copies cannot be zeroed here.
+        if keys != nil {
+            keys!.encryptionKey.resetBytes(in: 0..<keys!.encryptionKey.count)
+            keys!.macKey.resetBytes(in: 0..<keys!.macKey.count)
+        }
+        keys = nil
         logger.info("Vault locked — key material zeroed")
     }
 
@@ -180,7 +191,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
                 }
             } catch {
                 failedCount += 1
-                logger.debug("decryptList: Cipher skipped at index \(index)")
+                logger.error("decryptList: Cipher decryption failed at index \(index, privacy: .public)")
                 if DebugConfig.isEnabled {
                     logger.debug("[debug] cipher[\(index, privacy: .public)] FAILED — type=\(cipher.type, privacy: .public) error=\(error, privacy: .public)")
                 }
@@ -192,9 +203,8 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
 
     // MARK: - makeMasterKey
 
-    func makeMasterKey(password: String, email: String, kdf: KdfParams) async throws -> Data {
-        guard let passwordData = password.data(using: .utf8),
-              let emailData    = email.lowercased().data(using: .utf8) else {
+    func makeMasterKey(password: Data, email: String, kdf: KdfParams) async throws -> Data {
+        guard let emailData = email.lowercased().data(using: .utf8) else {
             throw MacwardenCryptoServiceError.kdfFailed
         }
 
@@ -203,7 +213,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
         switch kdf.type {
         case .pbkdf2:
             return try pbkdf2SHA256(
-                password: passwordData,
+                password: password,
                 salt:     emailData,
                 rounds:   UInt32(kdf.iterations),
                 keyLen:   32
@@ -215,7 +225,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
                 throw MacwardenCryptoServiceError.kdfFailed
             }
             return try argon2idDerive(
-                password:    passwordData,
+                password:    password,
                 salt:        emailData,
                 iterations:  kdf.iterations,
                 memory:      memory,
@@ -257,13 +267,10 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
 
     // MARK: - makeServerHash
 
-    func makeServerHash(masterKey: Data, password: String) async throws -> String {
-        guard let passwordData = password.data(using: .utf8) else {
-            throw MacwardenCryptoServiceError.kdfFailed
-        }
+    func makeServerHash(masterKey: Data, password: Data) async throws -> String {
         // serverHash = PBKDF2-SHA256(masterKey, password, 1 iteration, 32 bytes)
         // Per Bitwarden Security Whitepaper §4: "Local Password Hash"
-        let hash = try pbkdf2SHA256(password: masterKey, salt: passwordData, rounds: 1, keyLen: 32)
+        let hash = try pbkdf2SHA256(password: masterKey, salt: password, rounds: 1, keyLen: 32)
         return hash.base64EncodedString()
     }
 

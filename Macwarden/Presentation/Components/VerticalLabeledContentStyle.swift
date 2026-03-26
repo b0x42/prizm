@@ -8,7 +8,7 @@ struct VerticalLabeledContentStyle: LabeledContentStyle {
     func makeBody(configuration: Configuration) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             configuration.label
-                .font(.callout.weight(.medium))
+                .font(Typography.fieldLabelProminent)
                 .foregroundStyle(.secondary)
             configuration.content
         }

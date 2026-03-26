@@ -29,7 +29,7 @@ struct CustomFieldsSection: View {
                     .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
                     .padding(.top, Spacing.headerGap)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, Spacing.headerGap)
             }
         }
     }

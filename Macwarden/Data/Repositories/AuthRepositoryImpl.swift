@@ -37,11 +37,13 @@ final class AuthRepositoryImpl: AuthRepository {
     // Set by loginWithPassword when the server requests 2FA; consumed by loginWithTOTP.
 
     private struct PendingTwoFactor {
-        let email:        String
-        let passwordHash: String
-        let kdfParams:    KdfParams
-        let stretchedKeys: CryptoKeys
-        let deviceId:     String
+        let email:         String
+        let passwordHash:  String
+        let kdfParams:     KdfParams
+        // `var` so cancelTwoFactor() can zero the key buffers before releasing the struct
+        // (Constitution §III). Swift ARC does not guarantee immediate deallocation on nil.
+        var stretchedKeys: CryptoKeys
+        let deviceId:      String
     }
     private var pendingTwoFactor: PendingTwoFactor?
 
@@ -62,9 +64,11 @@ final class AuthRepositoryImpl: AuthRepository {
     func validateServerURL(_ urlString: String) throws {
         // Strip trailing slash for normalisation.
         let trimmed = urlString.hasSuffix("/") ? String(urlString.dropLast()) : urlString
+        // Only HTTPS is permitted — Constitution §III requires all vault communication
+        // to use TLS. Allowing http:// would expose the master password hash and tokens
+        // to network interception even on "trusted" local networks.
         guard let url = URL(string: trimmed),
-              let scheme = url.scheme,
-              (scheme == "https" || scheme == "http"),
+              url.scheme == "https",
               url.host != nil else {
             throw AuthError.invalidURL
         }
@@ -77,7 +81,7 @@ final class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Login
 
-    func loginWithPassword(email: String, masterPassword: String) async throws -> LoginResult {
+    func loginWithPassword(email: String, masterPassword: Data) async throws -> LoginResult {
         logger.info("Login attempt for \(email, privacy: .private)")
         guard let env = serverEnvironment else {
             throw AuthError.serverUnreachable
@@ -92,6 +96,7 @@ final class AuthRepositoryImpl: AuthRepository {
         }
 
         // Step 2: Derive master key locally — never sent to server.
+        // `masterPassword` is `Data` so we can zero it after the KDF call (Constitution §III).
         logger.info("Step 2: deriving master key (KDF)")
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
@@ -226,7 +231,29 @@ final class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Unlock
 
-    func unlockWithPassword(_ masterPassword: String) async throws -> Account {
+    func cancelTwoFactor() {
+        // Explicitly zero the stretched key buffers before releasing the struct.
+        // Setting pendingTwoFactor = nil alone does not guarantee immediate deallocation —
+        // ARC may defer it. Zeroing the Data buffers in-place reduces the window during
+        // which derived key material lives in the heap (Constitution §III).
+        // Note: passwordHash (String) cannot be zeroed — String storage is immutable.
+        // `pendingTwoFactor!` is used for the mutations rather than the local `pending`
+        // copy produced by `if let` — zeroing `pending` would only zero the copy's CoW
+        // buffer, not the stored struct's. In-place mutation through `pendingTwoFactor!`
+        // is safe here because we verified non-nil one line above.
+        if let pending = pendingTwoFactor {
+            pendingTwoFactor!.stretchedKeys.encryptionKey.resetBytes(
+                in: 0..<pending.stretchedKeys.encryptionKey.count
+            )
+            pendingTwoFactor!.stretchedKeys.macKey.resetBytes(
+                in: 0..<pending.stretchedKeys.macKey.count
+            )
+        }
+        pendingTwoFactor = nil
+        logger.info("Pending 2FA state cleared — stretched keys zeroed")
+    }
+
+    func unlockWithPassword(_ masterPassword: Data) async throws -> Account {
         logger.info("Unlock attempt")
         let userId: String
         do {
@@ -275,6 +302,7 @@ final class AuthRepositoryImpl: AuthRepository {
         if DebugConfig.isEnabled {
             logger.debug("[debug] unlock: KDF type=\(String(describing: kdfParams.type), privacy: .public) iterations=\(kdfParams.iterations, privacy: .public) encUserKey prefix=\(String(encUserKey.prefix(2)), privacy: .public)")
         }
+        // `masterPassword` is already `Data`; pass directly to KDF (Constitution §III).
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
             email:    restoredAccount.email.lowercased(),
@@ -300,12 +328,22 @@ final class AuthRepositoryImpl: AuthRepository {
 
             // The stored access token may be expired. Attempt a refresh using the stored
             // refresh token so the post-unlock sync doesn't fail with 401.
-            if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
+            let refreshTokenOpt = try? readString(key: KeychainKey.user(userId, "refreshToken"))
+            if refreshTokenOpt == nil {
+                logger.debug("Unlock: no refresh token in Keychain — skipping token refresh")
+            }
+            if let refreshToken = refreshTokenOpt {
                 do {
                     let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
-                    try? writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
-                    if let newRefresh = tokens.refreshToken {
-                        try? writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                    do {
+                        try writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                        if let newRefresh = tokens.refreshToken {
+                            try writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                        }
+                    } catch {
+                        // Persisting the refreshed token failed — the next launch will use
+                        // the old (expired) token and the user may be signed out unexpectedly.
+                        logger.error("Unlock: failed to persist refreshed tokens — next launch may require re-auth: \(error.localizedDescription, privacy: .public)")
                     }
                     if DebugConfig.isEnabled {
                         logger.debug("[debug] unlock: access token refreshed successfully")
@@ -370,6 +408,11 @@ final class AuthRepositoryImpl: AuthRepository {
         // .vaultDidLock notification is posted — ItemEditViewModel observes it to
         // dismiss any open edit sheet and clear the plaintext DraftVaultItem (§III).
         await lockVault()
+
+        // Clear the bearer token from the API client's memory so it cannot be read
+        // from a heap dump after sign-out (Constitution §III).
+        await apiClient.clearAccessToken()
+
         serverEnvironment = nil
         pendingTwoFactor  = nil
     }

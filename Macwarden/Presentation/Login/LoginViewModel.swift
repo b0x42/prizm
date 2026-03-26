@@ -49,16 +49,30 @@ final class LoginViewModel: ObservableObject {
         errorMessage = nil
         flowState    = .loading
 
+        // Convert the password String to Data at this boundary — the only place the
+        // String-to-bytes conversion happens. `Data` can be zeroed after the KDF call;
+        // `String` cannot (Constitution §III).
+        // Reject empty password here to match the UI's disabled-button guard.
+        // The Task below must never be spawned with an empty credential.
+        guard let passwordData = password.data(using: .utf8), !passwordData.isEmpty else {
+            errorMessage = "Invalid password encoding."
+            flowState    = .login
+            return
+        }
+
         Task {
             do {
                 let result = try await loginUseCase.execute(
                     serverURL:      serverURL,
                     email:          email,
-                    masterPassword: password
+                    masterPassword: passwordData
                 )
 
                 switch result {
                 case .success:
+                    // Clear the password field so the plaintext does not linger in
+                    // the published property (and therefore the SwiftUI state graph).
+                    password  = ""
                     flowState = .vault
 
                 case .requiresTwoFactor(let method):
@@ -68,6 +82,7 @@ final class LoginViewModel: ObservableObject {
                         }
                         throw AuthError.invalidCredentials
                     }
+                    password  = ""
                     flowState = .totpPrompt
                 }
 
@@ -81,6 +96,12 @@ final class LoginViewModel: ObservableObject {
                 flowState    = .login
             }
         }
+    }
+
+    /// Cancels the pending TOTP challenge and returns to the login screen.
+    func cancelTOTP() {
+        loginUseCase.cancelTOTP()
+        flowState = .login
     }
 
     /// Completes a pending TOTP 2FA challenge.

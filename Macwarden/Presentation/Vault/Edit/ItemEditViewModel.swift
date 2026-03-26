@@ -55,7 +55,8 @@ final class ItemEditViewModel: ObservableObject {
     // MARK: - Private state
 
     /// Snapshot of the item as it was when the sheet opened — used for `hasChanges`.
-    private let original: DraftVaultItem
+    /// `var` so `clearDraft()` can overwrite it with a blank sentinel (Constitution §III).
+    private var original: DraftVaultItem
 
     private let editUseCase: (any EditVaultItemUseCase)?
     private let createUseCase: (any CreateVaultItemUseCase)?
@@ -137,8 +138,11 @@ final class ItemEditViewModel: ObservableObject {
     /// held in the heap. Swift ARC may retain additional copies; this removes the primary
     /// reference held by this ViewModel.
     func clearDraft() {
-        // Replace with a minimal no-op draft to release any large string values.
-        draft = DraftVaultItem(VaultItem(
+        // Replace both draft and original with a blank sentinel to release all
+        // string values (passwords, keys, notes) from the heap (Constitution §III).
+        // `original` must also be cleared — it holds a full snapshot of the item
+        // as it was when the sheet opened, including any sensitive plaintext fields.
+        let blank = DraftVaultItem(VaultItem(
             id: original.id,
             name: "",
             isFavorite: false,
@@ -147,6 +151,8 @@ final class ItemEditViewModel: ObservableObject {
             revisionDate: original.revisionDate,
             content: .secureNote(SecureNoteContent(notes: nil, customFields: []))
         ))
+        draft    = blank
+        original = blank
     }
 
     // MARK: - Vault lock observation

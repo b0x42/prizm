@@ -17,10 +17,10 @@ struct UnlockView: View {
             // MARK: Header
             VStack(spacing: 4) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 48))
+                    .font(Typography.screenIcon)
                     .foregroundStyle(.tint)
                 Text("Vault locked")
-                    .font(.title.bold())
+                    .font(Typography.screenHeading)
                     .accessibilityIdentifier(AccessibilityID.Unlock.headerTitle)
                 Text("Enter your master password to unlock.")
                     .font(Typography.fieldLabel)
@@ -35,7 +35,7 @@ struct UnlockView: View {
                     Text(viewModel.email)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(6)
+                        .padding(Spacing.readOnlyField)
                         .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
                         .accessibilityIdentifier(AccessibilityID.Unlock.emailLabel)
                 }
@@ -55,7 +55,7 @@ struct UnlockView: View {
             // MARK: Error message
             if let error = viewModel.errorMessage {
                 Text(error)
-                    .font(.callout)
+                    .font(Typography.screenBody)
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
@@ -85,13 +85,13 @@ struct UnlockView: View {
                 viewModel.signInWithDifferentAccount()
             }
             .buttonStyle(.plain)
-            .font(.callout)
+            .font(Typography.screenBody)
             .foregroundStyle(.secondary)
             .accessibilityIdentifier(AccessibilityID.Unlock.switchAccount)
 
             Spacer()
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, Spacing.screenHorizontal)
         .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 400)
         .onAppear { passwordFocused = true }
