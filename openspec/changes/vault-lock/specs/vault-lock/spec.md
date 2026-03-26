@@ -1,10 +1,10 @@
 ## ADDED Requirements
 
 ### Requirement: User can lock the vault manually with ⌘L
-The system SHALL provide a **Lock Vault** command in the application menu with the keyboard shortcut ⌘L. The command SHALL be enabled only when the vault is unlocked and the vault browser is visible. Activating the command SHALL immediately zero all in-memory key material, clear the vault item cache, and transition to the unlock screen. The user SHALL be able to unlock again by entering their master password.
+The system SHALL provide a **Lock Vault** command in the application menu with the keyboard shortcut ⌘L. The command SHALL be enabled only when the vault is unlocked (vault browser visible or sync in progress). Activating the command SHALL immediately zero all in-memory key material, clear the vault item cache, and transition to the unlock screen. The user SHALL be able to unlock again by entering their master password.
 
 #### Scenario: Lock Vault command is available in the vault browser
-- **WHEN** the vault browser is visible
+- **WHEN** the vault browser is visible or a vault sync is in progress
 - **THEN** the Lock Vault command in the application menu SHALL be enabled and show the ⌘L shortcut
 
 #### Scenario: Lock Vault command is disabled outside the vault browser
