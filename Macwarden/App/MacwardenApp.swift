@@ -190,6 +190,9 @@ final class RootViewModel: ObservableObject {
     /// Whether the Save command should be enabled: the edit sheet is currently open.
     @Published private(set) var menuBarCanSave: Bool = false
 
+    /// The login content of the currently selected item, or nil. Drives copy command disabled state.
+    @Published private(set) var selectedLogin: LoginContent?
+
     private let logger = Logger(subsystem: "com.macwarden", category: "RootViewModel")
 
     let loginVM:          LoginViewModel
@@ -261,6 +264,11 @@ final class RootViewModel: ObservableObject {
             for await selection in vaultBrowserVM.$itemSelection.values {
                 guard let self else { break }
                 self.menuBarCanEdit = selection != nil && !vaultBrowserVM.editSheetOpen
+                if case .login(let login) = selection?.content {
+                    self.selectedLogin = login
+                } else {
+                    self.selectedLogin = nil
+                }
             }
         }
 
@@ -392,8 +400,8 @@ final class RootViewModel: ObservableObject {
     }
 
     private func selectedFieldValue(_ field: CopyableField) -> String? {
-        guard let item = vaultBrowserVM.itemSelection,
-              case .login(let login) = item.content else { return nil }
+        guard let login = selectedLogin else { return nil }
+
         switch field {
         case .username: return login.username
         case .password: return login.password
