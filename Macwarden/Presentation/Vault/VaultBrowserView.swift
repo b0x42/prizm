@@ -17,6 +17,7 @@ struct VaultBrowserView: View {
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
+    @State private var isSearchFieldFocused = false
 
     private let logger = Logger(subsystem: "com.macwarden", category: "UI.VaultBrowser")
 
@@ -24,7 +25,14 @@ struct VaultBrowserView: View {
         NavigationSplitView(
             sidebar: {
                 SidebarView(
-                    selection:  $viewModel.sidebarSelection,
+                    selection: Binding(
+                        get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
+                        set: { newValue in
+                            if let value = newValue {
+                                viewModel.sidebarSelection = value
+                            }
+                        }
+                    ),
                     itemCounts: viewModel.itemCounts
                 )
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
@@ -45,7 +53,9 @@ struct VaultBrowserView: View {
                             items:         viewModel.displayedItems,
                             selection:     $viewModel.itemSelection,
                             faviconLoader: faviconLoader,
-                            onDelete:      { id in await viewModel.performSoftDelete(id: id) }
+                            searchQuery:   viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
+                            onDelete:      { id in await viewModel.performSoftDelete(id: id) },
+                            onToggleFavorite: { viewModel.toggleFavorite(item: $0) }
                         )
                     }
                 }
@@ -101,9 +111,19 @@ struct VaultBrowserView: View {
                                 Button("Delete Permanently", role: .destructive) {
                                     showPermanentDeleteAlert = true
                                 }
+                                .foregroundStyle(.red)
                                 .accessibilityIdentifier(AccessibilityID.Trash.permanentDeleteButton)
                             }
                         } else {
+                            ToolbarItem(placement: .primaryAction) {
+                                Button {
+                                    viewModel.toggleFavorite(item: item)
+                                } label: {
+                                    Image(systemName: item.isFavorite ? "star.fill" : "star")
+                                        .foregroundStyle(item.isFavorite ? .yellow : .secondary)
+                                }
+                                .help(item.isFavorite ? "Unfavorite" : "Favorite")
+                            }
                             ToolbarItem(placement: .primaryAction) {
                                 Button("Edit") {
                                     viewModel.triggerEdit()
@@ -116,12 +136,14 @@ struct VaultBrowserView: View {
                                 Button("Delete", role: .destructive) {
                                     showSoftDeleteAlert = true
                                 }
+                                .foregroundStyle(.red)
                             }
                         }
                     }
                 }
                 .searchable(
                     text: $viewModel.searchQuery,
+                    isPresented: $isSearchFieldFocused,
                     placement: .toolbar,
                     prompt: "Search vault"
                 )
@@ -158,7 +180,26 @@ struct VaultBrowserView: View {
         }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in
-            if newValue == .trash { viewModel.searchQuery = "" }
+            if newValue == .trash {
+                viewModel.searchQuery = ""
+            }
+        }
+        .onChange(of: viewModel.searchQuery) { _, newValue in
+            if newValue.isEmpty && viewModel.isGlobalSearch {
+                viewModel.deactivateGlobalSearch()
+            }
+        }
+        .onChange(of: viewModel.isGlobalSearch) { _, isActive in
+            if !isActive { isSearchFieldFocused = false }
+        }
+        .background {
+            Button("") {
+                viewModel.activateGlobalSearch()
+                isSearchFieldFocused = true
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .frame(width: 0, height: 0)
+            .opacity(0)
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(

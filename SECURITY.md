@@ -1,93 +1,142 @@
-# Security Model — Macwarden Client
+# Security
 
-This document describes, in plain language, the security architecture of this
-Macwarden desktop client. It is intended to allow any developer or
-technically literate user to verify the implementation (Constitution §VII).
-
----
-
-## What Data Is Encrypted
-
-| Data | Encryption | Notes |
-|------|-----------|-------|
-| Vault items (passwords, card numbers, identities, notes, SSH keys, custom fields) | AES-CBC-256 with HMAC-SHA256 (Encrypt-then-MAC) | Decrypted only in memory after unlock; never persisted in plaintext |
-| Master password | Never stored anywhere | Only used transiently during KDF derivation |
-| Encrypted user key (`encUserKey`) | AES-CBC-256 (encrypted by the stretched master key) | Stored in Keychain; decrypted at unlock time to obtain vault keys |
-| Access / refresh tokens | Plaintext in Keychain | Protected by macOS Keychain ACL (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`) |
-
-### Encryption Algorithms Used
-
-- **AES-256-CBC** with PKCS7 padding — via CommonCrypto (`kCCAlgorithmAES128` with 256-bit key)
-- **HMAC-SHA256** — via CryptoKit (`HMAC<SHA256>`) for MAC verification (Encrypt-then-MAC)
-- **PBKDF2-SHA256** — via CommonCrypto (`CCKeyDerivationPBKDF`) for master key derivation
-- **Argon2id** — via `Argon2Swift` (vendored reference C implementation) for Argon2id KDF
-- **HKDF-SHA256** — via CryptoKit (`HKDF<SHA256>`) for key stretching (RFC 5869)
-- **RSA-OAEP** with SHA-1 — via Security.framework for organisation key decryption (v2 scope)
-
-All implementations use Apple system frameworks or the Argon2Swift vendored
-package. No hand-rolled cryptographic algorithms are used (Constitution §III).
+Macwarden is a password manager. This document explains exactly how it protects your
+data — what is encrypted, where keys live, what threats it defends against, and what
+it does not. The goal is to let any developer or technically literate user audit the
+implementation and decide whether to trust it. No black boxes.
 
 ---
 
-## Where Keys Are Stored
+## Reporting a Vulnerability
 
-| Key Material | Storage | Access Conditions |
-|-------------|---------|-------------------|
-| Master key (32 bytes) | In-memory only | Derived on login/unlock; zeroed on lock/sign-out |
+Please do **not** open a public GitHub issue for security vulnerabilities.
+
+Report privately via GitHub's [Security Advisories](https://github.com/b0x42/macwarden/security/advisories/new)
+or email the maintainer directly (address in the GitHub profile). Include a description
+of the issue, steps to reproduce, and any relevant log output or proof of concept.
+
+---
+
+## Encryption
+
+### Data at rest
+
+No vault data is ever written to disk in plaintext. The only sensitive material
+persisted on disk is the **encrypted user key**, stored in the macOS Keychain under
+`kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — accessible only when the Mac is
+unlocked and only on this specific device, excluded from iCloud Keychain and backups.
+
+| Data | How it is protected |
+|------|---------------------|
+| Vault items (passwords, card numbers, identities, notes, SSH keys, custom fields) | AES-256-CBC + HMAC-SHA256; decrypted in memory after unlock only, never written to disk |
+| Master password | Never stored anywhere; used transiently during KDF and then discarded |
+| Encrypted user key (`encUserKey`) | AES-256-CBC encrypted by the stretched master key; stored in Keychain |
+| Access and refresh tokens | Stored in Keychain under `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` |
+| KDF parameters | Stored in Keychain; required for offline unlock |
+
+### Data in transit
+
+All API communication uses HTTPS/TLS. Vault data is **encrypted before it leaves the
+device** — when creating or editing an item, the client encrypts the plaintext fields
+using the vault symmetric keys and sends only ciphertext to the server. The server
+never receives plaintext vault content or the master key at any point.
+
+Authentication sends a one-way derived hash (`serverHash`) rather than the master
+password itself.
+
+### Algorithms
+
+| Algorithm | Purpose | Implementation |
+|-----------|---------|----------------|
+| AES-256-CBC + PKCS7 | Vault item encryption / decryption | CommonCrypto (`kCCAlgorithmAES128`, 256-bit key) |
+| HMAC-SHA256 | MAC verification (Encrypt-then-MAC) | CryptoKit `HMAC<SHA256>` |
+| PBKDF2-SHA256 | Master key derivation (PBKDF2 accounts) | CommonCrypto `CCKeyDerivationPBKDF` |
+| Argon2id | Master key derivation (Argon2id accounts) | `Argon2Swift` — thin wrapper around the reference C implementation |
+| HKDF-SHA256 | Key stretching | CryptoKit `HKDF<SHA256>` (RFC 5869) |
+
+No hand-rolled cryptographic algorithms are used. All implementations are Apple system
+frameworks or the vendored `Argon2Swift` package (Argon2id is not provided by Apple
+frameworks).
+
+---
+
+## Key Management
+
+### Where keys live
+
+| Key material | Storage | Lifetime |
+|---|---|---|
+| Master key (32 bytes) | In-memory only | Derived on login/unlock; zeroed on lock or sign-out |
 | Stretched keys (enc + mac, 64 bytes) | In-memory only | Derived from master key; zeroed on lock |
 | Vault symmetric keys (enc + mac) | In-memory only | Decrypted from `encUserKey`; zeroed on lock |
-| Encrypted user key (`encUserKey`) | macOS Keychain | `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — accessible only while the Mac is unlocked and only on this device; not included in iCloud Keychain or backups |
-| Access token | macOS Keychain | Same ACL as above |
-| Refresh token | macOS Keychain | Same ACL as above |
-| KDF parameters (type, iterations, memory, parallelism) | macOS Keychain | Same ACL — needed for offline unlock |
-| Device identifier (UUID) | macOS Keychain | Same ACL — stable across sessions |
+| Encrypted user key (`encUserKey`) | macOS Keychain | Persisted across sessions; deleted on sign-out |
+| Access token | macOS Keychain | Persisted across sessions; deleted on sign-out |
+| Refresh token | macOS Keychain | Persisted across sessions; deleted on sign-out |
+| KDF parameters | macOS Keychain | Persisted across sessions; deleted on sign-out |
+| Device identifier (UUID) | macOS Keychain | Stable across sessions; deleted on sign-out |
 
-### Key Lifecycle
+### Key lifecycle
 
-1. **Login**: Master password + email → KDF → master key → HKDF → stretched keys → decrypt `encUserKey` → vault keys. Vault keys remain in memory.
-2. **Lock** (app quit or explicit lock): All in-memory key material is zeroed. Keychain data is retained for next unlock.
-3. **Sign out**: All in-memory key material is zeroed AND all per-user Keychain entries are deleted. The user must re-authenticate to use the app.
+1. **Login** — master password + email → KDF (PBKDF2 or Argon2id) → master key →
+   HKDF → stretched keys → decrypt `encUserKey` → vault symmetric keys. All in memory.
+2. **Lock** — all in-memory key material is zeroed. Keychain entries are retained so
+   the vault can be unlocked offline without re-authenticating to the server.
+3. **Sign out** — all in-memory key material is zeroed and all Keychain entries for
+   the account are deleted. The app returns to a blank login screen.
 
 ---
 
 ## Threat Model
 
-### What This App Defends Against
+### What this app defends against
 
-- **Server compromise**: The server never receives the master password or master key. Only a one-way hash (`serverHash`) is sent during authentication. Even if the server is fully compromised, the attacker cannot derive the master password without brute-forcing the KDF.
-- **Disk/at-rest compromise**: Vault data is never stored on disk in plaintext. Only the encrypted user key is persisted, protected by the macOS Keychain with device-only access restrictions.
-- **Memory dump after lock**: On lock, all key material is zeroed. A memory dump after lock reveals no vault keys.
-- **Clipboard sniffing**: Copied secrets are auto-cleared from the clipboard after 30 seconds (best-effort).
-- **Network eavesdropping**: All API communication uses HTTPS/TLS.
+- **Server compromise** — The server never receives the master password, master key,
+  or plaintext vault data. A fully compromised server exposes only ciphertext; an
+  attacker must still brute-force the KDF to decrypt it.
+- **Disk / at-rest compromise** — Vault data is never on disk in plaintext. The
+  encrypted user key in the Keychain cannot be decrypted without the master password.
+- **Memory dump after lock** — All key material is zeroed on lock. A memory dump
+  taken after the vault locks reveals no usable keys.
+- **Clipboard sniffing** — Copied secrets are automatically cleared from the clipboard
+  after 30 seconds (best-effort on app quit).
+- **Network eavesdropping** — All server communication uses HTTPS/TLS. Vault payloads
+  are encrypted before transmission regardless.
 
-### What This App Does NOT Protect Against (Explicit Non-Goals)
+### What this app does NOT protect against
 
-- **Compromised macOS installation**: If the operating system itself is compromised (rootkit, kernel exploit), all bets are off. The app depends on macOS sandboxing, Keychain integrity, and process isolation being intact.
-- **Running debugger / memory inspector while unlocked**: While the vault is unlocked, key material exists in process memory. An attacker with `task_for_pid` or debugger access can read it.
-- **Keylogger capturing the master password**: The master password is typed by the user. A keylogger can capture it.
-- **Physical access while the Mac is unlocked**: Keychain items with `WhenUnlockedThisDeviceOnly` are accessible to the app while the Mac is in an unlocked state.
-- **Bitwarden server authentication (MitM on server identity)**: v1 does not implement certificate pinning.
-- **Organisation cipher decryption**: v1 only decrypts personal vault ciphers. Organisation ciphers are silently skipped.
-- **Write operations**: v1 is read-only. No create, edit, delete, or favourite-toggle operations.
+- **Compromised macOS installation** — The app relies on macOS sandboxing, Keychain
+  integrity, and process isolation. A rootkit or kernel exploit invalidates these
+  guarantees.
+- **Debugger or memory inspector while unlocked** — While the vault is unlocked, key
+  material exists in process memory. An attacker with `task_for_pid` or debugger
+  access can read it.
+- **Keylogger** — The master password is entered via the keyboard. A keylogger can
+  capture it before it reaches the app.
+- **Physical access while the Mac is unlocked** — Keychain items with
+  `WhenUnlockedThisDeviceOnly` are accessible to the app whenever the Mac is in an
+  unlocked state.
+- **TLS interception (MitM on server identity)** — Certificate pinning is not
+  implemented. TLS validation relies on the system trust store.
+- **Organisation vaults** — Only personal vault ciphers are decrypted. Organisation
+  ciphers are skipped.
 
 ---
 
-## App Sandbox & Hardened Runtime
+## Runtime Protections
 
-The app is built with:
-- **App Sandbox** enabled (entitlements file)
-- **Hardened Runtime** enabled
-- Outbound network connections: allowed (for Bitwarden API + icon service)
+The app is built with App Sandbox and Hardened Runtime enabled:
+
+- Outbound network connections: allowed (Bitwarden/Vaultwarden API, icon service)
 - Inbound network connections: denied
-- File system access: read-only user-selected files
-- No access to: camera, microphone, contacts, calendars, location, Bluetooth, USB, printing
+- File system access: read-only, user-selected files only
+- No access to camera, microphone, contacts, calendars, location, Bluetooth, USB, or printing
 
 ---
 
-## Standards Referenced
+## Standards and References
 
 - [Bitwarden Security Whitepaper](https://bitwarden.com/help/bitwarden-security-white-paper/) — vault architecture, key derivation, encryption flow
-- [RFC 5869](https://tools.ietf.org/html/rfc5869) — HKDF (HMAC-based Key Derivation Function)
-- [RFC 8018 / NIST SP 800-132](https://tools.ietf.org/html/rfc8018) — PBKDF2
+- [RFC 5869](https://tools.ietf.org/html/rfc5869) — HKDF
+- [RFC 8018](https://tools.ietf.org/html/rfc8018) / [NIST SP 800-132](https://csrc.nist.gov/publications/detail/sp/800-132/final) — PBKDF2
 - [RFC 9106](https://tools.ietf.org/html/rfc9106) — Argon2id
-- [NIST SP 800-107](https://csrc.nist.gov/publications/detail/sp/800-107/rev-1/final) — HMAC recommendations
+- [NIST SP 800-107](https://csrc.nist.gov/publications/detail/sp/800-107/rev-1/final) — HMAC

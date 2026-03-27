@@ -28,7 +28,7 @@ struct ItemDetailView: View {
                     itemHeader(for: item)
                     typeDetailView(for: item)
 
-                    Divider()
+                    Spacer(minLength: 20)
                     metadataFooter(for: item)
                 }
             }
@@ -75,14 +75,24 @@ struct ItemDetailView: View {
 
     @ViewBuilder
     private func metadataFooter(for item: VaultItem) -> some View {
-        HStack {
-            Label("Created \(item.creationDate.formatted(date: .abbreviated, time: .omitted))", systemImage: "calendar")
-                .font(Typography.utility).foregroundStyle(.secondary)
-            Spacer()
-            Label("Updated \(item.revisionDate.formatted(date: .abbreviated, time: .omitted))", systemImage: "clock")
-                .font(Typography.utility).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 0) {
+                Text("Updated:")
+                    .frame(width: 70, alignment: .leading)
+                Text(item.revisionDate.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year()))
+            }
+            HStack(spacing: 0) {
+                Text("Created:")
+                    .frame(width: 70, alignment: .leading)
+                Text(item.creationDate.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year()))
+            }
         }
-        .padding(Spacing.footerPadding)
+        .font(Typography.fieldValue)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Spacing.pageMargin)
+        .padding(.top, Spacing.cardTop)
+        .padding(.bottom, Spacing.cardBottom)
     }
 
     @ViewBuilder

@@ -15,13 +15,12 @@ import SwiftUI
 struct CardBackground: ViewModifier {
     func body(content: Content) -> some View {
         content
-            // Background must be applied before the clip so both the content
-            // and the background colour are clipped to the same rounded shape.
-            // Applying .background() after .clipShape() would paint it in the
-            // full rectangular frame, requiring a second round of clipping.
             .background(Color("CardBackground"))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+            )
     }
 }
 
@@ -59,11 +58,10 @@ struct DetailSectionCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.headerGap) {
+        VStack(alignment: .leading, spacing: 14) {
             if Self.hasHeader(title) {
                 Text(title!)
-                    .font(Typography.sectionHeader)
-                    .foregroundStyle(.secondary)
+                    .font(.headline)
                     .padding(.leading, 4)
                     .accessibilityIdentifier(
                         AccessibilityID.Detail.cardHeader(title!)

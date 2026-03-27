@@ -17,35 +17,57 @@ struct ItemRowView: View {
 
     let item:          VaultItem
     let faviconLoader: FaviconLoader
+    var searchQuery:   String? = nil
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             FaviconView(
                 domain:    primaryDomain(for: item),
                 itemType:  itemType(for: item),
-                loader:    faviconLoader
+                loader:    faviconLoader,
+                size:      26
             )
 
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 4) {
-                    Text(item.name)
-                        .font(Typography.listTitle)
-                        .lineLimit(1)
-                    if item.isFavorite {
-                        Image(systemName: "star.fill")
-                            .imageScale(.small)
-                            .foregroundStyle(.yellow)
-                    }
-                }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(styledName)
+                    .font(.headline)
+                    .lineLimit(1)
                 if let subtitle = subtitle(for: item) {
-                    Text(subtitle)
-                        .font(Typography.listSubtitle)
+                    Text(styledSubtitle(subtitle))
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Highlighted text helpers
+
+    private var styledName: AttributedString {
+        guard let q = searchQuery, !q.isEmpty else { return AttributedString(item.name) }
+        return Self.highlightedText(item.name, query: q)
+    }
+
+    private func styledSubtitle(_ text: String) -> AttributedString {
+        guard let q = searchQuery, !q.isEmpty else { return AttributedString(text) }
+        return Self.highlightedText(text, query: q)
+    }
+
+    /// Returns an `AttributedString` with the first case-insensitive match of `query` rendered in bold.
+    static func highlightedText(_ text: String, query: String) -> AttributedString {
+        var result = AttributedString(text)
+        guard !query.isEmpty,
+              let range = text.range(of: query, options: .caseInsensitive) else {
+            return result
+        }
+        let lower = text.distance(from: text.startIndex, to: range.lowerBound)
+        let upper = text.distance(from: text.startIndex, to: range.upperBound)
+        let start = result.index(result.startIndex, offsetByCharacters: lower)
+        let end   = result.index(result.startIndex, offsetByCharacters: upper)
+        result[start..<end].inlinePresentationIntent = .stronglyEmphasized
+        return result
     }
 
     // MARK: - Subtitle (FR-021, FR-046, FR-047)

@@ -76,7 +76,10 @@ final class MockAuthRepository: AuthRepository {
         return account
     }
 
-    func storedAccount() -> Account? { nil }
+    func storedAccount() -> Account? { stubbedStoredAccount }
+
+    /// Stub for `storedAccount()`. Defaults to nil.
+    var stubbedStoredAccount: Account?
 
     func signOut() async throws {
         signOutCalled = true

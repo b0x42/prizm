@@ -248,4 +248,17 @@ final class VaultBrowserJourneyTests: XCTestCase {
             XCTAssertTrue(emptyState.exists, "Empty state message should appear for empty category")
         }
     }
+
+    // MARK: - Lock Vault (⌘L)
+
+    func testLockVault_withCmdL_transitionsToUnlockScreen() {
+        // Vault browser is already visible (setUp ensures this).
+        app.typeKey("l", modifierFlags: .command)
+
+        let unlockHeader = app.staticTexts[AccessibilityID.Unlock.headerTitle]
+        XCTAssertTrue(
+            unlockHeader.waitForExistence(timeout: 5),
+            "Unlock screen should appear after ⌘L"
+        )
+    }
 }

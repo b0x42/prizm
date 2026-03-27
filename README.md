@@ -26,8 +26,15 @@ A native Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](htt
 | Shortcut | Action |
 |---|---|
 | ⌘N | New Login item |
+| ⌥⌘N | New window |
 | ⌘E | Edit selected item |
 | ⌘S | Save edits |
+| ⌘L | Lock vault |
+| ⌘F | Global search across all items |
+| ⇧⌘C | Copy username |
+| ⌥⌘C | Copy password |
+| ⌃⌘C | Copy TOTP code |
+| ⌥⇧⌘C | Copy website |
 | ⇧⌘Q | Sign out |
 | ⌥ (hold) | Peek at masked passwords and secrets |
 | ↑ ↓ | Navigate item list |
