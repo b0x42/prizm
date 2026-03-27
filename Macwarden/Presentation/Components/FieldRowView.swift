@@ -76,10 +76,10 @@ struct FieldRowView: View {
     private func copyValue() {
         guard let copyValue = value, !copyValue.isEmpty else { return }
         onCopy?(copyValue)
-        withAnimation { showCopied = true }
+        withAnimation(.easeInOut(duration: 0.1)) { showCopied = true }
         Task {
             try? await Task.sleep(for: .seconds(1.5))
-            withAnimation { showCopied = false }
+            withAnimation(.easeInOut(duration: 0.1)) { showCopied = false }
         }
     }
 
