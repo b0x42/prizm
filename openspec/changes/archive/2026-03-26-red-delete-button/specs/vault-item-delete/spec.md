@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: User can soft-delete an active vault item
 The system SHALL allow the user to move an active vault item to trash via a Delete action available in the vault list context menu and in the item detail view toolbar. Soft-delete SHALL call `DELETE /ciphers/{id}` and set `deletedDate` on the item without permanently removing it from the server. The Delete button text in the detail toolbar SHALL render in red.
@@ -49,47 +49,3 @@ The system SHALL allow the user to permanently delete a single item that is alre
 #### Scenario: Permanent delete network failure
 - **WHEN** the API call fails
 - **THEN** an error alert is shown and the item remains in the Trash list
-
-### Requirement: User can empty trash
-The system SHALL provide an "Empty Trash" action that permanently deletes all items in the trash via `DELETE /ciphers/purge`. A confirmation alert displaying the number of items to be deleted SHALL be required before proceeding.
-
-#### Scenario: Empty trash action is available when trash contains items
-- **WHEN** the Trash view is selected and there is at least one trashed item
-- **THEN** an "Empty Trash" button is visible in the toolbar
-
-#### Scenario: Empty trash action is disabled when trash is empty
-- **WHEN** the Trash view contains no items
-- **THEN** the "Empty Trash" button is absent or disabled
-
-#### Scenario: Empty trash confirmation required
-- **WHEN** the user clicks "Empty Trash"
-- **THEN** a confirmation alert states the number of items that will be permanently deleted
-
-#### Scenario: Empty trash confirmed
-- **WHEN** the user confirms empty-trash
-- **THEN** the system calls `DELETE /ciphers/purge`, all trashed items are removed, and the Trash list becomes empty
-
-#### Scenario: Empty trash network failure
-- **WHEN** the API call fails
-- **THEN** an error alert is shown and the Trash list is unchanged
-
-### Requirement: Trash sidebar section displays soft-deleted items
-The system SHALL display a "Trash" entry in the sidebar that, when selected, shows all vault items whose `deletedDate` is non-nil. Trashed items SHALL NOT appear in the main active vault list.
-
-#### Scenario: Trash entry in sidebar
-- **WHEN** the vault is unlocked
-- **THEN** a "Trash" entry appears in the sidebar below the main item categories
-
-#### Scenario: Active items exclude trashed items
-- **WHEN** the main vault list is displayed
-- **THEN** items with a non-nil `deletedDate` are NOT shown
-
-#### Scenario: Trash list shows only trashed items
-- **WHEN** the user selects the Trash sidebar entry
-- **THEN** only items with a non-nil `deletedDate` are shown
-
-#### Scenario: Empty trash view shows empty state
-- **WHEN** the user selects the Trash sidebar entry and no items are in trash
-- **THEN** the Trash view displays the message "No items in trash" as a heading and "Items you delete will appear here" as supporting text, with no list content
-
-> **Note on auto-purge copy**: Bitwarden (official cloud) permanently deletes trashed items after 30 days server-side. Vaultwarden (self-hosted) does **not** auto-purge by default — it requires the admin to set `TRASH_AUTO_DELETE_DAYS`, and the period is configurable. Because Macwarden targets both servers, the supporting text intentionally omits the "30 days" timeframe to avoid a misleading promise on self-hosted instances.

@@ -110,6 +110,7 @@ struct VaultBrowserView: View {
                                 Button("Delete Permanently", role: .destructive) {
                                     showPermanentDeleteAlert = true
                                 }
+                                .foregroundStyle(.red)
                                 .accessibilityIdentifier(AccessibilityID.Trash.permanentDeleteButton)
                             }
                         } else {
@@ -125,6 +126,7 @@ struct VaultBrowserView: View {
                                 Button("Delete", role: .destructive) {
                                     showSoftDeleteAlert = true
                                 }
+                                .foregroundStyle(.red)
                             }
                         }
                     }
