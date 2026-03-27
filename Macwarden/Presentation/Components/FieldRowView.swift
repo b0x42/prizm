@@ -80,8 +80,7 @@ struct FieldRowView: View {
                         onCopy?(copyValue)
                     } label: {
                         Text("copy")
-                            .font(Typography.utility)
-                            .bold()
+                            .font(.headline)
                             .textCase(.uppercase)
                             .foregroundStyle(Color.accentColor)
                     }
