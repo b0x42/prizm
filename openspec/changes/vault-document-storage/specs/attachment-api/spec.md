@@ -1,14 +1,14 @@
 ## ADDED Requirements
 
-### Requirement: Upload attachment via two-step signed-URL flow
-The system SHALL upload an attachment using the two-step Bitwarden Attachments API:
-1. `POST /api/ciphers/{cipherId}/attachment` with JSON body `{ "fileName": "<encryptedFileName>", "key": "<encryptedAttachmentKey>", "fileSize": <plaintextSizeBytes> }` and `Authorization: Bearer <accessToken>`. The file name SHALL be encrypted as an EncString using the cipher key before sending.
+### Requirement: Upload attachment via two-step v2 signed-URL flow
+The system SHALL upload an attachment using the v2 Bitwarden Attachments API. The v2 endpoint separates metadata creation from file upload:
+1. `POST /api/ciphers/{cipherId}/attachment/v2` with JSON body `{ "fileName": "<encryptedFileName>", "key": "<encryptedAttachmentKey>", "fileSize": <plaintextSizeBytes> }` and `Authorization: Bearer <accessToken>`. The file name SHALL be encrypted as an EncString using the cipher key before sending.
 2. The server response SHALL include `{ "attachmentId": "...", "url": "<signedUrl>", "fileUploadType": 0|1 }`.
-3. For `fileUploadType` = `0` (Vaultwarden direct): `POST <signedUrl>` with the encrypted blob as the multipart form body field `data`.
+3. For `fileUploadType` = `0` (Vaultwarden direct): `POST /api/ciphers/{cipherId}/attachment/{attachmentId}` (the `url` field resolves to this path) with the encrypted blob as the multipart form body field `data`.
 4. For `fileUploadType` = `1` (Azure blob): `PUT <signedUrl>` with the encrypted blob as the raw request body and header `x-ms-blob-type: BlockBlob`.
 
-#### Scenario: Step 1 POST returns attachment metadata with signed URL
-- **WHEN** a valid POST is sent to `/api/ciphers/{id}/attachment`
+#### Scenario: Step 1 POST is to the v2 endpoint and returns metadata with signed URL
+- **WHEN** a valid POST is sent to `/api/ciphers/{id}/attachment/v2`
 - **THEN** the response SHALL contain `attachmentId`, `url`, and `fileUploadType`
 
 #### Scenario: Vaultwarden direct upload succeeds

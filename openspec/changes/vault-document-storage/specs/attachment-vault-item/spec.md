@@ -1,7 +1,9 @@
 ## ADDED Requirements
 
 ### Requirement: Attachment domain entity
-The system SHALL define an `Attachment` value type (`struct`) in the Domain layer with fields: `id: String`, `fileName: String` (decrypted), `encryptedFileName: String` (EncString, as received from server), `encryptedKey: String` (EncString — the attachment key wrapped with the cipher key), `size: Int`, `url: String?`. The Domain layer SHALL NOT import CommonCrypto, CryptoKit, or any Data-layer module.
+The system SHALL define an `Attachment` value type (`struct`) in the Domain layer with fields: `id: String`, `fileName: String` (decrypted), `encryptedFileName: String` (EncString, as received from server), `encryptedKey: String` (EncString — the attachment key wrapped with the cipher key), `size: Int` (parsed from the server's string representation), `sizeName: String` (human-readable size string as returned by server, e.g. `"1.5 MB"` — used directly in UI, not re-formatted client-side per §VI), `url: String?`. The Domain layer SHALL NOT import CommonCrypto, CryptoKit, or any Data-layer module.
+
+Note on `size`: the Bitwarden API returns `size` as a JSON string (e.g. `"12345"`), not a number. `AttachmentMapper` SHALL parse it to `Int`; if parsing fails the mapper SHALL throw a typed error.
 
 #### Scenario: Attachment is a pure value type with no crypto imports
 - **WHEN** the Domain layer is compiled
@@ -91,11 +93,29 @@ Each use case SHALL be a struct or final class in `Domain/UseCases/` holding inj
 ---
 
 ### Requirement: AttachmentMapper translates sync payload to Attachment entity
-The Data layer SHALL provide an `AttachmentMapper` that converts the raw sync JSON object for an attachment into an `Attachment` domain entity, decrypting `fileName` from its EncString form using the provided cipher key.
+The Data layer SHALL provide an `AttachmentMapper` that converts the raw sync JSON attachment object into an `Attachment` domain entity. The sync JSON shape is: `{ "id": String, "fileName": EncString, "key": EncString, "size": String, "sizeName": String, "url": String? }`. The mapper SHALL:
+- Decrypt `fileName` from its EncString form using the provided cipher key → `Attachment.fileName`
+- Preserve `fileName` EncString verbatim → `Attachment.encryptedFileName`
+- Preserve `key` EncString verbatim → `Attachment.encryptedKey`
+- Parse `size` from `String` to `Int` → `Attachment.size`; throw a typed error if non-numeric
+- Map `sizeName` verbatim → `Attachment.sizeName`
+- Map `url` verbatim (may be `null`) → `Attachment.url`
 
 #### Scenario: Mapper decrypts file name from EncString
 - **WHEN** the mapper processes an attachment with `fileName` = `"2.<iv>|<ct>|<mac>"`
 - **THEN** the resulting `Attachment.fileName` SHALL be the plaintext file name string
+
+#### Scenario: Mapper parses size string to Int
+- **WHEN** the mapper processes an attachment with `size` = `"12345"`
+- **THEN** `Attachment.size` SHALL equal `12345` as an `Int`
+
+#### Scenario: Mapper throws on non-numeric size
+- **WHEN** the mapper processes an attachment with a `size` value that cannot be parsed as an integer
+- **THEN** the mapper SHALL throw a typed mapping error
+
+#### Scenario: Mapper preserves sizeName verbatim
+- **WHEN** the mapper processes an attachment with `sizeName` = `"1.5 MB"`
+- **THEN** `Attachment.sizeName` SHALL equal `"1.5 MB"` unchanged
 
 #### Scenario: Mapper preserves encrypted key as-is
 - **WHEN** the mapper processes an attachment with a `key` field

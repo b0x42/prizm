@@ -1,6 +1,6 @@
 ## 1. Domain Layer
 
-- [ ] 1.1 Add `Attachment` struct to `Domain/Entities/` with fields: `id`, `fileName`, `encryptedFileName`, `encryptedKey`, `size`, `url`
+- [ ] 1.1 Add `Attachment` struct to `Domain/Entities/` with fields: `id`, `fileName`, `encryptedFileName`, `encryptedKey`, `size: Int`, `sizeName: String`, `url: String?`
 - [ ] 1.2 Add `attachments: [Attachment]` field to the cipher detail entity (or equivalent `VaultItem` sub-type); treat `null` from server as `[]`
 - [ ] 1.3 Define `AttachmentRepository` protocol in `Domain/` with `upload(cipherId:fileName:data:cipherKey:)`, `download(cipherId:attachment:cipherKey:)`, and `delete(cipherId:attachmentId:)` methods
 - [ ] 1.4 Define `VaultKeyService` protocol in `Domain/` with `cipherKey(for cipherId: String) async throws -> Data`; Foundation-only; throws when vault is locked
@@ -22,7 +22,7 @@
 ## 3. Data Layer — Network
 
 - [ ] 3.1 Create `AttachmentRepositoryImpl` conforming to `AttachmentRepository`
-- [ ] 3.2 Implement `upload` — generate attachment key, encrypt file name, encrypt file data, POST metadata to `/api/ciphers/{id}/attachment`, dispatch to `fileUploadType` 0 (Vaultwarden POST multipart) or 1 (Azure PUT + `x-ms-blob-type` header), zero key material after completion
+- [ ] 3.2 Implement `upload` — generate attachment key, encrypt file name, encrypt file data, POST metadata to `/api/ciphers/{id}/attachment/v2`, dispatch to `fileUploadType` 0 (POST `/api/ciphers/{id}/attachment/{attachmentId}` multipart `data` field) or 1 (Azure PUT + `x-ms-blob-type: BlockBlob` header), zero key material after completion
 - [ ] 3.3 Implement `download` — GET `/api/ciphers/{id}/attachment/{attachmentId}` for signed URL, GET encrypted blob from signed URL, decrypt with attachment key (decrypted from `encryptedKey`), zero key and ciphertext buffers after decryption; retry once on 403 (expired URL)
 - [ ] 3.4 Implement `delete` — DELETE `/api/ciphers/{id}/attachment/{attachmentId}`, remove from in-memory cache on 200
 - [ ] 3.5 Handle HTTP 402 response from upload → throw typed `AttachmentError.premiumRequired`
@@ -32,14 +32,14 @@
 
 ## 4. Data Layer — Sync Mapping
 
-- [ ] 4.1 Create `AttachmentMapper` to convert sync JSON attachment object → `Attachment` entity, decrypting `fileName` from EncString using cipher key
+- [ ] 4.1 Create `AttachmentMapper` to convert sync JSON attachment object (`id`, `fileName` EncString, `key` EncString, `size` String, `sizeName` String, `url` String?) → `Attachment` entity; decrypt `fileName`; parse `size` String → Int (throw on failure); map `sizeName` verbatim
 - [ ] 4.2 Update `VaultSyncMapper` (or equivalent) to map `ciphers[].attachments` array through `AttachmentMapper`; coerce `null` to `[]`
-- [ ] 4.3 Write unit tests for `AttachmentMapper`: encrypted file name is decrypted; `null` attachments field → empty array; `encryptedKey` preserved verbatim
+- [ ] 4.3 Write unit tests for `AttachmentMapper`: fileName decrypted; size String parsed to Int; non-numeric size throws; sizeName preserved verbatim; null attachments → empty array; encryptedKey preserved verbatim
 
 ## 5. Presentation — Attachments Section in Detail Pane
 
 - [ ] 5.1 Add an Attachments section card to the vault item detail view below all existing field cards, using design system tokens (`Typography.sectionHeader`, `Spacing.cardTop/cardBottom/rowVertical/rowHorizontal`)
-- [ ] 5.2 Render one `AttachmentRowView` per `Attachment` in the list, showing decrypted file name and human-readable size
+- [ ] 5.2 Render one `AttachmentRowView` per `Attachment` in the list, showing `attachment.fileName` and `attachment.sizeName` (use server-provided string directly — do not reformat)
 - [ ] 5.3 Add "Add Attachment" button at the bottom of the Attachments card (visible even when attachment list is empty)
 
 ## 6. Presentation — Add Attachment Flow
