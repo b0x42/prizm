@@ -60,7 +60,7 @@ struct SSHKeyDetailView: View {
 
                 if let notes = sshKey.notes, !notes.isEmpty {
                     DetailSectionCard("Notes") {
-                        FieldRowView(label: "Notes", value: notes, itemId: item.id, onCopy: onCopy)
+                        FieldRowView(label: "", value: notes, itemId: item.id, isMultiLine: true, onCopy: onCopy)
                     }
                 }
 

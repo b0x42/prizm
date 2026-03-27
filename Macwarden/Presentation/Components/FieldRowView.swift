@@ -22,69 +22,94 @@ struct FieldRowView: View {
     let value:    String?
     let itemId:   String
     var isMasked: Bool  = false
+    var isMultiLine: Bool = false
     var url:      URL?  = nil
     var onCopy:   ((String) -> Void)? = nil
 
     @State private var isHovered = false
+    @State private var showCopied = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             // Field content
             if isMasked {
+                Text(label)
+                    .font(Typography.fieldValue)
+                Spacer()
+                hoverActions
                 MaskedFieldView(label: label, value: value, itemId: itemId)
-            } else {
+            } else if isMultiLine {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(label)
-                        .font(Typography.fieldLabel)
-                        .foregroundStyle(.secondary)
+                    if !label.isEmpty {
+                        Text(label)
+                            .font(Typography.fieldValue)
+                    }
                     Text(value ?? "—")
-                        .font(Typography.fieldValue)
+                        .font(Typography.fieldValue.monospaced())
                         .textSelection(.enabled)
                 }
-            }
-
-            Spacer()
-
-            // Hover actions
-            if isHovered {
-                HStack(spacing: 4) {
-                    if let copyValue = value, !copyValue.isEmpty {
-                        Button {
-                            onCopy?(copyValue)
-                        } label: {
-                            Text("COPY")
-                                .font(Typography.utility)
-                                .bold()
-                        }
-                        .buttonStyle(.plain)
-                        .help("Copy \(label)")
-                        .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
-                    }
-
-                    if let link = url {
-                        Link(destination: link) {
-                            Image(systemName: "arrow.up.right.square")
-                                .imageScale(.small)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Open in browser")
-                        .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
-                    }
-                }
-                .transition(.opacity)
+                Spacer()
+                hoverActions
+            } else {
+                Text(label)
+                    .font(Typography.fieldValue)
+                Spacer()
+                hoverActions
+                Text(value ?? "—")
+                    .font(Typography.fieldValue.monospaced())
+                    .lineLimit(1)
+                    .textSelection(.enabled)
+                browserLink
             }
         }
-        .padding(.vertical, Spacing.rowVertical)
+        .padding(.vertical, 16)
         .padding(.horizontal, Spacing.rowHorizontal)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isHovered ? Color.primary.opacity(0.06) : Color.clear)
-        )
-        .accessibilityIdentifier(AccessibilityID.Field.row(label))
+        .contentShape(Rectangle())
+        .onTapGesture { copyValue() }
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.1)) {
+            withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
+        }
+        .accessibilityIdentifier(AccessibilityID.Field.row(label))
+    }
+
+    private func copyValue() {
+        guard let copyValue = value, !copyValue.isEmpty else { return }
+        onCopy?(copyValue)
+        withAnimation(.easeInOut(duration: 0.1)) { showCopied = true }
+        Task {
+            try? await Task.sleep(for: .seconds(0.8))
+            withAnimation(.easeInOut(duration: 0.1)) { showCopied = false }
+        }
+    }
+
+    @ViewBuilder
+    private var hoverActions: some View {
+        if isHovered || showCopied {
+            if value != nil, !(value?.isEmpty ?? true) {
+                Text(showCopied ? "copied" : "copy")
+                    .font(.headline)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.trailing, 4)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var browserLink: some View {
+        if let link = url {
+            Link(destination: link) {
+                Image(systemName: "arrow.up.right.square")
+                    .imageScale(.medium)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .help("Open in browser")
+            .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
         }
     }
 }

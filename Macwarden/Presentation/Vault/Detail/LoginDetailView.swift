@@ -65,12 +65,7 @@ struct LoginDetailView: View {
 
                 if let notes = login.notes, !notes.isEmpty {
                     DetailSectionCard("Notes") {
-                        FieldRowView(
-                            label:  "Notes",
-                            value:  notes,
-                            itemId: item.id,
-                            onCopy: onCopy
-                        )
+                        FieldRowView(label: "", value: notes, itemId: item.id, isMultiLine: true, onCopy: onCopy)
                     }
                 }
 

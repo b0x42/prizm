@@ -16,20 +16,12 @@ struct CustomFieldsSection: View {
 
     var body: some View {
         if fields.isEmpty { EmptyView() } else {
-            Section {
-                ForEach(fields.indices, id: \.self) { index in
-                    let field = fields[index]
-                    customFieldRow(field)
-                    if index < fields.indices.last! {
-                        Divider()
-                    }
+            ForEach(fields.indices, id: \.self) { index in
+                let field = fields[index]
+                customFieldRow(field)
+                if index < fields.indices.last! {
+                    Divider()
                 }
-            } header: {
-                Text("Custom Fields")
-                    .font(Typography.fieldLabel)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, Spacing.headerGap)
-                    .padding(.horizontal, Spacing.headerGap)
             }
         }
     }
