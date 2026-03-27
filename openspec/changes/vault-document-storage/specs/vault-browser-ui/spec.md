@@ -10,3 +10,9 @@ The vault item detail pane SHALL include an "Attachments" section rendered below
 #### Scenario: Attachments section uses design system tokens
 - **WHEN** the Attachments section is rendered
 - **THEN** the section header SHALL use `Typography.sectionHeader`, section spacing SHALL use `Spacing.cardTop` and `Spacing.cardBottom`, and row padding SHALL use `Spacing.rowVertical` and `Spacing.rowHorizontal`
+
+#### Scenario: Attachments section highlights when files are dragged over it
+- **WHEN** the user drags one or more files from Finder over the Attachments section card
+- **THEN** the card SHALL display a visible drop-target highlight
+- **WHEN** the user moves the cursor away without dropping
+- **THEN** the highlight SHALL be removed and the card SHALL return to its normal appearance

@@ -41,14 +41,25 @@
 - [ ] 5.1 Add an Attachments section card to the vault item detail view below all existing field cards, using design system tokens (`Typography.sectionHeader`, `Spacing.cardTop/cardBottom/rowVertical/rowHorizontal`)
 - [ ] 5.2 Render one `AttachmentRowView` per `Attachment` in the list, showing `attachment.fileName` and `attachment.sizeName` (use server-provided string directly — do not reformat)
 - [ ] 5.3 Add "Add Attachment" button at the bottom of the Attachments card (visible even when attachment list is empty)
+- [ ] 5.4 Add `.onDrop(of: [.fileURL], isTargeted: $isDragTargeted, perform:)` to the Attachments section card; bind `isDragTargeted` to a highlight style (border or background tint)
 
 ## 6. Presentation — Add Attachment Flow
 
-- [ ] 6.1 Create `AttachmentAddViewModel` (`@Observable`) with state: `selectedFileURL`, `fileName`, `fileSizeBytes`, `isConfirming`, `isUploading`, `sizeError`, `uploadError`
+- [ ] 6.1 Create `AttachmentAddViewModel` (`@Observable`) with state for single-file flow: `selectedFileURL`, `fileName`, `fileSizeBytes`, `isConfirming`, `isUploading`, `sizeError`, `uploadError`
 - [ ] 6.2 Implement file selection via `NSOpenPanel`; read file size only (not contents) to validate ≤500 MB before reading bytes
 - [ ] 6.3 Create `AttachmentConfirmSheet` — shows file name, size, size/advisory messages, progress indicator, Confirm/Cancel buttons; wired to `AttachmentAddViewModel`
 - [ ] 6.4 Implement Confirm action — background `Task`, call `UploadAttachmentUseCase.execute(cipherId:fileName:data:)` with no key parameter (key resolved internally by use case — §II/§III), handle 402 (premium), handle vault lock (cancel task + zero buffers + dismiss), show progress
 - [ ] 6.5 Write unit tests for `AttachmentAddViewModel`: 500 MB rejection, 50–500 MB advisory, successful upload path, vault lock abort, premium error display
+
+## 6b. Presentation — Drag-and-Drop Batch Upload Flow
+
+- [ ] 6b.1 Create `AttachmentBatchItem` model: `url: URL`, `fileName: String`, `sizeName: String`, `sizeBytes: Int`, `state: BatchItemState` (enum: `.valid`, `.tooLarge`, `.uploading`, `.succeeded`, `.failed(String)`)
+- [ ] 6b.2 Create `AttachmentBatchViewModel` (`@Observable`) — accepts `[URL]` from drop handler; builds `[AttachmentBatchItem]` reading file size only (not contents); exposes `canConfirm: Bool` (true if ≥1 valid item)
+- [ ] 6b.3 Create `AttachmentBatchSheet` — lists all items with name, sizeName, per-row state (error badge for too-large, spinner for uploading, checkmark for success, error message for failed); Confirm/Cancel buttons driven by `canConfirm`
+- [ ] 6b.4 Implement `.onDrop` handler in the Attachments section view — extract file URLs from `NSItemProvider`, pass to `AttachmentBatchViewModel`, present `AttachmentBatchSheet`
+- [ ] 6b.5 Implement Confirm action in `AttachmentBatchViewModel` — launch a concurrent background `Task` per valid item; each calls `UploadAttachmentUseCase.execute(cipherId:fileName:data:)`; update per-item state on success/failure; zero file bytes after each upload; dismiss sheet automatically when all succeed
+- [ ] 6b.6 Handle vault lock during batch — cancel all in-flight upload tasks, zero all buffered file bytes, dismiss sheet immediately
+- [ ] 6b.7 Write unit tests for `AttachmentBatchViewModel`: all-too-large disables confirm; mixed valid/invalid shows correct states; concurrent upload tasks update item state independently; vault lock cancels all tasks
 
 ## 7. Presentation — View / Download / Delete Flow
 
@@ -65,3 +76,4 @@
 ## 9. XCUITest
 
 - [ ] 9.1 Write UI journey: open a vault item → click Add Attachment → select a small test file → confirm → verify attachment row appears with correct name → click Open → verify temp file exists → click Delete → confirm → verify row is gone
+- [ ] 9.2 Write UI journey: open a vault item → drag two small test files onto the Attachments section → verify batch sheet lists both → confirm → verify both attachment rows appear

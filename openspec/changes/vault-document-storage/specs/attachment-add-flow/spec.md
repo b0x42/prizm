@@ -59,6 +59,66 @@ Encryption and upload SHALL execute on a background `Task`. While in progress, t
 
 ---
 
+### Requirement: Attachments section accepts dropped files
+The Attachments section card SHALL act as a drop zone for files dragged from Finder or any other source. The system SHALL use SwiftUI's `.onDrop(of: [.fileURL], isTargeted:, perform:)` modifier — no AppKit drop target is needed. When one or more files are dragged over the Attachments section, the card SHALL display a visible highlight (e.g. a coloured border or background tint) to indicate it is a valid drop target. Dropping one or more files SHALL open a batch confirmation sheet listing all dropped files.
+
+#### Scenario: Attachments card highlights when files are dragged over it
+- **WHEN** the user drags one or more files over the Attachments section card
+- **THEN** the card SHALL display a drop-target highlight and the cursor SHALL change to indicate a valid drop
+
+#### Scenario: Dropping files opens the batch confirmation sheet
+- **WHEN** the user drops one or more files onto the Attachments section card
+- **THEN** a batch confirmation sheet SHALL open listing every dropped file
+
+#### Scenario: Dragging non-file content over the card shows no highlight
+- **WHEN** the user drags content that is not a file URL (e.g. text, an image from a web page)
+- **THEN** the card SHALL NOT highlight and the drop SHALL be rejected
+
+---
+
+### Requirement: Batch confirmation sheet for drag-and-drop uploads
+When files are dropped, the system SHALL present a single sheet listing all dropped files before any upload begins. Each file SHALL appear as a row showing its name and `sizeName`. Files exceeding 500 MB SHALL show an inline per-row error ("Too large — 500 MB max") and SHALL be excluded from the upload. The Confirm button SHALL be enabled if at least one dropped file is valid; it SHALL be disabled only if every file exceeds the limit. Confirming SHALL encrypt and upload all valid files concurrently on background `Task`s. The sheet SHALL remain open showing per-file upload state until all uploads complete or fail, then dismiss automatically on full success or remain open to show failures.
+
+#### Scenario: Batch sheet lists all dropped files with name and size
+- **WHEN** the batch confirmation sheet opens after a drop
+- **THEN** every dropped file SHALL appear as a row showing its file name and `sizeName`
+
+#### Scenario: Oversized files are flagged inline but do not block valid files
+- **WHEN** the batch sheet contains a mix of valid files and files over 500 MB
+- **THEN** each oversized file row SHALL show "Too large — 500 MB max" and SHALL be marked as excluded
+- **AND** the Confirm button SHALL be enabled for the remaining valid files
+
+#### Scenario: Confirm is disabled when every dropped file exceeds 500 MB
+- **WHEN** all files in the batch sheet exceed 500 MB
+- **THEN** the Confirm button SHALL be disabled
+
+#### Scenario: Confirming starts concurrent uploads for all valid files
+- **WHEN** the user confirms the batch sheet
+- **THEN** each valid file SHALL begin encrypting and uploading on its own background `Task` concurrently
+- **AND** each row SHALL show an individual progress indicator
+
+#### Scenario: Per-file upload success removes the progress indicator from that row
+- **WHEN** a file in the batch uploads successfully
+- **THEN** its row SHALL show a success indicator and the attachment SHALL appear in the detail pane
+
+#### Scenario: Per-file upload failure shows an inline row error
+- **WHEN** a file in the batch fails to upload
+- **THEN** its row SHALL show an inline error message; other files in the batch are not affected
+
+#### Scenario: Sheet dismisses automatically when all uploads succeed
+- **WHEN** every valid file in the batch has uploaded successfully
+- **THEN** the sheet SHALL dismiss and all new attachments SHALL be visible in the Attachments section
+
+#### Scenario: Sheet stays open if any upload fails
+- **WHEN** at least one file in the batch fails to upload
+- **THEN** the sheet SHALL remain open showing the failure rows; the user SHALL be able to dismiss manually
+
+#### Scenario: Cancel before confirming discards all dropped file data
+- **WHEN** the user presses Cancel on the batch confirmation sheet before confirming
+- **THEN** no uploads SHALL be initiated and all in-memory file references SHALL be released
+
+---
+
 ### Requirement: Vault lock during upload aborts and clears file data
 If the vault locks while an upload is in progress, the system SHALL cancel the upload task, zero any in-memory file bytes and attachment key material, and dismiss the confirmation sheet without a discard prompt.
 
