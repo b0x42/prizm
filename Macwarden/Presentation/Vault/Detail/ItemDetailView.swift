@@ -90,7 +90,7 @@ struct ItemDetailView: View {
         .font(Typography.fieldValue)
         .foregroundStyle(.secondary)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, Spacing.pageMargin + Spacing.rowHorizontal)
+        .padding(.horizontal, Spacing.pageMargin)
         .padding(.top, Spacing.cardTop)
         .padding(.bottom, Spacing.cardBottom)
     }
