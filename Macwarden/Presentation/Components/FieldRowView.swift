@@ -104,6 +104,7 @@ struct FieldRowView: View {
             Link(destination: link) {
                 Image(systemName: "arrow.up.right.square")
                     .imageScale(.medium)
+                    .fontWeight(.semibold)
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
