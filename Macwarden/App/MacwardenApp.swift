@@ -71,6 +71,32 @@ struct MacwardenApp: App {
                 }
                 .disabled(!rootVM.menuBarCanSave)
                 .keyboardShortcut("s", modifiers: .command)
+
+                Divider()
+
+                Button("Copy Username") {
+                    rootVM.copySelectedField(.username)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+                .disabled(!rootVM.selectedFieldAvailable(.username))
+
+                Button("Copy Password") {
+                    rootVM.copySelectedField(.password)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .option])
+                .disabled(!rootVM.selectedFieldAvailable(.password))
+
+                Button("Copy Code") {
+                    rootVM.copySelectedField(.totp)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .control])
+                .disabled(!rootVM.selectedFieldAvailable(.totp))
+
+                Button("Copy Website") {
+                    rootVM.copySelectedField(.website)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .option, .shift])
+                .disabled(!rootVM.selectedFieldAvailable(.website))
             }
         }
     }
@@ -164,6 +190,9 @@ final class RootViewModel: ObservableObject {
     /// Whether the Save command should be enabled: the edit sheet is currently open.
     @Published private(set) var menuBarCanSave: Bool = false
 
+    /// The login content of the currently selected item, or nil. Drives copy command disabled state.
+    @Published private(set) var selectedLogin: LoginContent?
+
     private let logger = Logger(subsystem: "com.macwarden", category: "RootViewModel")
 
     let loginVM:          LoginViewModel
@@ -235,6 +264,11 @@ final class RootViewModel: ObservableObject {
             for await selection in vaultBrowserVM.$itemSelection.values {
                 guard let self else { break }
                 self.menuBarCanEdit = selection != nil && !vaultBrowserVM.editSheetOpen
+                if case .login(let login) = selection?.content {
+                    self.selectedLogin = login
+                } else {
+                    self.selectedLogin = nil
+                }
             }
         }
 
@@ -348,5 +382,31 @@ final class RootViewModel: ObservableObject {
             screen   = .login
         }
         logger.info("Screen transition → \(String(describing: state))")
+    }
+
+    // MARK: - Copy field from selected item
+
+    enum CopyableField {
+        case username, password, totp, website
+    }
+
+    func copySelectedField(_ field: CopyableField) {
+        guard let value = selectedFieldValue(field) else { return }
+        vaultBrowserVM.copy(value)
+    }
+
+    func selectedFieldAvailable(_ field: CopyableField) -> Bool {
+        selectedFieldValue(field) != nil
+    }
+
+    private func selectedFieldValue(_ field: CopyableField) -> String? {
+        guard let login = selectedLogin else { return nil }
+
+        switch field {
+        case .username: return login.username
+        case .password: return login.password
+        case .totp:     return login.totp
+        case .website:  return login.uris.first?.uri
+        }
     }
 }
