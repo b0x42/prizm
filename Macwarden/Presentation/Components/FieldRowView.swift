@@ -78,7 +78,7 @@ struct FieldRowView: View {
         onCopy?(copyValue)
         withAnimation(.easeInOut(duration: 0.1)) { showCopied = true }
         Task {
-            try? await Task.sleep(for: .seconds(1.5))
+            try? await Task.sleep(for: .seconds(0.8))
             withAnimation(.easeInOut(duration: 0.1)) { showCopied = false }
         }
     }
