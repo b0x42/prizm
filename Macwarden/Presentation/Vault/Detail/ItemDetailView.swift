@@ -75,11 +75,10 @@ struct ItemDetailView: View {
 
     @ViewBuilder
     private func metadataFooter(for item: VaultItem) -> some View {
-        HStack {
+        VStack(alignment: .leading, spacing: 4) {
             Text("Created \(item.creationDate.formatted(date: .abbreviated, time: .omitted))")
                 .font(Typography.fieldValue)
                 .foregroundStyle(.secondary)
-            Spacer()
             Text("Updated \(item.revisionDate.formatted(date: .abbreviated, time: .omitted))")
                 .font(Typography.fieldValue)
                 .foregroundStyle(.secondary)
