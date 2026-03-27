@@ -58,6 +58,10 @@ The system SHALL delete an attachment via `DELETE /api/ciphers/{cipherId}/attach
 - **WHEN** the server returns a non-200 status for DELETE
 - **THEN** an inline error SHALL appear in the detail pane and the attachment SHALL remain visible
 
+#### Scenario: Delete of incomplete attachment removes orphaned metadata
+- **WHEN** the user deletes an attachment with `isUploadIncomplete` = `true`
+- **THEN** the system SHALL call `DELETE /api/ciphers/{cipherId}/attachment/{attachmentId}` — the server removes the orphaned metadata row regardless of whether a blob was ever uploaded; the row SHALL disappear from the detail pane on success
+
 ---
 
 ### Requirement: Structured logging for all attachment operations

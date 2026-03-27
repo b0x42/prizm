@@ -13,6 +13,19 @@ The vault item detail pane SHALL include an "Attachments" section below the exis
 
 ---
 
+### Requirement: Upload-incomplete attachments are shown with retry option
+If a sync response includes an attachment whose `url` is nil and whose metadata cannot be resolved to a downloadable file (indicating a prior upload was interrupted after the metadata POST but before the blob upload), the attachment row SHALL be shown in a degraded "Upload incomplete" state. The row SHALL display the decrypted file name, a visual indicator distinguishing it from normal rows, and a "Retry Upload" button. Pressing "Retry Upload" SHALL re-prompt the user to select the same file and re-initiate the two-step upload flow. Pressing Delete SHALL behave identically to the normal delete flow.
+
+#### Scenario: Incomplete attachment is shown as degraded
+- **WHEN** a synced cipher has an attachment with no resolvable download URL
+- **THEN** the attachment row SHALL display a "Upload incomplete" indicator and a "Retry Upload" button instead of the Open/Save actions
+
+#### Scenario: Retry Upload deletes orphaned metadata then does a fresh upload
+- **WHEN** the user presses "Retry Upload" on an incomplete attachment
+- **THEN** an `NSOpenPanel` SHALL open so the user can re-select the file; on confirm the system SHALL (1) call `DeleteAttachmentUseCase.execute` to remove the orphaned server metadata, then (2) call `UploadAttachmentUseCase.execute` as a fresh upload — the new attachment receives a new server-assigned ID and replaces the incomplete row on success; the old incomplete row SHALL disappear
+
+---
+
 ### Requirement: Open decrypts and opens attachment in default app
 Each attachment row SHALL have an "Open" action. Pressing it SHALL:
 1. Download and decrypt the attachment on a background `Task`

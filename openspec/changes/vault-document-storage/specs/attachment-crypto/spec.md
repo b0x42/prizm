@@ -14,7 +14,7 @@ The system SHALL generate a cryptographically random 64-byte attachment key for 
 ---
 
 ### Requirement: File data encrypted with attachment key
-The system SHALL encrypt attachment file data using AES-256-CBC + HMAC-SHA256 (EncString type 2) with the per-attachment key. The encrypted output SHALL use the standard EncString binary layout: 16-byte IV ‖ ciphertext ‖ 32-byte HMAC. MAC SHALL be verified before decryption (Encrypt-then-MAC).
+The system SHALL encrypt attachment file data using the AES-256-CBC + HMAC-SHA256 algorithm with the per-attachment key. The encrypted output SHALL be transmitted as **raw binary** — NOT as a Base64-encoded EncString string — with layout: 16-byte IV ‖ ciphertext ‖ 32-byte HMAC. This is the same algorithm as EncString type 2 but a different wire format: EncString (Base64-encoded, `2.<iv>|<ct>|<mac>`) is used only for metadata fields (attachment key and file name); the file blob is always raw bytes. MAC SHALL be verified before decryption (Encrypt-then-MAC).
 
 #### Scenario: File data is not stored or transmitted in plaintext
 - **WHEN** an attachment is prepared for upload

@@ -22,7 +22,7 @@ An earlier draft of this design proposed local-only encrypted file storage in th
 
 ## Decisions
 
-### 1. Two-layer per-attachment encryption per Bitwarden whitepaper
+### 1. Per-attachment encryption — two-layer key scheme, three encrypted artifacts
 
 **Decision:** For each attachment:
 1. Generate a random 64-byte `attachmentKey` (32-byte enc key ‖ 32-byte mac key)
@@ -83,13 +83,21 @@ This produces three encrypted artifacts per attachment: the file data, the attac
 
 ## Complexity Tracking
 
-Per §I of the Constitution, AppKit usage must be documented and justified here.
+Per §I of the Constitution, AppKit usage must be documented and justified here. Per §VI (YAGNI), non-obvious feature additions must also be justified against a simpler alternative.
+
+### AppKit Usage
 
 | AppKit API | Used in | Justification |
 |---|---|---|
 | `NSOpenPanel` | `attachment-add-flow` | SwiftUI has no equivalent file-open panel API on macOS that allows "any file type" with a native sheet presentation. `fileImporter()` (SwiftUI) is limited to `UTType` allowlists and does not support the same UX flexibility. AppKit is the correct choice per §I. |
 | `NSSavePanel` | `attachment-view-flow` | SwiftUI `fileExporter()` requires a `FileDocument` conformance which is inappropriate for arbitrary binary data being written outside the app's document model. `NSSavePanel` is the correct choice. |
 | `NSWorkspace.shared.open(_:)` | `attachment-view-flow` | SwiftUI and Foundation have no equivalent API for opening a file with the system default application on macOS. This is the only sanctioned approach. |
+
+### Feature Complexity (§VI)
+
+| Feature | Justified complexity | Rejected simpler alternative |
+|---|---|---|
+| Upload-incomplete detection and retry UI | Without recovery, an interrupted upload leaves an attachment that permanently shows no Open/Save actions — broken UX with no self-service fix. Retry reuses two existing use cases (`Delete` + `Upload`) so no new architectural components are required. | Silently delete incomplete attachments on sync — destroys user intent with no warning and is worse for large files on unreliable connections. |
 
 ## SECURITY.md
 

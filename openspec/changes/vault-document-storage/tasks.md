@@ -1,6 +1,6 @@
 ## 1. Domain Layer
 
-- [ ] 1.1 Add `Attachment` struct to `Domain/Entities/` with fields: `id`, `fileName`, `encryptedFileName`, `encryptedKey`, `size: Int`, `sizeName: String`, `url: String?`
+- [ ] 1.1 Add `Attachment` struct to `Domain/Entities/` with fields: `id: String`, `fileName: String`, `encryptedFileName: String`, `encryptedKey: String`, `size: Int`, `sizeName: String`, `url: String?`, `isUploadIncomplete: Bool` (defaults to `false`)
 - [ ] 1.2 Add `attachments: [Attachment]` field to the cipher detail entity (or equivalent `VaultItem` sub-type); treat `null` from server as `[]`
 - [ ] 1.3 Define `AttachmentRepository` protocol in `Domain/` with `upload(cipherId:fileName:data:cipherKey:)`, `download(cipherId:attachment:cipherKey:)`, and `delete(cipherId:attachmentId:)` methods
 - [ ] 1.4 Define `VaultKeyService` protocol in `Domain/` with `cipherKey(for cipherId: String) async throws -> Data`; Foundation-only; throws when vault is locked
@@ -17,7 +17,10 @@
 - [ ] 2.5 Add `decryptAttachmentKey(_ encString: String, cipherKey: SymmetricKey) throws -> Data` — unwraps EncString → raw 64-byte key
 - [ ] 2.6 Add `encryptFileName(_ name: String, cipherKey: SymmetricKey) throws -> String` — encrypt file name as EncString for upload metadata
 - [ ] 2.7 Write unit tests: round-trip encrypt/decrypt of binary data; MAC tampering throws; attachment key wrap/unwrap round-trip; key zeroisation after use
-- [ ] 2.8 Write Known-Answer Tests (KATs) — AES-CBC against NIST SP 800-38A vectors, HMAC-SHA256 against RFC 4231 vectors, and a full EncString round-trip KAT against a reference vector (required by §IV)
+- [ ] 2.8 Write Known-Answer Tests (KATs) — each test MUST cite the source inline (§IV + §VII):
+  - AES-256-CBC: use NIST SP 800-38A Appendix F.2.5 (256-bit key, CBC mode) test vectors
+  - HMAC-SHA256: use RFC 4231 §4.2 and §4.6 test vectors
+  - EncString round-trip: derive a vector from the Bitwarden iOS client test suite (`BitwardenShared` test target, `CryptographyTests`) or the official Bitwarden security whitepaper; include the plaintext, key bytes, expected IV+ciphertext+MAC hex, and expected EncString string in the test source as comments
 
 ## 3. Data Layer — Network
 
@@ -32,9 +35,10 @@
 
 ## 4. Data Layer — Sync Mapping
 
-- [ ] 4.1 Create `AttachmentMapper` to convert sync JSON attachment object (`id`, `fileName` EncString, `key` EncString, `size` String, `sizeName` String, `url` String?) → `Attachment` entity; decrypt `fileName`; parse `size` String → Int (throw on failure); map `sizeName` verbatim
+- [ ] 4.0 Define `AttachmentDTO` struct in the Data layer mirroring the sync JSON shape: `id: String`, `fileName: String` (EncString), `key: String` (EncString), `size: String`, `sizeName: String`, `url: String?`; derive `Decodable` conformance
+- [ ] 4.1 Create `AttachmentMapper` with signature `map(_ dto: AttachmentDTO, cipherKey: Data) throws -> Attachment`; decrypt `fileName` from EncString; parse `size` String → Int (throw on failure); map `sizeName` verbatim; set `isUploadIncomplete = (dto.url == nil)`
 - [ ] 4.2 Update `VaultSyncMapper` (or equivalent) to map `ciphers[].attachments` array through `AttachmentMapper`; coerce `null` to `[]`
-- [ ] 4.3 Write unit tests for `AttachmentMapper`: fileName decrypted; size String parsed to Int; non-numeric size throws; sizeName preserved verbatim; null attachments → empty array; encryptedKey preserved verbatim
+- [ ] 4.3 Write unit tests for `AttachmentMapper`: fileName decrypted; size String parsed to Int; non-numeric size throws; sizeName preserved verbatim; null attachments → empty array; encryptedKey preserved verbatim; `isUploadIncomplete` is `true` when `url` is nil, `false` when present
 
 ## 5. Presentation — Attachments Section in Detail Pane
 
@@ -62,6 +66,16 @@
 - [ ] 6b.7 Implement Cancel-during-upload in `AttachmentBatchViewModel` — cancel all `Task` handles, zero all in-memory file byte buffers, set state to allow dismissal; files already partially uploaded appear as "Upload incomplete" on next sync
 - [ ] 6b.8 Write unit tests for `AttachmentBatchViewModel`: all-too-large disables confirm; mixed valid/invalid shows correct states; concurrent upload tasks update item state independently; vault lock cancels all tasks; cancel-during-upload zeros all buffers; second drop while `isUploading` is rejected
 
+## 6c. Data Layer — Upload-Incomplete Detection
+
+- [ ] 6c.1 `AttachmentMapper` already sets `isUploadIncomplete` (task 4.1); verify `VaultSyncMapper` propagates this flag through to the in-memory vault cache so `AttachmentRowViewModel` can observe it
+
+## 6d. Presentation — Upload-Incomplete UI
+
+- [ ] 6d.1 In `AttachmentRowView`, render an "Upload incomplete" indicator (e.g. a warning icon + label) and a "Retry Upload" button when `attachment.isUploadIncomplete` is true; hide the normal Open/Save to Disk actions for that row
+- [ ] 6d.2 Implement Retry Upload action — open `NSOpenPanel`; on confirmation: (1) call `DeleteAttachmentUseCase.execute(cipherId:attachmentId:)` to remove orphaned server metadata, then (2) call `UploadAttachmentUseCase.execute(cipherId:fileName:data:)` as a fresh upload; on success the incomplete row disappears and a new normal row appears; show inline error if either step fails
+- [ ] 6d.3 Write unit tests for the incomplete-attachment row state and retry flow
+
 ## 7. Presentation — View / Download / Delete Flow
 
 - [ ] 7.1 Create `AttachmentRowViewModel` per attachment row (`@Observable`) with state: `isLoading`, `actionError`
@@ -72,7 +86,8 @@
 
 ## 8. Documentation & Transparency
 
-- [ ] 8.1 Update `SECURITY.md` at repo root to document: attachment encryption scheme (AES-256-CBC + HMAC-SHA256 two-layer), where keys live (cipher key from Keychain → attachment key in memory only), temp file lifetime, and attachment-specific threat model additions (§VII)
+- [ ] 8.1 Update `SECURITY.md` at repo root to document: attachment encryption scheme (AES-256-CBC + HMAC-SHA256 two-layer key scheme, three encrypted artifacts), where keys live (cipher key from Keychain → attachment key in memory only), temp file lifetime, and attachment-specific threat model additions (§VII)
+- [ ] 8.2 Add §VII-compliant doc-comment blocks to every Data layer file that touches crypto for this feature — at minimum: `AttachmentRepositoryImpl`, `AttachmentMapper`, and any `BitwardenCryptoService` extension. Each block SHALL state the security goal, name the algorithm + spec ref, call out any deviations, and note any intentional omissions (e.g. no caching)
 
 ## 9. XCUITest
 

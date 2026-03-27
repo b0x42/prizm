@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Attachment domain entity
-The system SHALL define an `Attachment` value type (`struct`) in the Domain layer with fields: `id: String`, `fileName: String` (decrypted), `encryptedFileName: String` (EncString, as received from server), `encryptedKey: String` (EncString — the attachment key wrapped with the cipher key), `size: Int` (parsed from the server's string representation), `sizeName: String` (human-readable size string as returned by server, e.g. `"1.5 MB"` — used directly in UI, not re-formatted client-side per §VI), `url: String?`. The Domain layer SHALL NOT import CommonCrypto, CryptoKit, or any Data-layer module.
+The system SHALL define an `Attachment` value type (`struct`) in the Domain layer with fields: `id: String`, `fileName: String` (decrypted), `encryptedFileName: String` (EncString, as received from server), `encryptedKey: String` (EncString — the attachment key wrapped with the cipher key), `size: Int` (parsed from the server's string representation), `sizeName: String` (human-readable size string as returned by server, e.g. `"1.5 MB"` — used directly in UI, not re-formatted client-side per §VI), `url: String?`, `isUploadIncomplete: Bool` (true when `url` is nil, indicating the blob upload was interrupted after metadata creation). The Domain layer SHALL NOT import CommonCrypto, CryptoKit, or any Data-layer module.
 
 Note on `size`: the Bitwarden API returns `size` as a JSON string (e.g. `"12345"`), not a number. `AttachmentMapper` SHALL parse it to `Int`; if parsing fails the mapper SHALL throw a typed error.
 
@@ -93,13 +93,28 @@ Each use case SHALL be a struct or final class in `Domain/UseCases/` holding inj
 ---
 
 ### Requirement: AttachmentMapper translates sync payload to Attachment entity
-The Data layer SHALL provide an `AttachmentMapper` that converts the raw sync JSON attachment object into an `Attachment` domain entity. The sync JSON shape is: `{ "id": String, "fileName": EncString, "key": EncString, "size": String, "sizeName": String, "url": String? }`. The mapper SHALL:
+The Data layer SHALL provide an `AttachmentMapper` with the following signature:
+
+```swift
+func map(_ dto: AttachmentDTO, cipherKey: Data) throws -> Attachment
+```
+
+`AttachmentDTO` mirrors the raw sync JSON shape: `{ "id": String, "fileName": EncString, "key": EncString, "size": String, "sizeName": String, "url": String? }`. `VaultSyncMapper` (or equivalent) SHALL call `AttachmentMapper.map(_:cipherKey:)` for each element of `ciphers[].attachments`, supplying the cipher's resolved key. The mapper SHALL:
 - Decrypt `fileName` from its EncString form using the provided cipher key → `Attachment.fileName`
 - Preserve `fileName` EncString verbatim → `Attachment.encryptedFileName`
 - Preserve `key` EncString verbatim → `Attachment.encryptedKey`
 - Parse `size` from `String` to `Int` → `Attachment.size`; throw a typed error if non-numeric
 - Map `sizeName` verbatim → `Attachment.sizeName`
 - Map `url` verbatim (may be `null`) → `Attachment.url`
+- Set `isUploadIncomplete = (url == nil)` → `Attachment.isUploadIncomplete`; a nil URL means the blob upload was interrupted after the metadata POST succeeded
+
+#### Scenario: Mapper sets isUploadIncomplete when url is nil
+- **WHEN** the mapper processes an attachment with `url` = `null`
+- **THEN** `Attachment.isUploadIncomplete` SHALL be `true`
+
+#### Scenario: Mapper clears isUploadIncomplete when url is present
+- **WHEN** the mapper processes an attachment with a non-nil `url`
+- **THEN** `Attachment.isUploadIncomplete` SHALL be `false`
 
 #### Scenario: Mapper decrypts file name from EncString
 - **WHEN** the mapper processes an attachment with `fileName` = `"2.<iv>|<ct>|<mac>"`
