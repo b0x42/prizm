@@ -101,6 +101,7 @@ struct FieldRowView: View {
                 }
             }
             .transition(.opacity)
+            .padding(.trailing, 4)
         }
     }
 }
