@@ -33,6 +33,13 @@ struct MacwardenApp: App {
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("New Window") {
+                    NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
+                }
+                .keyboardShortcut("n", modifiers: [.command, .option])
+            }
+
             CommandGroup(after: .appInfo) {
                 Button("Sign Out…") {
                     rootVM.confirmSignOut()
