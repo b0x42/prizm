@@ -28,7 +28,10 @@ An earlier draft of this design proposed local-only encrypted file storage in th
 1. Generate a random 64-byte `attachmentKey` (32-byte enc key ‖ 32-byte mac key)
 2. Encrypt file data with `attachmentKey` using AES-256-CBC + HMAC-SHA256 → `encryptedData`
 3. Encrypt `attachmentKey` with the cipher's own symmetric key (or the user's vault key if the cipher has no per-item key) → `encryptedAttachmentKey` (EncString type 2)
-4. Upload `encryptedAttachmentKey` as metadata; upload `encryptedData` as the file blob
+4. Encrypt `fileName` with the cipher's symmetric key → `encryptedFileName` (EncString type 2); this prevents the server from learning the original file name
+5. Upload `encryptedAttachmentKey` and `encryptedFileName` as metadata; upload `encryptedData` as the file blob
+
+This produces three encrypted artifacts per attachment: the file data, the attachment key, and the file name. All three use the same AES-256-CBC + HMAC-SHA256 scheme. The file name uses the cipher key directly (not the attachment key) because the attachment key is generated fresh per upload and is not available at sync time when the file name must be decryptable from metadata alone.
 
 **Why this scheme:** This is the documented Bitwarden attachment crypto. It means each attachment has an independent key — compromising one attachment key does not expose any other attachment or vault item. It also matches what the server expects.
 
@@ -38,9 +41,9 @@ An earlier draft of this design proposed local-only encrypted file storage in th
 
 ### 2. Signed-URL upload pattern
 
-**Decision:** Follow the two-step upload flow:
-1. `POST /api/ciphers/{id}/attachment` with JSON metadata (fileName, key = `encryptedAttachmentKey`, fileSize) → server returns `{ attachmentId, url, fileUploadType }` where `url` is a signed upload URL
-2. `PUT <signed-url>` with the raw encrypted blob as the request body
+**Decision:** Follow the two-step v2 upload flow:
+1. `POST /api/ciphers/{id}/attachment/v2` with JSON metadata (`fileName` = `encryptedFileName`, `key` = `encryptedAttachmentKey`, `fileSize` = plaintext byte count) → server returns `{ attachmentId, url, fileUploadType }` where `url` is a signed upload URL
+2. For `fileUploadType` = `1` (Azure): `PUT <signed-url>` with the raw encrypted blob as the request body and header `x-ms-blob-type: BlockBlob`. For `fileUploadType` = `0` (Vaultwarden direct): `POST /api/ciphers/{id}/attachment/{attachmentId}` with the encrypted blob as multipart form field `data`.
 
 **Why:** This is the server's required flow. Attempting to send the file directly in the POST would violate the API contract.
 
@@ -73,7 +76,7 @@ An earlier draft of this design proposed local-only encrypted file storage in th
 | Risk | Mitigation |
 |------|------------|
 | Upload interrupted mid-way — server has metadata but no file | On next sync, detect attachments with metadata but no resolvable download URL; show "upload incomplete" state and offer retry/delete |
-| Decrypted plaintext in memory during encrypt/decrypt of large file (up to 500 MB) | Stream-encrypt if file > 50 MB using `CryptoKit.AES.CBC` chunked; for ≤50 MB load fully into memory |
+| Decrypted plaintext in memory during encrypt/decrypt of large file (up to 500 MB) | Load fully into memory; the 500 MB hard limit combined with macOS memory management makes streaming unnecessary for v1. Streaming is deferred (see Alternatives Considered in §1). |
 | `attachmentKey` zeroisation — Swift `Data` is CoW and may be copied | Use `withUnsafeMutableBytes` to zero in place; avoid passing `Data` containing key material across actor boundaries |
 | Bitwarden cloud rejects upload with 402 (premium required) | Catch HTTP 402, show localised "Attachments require a Bitwarden Premium account" message |
 | Signed upload URL expiry during slow upload | Re-request a new signed URL and retry once on 403 from the upload endpoint |
@@ -96,7 +99,13 @@ This change adds a new class of encrypted data (file attachments) to the app. Be
 - Note that attachment file data is never cached unencrypted on disk (temp file lifecycle described)
 - Update the threat model to cover attachment-specific risks (temp file exposure window, upload interruption)
 
-## Open Questions
+## Resolved Design Decisions
 
-- Should attachment metadata (fileName, size) be shown in search results? (Assumed no for v1 — search operates on vault item name/username/URL only)
-- Should there be an attachment size warning (not a hard stop) for files between 50 MB and 500 MB? (Assumed yes — warn at 50 MB, block at 500 MB)
+| Decision | Resolution |
+|---|---|
+| Should attachment metadata appear in search results? | No for v1 — search operates on vault item name/username/URL only |
+| Size warning threshold | Warn (advisory) at 50 MB; hard block at 500 MB |
+| Download URL source | Use `Attachment.url` from sync payload directly when non-nil; re-fetch via `GET /api/ciphers/{id}/attachment/{attachmentId}` only when nil; retry once on 403 |
+| Cancel during batch upload | Allowed — Cancel button remains enabled while uploading; cancels all in-flight tasks, zeros buffers, dismisses sheet |
+| Concurrent drag-drop during active upload | Rejected — drop zone shows rejection indicator and brief inline message; user may retry after current batch completes |
+| Streaming encryption for large files | Not required for v1 — 500 MB hard limit is sufficient for in-memory encrypt/decrypt on macOS; deferred to future optimisation |

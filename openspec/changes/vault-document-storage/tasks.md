@@ -54,12 +54,13 @@
 ## 6b. Presentation — Drag-and-Drop Batch Upload Flow
 
 - [ ] 6b.1 Create `AttachmentBatchItem` model: `url: URL`, `fileName: String`, `sizeName: String`, `sizeBytes: Int`, `state: BatchItemState` (enum: `.valid`, `.tooLarge`, `.uploading`, `.succeeded`, `.failed(String)`)
-- [ ] 6b.2 Create `AttachmentBatchViewModel` (`@Observable`) — accepts `[URL]` from drop handler; builds `[AttachmentBatchItem]` reading file size only (not contents); exposes `canConfirm: Bool` (true if ≥1 valid item)
-- [ ] 6b.3 Create `AttachmentBatchSheet` — lists all items with name, sizeName, per-row state (error badge for too-large, spinner for uploading, checkmark for success, error message for failed); Confirm/Cancel buttons driven by `canConfirm`
-- [ ] 6b.4 Implement `.onDrop` handler in the Attachments section view — extract file URLs from `NSItemProvider`, pass to `AttachmentBatchViewModel`, present `AttachmentBatchSheet`
+- [ ] 6b.2 Create `AttachmentBatchViewModel` (`@Observable`) — accepts `[URL]` from drop handler; builds `[AttachmentBatchItem]` reading file size only (not contents); exposes `canConfirm: Bool` (true if ≥1 valid item); exposes `isUploading: Bool` (true while any task is in flight)
+- [ ] 6b.3 Create `AttachmentBatchSheet` — lists all items with name, sizeName, per-row state (error badge for too-large, spinner for uploading, checkmark for success, error message for failed); Confirm/Cancel buttons driven by `canConfirm`; Cancel button remains enabled during upload (pressing it cancels all in-flight tasks, zeros buffers, dismisses sheet)
+- [ ] 6b.4 Implement `.onDrop` handler in the Attachments section view — extract file URLs from `NSItemProvider`; if `isUploading` is true, reject the drop and show a brief inline message "Upload in progress — please wait"; otherwise pass URLs to `AttachmentBatchViewModel` and present `AttachmentBatchSheet`
 - [ ] 6b.5 Implement Confirm action in `AttachmentBatchViewModel` — launch a concurrent background `Task` per valid item; each calls `UploadAttachmentUseCase.execute(cipherId:fileName:data:)`; update per-item state on success/failure; zero file bytes after each upload; dismiss sheet automatically when all succeed
 - [ ] 6b.6 Handle vault lock during batch — cancel all in-flight upload tasks, zero all buffered file bytes, dismiss sheet immediately
-- [ ] 6b.7 Write unit tests for `AttachmentBatchViewModel`: all-too-large disables confirm; mixed valid/invalid shows correct states; concurrent upload tasks update item state independently; vault lock cancels all tasks
+- [ ] 6b.7 Implement Cancel-during-upload in `AttachmentBatchViewModel` — cancel all `Task` handles, zero all in-memory file byte buffers, set state to allow dismissal; files already partially uploaded appear as "Upload incomplete" on next sync
+- [ ] 6b.8 Write unit tests for `AttachmentBatchViewModel`: all-too-large disables confirm; mixed valid/invalid shows correct states; concurrent upload tasks update item state independently; vault lock cancels all tasks; cancel-during-upload zeros all buffers; second drop while `isUploading` is rejected
 
 ## 7. Presentation — View / Download / Delete Flow
 

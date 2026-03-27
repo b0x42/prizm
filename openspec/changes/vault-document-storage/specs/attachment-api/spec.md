@@ -27,15 +27,19 @@ The system SHALL upload an attachment using the v2 Bitwarden Attachments API. Th
 
 ### Requirement: Download attachment via signed URL
 The system SHALL download an attachment on demand (not during sync). The download flow:
-1. `GET /api/ciphers/{cipherId}/attachment/{attachmentId}` with `Authorization: Bearer <accessToken>` → response includes `{ "url": "<signedUrl>", ... }`
+1. If `Attachment.url` from the sync payload is non-nil, use it directly as the download URL (skipping the GET step). Otherwise, `GET /api/ciphers/{cipherId}/attachment/{attachmentId}` with `Authorization: Bearer <accessToken>` → response includes `{ "url": "<signedUrl>", ... }`, then use the returned URL.
 2. `GET <signedUrl>` → raw encrypted blob
 3. Decrypt blob using the attachment key (itself decrypted from the EncString metadata using the cipher key)
 
 The system SHALL NOT cache the downloaded encrypted blob to disk. The decrypted plaintext SHALL be handled per the `attachment-view-flow` spec (temp file or save panel).
 
-#### Scenario: Download fetches file from signed URL
-- **WHEN** the user requests to open or save an attachment
-- **THEN** the system SHALL first GET the attachment record to obtain the signed download URL, then GET the encrypted blob from that URL
+#### Scenario: Download uses sync URL when available
+- **WHEN** `Attachment.url` is non-nil
+- **THEN** the system SHALL GET the encrypted blob directly from that URL without a separate metadata fetch
+
+#### Scenario: Download fetches fresh URL when sync URL is absent
+- **WHEN** `Attachment.url` is nil
+- **THEN** the system SHALL first GET the attachment record to obtain a signed download URL, then GET the encrypted blob from that URL
 
 #### Scenario: Signed URL expiry is handled
 - **WHEN** the download URL returns HTTP 403

@@ -117,6 +117,19 @@ When files are dropped, the system SHALL present a single sheet listing all drop
 - **WHEN** the user presses Cancel on the batch confirmation sheet before confirming
 - **THEN** no uploads SHALL be initiated and all in-memory file references SHALL be released
 
+#### Scenario: Cancel while uploads are in progress cancels all tasks
+- **WHEN** the user presses Cancel on the batch confirmation sheet after confirming (while uploads are running)
+- **THEN** all in-flight upload tasks SHALL be cancelled, in-memory file bytes SHALL be zeroed, and the sheet SHALL dismiss immediately; any partially uploaded files SHALL appear as "Upload incomplete" on the next sync
+
+---
+
+### Requirement: Reject concurrent drag-drop while batch upload is in progress
+While a batch upload is actively running (at least one upload task is in flight), the Attachments section drop zone SHALL NOT accept a new drop. When the user drags files over the card during an active upload, the card SHALL display a rejection indicator instead of the normal drop-target highlight, and the drop SHALL be ignored.
+
+#### Scenario: Drop is rejected while uploads are in progress
+- **WHEN** the user drops files onto the Attachments card while a batch upload is running
+- **THEN** the drop SHALL be ignored and a brief inline message SHALL indicate that an upload is already in progress
+
 ---
 
 ### Requirement: Vault lock during upload aborts and clears file data

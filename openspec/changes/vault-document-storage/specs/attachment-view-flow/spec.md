@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Attachments section in detail pane lists all attachments
-The vault item detail pane SHALL include an "Attachments" section below the existing field cards when a cipher has one or more attachments. Each row SHALL display the decrypted file name and human-readable file size. The section SHALL also contain an "Add Attachment" button (see `attachment-add-flow`). When a cipher has no attachments, the section SHALL still be present with only the "Add Attachment" button visible.
+The vault item detail pane SHALL include an "Attachments" section below the existing field cards for every cipher type, regardless of whether the cipher has any attachments. Each attachment SHALL appear as a row displaying the decrypted file name and human-readable file size. The section SHALL also contain an "Add Attachment" button at the bottom (see `attachment-add-flow`). When a cipher has no attachments, the section SHALL still be present with only the "Add Attachment" button visible.
 
 #### Scenario: Attachments section shows file name and size per row
 - **WHEN** a vault item with attachments is selected
