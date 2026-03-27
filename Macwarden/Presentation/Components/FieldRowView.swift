@@ -47,36 +47,6 @@ struct FieldRowView: View {
                 Text(label)
                     .font(Typography.fieldValue)
                 Spacer()
-
-                // Hover actions — left of value
-                if isHovered {
-                    HStack(spacing: 4) {
-                        if let copyValue = value, !copyValue.isEmpty {
-                            Button {
-                                onCopy?(copyValue)
-                            } label: {
-                                Text("COPY")
-                                    .font(Typography.utility)
-                                    .bold()
-                            }
-                            .buttonStyle(.plain)
-                            .help("Copy \(label)")
-                            .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
-                        }
-
-                        if let link = url {
-                            Link(destination: link) {
-                                Image(systemName: "arrow.up.right.square")
-                                    .imageScale(.small)
-                            }
-                            .buttonStyle(.plain)
-                            .help("Open in browser")
-                            .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
-                        }
-                    }
-                    .transition(.opacity)
-                }
-
                 Text(value ?? "—")
                     .font(Typography.fieldValue.monospaced())
                     .lineLimit(1)
@@ -85,9 +55,11 @@ struct FieldRowView: View {
 
             if isMasked || isMultiLine {
                 Spacer()
+            }
 
-                // Hover actions for masked/multiline rows
-                if isHovered {
+            // Hover actions — consistent trailing position for all row types
+            if isHovered {
+                HStack(spacing: 4) {
                     if let copyValue = value, !copyValue.isEmpty {
                         Button {
                             onCopy?(copyValue)
@@ -99,9 +71,19 @@ struct FieldRowView: View {
                         .buttonStyle(.plain)
                         .help("Copy \(label)")
                         .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
-                        .transition(.opacity)
+                    }
+
+                    if let link = url {
+                        Link(destination: link) {
+                            Image(systemName: "arrow.up.right.square")
+                                .imageScale(.small)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Open in browser")
+                        .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
                     }
                 }
+                .transition(.opacity)
             }
         }
         .padding(.vertical, 16)
