@@ -71,6 +71,32 @@ struct MacwardenApp: App {
                 }
                 .disabled(!rootVM.menuBarCanSave)
                 .keyboardShortcut("s", modifiers: .command)
+
+                Divider()
+
+                Button("Copy Username") {
+                    rootVM.copySelectedField(.username)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+                .disabled(!rootVM.selectedFieldAvailable(.username))
+
+                Button("Copy Password") {
+                    rootVM.copySelectedField(.password)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .option])
+                .disabled(!rootVM.selectedFieldAvailable(.password))
+
+                Button("Copy Code") {
+                    rootVM.copySelectedField(.totp)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .control])
+                .disabled(!rootVM.selectedFieldAvailable(.totp))
+
+                Button("Copy Website") {
+                    rootVM.copySelectedField(.website)
+                }
+                .keyboardShortcut("c", modifiers: [.command, .option, .shift])
+                .disabled(!rootVM.selectedFieldAvailable(.website))
             }
         }
     }
@@ -348,5 +374,31 @@ final class RootViewModel: ObservableObject {
             screen   = .login
         }
         logger.info("Screen transition → \(String(describing: state))")
+    }
+
+    // MARK: - Copy field from selected item
+
+    enum CopyableField {
+        case username, password, totp, website
+    }
+
+    func copySelectedField(_ field: CopyableField) {
+        guard let value = selectedFieldValue(field) else { return }
+        vaultBrowserVM.copy(value)
+    }
+
+    func selectedFieldAvailable(_ field: CopyableField) -> Bool {
+        selectedFieldValue(field) != nil
+    }
+
+    private func selectedFieldValue(_ field: CopyableField) -> String? {
+        guard let item = vaultBrowserVM.itemSelection,
+              case .login(let login) = item.content else { return nil }
+        switch field {
+        case .username: return login.username
+        case .password: return login.password
+        case .totp:     return login.totp
+        case .website:  return login.uris.first?.uri
+        }
     }
 }
