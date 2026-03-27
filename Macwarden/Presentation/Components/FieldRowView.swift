@@ -79,9 +79,10 @@ struct FieldRowView: View {
                     Button {
                         onCopy?(copyValue)
                     } label: {
-                        Text("COPY")
+                        Text("copy")
                             .font(Typography.utility)
                             .bold()
+                            .textCase(.uppercase)
                     }
                     .buttonStyle(.plain)
                     .help("Copy \(label)")
