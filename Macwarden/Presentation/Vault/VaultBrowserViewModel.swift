@@ -211,6 +211,21 @@ final class VaultBrowserViewModel: ObservableObject {
         refreshCounts()
     }
 
+    // MARK: - Toggle Favorite
+
+    func toggleFavorite(item: VaultItem) {
+        Task {
+            var draft = DraftVaultItem(item)
+            draft.isFavorite.toggle()
+            do {
+                let updated = try await vault.update(draft)
+                handleItemSaved(updated)
+            } catch {
+                logger.error("Toggle favorite failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
     // MARK: - Delete / Restore / Empty Trash
 
     /// Soft-deletes `id`, moving it to Trash.
