@@ -59,6 +59,7 @@ struct FieldRowView: View {
                     .font(Typography.fieldValue.monospaced())
                     .lineLimit(1)
                     .textSelection(.enabled)
+                browserLink
             }
         }
         .padding(.vertical, 16)
@@ -86,26 +87,28 @@ struct FieldRowView: View {
     @ViewBuilder
     private var hoverActions: some View {
         if isHovered || showCopied {
-            HStack(spacing: 4) {
-                if value != nil, !(value?.isEmpty ?? true) {
-                    Text(showCopied ? "copied" : "copy")
-                        .font(.headline)
-                        .textCase(.uppercase)
-                        .foregroundStyle(Color.accentColor)
-                }
-
-                if let link = url {
-                    Link(destination: link) {
-                        Image(systemName: "arrow.up.right.square")
-                            .imageScale(.small)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Open in browser")
-                    .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
-                }
+            if value != nil, !(value?.isEmpty ?? true) {
+                Text(showCopied ? "copied" : "copy")
+                    .font(.headline)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.trailing, 4)
+                    .transition(.opacity)
             }
-            .transition(.opacity)
-            .padding(.trailing, 4)
+        }
+    }
+
+    @ViewBuilder
+    private var browserLink: some View {
+        if let link = url {
+            Link(destination: link) {
+                Image(systemName: "arrow.up.right.square")
+                    .imageScale(.medium)
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .help("Open in browser")
+            .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
         }
     }
 }
