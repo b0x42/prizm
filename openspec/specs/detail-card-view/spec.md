@@ -1,117 +1,99 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
-### Requirement: CardBackground ViewModifier
-The system SHALL provide a `CardBackground` `ViewModifier` that applies a white/dark-gray background (`Color("CardBackground")`), `cornerRadius(20)`, and a subtle drop shadow (`black` at 20% opacity, radius 4) to any view. A `.cardBackground()` `View` extension SHALL expose it ergonomically.
+### Requirement: CardBackground ViewModifier (MODIFIED)
+The system SHALL provide a `CardBackground` `ViewModifier` that applies a `#FAFAFA` (light) / `#2C2C2C` (dark) background via the `CardBackground` color asset, rounded corners (radius 10), and a subtle 0.5pt border at 8% opacity. The modifier SHALL NOT apply a drop shadow. A `.cardBackground()` `View` extension SHALL expose it ergonomically.
 
 #### Scenario: Card is visually distinct in light mode
 - **WHEN** the detail pane is displayed in light mode
-- **THEN** each card SHALL render with a white background, rounded corners (radius 20), and a visible shadow
+- **THEN** each card SHALL render with a `#FAFAFA` background, rounded corners (radius 10), a subtle border, and no drop shadow
 
 #### Scenario: Card is visually distinct in dark mode
 - **WHEN** the detail pane is displayed in dark mode
-- **THEN** each card SHALL render with a dark gray (#212121) background so the shadow remains effective against the dark pane background
+- **THEN** each card SHALL render with a `#2C2C2C` background, rounded corners (radius 10), a subtle border, and no drop shadow
 
-### Requirement: DetailSectionCard wrapper view
-The system SHALL provide a `DetailSectionCard` SwiftUI view that accepts an optional section title and a `@ViewBuilder` content closure, rendering the content inside a `.cardBackground()` card with the title displayed above it when non-empty.
+---
 
-#### Scenario: Card renders with header
-- **WHEN** a `DetailSectionCard` is initialised with a non-empty title string
-- **THEN** the section header SHALL be visible above the card content
+### Requirement: DetailSectionCard header style (MODIFIED)
+Section headers ("Credentials", "Websites", etc.) SHALL use `.headline` font (13pt semibold) with default text color. Spacing between the header and the card content SHALL be 12pt.
 
-#### Scenario: Card renders without header
-- **WHEN** a `DetailSectionCard` is initialised with no title (or empty string)
-- **THEN** no header label SHALL be rendered
+#### Scenario: Section header renders with headline style
+- **WHEN** a `DetailSectionCard` is displayed with a non-empty title
+- **THEN** the title SHALL render in `.headline` font with default (primary) text color
 
-### Requirement: Login item detail grouped into cards
-The system SHALL display Login item fields grouped into labelled card sections.
+---
 
-#### Scenario: Credentials card shown when username or password present
-- **WHEN** a Login item has a username or password
-- **THEN** a "Credentials" card SHALL be shown containing those fields
+### Requirement: FieldRowView uses horizontal layout for all field types (MODIFIED)
+The system SHALL display field rows with the label on the left and the value on the right. Multi-line fields (notes) SHALL use a stacked layout. Masked fields SHALL display the label on the left with the masked value and eye toggle on the right. All field values SHALL use monospaced font. All field labels SHALL use default (primary) text color.
 
-#### Scenario: Websites card shown when URIs present
-- **WHEN** a Login item has one or more URIs
-- **THEN** a "Websites" card SHALL be shown containing each URI as a copyable row
+#### Scenario: Single-line field renders horizontally
+- **WHEN** a `FieldRowView` is displayed with `isMultiLine` false (default) and `isMasked` false
+- **THEN** the label SHALL appear on the left and the value on the right, on the same line
 
-#### Scenario: Notes card shown when notes non-empty
-- **WHEN** a Login item has non-empty notes
-- **THEN** a "Notes" card SHALL be shown containing the notes field
+#### Scenario: Multi-line field renders stacked
+- **WHEN** a `FieldRowView` is displayed with `isMultiLine` true
+- **THEN** the label SHALL appear above the value in a vertical stack
 
-#### Scenario: Custom fields card shown when custom fields present
-- **WHEN** a Login item has one or more custom fields
-- **THEN** a "Custom Fields" card SHALL be shown
+#### Scenario: Masked field renders horizontally
+- **WHEN** a `FieldRowView` is displayed with `isMasked` true
+- **THEN** the label SHALL appear on the left, and the masked value with eye toggle SHALL appear on the right
 
-#### Scenario: Empty sections are hidden
-- **WHEN** a Login item has no URIs
-- **THEN** the "Websites" card SHALL NOT be rendered
+---
 
-### Requirement: Card item detail grouped into cards
-The system SHALL display Card item fields grouped into labelled card sections.
+### Requirement: Copy on hover with feedback (MODIFIED)
+The system SHALL show a "COPY" label (displayed uppercase via `.textCase(.uppercase)`) when the user hovers over a field row. Clicking anywhere on a hovered row SHALL copy the field value. After copying, the label SHALL change to "COPIED" for 0.8 seconds. The COPY label SHALL use `.headline` font and the system accent color. The COPY label SHALL appear to the left of the field value.
 
-#### Scenario: Card details section shown
-- **WHEN** a Card item is displayed
-- **THEN** a "Card Details" section SHALL group cardholder name, brand, card number, expiry, and security code
+#### Scenario: COPY appears on hover
+- **WHEN** the user hovers over a field row with a non-empty value
+- **THEN** a "COPY" label SHALL appear to the left of the value
 
-#### Scenario: Empty card fields are hidden within the card
-- **WHEN** a Card item is missing an optional field (e.g. no security code)
-- **THEN** that field row SHALL NOT appear in the card
+#### Scenario: COPY hidden when not hovered
+- **WHEN** the user is not hovering over a field row
+- **THEN** no COPY label SHALL be visible
 
-#### Scenario: Notes card hidden when empty
-- **WHEN** a Card item has no notes
-- **THEN** the "Notes" card SHALL NOT be rendered
+#### Scenario: Click row copies value
+- **WHEN** the user clicks anywhere on a hovered field row
+- **THEN** the field value SHALL be copied to the clipboard
 
-#### Scenario: Custom fields card hidden when empty
-- **WHEN** a Card item has no custom fields
-- **THEN** the "Custom Fields" card SHALL NOT be rendered
+#### Scenario: COPIED feedback after copy
+- **GIVEN** the user has clicked a field row to copy
+- **THEN** the label SHALL change to "COPIED" for 0.8 seconds, then revert to "COPY"
 
-### Requirement: Identity item detail grouped into cards
-The system SHALL display Identity item fields grouped into labelled card sections: Personal Info, ID Numbers, Contact, Address, Notes, and Custom Fields.
+---
 
-#### Scenario: Personal Info card
-- **WHEN** an Identity item has any name or company fields
-- **THEN** a "Personal Info" card SHALL group title, first name, middle name, last name, and company
+### Requirement: Open-in-browser icon always visible (MODIFIED)
+For field rows with a URL, the system SHALL always display an open-in-browser icon (`arrow.up.right.square`) at the trailing edge of the row. The icon SHALL use the system accent color, `.medium` image scale, and `.semibold` font weight.
 
-#### Scenario: Address card hidden when all address fields nil
-- **WHEN** an Identity item has no address fields
-- **THEN** the "Address" card SHALL NOT be rendered
+#### Scenario: Browser icon visible on URL fields
+- **WHEN** a `FieldRowView` has a non-nil `url`
+- **THEN** the open-in-browser icon SHALL be visible at all times (not only on hover)
 
-#### Scenario: Notes card hidden when empty
-- **WHEN** an Identity item has no notes
-- **THEN** the "Notes" card SHALL NOT be rendered
+---
 
-#### Scenario: Custom fields card hidden when empty
-- **WHEN** an Identity item has no custom fields
-- **THEN** the "Custom Fields" card SHALL NOT be rendered
+### Requirement: Eye toggle icon style (MODIFIED)
+The reveal/hide eye icon on masked fields SHALL use the system accent color and `.medium` image scale.
 
-### Requirement: Secure Note detail uses card layout
-The system SHALL display Secure Note fields in card sections.
+#### Scenario: Eye icon uses accent color
+- **WHEN** a masked field is displayed
+- **THEN** the eye toggle icon SHALL use the system accent color and medium size
 
-#### Scenario: Secure Note renders in a card
-- **WHEN** a Secure Note item is displayed
-- **THEN** the note body SHALL be wrapped in a "Note" card
+---
 
-#### Scenario: Secure Note custom fields card hidden when empty
-- **WHEN** a Secure Note item has no custom fields
-- **THEN** the "Custom Fields" card SHALL NOT be rendered
+### Requirement: Duplicate labels removed from card sections (MODIFIED)
+When a `DetailSectionCard` provides a section header (e.g. "Notes", "Custom Fields"), the field rows inside SHALL NOT render a redundant label matching the section header.
 
-### Requirement: SSH Key detail uses card layout
-The system SHALL display SSH Key fields in card sections.
+#### Scenario: Notes card has no inner label
+- **WHEN** a Notes section is displayed inside a `DetailSectionCard("Notes")`
+- **THEN** only the note text SHALL appear inside the card, with no "Notes" label
 
-#### Scenario: SSH Key fields rendered in a card
-- **WHEN** an SSH Key item is displayed
-- **THEN** the public key, private key, and fingerprint fields SHALL be grouped in a "Key" card
+#### Scenario: Custom Fields card has no inner header
+- **WHEN** a Custom Fields section is displayed inside a `DetailSectionCard("Custom Fields")`
+- **THEN** no duplicate "Custom Fields" header SHALL appear inside the card
 
-#### Scenario: SSH Key notes card hidden when empty
-- **WHEN** an SSH Key item has no notes
-- **THEN** the "Notes" card SHALL NOT be rendered
+---
 
-#### Scenario: SSH Key custom fields card hidden when empty
-- **WHEN** an SSH Key item has no custom fields
-- **THEN** the "Custom Fields" card SHALL NOT be rendered
+### Requirement: Metadata footer displays created and updated dates (MODIFIED)
+The system SHALL display "Updated" and "Created" dates below the last card section, left-aligned, stacked vertically, using default field text style with secondary (gray) color. Dates SHALL use `dd.MM.yyyy` format. Labels and dates SHALL be column-aligned.
 
-### Requirement: Existing copy-on-hover behaviour preserved
-All field rows within cards SHALL retain the existing copy-on-hover button and masked-field toggle behaviour provided by `FieldRowView`.
-
-#### Scenario: Copy button available inside card
-- **WHEN** the user hovers over a field row inside a `DetailSectionCard`
-- **THEN** the copy button SHALL appear and SHALL copy the field value to the clipboard when clicked
+#### Scenario: Dates render below cards
+- **WHEN** an item detail is displayed
+- **THEN** "Updated: dd.MM.yyyy" and "Created: dd.MM.yyyy" SHALL appear below the last card, left-aligned, in gray text
