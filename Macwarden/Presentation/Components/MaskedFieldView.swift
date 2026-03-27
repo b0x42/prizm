@@ -83,7 +83,7 @@ struct MaskedFieldView: View {
                 state = state.toggled()
             } label: {
                 Image(systemName: state.isRevealed ? "eye.slash" : "eye")
-                    .imageScale(.small)
+                    .imageScale(.medium)
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
