@@ -22,69 +22,71 @@ struct FieldRowView: View {
     let value:    String?
     let itemId:   String
     var isMasked: Bool  = false
+    var isMultiLine: Bool = false
     var url:      URL?  = nil
     var onCopy:   ((String) -> Void)? = nil
-
-    @State private var isHovered = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             // Field content
             if isMasked {
                 MaskedFieldView(label: label, value: value, itemId: itemId)
-            } else {
+            } else if isMultiLine {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(label)
-                        .font(Typography.fieldLabel)
-                        .foregroundStyle(.secondary)
+                    if !label.isEmpty {
+                        Text(label)
+                            .font(Typography.fieldValue)
+                    }
                     Text(value ?? "—")
-                        .font(Typography.fieldValue)
+                        .font(Typography.fieldValue.monospaced())
                         .textSelection(.enabled)
                 }
+            } else {
+                Text(label)
+                    .font(Typography.fieldValue)
+                Spacer()
+                Text(value ?? "—")
+                    .font(Typography.fieldValue.monospaced())
+                    .lineLimit(1)
+                    .textSelection(.enabled)
             }
 
-            Spacer()
+            if isMasked || isMultiLine {
+                Spacer()
+            }
 
-            // Hover actions
-            if isHovered {
-                HStack(spacing: 4) {
-                    if let copyValue = value, !copyValue.isEmpty {
-                        Button {
-                            onCopy?(copyValue)
-                        } label: {
-                            Text("COPY")
-                                .font(Typography.utility)
-                                .bold()
-                        }
-                        .buttonStyle(.plain)
-                        .help("Copy \(label)")
-                        .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
+            // Actions
+            HStack(spacing: 4) {
+                if let copyValue = value, !copyValue.isEmpty {
+                    Button {
+                        onCopy?(copyValue)
+                    } label: {
+                        Text("COPY")
+                            .font(Typography.utility)
+                            .bold()
                     }
-
-                    if let link = url {
-                        Link(destination: link) {
-                            Image(systemName: "arrow.up.right.square")
-                                .imageScale(.small)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Open in browser")
-                        .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
-                    }
+                    .buttonStyle(.plain)
+                    .help("Copy \(label)")
+                    .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
                 }
-                .transition(.opacity)
+
+                if let link = url {
+                    Link(destination: link) {
+                        Image(systemName: "arrow.up.right.square")
+                            .imageScale(.small)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open in browser")
+                    .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
+                }
             }
         }
-        .padding(.vertical, Spacing.rowVertical)
+        .padding(.vertical, 16)
         .padding(.horizontal, Spacing.rowHorizontal)
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(isHovered ? Color.primary.opacity(0.06) : Color.clear)
+                .fill(Color.clear)
         )
         .accessibilityIdentifier(AccessibilityID.Field.row(label))
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.1)) {
-                isHovered = hovering
-            }
-        }
     }
 }

@@ -75,16 +75,13 @@ struct MaskedFieldView: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(Typography.fieldLabel)
-                    .foregroundStyle(.secondary)
-                Text(effectiveDisplayValue)
-                    .font(Typography.fieldValue.monospaced())
-                    .textSelection(.enabled)
-                    .accessibilityIdentifier(AccessibilityID.Masked.value(label))
-            }
+            Text(label)
+                .font(Typography.fieldValue)
             Spacer()
+            Text(effectiveDisplayValue)
+                .font(Typography.fieldValue.monospaced())
+                .textSelection(.enabled)
+                .accessibilityIdentifier(AccessibilityID.Masked.value(label))
             Button {
                 state = state.toggled()
             } label: {
