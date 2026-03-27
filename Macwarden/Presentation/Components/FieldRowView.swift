@@ -33,6 +33,8 @@ struct FieldRowView: View {
             // Field content
             if isMasked {
                 MaskedFieldView(label: label, value: value, itemId: itemId)
+                Spacer()
+                hoverActions
             } else if isMultiLine {
                 VStack(alignment: .leading, spacing: 2) {
                     if !label.isEmpty {
@@ -43,47 +45,17 @@ struct FieldRowView: View {
                         .font(Typography.fieldValue.monospaced())
                         .textSelection(.enabled)
                 }
+                Spacer()
+                hoverActions
             } else {
                 Text(label)
                     .font(Typography.fieldValue)
                 Spacer()
+                hoverActions
                 Text(value ?? "—")
                     .font(Typography.fieldValue.monospaced())
                     .lineLimit(1)
                     .textSelection(.enabled)
-            }
-
-            if isMasked || isMultiLine {
-                Spacer()
-            }
-
-            // Hover actions — consistent trailing position for all row types
-            if isHovered {
-                HStack(spacing: 4) {
-                    if let copyValue = value, !copyValue.isEmpty {
-                        Button {
-                            onCopy?(copyValue)
-                        } label: {
-                            Text("COPY")
-                                .font(Typography.utility)
-                                .bold()
-                        }
-                        .buttonStyle(.plain)
-                        .help("Copy \(label)")
-                        .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
-                    }
-
-                    if let link = url {
-                        Link(destination: link) {
-                            Image(systemName: "arrow.up.right.square")
-                                .imageScale(.small)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Open in browser")
-                        .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
-                    }
-                }
-                .transition(.opacity)
             }
         }
         .padding(.vertical, 16)
@@ -95,5 +67,36 @@ struct FieldRowView: View {
             }
         }
         .accessibilityIdentifier(AccessibilityID.Field.row(label))
+    }
+
+    @ViewBuilder
+    private var hoverActions: some View {
+        if isHovered {
+            HStack(spacing: 4) {
+                if let copyValue = value, !copyValue.isEmpty {
+                    Button {
+                        onCopy?(copyValue)
+                    } label: {
+                        Text("COPY")
+                            .font(Typography.utility)
+                            .bold()
+                    }
+                    .buttonStyle(.plain)
+                    .help("Copy \(label)")
+                    .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
+                }
+
+                if let link = url {
+                    Link(destination: link) {
+                        Image(systemName: "arrow.up.right.square")
+                            .imageScale(.small)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open in browser")
+                    .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
+                }
+            }
+            .transition(.opacity)
+        }
     }
 }
