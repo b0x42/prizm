@@ -83,6 +83,7 @@ struct FieldRowView: View {
                             .font(Typography.utility)
                             .bold()
                             .textCase(.uppercase)
+                            .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
                     .help("Copy \(label)")
