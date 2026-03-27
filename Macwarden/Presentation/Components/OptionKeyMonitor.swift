@@ -9,7 +9,7 @@ final class OptionKeyMonitor {
 
     init() {
         monitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            self?.isOptionHeld = event.modifierFlags.contains(.option)
+            self?.isOptionHeld = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .option
             return event
         }
     }
