@@ -20,17 +20,18 @@ struct ItemRowView: View {
     var searchQuery:   String? = nil
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             FaviconView(
                 domain:    primaryDomain(for: item),
                 itemType:  itemType(for: item),
-                loader:    faviconLoader
+                loader:    faviconLoader,
+                size:      26
             )
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 4) {
                     Text(styledName)
-                        .font(Typography.listTitle)
+                        .font(.headline)
                         .lineLimit(1)
                     if item.isFavorite {
                         Image(systemName: "star.fill")
@@ -40,13 +41,13 @@ struct ItemRowView: View {
                 }
                 if let subtitle = subtitle(for: item) {
                     Text(styledSubtitle(subtitle))
-                        .font(Typography.listSubtitle)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Highlighted text helpers

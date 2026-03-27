@@ -21,6 +21,18 @@ struct ItemListView: View {
     @State private var itemToDelete:    VaultItem? = nil
     @State private var showDeleteAlert: Bool       = false
 
+    private var sections: [(letter: String, items: [VaultItem])] {
+        let grouped = Dictionary(grouping: items) { item in
+            let first = item.name.first.map { String($0).uppercased() } ?? "#"
+            return first.first?.isLetter == true ? first : "#"
+        }
+        return grouped.sorted { lhs, rhs in
+            if lhs.key == "#" { return false }
+            if rhs.key == "#" { return true }
+            return lhs.key < rhs.key
+        }.map { (letter: $0.key, items: $0.value) }
+    }
+
     var body: some View {
         Group {
             if items.isEmpty {
@@ -31,18 +43,24 @@ struct ItemListView: View {
                 )
                 .accessibilityIdentifier(AccessibilityID.ItemList.emptyState)
             } else {
-                List(items, id: \.id, selection: $selection) { item in
-                    ItemRowView(item: item, faviconLoader: faviconLoader, searchQuery: searchQuery)
-                        .tag(item)
-                        .accessibilityIdentifier(AccessibilityID.ItemList.row(item.id))
-                        .contextMenu {
-                            if onDelete != nil {
-                                Button("Delete", role: .destructive) {
-                                    itemToDelete    = item
-                                    showDeleteAlert = true
-                                }
+                List(selection: $selection) {
+                    ForEach(sections, id: \.letter) { section in
+                        Section(header: Text(section.letter)) {
+                            ForEach(section.items, id: \.id) { item in
+                                ItemRowView(item: item, faviconLoader: faviconLoader, searchQuery: searchQuery)
+                                    .tag(item)
+                                    .accessibilityIdentifier(AccessibilityID.ItemList.row(item.id))
+                                    .contextMenu {
+                                        if onDelete != nil {
+                                            Button("Delete", role: .destructive) {
+                                                itemToDelete    = item
+                                                showDeleteAlert = true
+                                            }
+                                        }
+                                    }
                             }
                         }
+                    }
                 }
                 // Soft-delete confirmation alert — shown when the user selects "Delete"
                 // from a row context menu. The item is only moved to Trash, not permanently
