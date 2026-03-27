@@ -27,6 +27,7 @@ struct FieldRowView: View {
     var onCopy:   ((String) -> Void)? = nil
 
     @State private var isHovered = false
+    @State private var showCopied = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -63,6 +64,7 @@ struct FieldRowView: View {
         .padding(.vertical, 16)
         .padding(.horizontal, Spacing.rowHorizontal)
         .contentShape(Rectangle())
+        .onTapGesture { copyValue() }
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
@@ -71,22 +73,25 @@ struct FieldRowView: View {
         .accessibilityIdentifier(AccessibilityID.Field.row(label))
     }
 
+    private func copyValue() {
+        guard let copyValue = value, !copyValue.isEmpty else { return }
+        onCopy?(copyValue)
+        withAnimation { showCopied = true }
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            withAnimation { showCopied = false }
+        }
+    }
+
     @ViewBuilder
     private var hoverActions: some View {
-        if isHovered {
+        if isHovered || showCopied {
             HStack(spacing: 4) {
-                if let copyValue = value, !copyValue.isEmpty {
-                    Button {
-                        onCopy?(copyValue)
-                    } label: {
-                        Text("copy")
-                            .font(.headline)
-                            .textCase(.uppercase)
-                            .foregroundStyle(Color.accentColor)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Copy \(label)")
-                    .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
+                if value != nil, !(value?.isEmpty ?? true) {
+                    Text(showCopied ? "copied" : "copy")
+                        .font(.headline)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Color.accentColor)
                 }
 
                 if let link = url {
