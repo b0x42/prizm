@@ -75,9 +75,6 @@ struct MaskedFieldView: View {
 
     var body: some View {
         HStack {
-            Text(label)
-                .font(Typography.fieldValue)
-            Spacer()
             Text(effectiveDisplayValue)
                 .font(Typography.fieldValue.monospaced())
                 .textSelection(.enabled)

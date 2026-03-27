@@ -32,9 +32,11 @@ struct FieldRowView: View {
         HStack(alignment: .center, spacing: 8) {
             // Field content
             if isMasked {
-                MaskedFieldView(label: label, value: value, itemId: itemId)
+                Text(label)
+                    .font(Typography.fieldValue)
                 Spacer()
                 hoverActions
+                MaskedFieldView(label: label, value: value, itemId: itemId)
             } else if isMultiLine {
                 VStack(alignment: .leading, spacing: 2) {
                     if !label.isEmpty {
