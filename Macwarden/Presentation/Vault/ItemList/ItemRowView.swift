@@ -29,16 +29,9 @@ struct ItemRowView: View {
             )
 
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 4) {
-                    Text(styledName)
-                        .font(.headline)
-                        .lineLimit(1)
-                    if item.isFavorite {
-                        Image(systemName: "star.fill")
-                            .imageScale(.small)
-                            .foregroundStyle(.yellow)
-                    }
-                }
+                Text(styledName)
+                    .font(.headline)
+                    .lineLimit(1)
                 if let subtitle = subtitle(for: item) {
                     Text(styledSubtitle(subtitle))
                         .font(.callout)

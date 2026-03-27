@@ -54,7 +54,8 @@ struct VaultBrowserView: View {
                             selection:     $viewModel.itemSelection,
                             faviconLoader: faviconLoader,
                             searchQuery:   viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
-                            onDelete:      { id in await viewModel.performSoftDelete(id: id) }
+                            onDelete:      { id in await viewModel.performSoftDelete(id: id) },
+                            onToggleFavorite: { viewModel.toggleFavorite(item: $0) }
                         )
                     }
                 }
@@ -114,6 +115,15 @@ struct VaultBrowserView: View {
                                 .accessibilityIdentifier(AccessibilityID.Trash.permanentDeleteButton)
                             }
                         } else {
+                            ToolbarItem(placement: .primaryAction) {
+                                Button {
+                                    viewModel.toggleFavorite(item: item)
+                                } label: {
+                                    Image(systemName: item.isFavorite ? "star.fill" : "star")
+                                        .foregroundStyle(item.isFavorite ? .yellow : .secondary)
+                                }
+                                .help(item.isFavorite ? "Unfavorite" : "Favorite")
+                            }
                             ToolbarItem(placement: .primaryAction) {
                                 Button("Edit") {
                                     viewModel.triggerEdit()

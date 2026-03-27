@@ -16,6 +16,7 @@ struct ItemListView: View {
     /// Called when the user confirms moving an item to Trash from the row context menu.
     /// Nil disables the delete context-menu action (e.g. when trash actions are unavailable).
     var onDelete: ((String) async -> Void)? = nil
+    var onToggleFavorite: ((VaultItem) -> Void)? = nil
 
     // Tracks which item is pending a soft-delete confirmation alert.
     @State private var itemToDelete:    VaultItem? = nil
@@ -51,6 +52,11 @@ struct ItemListView: View {
                                     .tag(item)
                                     .accessibilityIdentifier(AccessibilityID.ItemList.row(item.id))
                                     .contextMenu {
+                                        if let onToggleFavorite {
+                                            Button(item.isFavorite ? "Unfavorite" : "Favorite") {
+                                                onToggleFavorite(item)
+                                            }
+                                        }
                                         if onDelete != nil {
                                             Button("Delete", role: .destructive) {
                                                 itemToDelete    = item
