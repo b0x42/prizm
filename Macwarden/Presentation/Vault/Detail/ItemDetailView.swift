@@ -76,13 +76,19 @@ struct ItemDetailView: View {
     @ViewBuilder
     private func metadataFooter(for item: VaultItem) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Created \(item.creationDate.formatted(date: .abbreviated, time: .omitted))")
-                .font(Typography.fieldValue)
-                .foregroundStyle(.secondary)
-            Text("Updated \(item.revisionDate.formatted(date: .abbreviated, time: .omitted))")
-                .font(Typography.fieldValue)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 0) {
+                Text("Updated:")
+                    .frame(width: 70, alignment: .leading)
+                Text(item.revisionDate.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year()))
+            }
+            HStack(spacing: 0) {
+                Text("Created:")
+                    .frame(width: 70, alignment: .leading)
+                Text(item.creationDate.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year()))
+            }
         }
+        .font(Typography.fieldValue)
+        .foregroundStyle(.secondary)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Spacing.pageMargin + Spacing.rowHorizontal)
         .padding(.top, Spacing.cardTop)
