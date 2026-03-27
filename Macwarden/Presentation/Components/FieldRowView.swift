@@ -26,6 +26,8 @@ struct FieldRowView: View {
     var url:      URL?  = nil
     var onCopy:   ((String) -> Void)? = nil
 
+    @State private var isHovered = false
+
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             // Field content
@@ -45,6 +47,36 @@ struct FieldRowView: View {
                 Text(label)
                     .font(Typography.fieldValue)
                 Spacer()
+
+                // Hover actions — left of value
+                if isHovered {
+                    HStack(spacing: 4) {
+                        if let copyValue = value, !copyValue.isEmpty {
+                            Button {
+                                onCopy?(copyValue)
+                            } label: {
+                                Text("COPY")
+                                    .font(Typography.utility)
+                                    .bold()
+                            }
+                            .buttonStyle(.plain)
+                            .help("Copy \(label)")
+                            .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
+                        }
+
+                        if let link = url {
+                            Link(destination: link) {
+                                Image(systemName: "arrow.up.right.square")
+                                    .imageScale(.small)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Open in browser")
+                            .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
+                        }
+                    }
+                    .transition(.opacity)
+                }
+
                 Text(value ?? "—")
                     .font(Typography.fieldValue.monospaced())
                     .lineLimit(1)
@@ -53,40 +85,33 @@ struct FieldRowView: View {
 
             if isMasked || isMultiLine {
                 Spacer()
-            }
 
-            // Actions
-            HStack(spacing: 4) {
-                if let copyValue = value, !copyValue.isEmpty {
-                    Button {
-                        onCopy?(copyValue)
-                    } label: {
-                        Text("COPY")
-                            .font(Typography.utility)
-                            .bold()
+                // Hover actions for masked/multiline rows
+                if isHovered {
+                    if let copyValue = value, !copyValue.isEmpty {
+                        Button {
+                            onCopy?(copyValue)
+                        } label: {
+                            Text("COPY")
+                                .font(Typography.utility)
+                                .bold()
+                        }
+                        .buttonStyle(.plain)
+                        .help("Copy \(label)")
+                        .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
+                        .transition(.opacity)
                     }
-                    .buttonStyle(.plain)
-                    .help("Copy \(label)")
-                    .accessibilityIdentifier(AccessibilityID.Field.copyButton(label))
-                }
-
-                if let link = url {
-                    Link(destination: link) {
-                        Image(systemName: "arrow.up.right.square")
-                            .imageScale(.small)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Open in browser")
-                    .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
                 }
             }
         }
         .padding(.vertical, 16)
         .padding(.horizontal, Spacing.rowHorizontal)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.clear)
-        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
         .accessibilityIdentifier(AccessibilityID.Field.row(label))
     }
 }
