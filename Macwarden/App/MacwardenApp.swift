@@ -310,6 +310,10 @@ final class RootViewModel: ObservableObject {
             if let email = container.authRepo.storedAccount()?.email {
                 let deps = container.makeSyncTimestampDependencies(for: email)
                 vaultBrowserVM.updateSyncTimestamp(repository: deps.repository, useCase: deps.useCase)
+            } else {
+                // Unexpected: vault transition reached with no stored account — timestamp will
+                // be written under the fallback empty-email key. Should not occur in normal flow.
+                logger.error("handleLoginFlow(.vault): no stored account; sync timestamp not re-scoped")
             }
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
             screen = .vault
@@ -387,6 +391,10 @@ final class RootViewModel: ObservableObject {
             if let email = container.authRepo.storedAccount()?.email {
                 let deps = container.makeSyncTimestampDependencies(for: email)
                 vaultBrowserVM.updateSyncTimestamp(repository: deps.repository, useCase: deps.useCase)
+            } else {
+                // Unexpected: vault transition reached with no stored account — timestamp will
+                // be written under the fallback empty-email key. Should not occur in normal flow.
+                logger.error("handleUnlockFlow(.vault): no stored account; sync timestamp not re-scoped")
             }
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
             screen = .vault

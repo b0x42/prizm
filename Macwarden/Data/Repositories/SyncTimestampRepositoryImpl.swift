@@ -19,6 +19,17 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
     nonisolated(unsafe) private let key:      String
     nonisolated(unsafe) private let defaults: UserDefaults
 
+    /// Shared formatter used for both reads and writes.
+    ///
+    /// `ISO8601DateFormatter` is thread-safe for concurrent use after construction (Apple docs).
+    /// `nonisolated(unsafe)` is correct here: the formatter is a static constant, never mutated
+    /// after initialisation, so there is no data race risk.
+    nonisolated(unsafe) private static let formatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
     /// - Parameters:
     ///   - email: The account email used to scope the UserDefaults key. Lowercased before use
     ///     to match the Bitwarden server's email normalisation convention, so different
@@ -38,11 +49,7 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
     /// read without `await`. `UserDefaults` reads are documented as thread-safe by Apple.
     nonisolated var lastSyncDate: Date? {
         guard let raw = defaults.string(forKey: key) else { return nil }
-        // Allocate a new formatter here rather than referencing the actor-isolated one.
-        // This path is read-only and infrequent enough that the allocation cost is negligible.
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: raw)
+        return Self.formatter.date(from: raw)
     }
 
     /// Persists the current date as the last successful sync timestamp.
@@ -55,11 +62,7 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
     /// Call only on the sync success path. Error paths MUST NOT call this — the stored
     /// value must always reflect the last *successful* sync.
     nonisolated func recordSuccessfulSync() {
-        let iso = {
-            let f = ISO8601DateFormatter()
-            f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return f.string(from: Date())
-        }()
+        let iso = Self.formatter.string(from: Date())
         defaults.set(iso, forKey: key)
         // §V Observability: log that a sync timestamp was recorded. Timestamp is non-sensitive.
         // Local Logger allocation required because the actor-isolated `logger` property is not
