@@ -4,10 +4,10 @@ Users have no way to know whether their vault data is current — after unlockin
 
 ## What Changes
 
-- Display the date and time of the last successful vault sync in the UI (sidebar footer or toolbar area)
-- Persist the last-sync timestamp to UserDefaults so it survives app restarts
+- Display a human-friendly relative sync label pinned to the bottom of the vault browser sidebar
+- Persist the last-sync timestamp to UserDefaults (per-account) so it survives app restarts
 - Update the timestamp each time a sync completes successfully
-- Show a human-friendly relative label (e.g. "Synced 2 minutes ago") with a full timestamp on hover/tooltip
+- Hide the element when the vault is locked
 
 ## Capabilities
 
@@ -19,7 +19,7 @@ Users have no way to know whether their vault data is current — after unlockin
 
 ## Impact
 
-- **Presentation layer**: New UI element in the vault browser (sidebar footer or toolbar); depends on `VaultBrowserViewModel` or equivalent
+- **Presentation layer**: New UI element pinned to sidebar bottom in the vault browser; depends on `VaultBrowserViewModel` or equivalent
 - **Domain layer**: New use case or service to read/write last-sync timestamp
 - **Data layer**: UserDefaults persistence for last-sync timestamp
 - **No API or crypto changes required**

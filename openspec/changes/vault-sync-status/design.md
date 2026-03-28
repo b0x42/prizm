@@ -26,11 +26,11 @@ The last-sync timestamp is not a secret — it is a UI preference. Storing it in
 
 **Alternative considered**: In-memory only (no persistence). Rejected because the value would disappear on every app relaunch, undermining the user's ability to judge data freshness after waking from sleep or restarting.
 
-### Decision: Store as ISO-8601 string in UserDefaults
+### Decision: Store as ISO-8601 string in UserDefaults, keyed per account
 
-`Date` encodes cleanly as an ISO-8601 `String` with `ISO8601DateFormatter`. This is human-readable in developer tools and avoids `Double`-based epoch representations that lose clarity during debugging.
+`Date` encodes cleanly as an ISO-8601 `String` with `ISO8601DateFormatter`. The UserDefaults key is scoped to the account email (`com.macwarden.lastSyncDate.<email>`) so that switching accounts does not show a stale timestamp from the previous account.
 
-**Alternative considered**: `TimeInterval` (Double). Rejected because ISO-8601 is self-documenting.
+**Alternative considered**: `TimeInterval` (Double) with a shared key. Rejected — ISO-8601 is self-documenting in developer tools, and per-account keying is necessary for correctness.
 
 ### Decision: Display pinned to the very bottom of the sidebar
 
@@ -52,4 +52,4 @@ Consistent with the project's architecture rules: domain protocol, data implemen
 
 - **Clock skew**: If the user's system clock is adjusted backward, the relative label could show a future timestamp. Mitigation: clamp displayed values to "just now" if the timestamp appears to be in the future.
 - **Sync error path not updated**: If a sync fails silently (network error swallowed), the old timestamp stays, which is actually the correct behavior — it reflects the last *successful* sync. Requires that the success path calls the update; error paths must not.
-- **UI coupling to sync completion**: The ViewModel needs to observe sync completion. This MUST be done via a proper async notification (e.g. `AsyncStream` or a published property on the sync use case) — not by polling UserDefaults from the ViewModel, which would be a §II layer violation (Presentation accessing Data layer directly).
+- **UI coupling to sync completion**: The ViewModel observes sync completion via `AsyncStream<Date>` exposed on the sync use case, consumed with `for await` in a `Task` on the ViewModel. This is the chosen mechanism — not polling UserDefaults (§II layer violation) and not Combine publishers (prohibited for new code per CLAUDE.md).
