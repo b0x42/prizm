@@ -21,11 +21,12 @@
 ## 5. Presentation Layer
 
 - [ ] 5.1 Add a `lastSyncDate: Date?` published property to the vault browser ViewModel; populate it from `GetLastSyncDateUseCase` on appear and update it when sync completes
-- [ ] 5.2 Add a helper (on `Date` or in the ViewModel) that formats the relative label: "Synced just now" / "Synced X minutes ago" / "Synced X hours ago" / date string for older; clamp future timestamps to "Synced just now"
-- [ ] 5.3 Add a `SyncStatusFooterView` (or inline view) in the sidebar footer that displays the relative label using `Typography.listSubtitle` and a `.help(_:)` tooltip with the full datetime string
+- [ ] 5.2 Add a helper (on `Date` or in the ViewModel) that formats the relative label: "Synced just now" / "Synced X minutes ago" / "Synced X hours ago" / "Synced yesterday" / "Synced [Month Day]"; clamp future timestamps to "Synced just now"
+- [ ] 5.3a Add a 60-second repeating timer in the ViewModel to refresh the relative label while the app is open
+- [ ] 5.3 Add a `SyncStatusView` pinned to the very bottom of the sidebar (outside the scroll area) displaying the formatted timestamp using `Typography.listSubtitle`
 - [ ] 5.4 Show "Never synced" when `lastSyncDate` is nil
 
 ## 6. Tests & Verification
 
-- [ ] 6.1 Write a unit test for the relative-label formatter covering: nil, just now, 2 minutes ago, 2 hours ago, yesterday, and a future date
+- [ ] 6.1 Write unit tests for the relative-label formatter covering all tiers: nil → "Never synced", < 1 min → "just now", 2 min, 59 min, 1 hr, 23 hrs, yesterday (24–48 hrs), older (date only), and future date → "just now"
 - [ ] 6.2 Verify end-to-end: unlock vault → sync completes → sidebar footer updates live without view reload

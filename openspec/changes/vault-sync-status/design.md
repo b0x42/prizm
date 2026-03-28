@@ -32,17 +32,17 @@ The last-sync timestamp is not a secret — it is a UI preference. Storing it in
 
 **Alternative considered**: `TimeInterval` (Double). Rejected because ISO-8601 is self-documenting.
 
-### Decision: Display in sidebar footer, not toolbar
+### Decision: Display pinned to the very bottom of the sidebar
 
-The sidebar footer is the natural home for persistent contextual metadata about the vault session. The toolbar is action-focused. Placing the timestamp in the footer matches the visual hierarchy of the three-pane layout and avoids crowding the toolbar.
+The sync status element is pinned to the bottom of the sidebar column, below all vault list content, and remains visible regardless of scroll position. This makes it persistently accessible as a status indicator without interfering with the item list. Implemented with a `VStack` where the list takes remaining space (`Spacer` or `List` filling available height) and the status view sits below it outside the scroll area.
 
-**Alternative considered**: Toolbar trailing area. Rejected as it competes with future action controls.
+**Alternative considered**: Toolbar trailing area. Rejected as it competes with future action controls and is not visible when the toolbar is hidden.
 
-### Decision: Relative time label with full timestamp tooltip
+### Decision: Show relative label, not full timestamp
 
-"Synced 3 minutes ago" is immediately useful without requiring the user to parse a date. The full timestamp in a tooltip provides precision when needed (e.g. debugging after a network outage). SwiftUI's `Text` with `.help(_:)` modifier covers this with no custom components.
+A relative label ("Synced 2 minutes ago", "Synced yesterday") is immediately readable at a glance without requiring the user to parse a datetime string. The label tiers: "just now" → "X minutes ago" → "X hours ago" → "yesterday" → "Month Day" for older syncs. A periodic timer (60-second interval) keeps the label current while the app is open.
 
-**Alternative considered**: Always show full datetime. Rejected as visually heavy for a secondary status indicator.
+**Alternative considered**: Full datetime ("Last synced: Mar 28, 2026 at 14:32"). Not chosen — harder to parse at a glance for a secondary status indicator; relative time communicates freshness more intuitively.
 
 ### Decision: Domain `SyncTimestampRepository` protocol, UserDefaults impl in Data layer
 

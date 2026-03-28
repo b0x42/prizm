@@ -21,25 +21,48 @@ The system SHALL record the date and time of the most recent successful vault sy
 
 ---
 
-### Requirement: Last sync timestamp is displayed in the vault browser UI
-The system SHALL display the last successful sync timestamp in the vault browser sidebar footer area. The display SHALL use a human-friendly relative label (e.g. "Synced 2 minutes ago"). The full ISO-8601 datetime SHALL be shown as a tooltip on hover. If no sync has occurred in this session or ever, the label SHALL read "Never synced".
+### Requirement: Last sync timestamp is displayed at the bottom of the sidebar
+The system SHALL display the last successful sync timestamp pinned to the very bottom of the vault browser sidebar, below all list content and always visible regardless of scroll position. The element SHALL use a human-friendly relative label that updates over time:
+- Less than 1 minute ago → "Synced just now"
+- 2–59 minutes ago → "Synced X minutes ago"
+- 1–23 hours ago → "Synced X hours ago"
+- 24–48 hours ago → "Synced yesterday"
+- Older → "Synced [Month Day]" (e.g. "Synced Mar 26")
 
-#### Scenario: Relative label shown after sync
-- **WHEN** the vault browser is open and a successful sync has occurred
-- **THEN** the sidebar footer shows a label such as "Synced X minutes ago" (or "Synced just now" for very recent syncs)
+If no sync has occurred, the element SHALL read "Never synced". The display SHALL use `Typography.listSubtitle` styling to remain visually unobtrusive.
 
-#### Scenario: Full timestamp shown on hover
-- **WHEN** the user hovers over the last-sync label
-- **THEN** a tooltip displays the full date and time (ISO-8601 or locale-formatted datetime)
+#### Scenario: Sync status shown at sidebar bottom
+- **WHEN** the vault browser is open
+- **THEN** a sync status element is pinned to the very bottom of the sidebar, below all vault list items, always visible
+
+#### Scenario: Relative label shown just after sync
+- **WHEN** a sync completed less than 1 minute ago
+- **THEN** the label reads "Synced just now"
+
+#### Scenario: Relative label shown minutes after sync
+- **WHEN** a sync completed 2–59 minutes ago
+- **THEN** the label reads "Synced X minutes ago"
+
+#### Scenario: Relative label shown hours after sync
+- **WHEN** a sync completed 1–23 hours ago
+- **THEN** the label reads "Synced X hours ago"
+
+#### Scenario: Relative label shown the day after sync
+- **WHEN** a sync completed 24–48 hours ago
+- **THEN** the label reads "Synced yesterday"
+
+#### Scenario: Relative label shown for older syncs
+- **WHEN** a sync completed more than 48 hours ago
+- **THEN** the label reads "Synced [Month Day]" (e.g. "Synced Mar 26")
 
 #### Scenario: Never synced state
 - **WHEN** no successful sync timestamp is stored
-- **THEN** the sidebar footer shows "Never synced"
+- **THEN** the sidebar bottom element shows "Never synced"
 
 #### Scenario: Future timestamp clamped to "just now"
 - **WHEN** the stored timestamp appears to be in the future (e.g. due to clock adjustment)
-- **THEN** the label displays "Synced just now" rather than a nonsensical future label
+- **THEN** the label displays "Synced just now"
 
 #### Scenario: Label updates live after sync completes
 - **WHEN** a sync completes while the vault browser is open
-- **THEN** the sidebar footer label updates to reflect the new timestamp without requiring a view reload
+- **THEN** the sidebar bottom label updates to reflect the new timestamp without requiring a view reload
