@@ -22,12 +22,15 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
         try await super.setUp()
         vault = MockVaultRepository()
         vault.populate(items: [sampleLogin, sampleCard], syncedAt: .now)
+        let syncRepo = MockSyncTimestampRepository(storedDate: nil)
         sut = VaultBrowserViewModel(
-            vault: vault,
-            search: SearchVaultUseCaseImpl(vault: vault),
-            delete: StubDeleteUseCase(),
+            vault:           vault,
+            search:          SearchVaultUseCaseImpl(vault: vault),
+            delete:          StubDeleteUseCase(),
             permanentDelete: StubPermanentDeleteUseCase(),
-            restore: StubRestoreUseCase()
+            restore:         StubRestoreUseCase(),
+            syncTimestamp:   syncRepo,
+            getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
     }
 

@@ -24,17 +24,24 @@ struct VaultBrowserView: View {
     var body: some View {
         NavigationSplitView(
             sidebar: {
-                SidebarView(
-                    selection: Binding(
-                        get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
-                        set: { newValue in
-                            if let value = newValue {
-                                viewModel.sidebarSelection = value
+                VStack(spacing: 0) {
+                    SidebarView(
+                        selection: Binding(
+                            get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
+                            set: { newValue in
+                                if let value = newValue {
+                                    viewModel.sidebarSelection = value
+                                }
                             }
-                        }
-                    ),
-                    itemCounts: viewModel.itemCounts
-                )
+                        ),
+                        itemCounts: viewModel.itemCounts
+                    )
+                    Divider()
+                    // Sync status pinned below the list, always visible regardless of scroll.
+                    // Hidden when locked: RootViewModel replaces the entire vault browser with
+                    // the lock screen, so no conditional logic is needed here.
+                    SyncStatusView(label: viewModel.syncStatusLabel)
+                }
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
             },
             content: {

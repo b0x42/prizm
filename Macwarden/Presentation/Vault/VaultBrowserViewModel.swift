@@ -70,6 +70,8 @@ final class VaultBrowserViewModel: ObservableObject {
     private let deleteUseCase:          any DeleteVaultItemUseCase
     private let permanentDeleteUseCase: any PermanentDeleteVaultItemUseCase
     private let restoreUseCase:         any RestoreVaultItemUseCase
+    private let syncTimestamp:          any SyncTimestampRepository
+    private let getLastSyncDate:        any GetLastSyncDateUseCase
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
@@ -87,6 +89,15 @@ final class VaultBrowserViewModel: ObservableObject {
     func triggerEdit() { editTrigger += 1 }
     func triggerSave() { saveTrigger += 1 }
 
+    // MARK: - Sync label refresh timer
+
+    /// Fires every 60 seconds to re-evaluate the relative sync label while the app is open.
+    /// Invalidated in `deinit` to prevent the timer outliving the ViewModel.
+    private var labelRefreshTimer: Timer?
+
+    /// Relative label derived from `lastSyncedAt`, refreshed every 60 seconds.
+    @Published private(set) var syncStatusLabel: String = "Never synced"
+
     // MARK: - Clipboard auto-clear
 
     private var clipboardClearTask: Task<Void, Never>?
@@ -98,16 +109,41 @@ final class VaultBrowserViewModel: ObservableObject {
         search:          any SearchVaultUseCase,
         delete:          any DeleteVaultItemUseCase,
         permanentDelete: any PermanentDeleteVaultItemUseCase,
-        restore:         any RestoreVaultItemUseCase
+        restore:         any RestoreVaultItemUseCase,
+        syncTimestamp:   any SyncTimestampRepository,
+        getLastSyncDate: any GetLastSyncDateUseCase
     ) {
         self.vault                  = vault
         self.search                 = search
         self.deleteUseCase          = delete
         self.permanentDeleteUseCase = permanentDelete
         self.restoreUseCase         = restore
+        self.syncTimestamp          = syncTimestamp
+        self.getLastSyncDate        = getLastSyncDate
         refreshItems()
         refreshCounts()
-        lastSyncedAt = vault.lastSyncedAt
+        // Load persisted timestamp first; fall back to in-memory value from the vault store
+        // (populated on the current session's sync, but not persisted across restarts).
+        lastSyncedAt   = getLastSyncDate.execute() ?? vault.lastSyncedAt
+        syncStatusLabel = lastSyncedAt.syncStatusLabel()
+        startLabelRefreshTimer()
+    }
+
+    deinit {
+        labelRefreshTimer?.invalidate()
+        clipboardClearTask?.cancel()
+    }
+
+    // MARK: - Timer
+
+    private func startLabelRefreshTimer() {
+        // Re-evaluate the relative label every 60 seconds so "2 minutes ago" stays accurate
+        // without requiring a view reload. The timer is weak-captured to avoid a retain cycle.
+        labelRefreshTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.syncStatusLabel = self?.lastSyncedAt.syncStatusLabel() ?? "Never synced"
+            }
+        }
     }
 
     // MARK: - Actions
@@ -184,8 +220,13 @@ final class VaultBrowserViewModel: ObservableObject {
     }
 
     /// Called after a successful sync to update counts, items, and timestamp.
+    ///
+    /// Also persists the timestamp via `SyncTimestampRepository` so it survives app restarts.
+    /// Error paths MUST NOT call this method — the stored timestamp reflects the last *successful* sync.
     func handleSyncCompleted(syncedAt: Date) {
         lastSyncedAt = syncedAt
+        syncStatusLabel = syncedAt.syncStatusLabel()
+        syncTimestamp.recordSuccessfulSync()
         refreshItems()
         refreshCounts()
         syncErrorMessage = nil
