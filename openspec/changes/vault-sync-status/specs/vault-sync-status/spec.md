@@ -23,12 +23,18 @@ The system SHALL record the date and time of the most recent successful vault sy
 
 ### Requirement: Last sync timestamp is displayed at the bottom of the sidebar
 The system SHALL display the last successful sync timestamp pinned to the very bottom of the vault browser sidebar, below all list content and always visible regardless of scroll position. The element SHALL be hidden when the vault is locked. The element SHALL use a human-friendly relative label that updates over time, evaluated in the user's local timezone:
-- 0–59 seconds ago → "Synced just now"
-- 60 seconds–59 minutes ago → "Synced X minute(s) ago"
-- 1–23 hours ago → "Synced X hour(s) ago"
-- Previous calendar day (local timezone) → "Synced yesterday"
-- Older, same year → "Synced [Month Day]" (e.g. "Synced Mar 26")
-- Older, different year → "Synced [Month Day, Year]" (e.g. "Synced Mar 26, 2025")
+The label is determined by first checking the calendar day (in the user's local timezone), then elapsed time for same-day syncs. Tiers evaluated in order (first match wins):
+
+**Calendar day checks (evaluated first):**
+1. Future timestamp → "Synced just now" (clock skew guard)
+2. Previous calendar year or earlier → "Synced [Month Day, Year]" (e.g. "Synced Mar 26, 2025")
+3. Two or more calendar days ago, same year → "Synced [Month Day]" (e.g. "Synced Mar 26")
+4. Previous calendar day → "Synced yesterday"
+
+**Elapsed time checks (same calendar day only):**
+5. 0–59 seconds → "Synced just now"
+6. 60–3599 seconds → "Synced 1 minute ago" / "Synced X minutes ago" (singular for 1, plural otherwise)
+7. 3600+ seconds → "Synced 1 hour ago" / "Synced X hours ago" (singular for 1, plural otherwise)
 
 If no sync has occurred, the element SHALL read "Never synced". The display SHALL use `Typography.listSubtitle` styling to remain visually unobtrusive.
 

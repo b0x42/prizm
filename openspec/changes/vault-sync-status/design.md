@@ -7,7 +7,7 @@ The app already performs a sync after login and after unlock (per `vault-browser
 ## Goals / Non-Goals
 
 **Goals:**
-- Persist the last successful sync timestamp across app restarts (UserDefaults)
+- Persist the last successful sync timestamp per account across app restarts (UserDefaults, key scoped to account email)
 - Display the timestamp in the vault browser UI as a human-friendly relative label
 - Update the timestamp each time any successful sync completes
 - Refresh the relative label on a 60-second timer while the app is open
@@ -40,9 +40,15 @@ The sync status element is pinned to the bottom of the sidebar column, below all
 
 ### Decision: Show relative label, not full timestamp
 
-A relative label ("Synced 2 minutes ago", "Synced yesterday") is immediately readable at a glance without requiring the user to parse a datetime string. The label tiers: "just now" → "X minutes ago" → "X hours ago" → "yesterday" → "Month Day" for older syncs. A periodic timer (60-second interval) keeps the label current while the app is open.
+A relative label ("Synced 2 minutes ago", "Synced yesterday") is immediately readable at a glance without requiring the user to parse a datetime string. Calendar day is checked first; elapsed time is used only for same-day syncs. Tiers: "just now" → "X minutes ago" → "X hours ago" → "yesterday" → "Month Day" (same year) → "Month Day, Year" (different year). A periodic timer (60-second interval) keeps the label current while the app is open.
 
 **Alternative considered**: Full datetime ("Last synced: Mar 28, 2026 at 14:32"). Not chosen — harder to parse at a glance for a secondary status indicator; relative time communicates freshness more intuitively.
+
+### Decision: Account email injected at init, not passed per call
+
+`SyncTimestampRepositoryImpl` is initialized with the account email: `SyncTimestampRepositoryImpl(email: String)`. The UserDefaults key is constructed once at init. The domain protocol (`SyncTimestampRepository`) stays parameter-free — `recordSuccessfulSync()` takes no arguments. `AppContainer` constructs the impl with the active session email.
+
+**Alternative considered**: Passing email as a parameter to `recordSuccessfulSync(for email: String)`. Rejected — leaks account context into every call site and couples callers to account identity unnecessarily.
 
 ### Decision: Domain `SyncTimestampRepository` protocol, UserDefaults impl in Data layer
 
