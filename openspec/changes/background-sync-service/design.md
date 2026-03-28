@@ -24,17 +24,31 @@ The goal is a single, injectable `SyncService` that all callers delegate to, wit
 
 ### 1. `SyncState` and `SyncStatusProviding` belong in Domain
 
-**Chosen:** `SyncState` and the `SyncStatusProviding` protocol live in `Domain/`. `SyncService` (Data layer) conforms to `SyncStatusProviding`. Presentation only imports Domain types.
+**Chosen:** `SyncState` and the `SyncStatusProviding` protocol live in `Domain/`. `SyncStatusProviding` is declared `@MainActor` so all its requirements are automatically main-actor-isolated. `SyncService` (Data layer) conforms to `SyncStatusProviding`. Presentation only imports Domain types.
 
 **Why:** Constitution §II prohibits Presentation from importing Data directly. `SidebarFooterView` and `SidebarView` need to read `SyncState` and call `clearError()` — if these types lived in Data, that would be a blocking §II violation. Moving them to Domain keeps the dependency arrows pointing inward and makes `SyncService` fully mockable in Presentation tests.
+
+`SyncStatusProviding` must be `@MainActor` because all consumers (`SidebarFooterView`, `VaultBrowserViewModel`) are `@MainActor`-isolated (SwiftUI views are `@MainActor` by default in Swift 6). Without `@MainActor` on the protocol, using `any SyncStatusProviding` from `@MainActor` code produces Swift 6 compiler errors about crossing actor boundaries. SE-470 (Swift 6.2, macOS 26) makes isolated conformances work cleanly — exactly the project's deployment target.
+
+```swift
+// Domain/SyncStatusProviding.swift
+@MainActor
+protocol SyncStatusProviding {
+    var state: SyncState { get }
+    var lastError: Error? { get }
+    func trigger()
+    func clearError()
+    func reset()
+}
+```
 
 ```
 Domain/                          Data/
   SyncState (enum)          ◀──  SyncService (conforms to SyncStatusProviding)
-  SyncStatusProviding (protocol)
+  SyncStatusProviding (@MainActor protocol)
        ▲
 Presentation/
-  SidebarFooterView (reads SyncState via SyncStatusProviding)
+  SidebarFooterView (reads SyncState via any SyncStatusProviding)
   VaultBrowserViewModel (holds any SyncStatusProviding)
 ```
 
@@ -88,7 +102,16 @@ When `lockVault()` is called, `SyncService.reset()` transitions state to `.idle`
 - **Vault appears before sync completes** → user may briefly see stale data after unlock. Acceptable: the spinner communicates that fresh data is loading. Considered showing a "Loading…" skeleton but rejected as over-engineered for typical sync times.
 - **Background sync fails silently on first login** → user sees red error mark immediately after entering the vault. This is more honest than the old behaviour (blocking progress screen that also showed an error). The error sheet provides the message.
 - **`SyncService` on `@MainActor`** → the `SyncUseCase.execute()` network call runs inside a `Task` but the `Task` closure itself is `@MainActor`-isolated. The actual `URLSession` work happens off-main inside `SyncRepositoryImpl`; `SyncService` only awaits the result. No main-thread blocking in practice.
-- **In-flight sync on lock** → `reset()` cancels the active `Task`. The cancelled sync throws `CancellationError`; `SyncService` must handle this without transitioning to `.error` state (treat cancellation as a clean reset, not a failure).
+- **In-flight sync on lock** → `reset()` cancels the active `Task`. The cancelled sync throws `CancellationError`; `SyncService` must catch it specifically and return early without touching `state`. The correct pattern:
+  ```swift
+  } catch is CancellationError {
+      return  // task was cancelled by reset() — not an error
+  } catch {
+      state = .error(error)
+  }
+  ```
+- **Stored `Task` + `@Observable` deinit (Swift compiler issue #79551)** → `@MainActor @Observable` classes with a stored `Task` property can produce a compiler error in `deinit`: "main actor-isolated property cannot be referenced from nonisolated context." Workaround: store the task as `nonisolated(unsafe) var syncTask: Task<Void, Never>?` or cancel it in a `nonisolated` helper. Monitor swift/swift#79551 for a fix; this is a known compiler issue, not a design flaw.
+- **`@MainActor` class is automatically `Sendable`** → No `@unchecked Sendable` annotation needed. Swift 6 infers `Sendable` for `@MainActor`-isolated types automatically.
 
 ## Migration Plan
 
