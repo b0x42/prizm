@@ -10,7 +10,7 @@ The app already performs a sync after login and after unlock (per `vault-browser
 - Persist the last successful sync timestamp across app restarts (UserDefaults)
 - Display the timestamp in the vault browser UI as a human-friendly relative label
 - Update the timestamp each time any successful sync completes
-- Surface the full ISO-8601 datetime on hover (tooltip)
+- Refresh the relative label on a 60-second timer while the app is open
 
 **Non-Goals:**
 - Triggering sync from this UI element (manual sync is a separate feature)
@@ -52,4 +52,4 @@ Consistent with the project's architecture rules: domain protocol, data implemen
 
 - **Clock skew**: If the user's system clock is adjusted backward, the relative label could show a future timestamp. Mitigation: clamp displayed values to "just now" if the timestamp appears to be in the future.
 - **Sync error path not updated**: If a sync fails silently (network error swallowed), the old timestamp stays, which is actually the correct behavior — it reflects the last *successful* sync. Requires that the success path calls the update; error paths must not.
-- **UI coupling to sync completion**: The ViewModel needs to observe sync completion. This can be done via a callback/notification from the existing sync use case, or by polling UserDefaults. A proper async notification is preferred to avoid stale display.
+- **UI coupling to sync completion**: The ViewModel needs to observe sync completion. This MUST be done via a proper async notification (e.g. `AsyncStream` or a published property on the sync use case) — not by polling UserDefaults from the ViewModel, which would be a §II layer violation (Presentation accessing Data layer directly).
