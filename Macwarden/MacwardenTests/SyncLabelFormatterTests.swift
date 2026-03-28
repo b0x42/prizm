@@ -133,4 +133,25 @@ final class SyncLabelFormatterTests: XCTestCase {
 
         XCTAssertEqual(date.syncStatusLabel(relativeTo: now, calendar: calendar), "Synced 3 hours ago")
     }
+
+    /// Verifies that 22-23 hours elapsed on the same calendar day still shows "X hours ago"
+    /// rather than "yesterday". This is the critical boundary: the calendar-day check must
+    /// correctly identify both the sync and the reference time as the same day.
+    func test22Hours_sameDayCalendarCheck() {
+        // now = 2026-03-28 23:58, sync = 2026-03-28 00:30 — 23h28m elapsed, same calendar day
+        var nowComps = DateComponents()
+        nowComps.year = 2026; nowComps.month = 3; nowComps.day = 28
+        nowComps.hour = 23; nowComps.minute = 58; nowComps.timeZone = TimeZone(identifier: "UTC")
+        let lateNow = calendar.date(from: nowComps)!
+
+        var syncComps = DateComponents()
+        syncComps.year = 2026; syncComps.month = 3; syncComps.day = 28
+        syncComps.hour = 0; syncComps.minute = 30; syncComps.timeZone = TimeZone(identifier: "UTC")
+        let earlySync = calendar.date(from: syncComps)!
+
+        // ~23 hours elapsed but both timestamps are on 2026-03-28 → must NOT show "yesterday"
+        let result = earlySync.syncStatusLabel(relativeTo: lateNow, calendar: calendar)
+        XCTAssertFalse(result.contains("yesterday"), "Same calendar day must not show 'yesterday', got: \(result)")
+        XCTAssertTrue(result.contains("hours ago"), "Expected hours label for ~23h same-day elapsed, got: \(result)")
+    }
 }

@@ -70,8 +70,8 @@ final class VaultBrowserViewModel: ObservableObject {
     private let deleteUseCase:          any DeleteVaultItemUseCase
     private let permanentDeleteUseCase: any PermanentDeleteVaultItemUseCase
     private let restoreUseCase:         any RestoreVaultItemUseCase
-    private let syncTimestamp:          any SyncTimestampRepository
-    private let getLastSyncDate:        any GetLastSyncDateUseCase
+    private var syncTimestamp:          any SyncTimestampRepository
+    private var getLastSyncDate:        any GetLastSyncDateUseCase
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
@@ -217,6 +217,23 @@ final class VaultBrowserViewModel: ObservableObject {
         } catch {
             logger.error("Failed to load item counts: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// Re-scopes the sync timestamp repository to a newly resolved account email.
+    ///
+    /// Called by `RootViewModel` immediately after a login or unlock transition to `.vault`,
+    /// before `handleSyncCompleted` — ensures the timestamp is written to and read from
+    /// the correct per-account UserDefaults key even on first launch (when the email was
+    /// not yet known at `AppContainer.init()` time).
+    func updateSyncTimestamp(
+        repository: any SyncTimestampRepository,
+        useCase:    any GetLastSyncDateUseCase
+    ) {
+        self.syncTimestamp   = repository
+        self.getLastSyncDate = useCase
+        // Reload the persisted timestamp from the now-correct account-scoped key.
+        lastSyncedAt    = useCase.execute() ?? vault.lastSyncedAt
+        syncStatusLabel = lastSyncedAt.syncStatusLabel()
     }
 
     /// Called after a successful sync to update counts, items, and timestamp.

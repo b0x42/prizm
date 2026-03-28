@@ -154,6 +154,11 @@ private final class MockRootDependencies: RootViewModelDependencies {
             getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
     }
+
+    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
+        let repo = MockSyncTimestampRepository(storedDate: nil)
+        return (repo, GetLastSyncDateUseCaseImpl(repository: repo))
+    }
 }
 
 // Minimal stubs for VaultBrowserViewModel dependencies.

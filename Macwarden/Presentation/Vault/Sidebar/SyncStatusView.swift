@@ -24,3 +24,13 @@ struct SyncStatusView: View {
             .accessibilityIdentifier(AccessibilityID.Vault.syncStatusLabel)
     }
 }
+
+#Preview("Synced recently") {
+    SyncStatusView(label: "Synced 2 minutes ago")
+        .frame(width: 220)
+}
+
+#Preview("Never synced") {
+    SyncStatusView(label: "Never synced")
+        .frame(width: 220)
+}

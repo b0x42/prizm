@@ -156,6 +156,9 @@ protocol RootViewModelDependencies: AnyObject {
     func makeLoginViewModel() -> LoginViewModel
     func makeUnlockViewModel(account: Account) -> UnlockViewModel
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel
+    /// Returns a fresh sync timestamp repository and use case scoped to the given email.
+    /// Called after login/unlock to re-scope to the correct account before the first sync.
+    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase)
 }
 
 extension AppContainer: RootViewModelDependencies {
@@ -301,6 +304,13 @@ final class RootViewModel: ObservableObject {
         case .totpPrompt:  screen = .totpPrompt
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:
+            // Re-scope the sync timestamp to the correct account before recording the sync.
+            // On first login the AppContainer was initialised without a known email; this
+            // corrects the UserDefaults key before handleSyncCompleted writes to it.
+            if let email = container.authRepo.storedAccount()?.email {
+                let deps = container.makeSyncTimestampDependencies(for: email)
+                vaultBrowserVM.updateSyncTimestamp(repository: deps.repository, useCase: deps.useCase)
+            }
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
             screen = .vault
         }
@@ -374,6 +384,10 @@ final class RootViewModel: ObservableObject {
         case .loading:      screen = .unlock   // stay on unlock screen with spinner
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:
+            if let email = container.authRepo.storedAccount()?.email {
+                let deps = container.makeSyncTimestampDependencies(for: email)
+                vaultBrowserVM.updateSyncTimestamp(repository: deps.repository, useCase: deps.useCase)
+            }
             vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
             screen = .vault
         case .login:

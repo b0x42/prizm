@@ -32,21 +32,3 @@ final class GetLastSyncDateUseCaseTests: XCTestCase {
         XCTAssertEqual(sut.execute(), future)
     }
 }
-
-// MARK: - MockSyncTimestampRepository
-
-final class MockSyncTimestampRepository: SyncTimestampRepository {
-    private(set) var recordCalled = false
-    private var storedDate: Date?
-
-    init(storedDate: Date?) {
-        self.storedDate = storedDate
-    }
-
-    var lastSyncDate: Date? { storedDate }
-
-    func recordSuccessfulSync() {
-        recordCalled = true
-        storedDate = Date()
-    }
-}

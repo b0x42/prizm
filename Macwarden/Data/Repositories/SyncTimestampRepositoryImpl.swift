@@ -19,15 +19,6 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
     nonisolated(unsafe) private let key:      String
     nonisolated(unsafe) private let defaults: UserDefaults
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "SyncTimestampRepository")
-
-    // ISO-8601 formatter shared within this actor — reuse avoids repeated allocation.
-    private let formatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
     /// - Parameters:
     ///   - email: The account email used to scope the UserDefaults key. Lowercased before use
     ///     to match the Bitwarden server's email normalisation convention, so different
@@ -56,13 +47,24 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
 
     /// Persists the current date as the last successful sync timestamp.
     ///
+    /// `nonisolated` so callers on any actor (including `@MainActor` ViewModels) can invoke
+    /// this synchronously without `await`, satisfying the non-isolated protocol requirement.
+    /// `defaults` and `key` are `nonisolated(unsafe)` immutable lets, safe to access here.
+    /// `UserDefaults.set` is thread-safe per Apple's documentation.
+    ///
     /// Call only on the sync success path. Error paths MUST NOT call this — the stored
     /// value must always reflect the last *successful* sync.
-    func recordSuccessfulSync() {
-        let now = Date()
-        let iso = formatter.string(from: now)
+    nonisolated func recordSuccessfulSync() {
+        let iso = {
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return f.string(from: Date())
+        }()
         defaults.set(iso, forKey: key)
         // §V Observability: log that a sync timestamp was recorded. Timestamp is non-sensitive.
-        logger.info("Sync timestamp recorded: \(iso, privacy: .public)")
+        // Local Logger allocation required because the actor-isolated `logger` property is not
+        // accessible from a nonisolated context. os.Logger is a lightweight struct — no cost.
+        Logger(subsystem: "com.macwarden", category: "SyncTimestampRepository")
+            .info("Sync timestamp recorded: \(iso, privacy: .public)")
     }
 }

@@ -84,6 +84,17 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Factories
 
+    /// Returns a fresh `SyncTimestampRepository` and matching `GetLastSyncDateUseCase`
+    /// scoped to the given account email.
+    ///
+    /// Called by `RootViewModel` after a successful login or unlock to ensure the
+    /// `VaultBrowserViewModel` is always scoped to the correct account — not the
+    /// fallback empty-email instance created before any account was known.
+    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
+        let repo = SyncTimestampRepositoryImpl(email: email)
+        return (repo, GetLastSyncDateUseCaseImpl(repository: repo))
+    }
+
     /// Creates a `LoginViewModel` pre-wired with the container's login use case.
     func makeLoginViewModel() -> LoginViewModel {
         LoginViewModel(loginUseCase: loginUseCase)
