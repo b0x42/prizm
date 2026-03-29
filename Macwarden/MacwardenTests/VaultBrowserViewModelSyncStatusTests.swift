@@ -32,13 +32,13 @@ final class VaultBrowserViewModelSyncStatusTests: XCTestCase {
 
     // MARK: - 1. lastSyncedAt is nil when repository has no stored date
 
-    func testInit_lastSyncedAt_isNil_whenNoStoredDate() {
+    func testInit_lastSyncedAt_isNil_whenNoStoredDate() async {
         XCTAssertNil(sut.lastSyncedAt)
     }
 
     // MARK: - 2. lastSyncedAt is loaded from use case on init
 
-    func testInit_lastSyncedAt_loadedFromUseCase() {
+    func testInit_lastSyncedAt_loadedFromUseCase() async {
         let stored = Date(timeIntervalSince1970: 1_000_000)
         let vm = makeViewModel(storedDate: stored)
         XCTAssertEqual(vm.lastSyncedAt, stored)
@@ -46,13 +46,13 @@ final class VaultBrowserViewModelSyncStatusTests: XCTestCase {
 
     // MARK: - 3. syncStatusLabel is "Never synced" when no date
 
-    func testInit_syncStatusLabel_isNeverSynced_whenNoDate() {
+    func testInit_syncStatusLabel_isNeverSynced_whenNoDate() async {
         XCTAssertEqual(sut.syncStatusLabel, "Never synced")
     }
 
     // MARK: - 4. handleSyncCompleted updates lastSyncedAt and calls recordSuccessfulSync
 
-    func testHandleSyncCompleted_updatesLastSyncedAt_andRecordsTimestamp() {
+    func testHandleSyncCompleted_updatesLastSyncedAt_andRecordsTimestamp() async {
         let date = Date()
         sut.handleSyncCompleted(syncedAt: date)
 
@@ -62,7 +62,7 @@ final class VaultBrowserViewModelSyncStatusTests: XCTestCase {
 
     // MARK: - 5. syncStatusLabel updates after handleSyncCompleted
 
-    func testHandleSyncCompleted_updatesSyncStatusLabel() {
+    func testHandleSyncCompleted_updatesSyncStatusLabel() async {
         let date = Date()
         sut.handleSyncCompleted(syncedAt: date)
 
@@ -72,7 +72,7 @@ final class VaultBrowserViewModelSyncStatusTests: XCTestCase {
 
     // MARK: - 6. handleSyncError does NOT call recordSuccessfulSync
 
-    func testHandleSyncError_doesNotRecordTimestamp() {
+    func testHandleSyncError_doesNotRecordTimestamp() async {
         sut.handleSyncError("Network unavailable")
 
         XCTAssertFalse(syncRepo.recordCalled, "recordSuccessfulSync() must not be called on sync failure")
