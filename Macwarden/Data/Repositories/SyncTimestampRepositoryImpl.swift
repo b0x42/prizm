@@ -14,9 +14,11 @@ import os.log
 /// - Format: ISO-8601 string via `ISO8601DateFormatter` — human-readable in developer tools.
 actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
 
-    /// Stored as `nonisolated(unsafe)` because they are set exactly once in `init` and
-    /// never mutated again — safe to read from any concurrency context.
-    nonisolated(unsafe) private let key:      String
+    /// `key` is a plain `let`: `String` is `Sendable`, so Swift 6 allows nonisolated access
+    /// to immutable actor properties of Sendable type without annotation.
+    /// `defaults` is `nonisolated(unsafe)`: `UserDefaults` is not `Sendable`, but it is set
+    /// once in `init` and never mutated, making concurrent reads safe in practice.
+    private let key: String
     nonisolated(unsafe) private let defaults: UserDefaults
 
     /// Shared formatter used for both reads and writes.
