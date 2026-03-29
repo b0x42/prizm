@@ -1,6 +1,7 @@
 import XCTest
 @testable import Macwarden
 
+@MainActor
 final class HighlightedTextTests: XCTestCase {
 
     // MARK: - Match applies bold
