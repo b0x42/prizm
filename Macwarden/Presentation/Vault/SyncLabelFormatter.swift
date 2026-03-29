@@ -49,12 +49,12 @@ extension Date {
 
         // Tier 2: previous calendar year
         if selfYear < nowYear {
-            return "Synced \(formatted(style: .monthDayYear, calendar: calendar))"
+            return "Synced \(formatted(style: .dateTime.month(.abbreviated).day().year(), calendar: calendar))"
         }
 
         // Tier 3: 2+ calendar days ago, same year
         if daysDiff >= 2 {
-            return "Synced \(formatted(style: .monthDay, calendar: calendar))"
+            return "Synced \(formatted(style: .dateTime.month(.abbreviated).day(), calendar: calendar))"
         }
 
         // Tier 4: previous calendar day ("yesterday")
@@ -83,16 +83,13 @@ extension Date {
 
     // MARK: - Private formatting helpers
 
-    private enum DateStyle { case monthDay, monthDayYear }
-
-    private func formatted(style: DateStyle, calendar: Calendar) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = calendar
-        formatter.locale   = calendar.locale ?? .current
-        switch style {
-        case .monthDay:     formatter.dateFormat = "MMM d"
-        case .monthDayYear: formatter.dateFormat = "MMM d, yyyy"
-        }
-        return formatter.string(from: self)
+    private func formatted(style: Date.FormatStyle, calendar: Calendar) -> String {
+        // Date.FormatStyle is zero-allocation — no DateFormatter constructed per call.
+        // Available macOS 12+; the project targets macOS 26.
+        self.formatted(
+            style
+                .calendar(calendar)
+                .locale(calendar.locale ?? .current)
+        )
     }
 }

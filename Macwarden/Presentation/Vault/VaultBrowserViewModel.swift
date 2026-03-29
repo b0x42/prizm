@@ -143,7 +143,11 @@ final class VaultBrowserViewModel: ObservableObject {
         // without requiring a view reload. The timer is weak-captured to avoid a retain cycle.
         labelRefreshTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.syncStatusLabel = self?.lastSyncedAt.syncStatusLabel() ?? "Never synced"
+                guard let self else { return }
+                // Guard against no-op updates: only assign when the label text changes,
+                // avoiding unnecessary SwiftUI re-renders every 60 seconds.
+                let updated = lastSyncedAt.syncStatusLabel()
+                if syncStatusLabel != updated { syncStatusLabel = updated }
             }
         }
     }
