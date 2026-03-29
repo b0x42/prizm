@@ -43,7 +43,12 @@ extension Date {
         // Tier 1: future timestamp — clamp to "just now" (clock skew guard)
         guard self <= now else { return "Synced just now" }
 
-        let daysDiff = calendar.dateComponents([.day], from: self, to: now).day ?? 0
+        // Compare start-of-day values so daysDiff counts calendar days (midnight-to-midnight),
+        // not elapsed 24-hour periods. Without this, 23:58 yesterday → 14:00 today = 0 days,
+        // causing the hours tier to fire instead of "yesterday".
+        let selfDay = calendar.startOfDay(for: self)
+        let nowDay  = calendar.startOfDay(for: now)
+        let daysDiff = calendar.dateComponents([.day], from: selfDay, to: nowDay).day ?? 0
         let selfYear = calendar.component(.year, from: self)
         let nowYear  = calendar.component(.year, from: now)
 
