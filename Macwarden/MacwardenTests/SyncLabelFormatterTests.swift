@@ -25,7 +25,10 @@ final class SyncLabelFormatterTests: XCTestCase {
 
     private var calendar: Calendar = {
         var c = Calendar(identifier: .gregorian)
-        c.timeZone = TimeZone(identifier: "UTC")!
+        c.timeZone  = TimeZone(identifier: "UTC")!
+        // Pin locale so Date.FormatStyle produces deterministic English month names
+        // ("Mar") regardless of the machine's system locale.
+        c.locale    = Locale(identifier: "en_US_POSIX")
         return c
     }()
 
