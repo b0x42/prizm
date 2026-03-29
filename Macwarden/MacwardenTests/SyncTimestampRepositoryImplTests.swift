@@ -1,6 +1,7 @@
 import XCTest
 @testable import Macwarden
 
+@MainActor
 final class SyncTimestampRepositoryImplTests: XCTestCase {
 
     // Use an isolated UserDefaults suite so tests don't pollute the real defaults.
