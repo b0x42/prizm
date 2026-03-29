@@ -21,11 +21,16 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
     private let key: String
     nonisolated(unsafe) private let defaults: UserDefaults
 
-    /// Shared formatter used for both reads and writes.
+    /// Shared formatter for both reads and writes.
     ///
     /// `ISO8601DateFormatter` is thread-safe for concurrent use after construction (Apple docs).
     /// `nonisolated(unsafe)` is correct here: the formatter is a static constant, never mutated
     /// after initialisation, so there is no data race risk.
+    ///
+    /// `CipherMapper` owns an identical static formatter for decoding cipher dates. The two are
+    /// intentionally separate: sharing across Data-layer types would require a new shared module
+    /// or a public utility, adding coupling between unrelated subsystems for negligible gain.
+    /// Each type owns exactly one formatter instance, so duplication cost is one allocation total.
     nonisolated(unsafe) private static let formatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
