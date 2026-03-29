@@ -34,7 +34,7 @@ final class SyncTimestampRepositoryImplTests: XCTestCase {
 
     // MARK: - 2. Read-back after write
 
-    func testLastSyncDate_returnsSavedDate_afterRecord() {
+    func testLastSyncDate_returnsSavedDate_afterRecord() throws {
         let sut = makeSUT()
         let before = Date()
         sut.recordSuccessfulSync()
