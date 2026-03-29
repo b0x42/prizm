@@ -19,7 +19,7 @@ struct SyncStatusView: View {
             .font(Typography.listSubtitle)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, Spacing.rowHorizontal)
+            .padding(.horizontal, Spacing.pageMargin)
             .padding(.top, Spacing.rowVertical)
             .padding(.bottom, 14)
             .accessibilityIdentifier(AccessibilityID.Vault.syncStatusLabel)
