@@ -23,7 +23,10 @@ final class GetLastSyncDateUseCaseImpl: GetLastSyncDateUseCase {
         self.repository = repository
     }
 
-    func execute() -> Date? {
+    // `nonisolated` so callers in any concurrency context can invoke execute() without
+    // a main-actor hop. Safe because `repository` is nonisolated(unsafe) and the
+    // SyncTimestampRepository.lastSyncDate property itself carries no actor isolation.
+    nonisolated func execute() -> Date? {
         repository.lastSyncDate
     }
 }
