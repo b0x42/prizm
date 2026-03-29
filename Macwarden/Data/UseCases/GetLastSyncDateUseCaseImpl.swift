@@ -9,7 +9,10 @@ import Foundation
 /// operation explicit and independently mockable in tests.
 final class GetLastSyncDateUseCaseImpl: GetLastSyncDateUseCase {
 
-    private let repository: any SyncTimestampRepository
+    // nonisolated(unsafe) lets the nonisolated init assign this property even though the
+    // class is otherwise @MainActor-inferred. The let guarantee makes this safe: the value
+    // is written exactly once (in init) and never mutated thereafter.
+    nonisolated(unsafe) private let repository: any SyncTimestampRepository
 
     // `nonisolated` so the init can be called from any concurrency context.
     // The class is otherwise inferred as @MainActor because AppContainer (which
