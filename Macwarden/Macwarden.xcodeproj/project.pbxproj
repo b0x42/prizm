@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */; };
+		B1C2D3E4F5A64791B2C3D4E5 /* SyncTimestampRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C4D5E6F74891A2B3C4D5 /* SyncTimestampRepository.swift */; };
+		D3E4F5A6B7C84892D4E5F6A7 /* GetLastSyncDateUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B74892C3D4E5F6 /* GetLastSyncDateUseCase.swift */; };
+		F5A6B7C8D9E04893F6A7B8C9 /* SyncTimestampRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F5A6B7C8D94893E5F6A7B8 /* SyncTimestampRepositoryImpl.swift */; };
+		B7C8D9E0F1A24894B8C9D0E1 /* GetLastSyncDateUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */; };
 		01C52844A03B4BA8A309902D /* ItemListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8949A6D242488CBEC15CC0 /* ItemListView.swift */; };
 		0718293040506070F90A1B2C /* ItemEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18293040506070E0A1B2C3D4 /* ItemEditViewModel.swift */; };
 		071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */; };
@@ -20,6 +24,8 @@
 		2E8E71AB9E244C56B93F96AD /* CustomFieldsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */; };
 		398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EBA517603CA448A8F9106AF /* SyncUseCase.swift */; };
 		3B3721D2F8C646EC91512FDA /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00802736F25046A0BD600128 /* SidebarView.swift */; };
+		C8D9E0F1A2B34895C9D0E1F2 /* SyncStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E0F1A2B3C44895D0E1F2A3 /* SyncStatusView.swift */; };
+		E0F1A2B3C4D54896E1F2A3B4 /* SyncLabelFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E64896F2A3B4C5 /* SyncLabelFormatter.swift */; };
 		3BC539D6D63240D0B5315A0D /* RestoreVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */; };
 		3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */; };
 		3E04D7AC0223458CB329663C /* CustomField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB323D45FF2440C95C0BA70 /* CustomField.swift */; };
@@ -107,6 +113,8 @@
 
 /* Begin PBXFileReference section */
 		00802736F25046A0BD600128 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		D9E0F1A2B3C44895D0E1F2A3 /* SyncStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusView.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E64896F2A3B4C5 /* SyncLabelFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncLabelFormatter.swift; sourceTree = "<group>"; };
 		09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCase.swift; sourceTree = "<group>"; };
 		0F78357C6C424765828B6185 /* SecureNoteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNoteDetailView.swift; sourceTree = "<group>"; };
 		0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCase.swift; sourceTree = "<group>"; };
@@ -122,6 +130,10 @@
 		257FAE34CC064783806B6A5C /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
 		2D38B14DD3084CD9A3AA4FFF /* TrashJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashJourneyTests.swift; sourceTree = "<group>"; };
 		3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepository.swift; sourceTree = "<group>"; };
+		A1B2C4D5E6F74891A2B3C4D5 /* SyncTimestampRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTimestampRepository.swift; sourceTree = "<group>"; };
+		C2D3E4F5A6B74892C3D4E5F6 /* GetLastSyncDateUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastSyncDateUseCase.swift; sourceTree = "<group>"; };
+		E4F5A6B7C8D94893E5F6A7B8 /* SyncTimestampRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTimestampRepositoryImpl.swift; sourceTree = "<group>"; };
+		A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastSyncDateUseCaseImpl.swift; sourceTree = "<group>"; };
 		3A4050607080902CC3D4E5F6 /* ItemEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditView.swift; sourceTree = "<group>"; };
 		3E105187F1E54E0E91E82B14 /* FieldRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldRowView.swift; sourceTree = "<group>"; };
 		3FBB82A6241244DD890E615C /* EncString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncString.swift; sourceTree = "<group>"; };
@@ -270,6 +282,7 @@
 				B65E7D6288C347DCA88A20DF /* AuthRepository.swift */,
 				7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */,
 				3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */,
+				A1B2C4D5E6F74891A2B3C4D5 /* SyncTimestampRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -286,6 +299,7 @@
 				EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */,
 				4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */,
 				6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
+				C2D3E4F5A6B74892C3D4E5F6 /* GetLastSyncDateUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -355,6 +369,7 @@
 				F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */,
 				4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */,
 				9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */,
+				E4F5A6B7C8D94893E5F6A7B8 /* SyncTimestampRepositoryImpl.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -378,6 +393,7 @@
 			children = (
 				F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */,
 				E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */,
+				F1A2B3C4D5E64896F2A3B4C5 /* SyncLabelFormatter.swift */,
 				4309FCFB2F680CC60031C9F4 /* Detail */,
 				8A9B0C1D2E3F4050A1B2C3D4 /* Edit */,
 				4309FCFA2F680CBD0031C9F4 /* ItemList */,
@@ -391,6 +407,7 @@
 			isa = PBXGroup;
 			children = (
 				00802736F25046A0BD600128 /* SidebarView.swift */,
+				D9E0F1A2B3C44895D0E1F2A3 /* SyncStatusView.swift */,
 			);
 			path = Sidebar;
 			sourceTree = "<group>";
@@ -620,6 +637,7 @@
 				42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */,
 				75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */,
 				8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
+				A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -753,6 +771,8 @@
 				2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */,
 				87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */,
 				018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */,
+				B1C2D3E4F5A64791B2C3D4E5 /* SyncTimestampRepository.swift in Sources */,
+				D3E4F5A6B7C84892D4E5F6A7 /* GetLastSyncDateUseCase.swift in Sources */,
 				C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */,
 				714B2A1113A34984901FCC03 /* UnlockUseCase.swift in Sources */,
 				398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */,
@@ -764,10 +784,12 @@
 				FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */,
 				B2390AAAD10D4CE69AD6660C /* AuthRepositoryImpl.swift in Sources */,
 				3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */,
+				F5A6B7C8D9E04893F6A7B8C9 /* SyncTimestampRepositoryImpl.swift in Sources */,
 				DB95790F466448D78246B723 /* VaultRepositoryImpl.swift in Sources */,
 				2CA025EEBDD14800B361F176 /* LoginUseCaseImpl.swift in Sources */,
 				48716DD27A3B45A6872E0DC2 /* UnlockUseCaseImpl.swift in Sources */,
 				56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */,
+				B7C8D9E0F1A24894B8C9D0E1 /* GetLastSyncDateUseCaseImpl.swift in Sources */,
 				A7E3F19B8C2D4A61B04DE723 /* SearchVaultUseCaseImpl.swift in Sources */,
 				9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */,
 				5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */,
@@ -783,6 +805,8 @@
 				C3DDB598E8834E85833D86FE /* VaultBrowserViewModel.swift in Sources */,
 				E17D4DA652374B49BC2CD6B1 /* VaultBrowserView.swift in Sources */,
 				3B3721D2F8C646EC91512FDA /* SidebarView.swift in Sources */,
+				C8D9E0F1A2B34895C9D0E1F2 /* SyncStatusView.swift in Sources */,
+				E0F1A2B3C4D54896E1F2A3B4 /* SyncLabelFormatter.swift in Sources */,
 				01C52844A03B4BA8A309902D /* ItemListView.swift in Sources */,
 				E7772DAF3F324B8A807B7491 /* ItemRowView.swift in Sources */,
 				7AE873E2FB0A4DC5BEE93B9A /* LoginDetailView.swift in Sources */,

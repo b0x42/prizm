@@ -93,7 +93,9 @@ final class VaultBrowserViewModel: ObservableObject {
 
     /// Fires every 60 seconds to re-evaluate the relative sync label while the app is open.
     /// Invalidated in `deinit` to prevent the timer outliving the ViewModel.
-    private var labelRefreshTimer: Timer?
+    // nonisolated(unsafe) is required because deinit is always nonisolated in Swift 6,
+    // and Timer is non-Sendable. The timer is only mutated on MainActor, so this is safe.
+    nonisolated(unsafe) private var labelRefreshTimer: Timer?
 
     /// Relative label derived from `lastSyncedAt`, refreshed every 60 seconds.
     @Published private(set) var syncStatusLabel: String = "Never synced"
