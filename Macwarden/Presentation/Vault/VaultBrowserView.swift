@@ -36,10 +36,6 @@ struct VaultBrowserView: View {
                         ),
                         itemCounts: viewModel.itemCounts
                     )
-                    Divider()
-                    // Sync status pinned below the list, always visible regardless of scroll.
-                    // Hidden when locked: RootViewModel replaces the entire vault browser with
-                    // the lock screen, so no conditional logic is needed here.
                     SyncStatusView(label: viewModel.syncStatusLabel)
                 }
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
