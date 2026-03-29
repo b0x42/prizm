@@ -11,7 +11,12 @@ final class GetLastSyncDateUseCaseImpl: GetLastSyncDateUseCase {
 
     private let repository: any SyncTimestampRepository
 
-    init(repository: any SyncTimestampRepository) {
+    // `nonisolated` so the init can be called from any concurrency context.
+    // The class is otherwise inferred as @MainActor because AppContainer (which
+    // is @MainActor) stores it as a let property. The nonisolated init breaks
+    // that inference at the call site without affecting runtime safety, since
+    // execute() only reads a nonisolated var on SyncTimestampRepository.
+    nonisolated init(repository: any SyncTimestampRepository) {
         self.repository = repository
     }
 

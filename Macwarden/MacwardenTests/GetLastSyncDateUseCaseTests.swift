@@ -1,7 +1,6 @@
 import XCTest
 @testable import Macwarden
 
-@MainActor
 final class GetLastSyncDateUseCaseTests: XCTestCase {
 
     // MARK: - 1. Returns nil when repository has no stored timestamp
