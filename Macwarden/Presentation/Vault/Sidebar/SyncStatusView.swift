@@ -20,7 +20,8 @@ struct SyncStatusView: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Spacing.rowHorizontal)
-            .padding(.vertical, Spacing.rowVertical)
+            .padding(.top, Spacing.rowVertical)
+            .padding(.bottom, 14)
             .accessibilityIdentifier(AccessibilityID.Vault.syncStatusLabel)
     }
 }
