@@ -8,17 +8,17 @@ final class SyncTimestampRepositoryImplTests: XCTestCase {
     private var defaults: UserDefaults!
     private let email = "alice@example.com"
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         defaults = UserDefaults(suiteName: "SyncTimestampRepositoryImplTests")!
         // Clean slate before each test.
         defaults.removePersistentDomain(forName: "SyncTimestampRepositoryImplTests")
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         defaults.removePersistentDomain(forName: "SyncTimestampRepositoryImplTests")
         defaults = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     private func makeSUT(email: String = "alice@example.com") -> SyncTimestampRepositoryImpl {
