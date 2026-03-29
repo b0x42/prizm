@@ -35,7 +35,7 @@ final class AppContainer: ObservableObject {
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
     let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
     let syncTimestampRepository:         SyncTimestampRepositoryImpl
-    let getLastSyncDateUseCase:          GetLastSyncDateUseCaseImpl
+    let getLastSyncDateUseCase:          any GetLastSyncDateUseCase
 
     // MARK: - Init
 
