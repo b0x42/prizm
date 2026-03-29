@@ -92,6 +92,14 @@ enum Spacing {
     /// Horizontal padding inside status banners (sync error, trash banner).
     static let bannerHorizontal: CGFloat = 12
 
+    /// Horizontal padding for sidebar footer elements (e.g. sync status label).
+    /// Matches the visual inset of sidebar section headers.
+    static let sidebarHorizontal: CGFloat = 20
+
+    /// Bottom padding for the sidebar sync status label — slightly more than `rowVertical`
+    /// to give the footer visual breathing room above the window edge.
+    static let sidebarStatusBottom: CGFloat = 14
+
     /// Vertical padding inside status banners.
     static let bannerVertical: CGFloat = 8
 
