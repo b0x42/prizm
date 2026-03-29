@@ -38,11 +38,12 @@ final class SyncTimestampRepositoryImplTests: XCTestCase {
         let sut = makeSUT()
         let before = Date()
         sut.recordSuccessfulSync()
-        let after = Date()
 
         let result = try XCTUnwrap(sut.lastSyncDate)
-        XCTAssertGreaterThanOrEqual(result, before)
-        XCTAssertLessThanOrEqual(result, after)
+        // ISO-8601 round-trip truncates to milliseconds, so sub-millisecond precision in
+        // `before` can make the parsed result appear fractionally earlier. Use 1-second
+        // accuracy instead of strict >= / <= to absorb that truncation.
+        XCTAssertEqual(result.timeIntervalSince1970, before.timeIntervalSince1970, accuracy: 1.0)
     }
 
     // MARK: - 3. Persists across new instance (simulates app restart)
