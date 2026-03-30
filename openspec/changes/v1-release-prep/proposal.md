@@ -25,6 +25,8 @@ config, and clear communication of v1 limitations so users can make an informed 
   Xcode setup, Team ID config, architecture overview, test instructions, openspec workflow
 - **Add** `SECURITY.md` — threat model, encryption summary, key storage, what the app
   does and does not protect against (required by CONSTITUTION §VII)
+- **Add** app icon — all required sizes added to `Assets.xcassets/AppIcon.appiconset`;
+  design is finalised, needs to be exported and wired into the asset catalogue
 - **Add** `Macwarden/LocalConfig.xcconfig.template` — Team ID template (already referenced
   in CLAUDE.md but not yet created)
 - **Modify** `Macwarden.xcodeproj` — enable `ENABLE_HARDENED_RUNTIME = YES` for Release;
@@ -64,6 +66,7 @@ _(none — no existing spec-level behavior changes)_
 ## Impact
 
 - Root directory: new `README.md`, `DEVELOPMENT.md`, `SECURITY.md`
+- `Macwarden/Assets.xcassets/AppIcon.appiconset` — app icon at all required sizes
 - `Macwarden/LocalConfig.xcconfig.template` — new file (gitignored instance already expected)
 - `Macwarden/Macwarden.xcodeproj` — `ENABLE_HARDENED_RUNTIME = YES` in Release config
 - `ExportOptions.plist` — new file at repo root, no secrets
