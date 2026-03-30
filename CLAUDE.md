@@ -1,11 +1,14 @@
 # Macwarden Development Guidelines
 
-Auto-generated from feature plans. Last updated: 2026-03-21
-Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
+**Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0) — READ THIS FIRST.**
+The Constitution defines seven non-negotiable principles that govern every decision in this
+codebase: Native-First (SwiftUI only), Clean Architecture (strict layer boundaries), Security-First
+(vetted crypto only, no hand-rolled algorithms), TDD (Red→Green→Refactor, no exceptions),
+Observability (no silent failures), Simplicity/YAGNI, and Radical Transparency (all crypto must be
+publicly auditable). Before implementing any feature, adding a dependency, or making an
+architectural decision, consult the Constitution. Violations are blocking PR rejections.
 
 ## Active Technologies
-- Swift 6.2 + SwiftUI, CommonCrypto, CryptoKit, Security.framework, `Argon2Swift` 1.0.1-bw2 (local vendored at `LocalPackages/Argon2Swift/`) (001-vault-browser-ui)
-- macOS Keychain (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), UserDefaults (UI prefs), in-memory (decrypted vault) (001-vault-browser-ui)
 
 - **Language**: Swift 6.2 (Swift 6 language mode)
 - **UI Framework**: SwiftUI (`NavigationSplitView` for three-pane layout)
@@ -23,24 +26,22 @@ Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0)
 ```text
 Macwarden/
 ├── Macwarden.xcodeproj/
-└── Macwarden/
-    ├── App/            # @main, AppContainer (DI), Config
-    ├── Domain/         # Pure Swift: Entities, UseCases, Repository protocols
-    ├── Data/           # Crypto, Network, Keychain, Repository impls, Mappers
-    ├── Presentation/   # SwiftUI Views + ViewModels
-    └── Tests/          # DomainTests/, DataTests/, UITests/
+├── App/                # @main, AppContainer (DI), Config
+├── Domain/             # Entities, UseCase protocols, Repository protocols, Utilities
+├── Data/               # Crypto, Network, Keychain, Repository impls, UseCase impls, Mappers
+├── Presentation/       # SwiftUI Views, ViewModels, Components
+├── MacwardenTests/     # Unit + integration tests (XCTest)
+└── Tests/UITests/      # UI journey tests (XCUITest)
 
-specs/
-└── 001-vault-browser-ui/
-    ├── spec.md         # Feature specification
-    ├── plan.md         # Implementation plan (this feature)
-    ├── research.md     # Phase 0 research findings
-    ├── data-model.md   # Domain entity definitions
-    ├── quickstart.md   # Developer setup guide
-    └── contracts/      # Repository protocol specs
+openspec/
+├── changes/            # Active and archived change specs (one dir per feature)
+└── specs/              # Approved specs awaiting or under implementation
 ```
 
 ## Setup
+
+**Local config:** Copy `Macwarden/LocalConfig.xcconfig.template` → `Macwarden/LocalConfig.xcconfig`
+and fill in your Team ID. This file is gitignored. **Build will fail without it.**
 
 **Team ID (code signing):** The Xcode project requires a valid Apple Developer Team ID for code signing. If the Team ID is not set (empty or `""` in the project file), **ask the user for their Team ID before running any build or test commands** — do not attempt to build without it, as the build will fail with a signing error.
 
@@ -60,6 +61,12 @@ xcodebuild test \
   -scheme "Macwarden" \
   -destination "platform=macOS"
 ```
+
+## Change Workflow (openspec)
+
+Feature changes live under `openspec/changes/<name>/`. Each change has design, spec, and task
+artifacts. Use `/opsx:new` to start a change, `/opsx:apply` to implement tasks, `/opsx:verify`
+then `/opsx:archive` when done. Archived changes move to `openspec/changes/archive/`.
 
 ## Design System
 
@@ -222,16 +229,3 @@ For every security-critical function or block:
 /// - Security goal: makes dictionary and GPU-accelerated attacks computationally infeasible
 func deriveKey(password: String, email: String) async throws -> SymmetricKey { ... }
 ```
-
-## Recent Changes
-- 001-vault-browser-ui: Added Swift 5.10 (latest stable) + SwiftUI, CommonCrypto, CryptoKit, Security.framework, `Argon2Swift` 1.0.1-bw2 (local vendored at `LocalPackages/Argon2Swift/`)
-
-### 001-vault-browser-ui (2026-03-15)
-Added: full project scaffold, three-pane vault browser, login/unlock flows, search.
-Technologies introduced: native Bitwarden crypto (CommonCrypto + CryptoKit + Argon2Swift),
-`NavigationSplitView`, macOS Keychain integration.
-Note: sdk-swift rejected (iOS-only XCFramework); native crypto adopted per CONSTITUTION.md §III.
-
-### 002-open-source-prep (2026-03-21)
-Added: Code Comments section (open source standard) with nine rules from Stack Overflow best
-practices guide, plus security-critical code documentation requirements.
