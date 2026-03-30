@@ -24,17 +24,24 @@ struct VaultBrowserView: View {
     var body: some View {
         NavigationSplitView(
             sidebar: {
-                SidebarView(
-                    selection: Binding(
-                        get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
-                        set: { newValue in
-                            if let value = newValue {
-                                viewModel.sidebarSelection = value
+                VStack(spacing: 0) {
+                    SidebarView(
+                        selection: Binding(
+                            get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
+                            set: { newValue in
+                                if let value = newValue {
+                                    // Defer the mutation out of SwiftUI's view-update pass.
+                                    // Setting @Published directly inside Binding.set fires
+                                    // objectWillChange during the current render, triggering
+                                    // the "Publishing changes from within view updates" warning.
+                                    Task { @MainActor in viewModel.sidebarSelection = value }
+                                }
                             }
-                        }
-                    ),
-                    itemCounts: viewModel.itemCounts
-                )
+                        ),
+                        itemCounts: viewModel.itemCounts
+                    )
+                    SyncStatusView(label: viewModel.syncStatusLabel)
+                }
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
             },
             content: {

@@ -143,13 +143,21 @@ private final class MockRootDependencies: RootViewModelDependencies {
     }
 
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel {
-        VaultBrowserViewModel(
-            vault: mockVault,
-            search: StubSearchUseCase(),
-            delete: StubDeleteUseCase(),
+        let syncRepo = MockSyncTimestampRepository(storedDate: nil)
+        return VaultBrowserViewModel(
+            vault:           mockVault,
+            search:          StubSearchUseCase(),
+            delete:          StubDeleteUseCase(),
             permanentDelete: StubPermanentDeleteUseCase(),
-            restore: StubRestoreUseCase()
+            restore:         StubRestoreUseCase(),
+            syncTimestamp:   syncRepo,
+            getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
+    }
+
+    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
+        let repo = MockSyncTimestampRepository(storedDate: nil)
+        return (repo, GetLastSyncDateUseCaseImpl(repository: repo))
     }
 }
 

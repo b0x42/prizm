@@ -156,6 +156,9 @@ protocol RootViewModelDependencies: AnyObject {
     func makeLoginViewModel() -> LoginViewModel
     func makeUnlockViewModel(account: Account) -> UnlockViewModel
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel
+    /// Returns a fresh sync timestamp repository and use case scoped to the given email.
+    /// Called after login/unlock to re-scope to the correct account before the first sync.
+    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase)
 }
 
 extension AppContainer: RootViewModelDependencies {
@@ -294,15 +297,34 @@ final class RootViewModel: ObservableObject {
         ) { [weak self] _ in MainActor.assumeIsolated { self?.lockVault() } }
     }
 
+    /// Re-scopes the sync timestamp to the current account and records a successful sync,
+    /// then transitions to the vault screen.
+    ///
+    /// Called from both `handleLoginFlow` and `handleUnlockFlow` — the vault transition
+    /// logic is identical in both flows. `caller` is included in the error log so the
+    /// originating flow is identifiable when the account is unexpectedly missing.
+    private func transitionToVault(caller: String) {
+        // Re-scope before recording: on first login the AppContainer was initialised without
+        // a known email; this corrects the UserDefaults key before handleSyncCompleted writes to it.
+        if let email = container.authRepo.storedAccount()?.email {
+            let deps = container.makeSyncTimestampDependencies(for: email)
+            vaultBrowserVM.updateSyncTimestamp(repository: deps.repository, useCase: deps.useCase)
+        } else {
+            // Unexpected: vault transition reached with no stored account — timestamp will
+            // be written under the fallback empty-email key. Should not occur in normal flow.
+            logger.error("\(caller, privacy: .public)(.vault): no stored account; sync timestamp not re-scoped")
+        }
+        vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
+        screen = .vault
+    }
+
     func handleLoginFlow(_ state: LoginFlowState) {
         switch state {
         case .login:       screen = .login
         case .loading:     screen = .loading
         case .totpPrompt:  screen = .totpPrompt
         case .syncing(let msg): screen = .syncing(message: msg)
-        case .vault:
-            vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
-            screen = .vault
+        case .vault:       transitionToVault(caller: "handleLoginFlow")
         }
         logger.info("Screen transition → \(String(describing: state))")
     }
@@ -373,9 +395,7 @@ final class RootViewModel: ObservableObject {
         case .unlock:       screen = .unlock
         case .loading:      screen = .unlock   // stay on unlock screen with spinner
         case .syncing(let msg): screen = .syncing(message: msg)
-        case .vault:
-            vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
-            screen = .vault
+        case .vault:        transitionToVault(caller: "handleUnlockFlow")
         case .login:
             // "Sign in with a different account" — reset to login.
             unlockVM = nil

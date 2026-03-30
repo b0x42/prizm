@@ -17,12 +17,15 @@ final class ToggleFavoriteTests: XCTestCase {
         try await super.setUp()
         vault = MockVaultRepository()
         vault.populate(items: [unfavoritedItem], syncedAt: .now)
+        let syncRepo = MockSyncTimestampRepository(storedDate: nil)
         sut = VaultBrowserViewModel(
-            vault: vault,
-            search: SearchVaultUseCaseImpl(vault: vault),
-            delete: StubDelete(),
+            vault:           vault,
+            search:          SearchVaultUseCaseImpl(vault: vault),
+            delete:          StubDelete(),
             permanentDelete: StubPermanentDelete(),
-            restore: StubRestore()
+            restore:         StubRestore(),
+            syncTimestamp:   syncRepo,
+            getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
     }
 

@@ -14,6 +14,7 @@ import SwiftUI
 ///
 /// TDD note: these tests are written before the implementation exists and must fail (Red)
 /// until `CardBackground.swift` is added to the target (task 2.1–2.3).
+@MainActor
 final class CardBackgroundTests: XCTestCase {
 
     // MARK: - CardBackground color asset (task 1.2)

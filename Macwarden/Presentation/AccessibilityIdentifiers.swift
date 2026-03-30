@@ -51,6 +51,7 @@ nonisolated enum AccessibilityID {
         static let navigationSplit   = "vault.navigationSplit"
         static let searchField       = "vault.search"
         static let lastSyncedLabel   = "vault.lastSynced"
+        static let syncStatusLabel   = "vault.syncStatus"
         static let syncErrorBanner   = "vault.syncErrorBanner"
         static let syncErrorDismiss  = "vault.syncErrorDismiss"
     }

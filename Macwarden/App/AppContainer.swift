@@ -34,6 +34,8 @@ final class AppContainer: ObservableObject {
     let deleteVaultItemUseCase:          DeleteVaultItemUseCaseImpl
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
     let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
+    let syncTimestampRepository:         SyncTimestampRepositoryImpl
+    let getLastSyncDateUseCase:          any GetLastSyncDateUseCase
 
     // MARK: - Init
 
@@ -54,6 +56,12 @@ final class AppContainer: ObservableObject {
             vaultRepository: vault
         )
 
+        // Resolve the stored account email for per-account timestamp scoping.
+        // Falls back to an empty string if no account is stored yet (first launch before login);
+        // the timestamp will be recorded under the correct key after login completes.
+        let accountEmail = auth.storedAccount()?.email ?? ""
+        let syncTimestamp = SyncTimestampRepositoryImpl(email: accountEmail)
+
         self.apiClient       = api
         self.crypto          = crypto
         self.keychain        = keychain
@@ -61,18 +69,31 @@ final class AppContainer: ObservableObject {
         self.faviconLoader   = FaviconLoader()
         self.authRepository  = auth
         self.syncRepository  = sync
-        self.syncUseCase             = SyncUseCaseImpl(sync: sync)
-        self.loginUseCase            = LoginUseCaseImpl(auth: auth, sync: sync)
-        self.unlockUseCase           = UnlockUseCaseImpl(auth: auth, sync: sync)
-        self.searchVaultUseCase      = SearchVaultUseCaseImpl(vault: vault)
+        self.syncUseCase                     = SyncUseCaseImpl(sync: sync)
+        self.loginUseCase                    = LoginUseCaseImpl(auth: auth, sync: sync)
+        self.unlockUseCase                   = UnlockUseCaseImpl(auth: auth, sync: sync)
+        self.searchVaultUseCase              = SearchVaultUseCaseImpl(vault: vault)
         self.editVaultItemUseCase            = EditVaultItemUseCaseImpl(repository: vault)
         self.createVaultItemUseCase          = CreateVaultItemUseCaseImpl(repository: vault)
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
         self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
         self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
+        self.syncTimestampRepository         = syncTimestamp
+        self.getLastSyncDateUseCase          = GetLastSyncDateUseCaseImpl(repository: syncTimestamp)
     }
 
     // MARK: - Factories
+
+    /// Returns a fresh `SyncTimestampRepository` and matching `GetLastSyncDateUseCase`
+    /// scoped to the given account email.
+    ///
+    /// Called by `RootViewModel` after a successful login or unlock to ensure the
+    /// `VaultBrowserViewModel` is always scoped to the correct account — not the
+    /// fallback empty-email instance created before any account was known.
+    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
+        let repo = SyncTimestampRepositoryImpl(email: email)
+        return (repo, GetLastSyncDateUseCaseImpl(repository: repo))
+    }
 
     /// Creates a `LoginViewModel` pre-wired with the container's login use case.
     func makeLoginViewModel() -> LoginViewModel {
@@ -91,7 +112,9 @@ final class AppContainer: ObservableObject {
             search:          searchVaultUseCase,
             delete:          deleteVaultItemUseCase,
             permanentDelete: permanentDeleteVaultItemUseCase,
-            restore:         restoreVaultItemUseCase
+            restore:         restoreVaultItemUseCase,
+            syncTimestamp:   syncTimestampRepository,
+            getLastSyncDate: getLastSyncDateUseCase
         )
     }
 

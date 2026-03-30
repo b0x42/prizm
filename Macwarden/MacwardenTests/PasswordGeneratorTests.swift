@@ -7,43 +7,43 @@ final class PasswordGeneratorTests: XCTestCase {
     private var generator: PasswordGenerator!
     private var provider: MockRandomnessProvider!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         generator = PasswordGenerator()
         provider = MockRandomnessProvider()
     }
 
     // MARK: - 1.5 Random password mode
 
-    func testPasswordLength_minimum5() throws {
+    func testPasswordLength_minimum5() async throws {
         var config = PasswordGeneratorConfig()
         config.length = 5
         let result = try generator.generatePassword(config: config, provider: provider)
         XCTAssertEqual(result.count, 5)
     }
 
-    func testPasswordLength_maximum128() throws {
+    func testPasswordLength_maximum128() async throws {
         var config = PasswordGeneratorConfig()
         config.length = 128
         let result = try generator.generatePassword(config: config, provider: provider)
         XCTAssertEqual(result.count, 128)
     }
 
-    func testPasswordLength_clampedBelow5() throws {
+    func testPasswordLength_clampedBelow5() async throws {
         var config = PasswordGeneratorConfig()
         config.length = 2
         let result = try generator.generatePassword(config: config, provider: provider)
         XCTAssertEqual(result.count, 5)
     }
 
-    func testPasswordLength_clampedAbove128() throws {
+    func testPasswordLength_clampedAbove128() async throws {
         var config = PasswordGeneratorConfig()
         config.length = 200
         let result = try generator.generatePassword(config: config, provider: provider)
         XCTAssertEqual(result.count, 128)
     }
 
-    func testPassword_uppercaseOnly() throws {
+    func testPassword_uppercaseOnly() async throws {
         var config = PasswordGeneratorConfig()
         config.includeUppercase = true
         config.includeLowercase = false
@@ -54,7 +54,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertTrue(result.allSatisfy { $0.isUppercase })
     }
 
-    func testPassword_allSetsPool_containsAllTypes() throws {
+    func testPassword_allSetsPool_containsAllTypes() async throws {
         var config = PasswordGeneratorConfig()
         config.length = 128
         let result = try generator.generatePassword(config: config, provider: provider)
@@ -64,7 +64,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertTrue(result.contains(where: { !$0.isLetter && !$0.isNumber }))
     }
 
-    func testPassword_atLeastOnePerSet_guarantee() throws {
+    func testPassword_atLeastOnePerSet_guarantee() async throws {
         // With all sets enabled and short length, each set must appear at least once.
         var config = PasswordGeneratorConfig()
         config.length = 5
@@ -81,7 +81,7 @@ final class PasswordGeneratorTests: XCTestCase {
         }
     }
 
-    func testPassword_avoidAmbiguous_excludesChars() throws {
+    func testPassword_avoidAmbiguous_excludesChars() async throws {
         let ambiguous: Set<Character> = ["0", "O", "I", "l", "1", "|"]
         var config = PasswordGeneratorConfig()
         config.avoidAmbiguous = true
@@ -92,7 +92,7 @@ final class PasswordGeneratorTests: XCTestCase {
         }
     }
 
-    func testPassword_noWhitespace_withSymbolsEnabled() throws {
+    func testPassword_noWhitespace_withSymbolsEnabled() async throws {
         var config = PasswordGeneratorConfig()
         config.length = 128
         for seed in [Array<UInt8>(repeating: 0, count: 256),
@@ -105,7 +105,7 @@ final class PasswordGeneratorTests: XCTestCase {
         }
     }
 
-    func testPassword_lastSetLock_preventsEmptyPool() throws {
+    func testPassword_lastSetLock_preventsEmptyPool() async throws {
         // All sets disabled — generator should fall back to lowercase.
         var config = PasswordGeneratorConfig()
         config.includeUppercase = false
@@ -120,7 +120,7 @@ final class PasswordGeneratorTests: XCTestCase {
 
     // MARK: - 1.6 Passphrase mode
 
-    func testPassphrase_wordCountBounds_minimum3() throws {
+    func testPassphrase_wordCountBounds_minimum3() async throws {
         var config = PasswordGeneratorConfig()
         config.wordCount = 3
         let result = try generator.generatePassphrase(config: config, provider: provider)
@@ -128,7 +128,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertEqual(words.count, 3)
     }
 
-    func testPassphrase_wordCountBounds_maximum10() throws {
+    func testPassphrase_wordCountBounds_maximum10() async throws {
         var config = PasswordGeneratorConfig()
         config.wordCount = 10
         let result = try generator.generatePassphrase(config: config, provider: provider)
@@ -136,7 +136,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertEqual(words.count, 10)
     }
 
-    func testPassphrase_defaultWordCount_is6() throws {
+    func testPassphrase_defaultWordCount_is6() async throws {
         let config = PasswordGeneratorConfig()
         XCTAssertEqual(config.wordCount, 6)
         let result = try generator.generatePassphrase(config: config, provider: provider)
@@ -144,7 +144,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertEqual(words.count, 6)
     }
 
-    func testPassphrase_separatorInjection() throws {
+    func testPassphrase_separatorInjection() async throws {
         var config = PasswordGeneratorConfig()
         config.separator = "."
         config.wordCount = 3
@@ -154,7 +154,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertEqual(words.count, 3)
     }
 
-    func testPassphrase_capitalize_uppercasesFirstLetter() throws {
+    func testPassphrase_capitalize_uppercasesFirstLetter() async throws {
         var config = PasswordGeneratorConfig()
         config.capitalize = true
         config.wordCount = 4
@@ -169,7 +169,7 @@ final class PasswordGeneratorTests: XCTestCase {
         }
     }
 
-    func testPassphrase_includeNumber_appendsDigitToOneWord() throws {
+    func testPassphrase_includeNumber_appendsDigitToOneWord() async throws {
         var config = PasswordGeneratorConfig()
         config.includeNumber = true
         config.wordCount = 4
@@ -182,7 +182,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertEqual(wordsWithTrailingDigit.count, 1, "Exactly one word should have a trailing digit")
     }
 
-    func testPassphrase_allWordsFromEFFList() throws {
+    func testPassphrase_allWordsFromEFFList() async throws {
         let wordList = Set(PasswordGenerator.effWordList)
         // Skip if word list not loaded (test bundle may not include resources).
         guard !wordList.isEmpty else { return }
@@ -198,7 +198,7 @@ final class PasswordGeneratorTests: XCTestCase {
         }
     }
 
-    func testPassphrase_wordCountClamped_below3() throws {
+    func testPassphrase_wordCountClamped_below3() async throws {
         var config = PasswordGeneratorConfig()
         config.wordCount = 1
         let result = try generator.generatePassphrase(config: config, provider: provider)
@@ -206,7 +206,7 @@ final class PasswordGeneratorTests: XCTestCase {
         XCTAssertEqual(words.count, 3)
     }
 
-    func testPassphrase_wordCountClamped_above10() throws {
+    func testPassphrase_wordCountClamped_above10() async throws {
         var config = PasswordGeneratorConfig()
         config.wordCount = 20
         let result = try generator.generatePassphrase(config: config, provider: provider)
