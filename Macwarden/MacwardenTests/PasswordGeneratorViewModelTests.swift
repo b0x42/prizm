@@ -7,16 +7,16 @@ final class PasswordGeneratorViewModelTests: XCTestCase {
     private var defaults: UserDefaults!
     private var provider: MockRandomnessProvider!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         defaults = UserDefaults(suiteName: "PasswordGeneratorViewModelTests")!
         defaults.removePersistentDomain(forName: "PasswordGeneratorViewModelTests")
         provider = MockRandomnessProvider()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         defaults.removePersistentDomain(forName: "PasswordGeneratorViewModelTests")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testInit_generatesValueImmediately() {

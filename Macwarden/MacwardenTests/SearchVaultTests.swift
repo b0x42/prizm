@@ -81,17 +81,17 @@ final class SearchVaultTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         vault = VaultRepositoryImpl(apiClient: MockMacwardenAPIClient(), crypto: MockMacwardenCryptoService())
         vault.populate(items: Self.allFixtures, syncedAt: Self.now)
         sut = SearchVaultUseCaseImpl(vault: vault)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         vault = nil
         sut = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Name search (all types)
