@@ -30,7 +30,11 @@ struct VaultBrowserView: View {
                             get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
                             set: { newValue in
                                 if let value = newValue {
-                                    viewModel.sidebarSelection = value
+                                    // Defer the mutation out of SwiftUI's view-update pass.
+                                    // Setting @Published directly inside Binding.set fires
+                                    // objectWillChange during the current render, triggering
+                                    // the "Publishing changes from within view updates" warning.
+                                    Task { @MainActor in viewModel.sidebarSelection = value }
                                 }
                             }
                         ),
