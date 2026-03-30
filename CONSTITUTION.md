@@ -22,8 +22,6 @@ Templates requiring updates:
   - CLAUDE.md                                 ⚠ pending — §III reference needs update
 Follow-up TODOs:
   - Update CLAUDE.md §III reference to reflect native crypto approach.
-  - Register for a Bitwarden client identifier before connecting to live servers.
-    See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 -->
 
 # Macwarden Constitution
@@ -190,16 +188,19 @@ Reference: https://contributing.bitwarden.com/architecture/security/requirements
 
 ### Bitwarden API Integration Requirements
 
-Before connecting to live Bitwarden servers, this client MUST be registered:
+**v1 scope: self-hosted servers only** (Vaultwarden or Bitwarden self-hosted).
+Client identifier registration with Bitwarden, Inc. is not required and does not apply.
 
-- **Client identifier**: Contact Bitwarden Customer Success via support ticket to obtain
-  a registered client identifier and device type enum value.
+- **Server URL**: Users supply their own server base URL; no hardcoded `bitwarden.com`
+  endpoint is permitted in v1. The app MUST NOT silently fall back to bitwarden.com.
+- **Required headers**: All API requests MUST include the minimum required headers
+  (e.g. `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, `Device-Type`).
+  Self-hosted servers are generally permissive, but correct headers ensure compatibility.
+- **Client version string**: SHOULD reflect the Bitwarden server API version the client
+  has been tested against; document the tested version in `Config.swift`.
+- **Future — bitwarden.com support**: If v2 adds support for bitwarden.com (the hosted
+  service), a registered client identifier MUST be obtained before that release.
   See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
-- **Required headers**: All API requests MUST include the minimum required headers as
-  specified by Bitwarden. Missing headers → `400 Bad Request`; invalid values → `403 Forbidden`.
-- **Client version string**: MUST accurately reflect the Bitwarden server release the
-  client has been certified/tested against.
-- **TODO**: Register client identifier before first production API connection.
 
 ---
 
@@ -285,4 +286,4 @@ Standards governing how features are built and shipped:
 
 ---
 
-**Version**: 1.4.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-15
+**Version**: 1.4.1 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-30
