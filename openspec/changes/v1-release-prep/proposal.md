@@ -25,6 +25,9 @@ config, and clear communication of v1 limitations so users can make an informed 
   Xcode setup, Team ID config, architecture overview, test instructions, openspec workflow
 - **Add** `SECURITY.md` — threat model, encryption summary, key storage, what the app
   does and does not protect against (required by CONSTITUTION §VII)
+- **Rename** app from Macwarden → Prizm — Xcode project, target, scheme, bundle IDs,
+  entitlements, keychain access group, Swift type names, logger subsystem, user-visible
+  strings, CLAUDE.md, and all openspec change files
 - **Add** app icon — all required sizes added to `Assets.xcassets/AppIcon.appiconset`;
   design is finalised, needs to be exported and wired into the asset catalogue
 - **Add** `Macwarden/LocalConfig.xcconfig.template` — Team ID template (already referenced
@@ -71,4 +74,5 @@ _(none — no existing spec-level behavior changes)_
 - `Macwarden/Macwarden.xcodeproj` — `ENABLE_HARDENED_RUNTIME = YES` in Release config
 - `ExportOptions.plist` — new file at repo root, no secrets
 - `.github/workflows/release.yml` — new release CI workflow
-- No Domain, Data, or Presentation Swift code changes
+- Swift source files, type names, and string literals updated as part of rename (no
+  behavioural changes — rename only)
