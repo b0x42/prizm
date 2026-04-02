@@ -65,9 +65,10 @@
 
 ## 7. Repository Rename
 
-- [ ] 7.1 Rename the GitHub repository from `macwarden` to `prizm` via GitHub Settings → General → Repository name
-- [ ] 7.2 Update the git remote URL locally: `git remote set-url origin https://github.com/b0x42/prizm`
-- [ ] 7.3 Verify push/pull works with the new remote URL
+- [ ] 7.1 Update GitHub repository About section: description → "Native macOS client for Vaultwarden and self-hosted Bitwarden.", topics → `macos`, `swift`, `swiftui`, `bitwarden`, `vaultwarden`, `password-manager`, `open-source`
+- [ ] 7.2 Rename the GitHub repository from `macwarden` to `prizm` via GitHub Settings → General → Repository name
+- [ ] 7.3 Update the git remote URL locally: `git remote set-url origin https://github.com/b0x42/prizm`
+- [ ] 7.4 Verify push/pull works with the new remote URL
 
 ## 8. GitHub Release
 

@@ -105,6 +105,16 @@ API, Argon2Swift). No copyright line. Accessible via Prizm → About Prizm menu 
 - **WHEN** the About window is shown
 - **THEN** the version number matches the value in `Info.plist` (CFBundleShortVersionString + CFBundleVersion)
 
+### Requirement: GitHub repository About section reflects Prizm
+The GitHub repository About section (description, website, topics) SHALL be updated
+to reflect the Prizm identity. Description: "Native macOS client for Vaultwarden and
+self-hosted Bitwarden." Topics: `macos`, `swift`, `swiftui`, `bitwarden`, `vaultwarden`,
+`password-manager`, `open-source`.
+
+#### Scenario: User lands on the GitHub repo page
+- **WHEN** a user visits the repository on GitHub
+- **THEN** the About section shows the Prizm description and relevant topics, not the old Macwarden text
+
 ### Requirement: GitHub repository is renamed to match the app name
 The GitHub repository SHALL be renamed from `macwarden` to `prizm` and the local git
 remote URL SHALL be updated to match. All existing GitHub links (issues, PRs, stars)
