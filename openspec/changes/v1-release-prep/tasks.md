@@ -26,6 +26,7 @@
 - [ ] 3.2 Build a Release archive locally and verify `codesign --verify --deep` passes
 - [ ] 3.3 Check entitlements for any incompatibilities with Hardened Runtime; add missing entitlement flags if needed
 - [ ] 3.4 Create `Prizm/LocalConfig.xcconfig.template` with `DEVELOPMENT_TEAM = ` placeholder and a comment explaining how to fill it in
+- [ ] 3.5 Bump `CFBundleShortVersionString` to `1.0.0` and `CFBundleVersion` to `1` in `Info.plist`
 
 ## 4. CI / Release Infrastructure
 
@@ -38,9 +39,10 @@
 
 ## 5. About Window
 
-- [ ] 5.1 Create `Presentation/About/AboutView.swift` — custom SwiftUI About window with: app icon, app name, version (read from `Bundle.main`), tagline, clickable GitHub link (`Link` view), "Built with" section (Swift 6.2, open source, auditable), acknowledgements section (Vaultwarden/Bitwarden API, Argon2Swift)
-- [ ] 5.2 Wire About window into `MacwardenApp` (post-rename: `PrizmApp`) — replace default `NSApp.orderFrontStandardAboutPanel` with a SwiftUI window; connect to Prizm → About Prizm menu item
-- [ ] 5.3 Verify version number in About window matches `CFBundleShortVersionString` in `Info.plist`
+- [ ] 5.1 Write failing tests for `AboutView`: version string reads from `Bundle.main.infoDictionary`, GitHub link URL is correct, all required sections are present (red phase before 5.2)
+- [ ] 5.2 Create `Presentation/About/AboutView.swift` — custom SwiftUI About window with: app icon, app name, version (read from `Bundle.main`), tagline, clickable GitHub link (`Link` view), "Built with" section (Swift 6.2, open source, auditable), acknowledgements section (Vaultwarden/Bitwarden API, Argon2Swift)
+- [ ] 5.3 Wire About window into `PrizmApp` — replace default `NSApp.orderFrontStandardAboutPanel` with a SwiftUI window; connect to Prizm → About Prizm menu item
+- [ ] 5.4 Verify version number in About window matches `CFBundleShortVersionString` in `Info.plist`
 
 ## 6. Documentation
 
@@ -63,17 +65,25 @@
 - [ ] 6.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
 - [ ] 6.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
 
-## 7. Repository Rename
+## 7. Pre-Release Repository Cleanup
 
-- [ ] 7.1 Update GitHub repository About section: description → "Native macOS client for Vaultwarden and self-hosted Bitwarden.", topics → `macos`, `swift`, `swiftui`, `bitwarden`, `vaultwarden`, `password-manager`, `open-source`
-- [ ] 7.2 Rename the GitHub repository from `macwarden` to `prizm` via GitHub Settings → General → Repository name
-- [ ] 7.3 Update the git remote URL locally: `git remote set-url origin https://github.com/b0x42/prizm`
-- [ ] 7.4 Verify push/pull works with the new remote URL
+- [ ] 7.1 Scan for any secrets, credentials, or personal info that should not be public — check all xcconfig files, plists, Swift source, and any config files not covered by .gitignore
+- [ ] 7.2 Verify `.gitignore` covers all sensitive local files (`LocalConfig.xcconfig`, `*.p12`, `*.mobileprovision`, `.env`, `xcuserdata/`)
+- [ ] 7.3 Review all TODO/FIXME comments — confirm none reveal exploitable security gaps; acceptable ones should be framed as improvement opportunities, not vulnerabilities
+- [ ] 7.4 Review open issues and PR descriptions for any private information before the repo goes public
+- [ ] 7.5 Switch repo visibility to public on GitHub — **do this manually after all other tasks are complete**
 
-## 8. GitHub Release
+## 8. Repository Rename
 
-- [ ] 8.1 Merge `feat/v1-release-prep` into `main`
-- [ ] 8.2 Create GitHub release `v1.0.0` from `main` with user-centric release notes covering all shipped features (not technical commit messages). Features to include:
+- [ ] 8.1 Update GitHub repository About section: description → "Native macOS client for Vaultwarden and self-hosted Bitwarden.", topics → `macos`, `swift`, `swiftui`, `bitwarden`, `vaultwarden`, `password-manager`, `open-source`
+- [ ] 8.2 Rename the GitHub repository from `macwarden` to `prizm` via GitHub Settings → General → Repository name
+- [ ] 8.3 Update the git remote URL locally: `git remote set-url origin https://github.com/b0x42/prizm`
+- [ ] 8.4 Verify push/pull works with the new remote URL
+
+## 9. GitHub Release
+
+- [ ] 9.1 Merge `feat/v1-release-prep` into `main`
+- [ ] 9.2 Create GitHub release `v1.0.0` from `main` with user-centric release notes covering all shipped features (not technical commit messages). Features to include:
   - Browse, search, and manage your entire vault
   - View all item types: logins, cards, identities, secure notes, SSH keys
   - Create, edit, and delete vault items
@@ -89,11 +99,11 @@
   - Alphabetical sections in item list
   - Keyboard shortcut ⌘N for new item
 
-## 9. Verification
+## 10. Verification
 
-- [ ] 9.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
-- [ ] 9.2 Confirm app icon renders correctly at all sizes on a real macOS build
-- [ ] 9.3 Confirm Release build archives cleanly with Hardened Runtime enabled
-- [ ] 9.4 Confirm README renders correctly on GitHub (centered headline, table, links)
-- [ ] 9.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
-- [ ] 9.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements
+- [ ] 10.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
+- [ ] 10.2 Confirm app icon renders correctly at all sizes on a real macOS build
+- [ ] 10.3 Confirm Release build archives cleanly with Hardened Runtime enabled
+- [ ] 10.4 Confirm README renders correctly on GitHub (centered headline, table, links)
+- [ ] 10.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
+- [ ] 10.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements
