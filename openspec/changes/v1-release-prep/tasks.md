@@ -63,10 +63,16 @@
 - [ ] 6.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
 - [ ] 6.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
 
-## 7. GitHub Release
+## 7. Repository Rename
 
-- [ ] 7.1 Merge `feat/v1-release-prep` into `main`
-- [ ] 7.2 Create GitHub release `v1.0.0` from `main` with user-centric release notes covering all shipped features (not technical commit messages). Features to include:
+- [ ] 7.1 Rename the GitHub repository from `macwarden` to `prizm` via GitHub Settings → General → Repository name
+- [ ] 7.2 Update the git remote URL locally: `git remote set-url origin https://github.com/b0x42/prizm`
+- [ ] 7.3 Verify push/pull works with the new remote URL
+
+## 8. GitHub Release
+
+- [ ] 8.1 Merge `feat/v1-release-prep` into `main`
+- [ ] 8.2 Create GitHub release `v1.0.0` from `main` with user-centric release notes covering all shipped features (not technical commit messages). Features to include:
   - Browse, search, and manage your entire vault
   - View all item types: logins, cards, identities, secure notes, SSH keys
   - Create, edit, and delete vault items

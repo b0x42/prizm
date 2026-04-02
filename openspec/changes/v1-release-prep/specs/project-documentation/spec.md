@@ -105,6 +105,19 @@ API, Argon2Swift). No copyright line. Accessible via Prizm → About Prizm menu 
 - **WHEN** the About window is shown
 - **THEN** the version number matches the value in `Info.plist` (CFBundleShortVersionString + CFBundleVersion)
 
+### Requirement: GitHub repository is renamed to match the app name
+The GitHub repository SHALL be renamed from `macwarden` to `prizm` and the local git
+remote URL SHALL be updated to match. All existing GitHub links (issues, PRs, stars)
+are automatically forwarded by GitHub after a rename.
+
+#### Scenario: Repository is renamed
+- **WHEN** the repository is renamed on GitHub
+- **THEN** the remote URL `https://github.com/b0x42/prizm` is reachable and push/pull works
+
+#### Scenario: Local remote is updated
+- **WHEN** the local remote URL is updated
+- **THEN** `git remote get-url origin` returns `https://github.com/b0x42/prizm`
+
 ### Requirement: LocalConfig.xcconfig.template exists
 The repository SHALL contain `Prizm/LocalConfig.xcconfig.template` so contributors
 can onboard without reading CLAUDE.md to discover the required file.
