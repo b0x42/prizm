@@ -36,9 +36,15 @@
 - [ ] 4.5 Add cleanup step to release workflow that deletes the temporary keychain on success and failure
 - [ ] 4.6 Add a fast-fail check at the top of the signing step: if `CERT_P12` secret is empty, exit with a descriptive error message referencing `DEVELOPMENT.md` for setup instructions
 
-## 5. Documentation
+## 5. About Window
 
-- [ ] 5.1 Write `README.md` using this exact structure:
+- [ ] 5.1 Create `Presentation/About/AboutView.swift` — custom SwiftUI About window with: app icon, app name, version (read from `Bundle.main`), tagline, clickable GitHub link (`Link` view), "Built with" section (Swift 6.2, open source, auditable), acknowledgements section (Vaultwarden/Bitwarden API, Argon2Swift)
+- [ ] 5.2 Wire About window into `MacwardenApp` (post-rename: `PrizmApp`) — replace default `NSApp.orderFrontStandardAboutPanel` with a SwiftUI window; connect to Prizm → About Prizm menu item
+- [ ] 5.3 Verify version number in About window matches `CFBundleShortVersionString` in `Info.plist`
+
+## 6. Documentation
+
+- [ ] 6.1 Write `README.md` using this exact structure:
   1. Centered `# Prizm` headline
   2. Badge row: CI build status, Swift 6.2, macOS 26+, license
   3. One-liner: "Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift."
@@ -54,13 +60,14 @@
   13. **Known Limitations** — direct honest list
   14. **Contributing** — link to DEVELOPMENT.md, mention openspec workflow
   15. **Mission & Principles** — adapted from approved draft (closing statement)
-- [ ] 5.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
-- [ ] 5.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
+- [ ] 6.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
+- [ ] 6.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
 
-## 6. Verification
+## 7. Verification
 
-- [ ] 6.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
-- [ ] 6.2 Confirm app icon renders correctly at all sizes on a real macOS build
-- [ ] 6.3 Confirm Release build archives cleanly with Hardened Runtime enabled
-- [ ] 6.4 Confirm README renders correctly on GitHub (centered headline, table, links)
-- [ ] 6.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
+- [ ] 7.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
+- [ ] 7.2 Confirm app icon renders correctly at all sizes on a real macOS build
+- [ ] 7.3 Confirm Release build archives cleanly with Hardened Runtime enabled
+- [ ] 7.4 Confirm README renders correctly on GitHub (centered headline, table, links)
+- [ ] 7.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
+- [ ] 7.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements

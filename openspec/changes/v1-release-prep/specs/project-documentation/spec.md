@@ -87,6 +87,24 @@ The repository SHALL contain a `SECURITY.md` at the root satisfying CONSTITUTION
 - **WHEN** a user reads `SECURITY.md`
 - **THEN** they find a clear instruction to report via GitHub Security Advisories (private disclosure) on the repository
 
+### Requirement: About window shows app identity and acknowledgements
+The app SHALL show a custom SwiftUI About window (replacing the default macOS About panel)
+containing: app name, version, tagline, clickable GitHub repository link, "Built with"
+section (Swift 6.2, open source, auditable), and acknowledgements (Vaultwarden/Bitwarden
+API, Argon2Swift). No copyright line. Accessible via Prizm → About Prizm menu item.
+
+#### Scenario: User opens About Prizm
+- **WHEN** a user selects Prizm → About Prizm from the menu bar
+- **THEN** a window appears showing the app name, current version, tagline ("Your secrets. Your server. Our user interface."), a clickable link to the GitHub repository, the "Built with" section, and acknowledgements
+
+#### Scenario: User clicks the GitHub link
+- **WHEN** a user clicks the GitHub repository link in the About window
+- **THEN** the link opens in the default browser
+
+#### Scenario: Version reflects the current build
+- **WHEN** the About window is shown
+- **THEN** the version number matches the value in `Info.plist` (CFBundleShortVersionString + CFBundleVersion)
+
 ### Requirement: LocalConfig.xcconfig.template exists
 The repository SHALL contain `Prizm/LocalConfig.xcconfig.template` so contributors
 can onboard without reading CLAUDE.md to discover the required file.
