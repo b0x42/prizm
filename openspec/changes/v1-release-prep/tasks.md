@@ -63,11 +63,30 @@
 - [ ] 6.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
 - [ ] 6.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
 
-## 7. Verification
+## 7. GitHub Release
 
-- [ ] 7.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
-- [ ] 7.2 Confirm app icon renders correctly at all sizes on a real macOS build
-- [ ] 7.3 Confirm Release build archives cleanly with Hardened Runtime enabled
-- [ ] 7.4 Confirm README renders correctly on GitHub (centered headline, table, links)
-- [ ] 7.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
-- [ ] 7.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements
+- [ ] 7.1 Merge `feat/v1-release-prep` into `main`
+- [ ] 7.2 Create GitHub release `v1.0.0` from `main` with user-centric release notes covering all shipped features (not technical commit messages). Features to include:
+  - Browse, search, and manage your entire vault
+  - View all item types: logins, cards, identities, secure notes, SSH keys
+  - Create, edit, and delete vault items
+  - Soft delete with Trash and permanent delete
+  - Restore items from Trash
+  - Star items as favourites
+  - Generate strong passwords and passphrases
+  - Copy username, password, TOTP code, and website with one click
+  - Reveal masked fields by holding Option
+  - Global search across all vault items (⌘F) with match highlighting
+  - Lock vault with ⌘L; auto-locks on sleep and screensaver
+  - Sync status indicator in sidebar
+  - Alphabetical sections in item list
+  - Keyboard shortcut ⌘N for new item
+
+## 9. Verification
+
+- [ ] 9.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
+- [ ] 9.2 Confirm app icon renders correctly at all sizes on a real macOS build
+- [ ] 9.3 Confirm Release build archives cleanly with Hardened Runtime enabled
+- [ ] 9.4 Confirm README renders correctly on GitHub (centered headline, table, links)
+- [ ] 9.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
+- [ ] 9.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements
