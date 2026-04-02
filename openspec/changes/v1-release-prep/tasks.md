@@ -27,13 +27,14 @@
 - [ ] 3.3 Check entitlements for any incompatibilities with Hardened Runtime; add missing entitlement flags if needed
 - [ ] 3.4 Create `Prizm/LocalConfig.xcconfig.template` with `DEVELOPMENT_TEAM = ` placeholder and a comment explaining how to fill it in
 
-## 4. Release Infrastructure
+## 4. CI / Release Infrastructure
 
-- [ ] 4.1 Create `ExportOptions.plist` at repo root with `method: developer-id`, bundle ID, and team ID placeholder
-- [ ] 4.2 Create `.github/workflows/release.yml` triggered on `v*` tags with steps: checkout, import cert into temp keychain, build and archive, export with ExportOptions.plist, create DMG, submit for notarization, staple, create GitHub release with DMG attached
-- [ ] 4.5 Add a prominent comment block to the signing and notarization steps in the workflow explaining they are no-ops without secrets and pointing to `DEVELOPMENT.md`
-- [ ] 4.3 Add cleanup step to release workflow that deletes the temporary keychain on success and failure
+- [ ] 4.1 Create `.github/workflows/ci.yml` triggered on push to `main` and on pull requests; steps: checkout, build, run full test suite
+- [ ] 4.2 Create `ExportOptions.plist` at repo root with `method: developer-id`, bundle ID, and team ID placeholder
+- [ ] 4.3 Create `.github/workflows/release.yml` triggered on `v*` tags with steps: checkout, import cert into temp keychain, build and archive, export with ExportOptions.plist, create DMG, submit for notarization, staple, create GitHub release with DMG attached
 - [ ] 4.4 Add a test step to the release workflow that runs the full test suite before archiving; halt on failure
+- [ ] 4.5 Add cleanup step to release workflow that deletes the temporary keychain on success and failure
+- [ ] 4.6 Add a fast-fail check at the top of the signing step: if `CERT_P12` secret is empty, exit with a descriptive error message referencing `DEVELOPMENT.md` for setup instructions
 
 ## 5. Documentation
 
@@ -47,7 +48,7 @@
   7. **Privacy** — no telemetry, no analytics, no cloud; nothing leaves your server
   8. **Security** — 3-bullet inline summary (Argon2id RFC 9106, AES-256-CBC + HMAC-SHA256, macOS Keychain) + link to SECURITY.md
   9. **Features** — user-centric list (what you can do, not how it works)
-  10. **Requirements** — macOS 26+, self-hosted Vaultwarden or Bitwarden, tested compatibility
+  10. **Requirements** — macOS 26+, self-hosted Vaultwarden or Bitwarden; note tested against Vaultwarden 1.35.4
   11. **Install** — (a) unsigned DMG + Gatekeeper bypass with honest explanation of why it is unsigned, (b) build from source one-liner, (c) link to DEVELOPMENT.md
   12. **Roadmap** — Now/Next/Later table
   13. **Known Limitations** — direct honest list

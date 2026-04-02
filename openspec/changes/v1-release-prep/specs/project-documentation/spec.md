@@ -33,7 +33,7 @@ Known Limitations → Contributing → Mission & Principles.
 
 #### Scenario: User reads Requirements
 - **WHEN** a user reads the Requirements section
-- **THEN** they find: macOS 26+, a self-hosted Vaultwarden or Bitwarden server, and the tested server compatibility (Vaultwarden 1.x)
+- **THEN** they find: macOS 26+, a self-hosted Vaultwarden or Bitwarden server, and the tested server compatibility (tested against Vaultwarden 1.35.4)
 
 #### Scenario: User wants to install the app
 - **WHEN** a user reads the Install section

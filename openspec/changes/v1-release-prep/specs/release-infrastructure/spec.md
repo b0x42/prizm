@@ -29,6 +29,19 @@ Developer ID-signed app without interactive prompts.
 - **WHEN** the release workflow runs `xcodebuild -exportArchive`
 - **THEN** it uses `ExportOptions.plist` and produces a `.app` signed with the Developer ID Application identity
 
+### Requirement: CI workflow runs build and tests on every push and PR
+The repository SHALL contain `.github/workflows/ci.yml` that triggers on push to `main`
+and on all pull requests. It SHALL build the project and run the full test suite.
+The workflow provides the build status badge shown in the README.
+
+#### Scenario: Pull request is opened
+- **WHEN** a pull request is opened or updated
+- **THEN** the CI workflow runs, builds the project, and runs all tests; a failing build blocks merge
+
+#### Scenario: Push to main
+- **WHEN** a commit is pushed to `main`
+- **THEN** the CI workflow runs and the build badge reflects the current status
+
 ### Requirement: GitHub Actions release workflow produces a DMG on version tags
 The repository SHALL contain `.github/workflows/release.yml` that triggers on `v*`
 tags and produces a signed, notarized, stapled `.dmg` attached to a GitHub release.
@@ -45,11 +58,11 @@ tags and produces a signed, notarized, stapled `.dmg` attached to a GitHub relea
 - **WHEN** the test step fails
 - **THEN** the workflow halts before producing any artifact and the release is not created
 
-### Requirement: Release workflow has a prominent comment when secrets are absent
-The `.github/workflows/release.yml` SHALL include a comment block at the top of the
-signing and notarization steps explaining that these steps are no-ops without the
-required GitHub secrets, and pointing to `DEVELOPMENT.md` for setup instructions.
+### Requirement: Release workflow fails fast with a clear message when secrets are absent
+The `.github/workflows/release.yml` SHALL include a fast-fail check at the top of the
+signing step: if the `CERT_P12` secret is empty, the step SHALL exit immediately with a
+human-readable error message pointing to `DEVELOPMENT.md` for setup instructions.
 
 #### Scenario: Workflow runs without secrets configured
-- **WHEN** a fork or fresh clone runs the workflow without secrets
-- **THEN** the signing step fails with a descriptive error referencing the comment and `DEVELOPMENT.md`, not a cryptic keychain or codesign error
+- **WHEN** a fork or fresh clone pushes a `v*` tag without secrets configured
+- **THEN** the signing step exits immediately with a clear message (e.g. "CERT_P12 secret is not set — see DEVELOPMENT.md for release signing setup") rather than a cryptic keychain or codesign error
