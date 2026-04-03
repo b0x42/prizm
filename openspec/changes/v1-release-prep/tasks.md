@@ -89,8 +89,8 @@
 
 ## 9. GitHub Release
 
-- [ ] 9.1 Merge `feat/v1-release-prep` into `main`
-- [ ] 9.2 Create GitHub release `v1.0.0` from `main` with user-centric release notes covering all shipped features (not technical commit messages). Features to include:
+- [x] 9.1 Merge `feat/v1-release-prep` into `main`
+- [x] 9.2 Create GitHub release `v1.0.0` from `main` with user-centric release notes covering all shipped features (not technical commit messages). Features to include:
   - Browse, search, and manage your entire vault
   - View all item types: logins, cards, identities, secure notes, SSH keys
   - Create, edit, and delete vault items
