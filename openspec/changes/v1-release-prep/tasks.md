@@ -18,7 +18,8 @@
 - [ ] 2.1 Export app icon artwork at all required macOS sizes: 16, 32, 64, 128, 256, 512, 1024px (1x and 2x where applicable)
 - [ ] 2.2 Add all icon images to `Assets.xcassets/AppIcon.appiconset/`
 - [ ] 2.3 Update `Contents.json` in the appiconset to reference all sizes
-- [ ] 2.4 Build and verify the icon appears correctly in Dock, Launchpad, and Finder
+- [ ] 2.4 Export a 128px PNG to `assets/icon.png` for use in the README
+- [ ] 2.5 Build and verify the icon appears correctly in Dock, Launchpad, and Finder
 
 ## 3. Xcode Project — Release Config
 
@@ -47,7 +48,7 @@
 ## 6. Documentation
 
 - [ ] 6.1 Write `README.md` using this exact structure:
-  1. Centered app icon image (use the exported PNG from Assets.xcassets, e.g. 128px)
+  1. Centered app icon image (`assets/icon.png` — 128px export)
   2. Centered `# Prizm` headline
   3. Badge row: CI build status, Swift 6.2, macOS 26+, license
   4. One-liner: "Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift."
@@ -105,9 +106,9 @@
 > **Constraint:** These tasks require a macOS host with Prizm built and runnable. Skip on Linux CI.
 
 - [ ] 10.1 Build a Debug or Release copy of Prizm on macOS and launch it
-- [ ] 10.2 Use `screencapture` to capture the main window: get the window ID via `osascript -e 'tell app "Prizm" to id of window 1'`, then run `screencapture -l <windowid> -o docs/screenshots/prizm-main.png`
+- [ ] 10.2 Use `screencapture` to capture the main window: get the window ID via `osascript -e 'tell app "Prizm" to id of window 1'`, then run `screencapture -l <windowid> -o assets/screenshot.png`
 - [ ] 10.3 Crop / resize the screenshot to a consistent width (e.g. 1200px) if needed
-- [ ] 10.4 Commit the screenshot to `docs/screenshots/prizm-main.png` and replace the placeholder in `README.md`
+- [ ] 10.4 Commit the screenshot to `assets/screenshot.png` and replace the placeholder in `README.md`
 
 ## 11. Verification
 
