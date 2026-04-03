@@ -48,32 +48,9 @@ See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specificatio
 ## Features
 
 - **Full vault management** — browse, create, edit, delete, and restore all item types (logins, cards, identities, secure notes, SSH keys) with Trash and favourites support
-- **Built for the keyboard** — ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / TOTP / website, Option to reveal masked fields. [Full shortcut list](#keyboard-shortcuts)
+- **Built for power users** — ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / website, Option to reveal masked fields. [Full shortcut list](#built-for-power-users)
 - **Password & passphrase generator** — configurable length, character sets, and word separators
 - **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
-
-## Keyboard Shortcuts
-
-| Shortcut | Action |
-|---|---|
-| ⌘F | Global search |
-| ⌘N | New item |
-| ⌘L | Lock vault |
-| ⌘E | Edit selected item |
-| ⌘S | Save edits |
-| ⇧⌘C | Copy username |
-| ⌥⌘C | Copy password |
-| ⌃⌘C | Copy TOTP code |
-| ⌥⇧⌘C | Copy website |
-| ⇧⌘Q | Sign out |
-| ⌥ (hold) | Reveal masked fields |
-
-## Requirements
-
-- macOS 26 or later
-- A self-hosted [Vaultwarden](https://github.com/dani-garcia/vaultwarden) or [Bitwarden](https://bitwarden.com/) server
-
-Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
 
 ## Install
 
@@ -105,6 +82,28 @@ open "Prizm/Prizm.xcodeproj"
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup instructions, including how to get a free Team ID.
 
+## Built for Power Users
+
+| Shortcut | Action |
+|---|---|
+| ⌘F | Global search |
+| ⌘N | New item |
+| ⌘L | Lock vault |
+| ⌘E | Edit selected item |
+| ⌘S | Save edits |
+| ⇧⌘C | Copy username |
+| ⌥⌘C | Copy password |
+| ⌥⇧⌘C | Copy website |
+| ⇧⌘Q | Sign out |
+| ⌥ (hold) | Reveal masked fields |
+
+## Requirements
+
+- macOS 26 or later
+- A self-hosted [Vaultwarden](https://github.com/dani-garcia/vaultwarden) or [Bitwarden](https://bitwarden.com/) server
+
+Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
+
 ## Roadmap
 
 | Now (v1.0) | Next | Later |
@@ -113,8 +112,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup instructions, including how 
 | Trash, restore, permanent delete | Organisation vault support | iCloud Keychain sync |
 | Favourites, global search | Passkey support | Menu bar quick-copy |
 | Password & passphrase generator | Multiple accounts | Biometric lock |
-| Auto-lock on sleep / screensaver | Watchtower / breach check | |
-| Custom About window | | |
+| Auto-lock on sleep / screensaver | TOTP / 2FA copy | |
+| Custom About window | Watchtower / breach check | |
 
 ## Known Limitations
 
