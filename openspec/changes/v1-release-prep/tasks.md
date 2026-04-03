@@ -118,8 +118,8 @@
 ## 11. Verification
 
 - [x] 11.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
-- [ ] 11.2 Confirm app icon renders correctly at all sizes on a real macOS build
+- [x] 11.2 Confirm app icon renders correctly at all sizes on a real macOS build
 - [x] 11.3 Confirm Release build archives cleanly with Hardened Runtime enabled — N/A (no paid Developer ID cert)
-- [ ] 11.4 Confirm README renders correctly on GitHub (centered headline, table, links)
+- [x] 11.4 Confirm README renders correctly on GitHub (centered headline, table, links)
 - [x] 11.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
-- [ ] 11.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements
+- [x] 11.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements
