@@ -77,8 +77,8 @@
 - [x] 7.2 Verify `.gitignore` covers all sensitive local files (`LocalConfig.xcconfig`, `*.p12`, `*.mobileprovision`, `.env`, `xcuserdata/`)
 - [x] 7.3 Review all TODO/FIXME comments — confirm none reveal exploitable security gaps; acceptable ones should be framed as improvement opportunities, not vulnerabilities
 - [x] 7.4 Review open issues and PR descriptions for any private information before the repo goes public
-- [ ] 7.5 Enable branch protection on `main`: require at least one PR approval, require CI to pass, disallow direct pushes — configure in GitHub Settings → Branches → Add rule
-- [ ] 7.6 Switch repo visibility to public on GitHub — **do this manually after all other tasks are complete**
+- [x] 7.5 Enable branch protection on `main`: require at least one PR approval, require CI to pass, disallow direct pushes — configure in GitHub Settings → Branches → Add rule
+- [x] 7.6 Switch repo visibility to public on GitHub — **do this manually after all other tasks are complete**
 
 ## 8. Repository Rename
 
