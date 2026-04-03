@@ -108,14 +108,17 @@ Tested against Vaultwarden 1.35.4. Older versions may work but are not validated
 
 ## Roadmap
 
-| Now (v1.0) | Next | Later |
+| Now | Next | Later |
 |---|---|---|
-| Browse, create, edit, delete all item types | Browser auto-fill extension | Face ID / Touch ID unlock |
-| Trash, restore, permanent delete | Organisation vault support | iCloud Keychain sync |
-| Favourites, global search | Passkey support | Menu bar quick-copy |
-| Password & passphrase generator | Multiple accounts | Biometric lock |
-| Auto-lock on sleep / screensaver | TOTP / 2FA copy | |
-| Custom About window | Watchtower / breach check | |
+| Attachments | Organisation vault support | Passkey support |
+| Reorder sidebar sections | Multiple accounts | Browser auto-fill extension |
+| Face ID / Touch ID unlock | Watchtower / breach check | |
+| TOTP / 2FA copy | KeePass import/export | |
+| Background sync | | |
+
+**Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
+
+Want to shift something up the list? [Open an issue](https://github.com/b0x42/prizm/issues) — priorities are driven by user feedback.
 
 ## Known Limitations
 
