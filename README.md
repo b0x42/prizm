@@ -66,7 +66,7 @@ Alternatively, from Terminal:
 xattr -dr com.apple.quarantine /Applications/Prizm.app
 ```
 
-*Release downloads will be linked here once the first release ships.*
+**[Download Prizm v1.0.0](https://github.com/b0x42/prizm/releases/tag/v1.0.0)**
 
 ### Build from source
 
