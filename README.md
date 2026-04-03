@@ -113,7 +113,7 @@ Tested against Vaultwarden 1.35.4. Older versions may work but are not validated
 | Attachments | Organisation vault support | Passkey support |
 | Reorder sidebar sections | Multiple accounts | Browser auto-fill extension |
 | Face ID / Touch ID unlock | Watchtower / breach check | |
-| TOTP / 2FA copy | KDBX 4 (KeePass) import/export | |
+| TOTP / 2FA copy | Full support for KDBX 4 (KeePass) | |
 | Background sync | | |
 
 **Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
