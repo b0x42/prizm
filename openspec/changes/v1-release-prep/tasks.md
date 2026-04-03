@@ -18,7 +18,7 @@
 - [x] 2.1 Export app icon artwork at all required macOS sizes: 16, 32, 64, 128, 256, 512, 1024px (1x and 2x where applicable)
 - [x] 2.2 Add all icon images to `Assets.xcassets/AppIcon.appiconset/`
 - [x] 2.3 Update `Contents.json` in the appiconset to reference all sizes
-- [ ] 2.4 Export a 128px PNG to `assets/icon.png` for use in the README
+- [x] 2.4 Export a 128px PNG to `assets/icon.png` for use in the README
 - [x] 2.5 Build and verify the icon appears correctly in Dock, Launchpad, and Finder
 
 ## 3. Xcode Project — Release Config
