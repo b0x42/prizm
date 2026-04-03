@@ -18,6 +18,9 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
 
+      - name: Create LocalConfig.xcconfig
+        run: echo "DEVELOPMENT_TEAM = " > Prizm/LocalConfig.xcconfig
+
       - name: Build
         run: |
           xcodebuild \
