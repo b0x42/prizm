@@ -97,6 +97,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup instructions, including how 
 | ⇧⌘Q | Sign out |
 | ⌥ (hold) | Reveal masked fields |
 
+Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts**. Add a rule for Prizm with the exact menu item name and your preferred key combination.
+
 ## Requirements
 
 - macOS 26 or later
