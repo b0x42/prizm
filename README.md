@@ -47,19 +47,26 @@ See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specificatio
 
 ## Features
 
-- Browse, search, and manage your entire vault
-- View all item types: logins, cards, identities, secure notes, SSH keys
-- Create, edit, and delete vault items
-- Soft delete with Trash, restore accidental deletions, permanently delete
-- Star items as favourites
-- Generate strong passwords and passphrases
-- Copy username, password, TOTP code, and website with one click
-- Reveal masked fields by holding Option
-- Global search across all vault items (⌘F) with match highlighting
-- Lock vault with ⌘L; auto-locks on sleep and screensaver
-- Sync status indicator in sidebar
-- Alphabetical sections in item list
-- New item shortcut ⌘N
+- **Full vault management** — browse, create, edit, delete, and restore all item types (logins, cards, identities, secure notes, SSH keys) with Trash and favourites support
+- **Built for the keyboard** — ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / TOTP / website, Option to reveal masked fields. [Full shortcut list](#keyboard-shortcuts)
+- **Password & passphrase generator** — configurable length, character sets, and word separators
+- **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| ⌘F | Global search |
+| ⌘N | New item |
+| ⌘L | Lock vault |
+| ⌘E | Edit selected item |
+| ⌘S | Save edits |
+| ⇧⌘C | Copy username |
+| ⌥⌘C | Copy password |
+| ⌃⌘C | Copy TOTP code |
+| ⌥⇧⌘C | Copy website |
+| ⇧⌘Q | Sign out |
+| ⌥ (hold) | Reveal masked fields |
 
 ## Requirements
 
