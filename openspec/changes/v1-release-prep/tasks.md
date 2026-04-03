@@ -110,10 +110,10 @@
 
 > **Constraint:** These tasks require a macOS host with Prizm built and runnable. Skip on Linux CI.
 
-- [ ] 10.1 Build a Debug or Release copy of Prizm on macOS and launch it
-- [ ] 10.2 Use `screencapture` to capture the main window: get the window ID via `osascript -e 'tell app "Prizm" to id of window 1'`, then run `screencapture -l <windowid> -o assets/screenshot.png`
-- [ ] 10.3 Crop / resize the screenshot to a consistent width (e.g. 1200px) if needed
-- [ ] 10.4 Commit the screenshot to `assets/screenshot.png` and replace the placeholder in `README.md`
+- [x] 10.1 Build a Debug or Release copy of Prizm on macOS and launch it
+- [x] 10.2 Use `screencapture` to capture the main window: get the window ID via `osascript -e 'tell app "Prizm" to id of window 1'`, then run `screencapture -l <windowid> -o assets/screenshot.png`
+- [x] 10.3 Crop / resize the screenshot to a consistent width (e.g. 1200px) if needed
+- [x] 10.4 Commit the screenshot to `assets/screenshot.png` and replace the placeholder in `README.md`
 
 ## 11. Verification
 
