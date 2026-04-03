@@ -30,7 +30,7 @@ Add `keychain-access-groups` to the entitlements file using the `$(AppIdentifier
 ```xml
 <key>keychain-access-groups</key>
 <array>
-    <string>$(AppIdentifierPrefix)com.macwarden</string>
+    <string>$(AppIdentifierPrefix)com.prizm</string>
 </array>
 ```
 
@@ -67,6 +67,6 @@ Create `LocalConfig.xcconfig` (gitignored) and `LocalConfig.xcconfig.template` (
 ## Migration Plan
 
 1. Apply code changes (entitlements, KeychainService, AuthRepositoryImpl, xcconfig)
-2. Delete existing keychain items for `com.macwarden` service (or sign out before upgrading)
+2. Delete existing keychain items for `com.prizm` service (or sign out before upgrading)
 3. Sign in once — items are written to data protection keychain
 4. Subsequent rebuilds: no prompts

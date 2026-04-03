@@ -24,7 +24,7 @@ struct LoginView: View {
                 Image(systemName: "lock.shield.fill")
                     .font(Typography.screenIcon)
                     .foregroundStyle(.tint)
-                Text("Macwarden")
+                Text("Prizm")
                     .font(Typography.screenHeading)
                 Text("Self-hosted vault")
                     .font(Typography.fieldLabel)

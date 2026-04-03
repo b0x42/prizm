@@ -1,6 +1,6 @@
 ## Why
 
-Macwarden is functionally complete for v1 but has no public-facing documentation, no
+Prizm is functionally complete for v1 but has no public-facing documentation, no
 distribution infrastructure, and no formal statement of scope or security posture. Before
 going public the project needs a README, SECURITY.md, release infrastructure, and clear
 communication of v1 scope and limitations so users can make an informed choice.
@@ -25,7 +25,7 @@ communication of v1 scope and limitations so users can make an informed choice.
   Xcode setup, Team ID config, architecture overview, test instructions, openspec workflow
 - **Add** `SECURITY.md` — threat model, encryption summary, key storage, what the app
   does and does not protect against (required by CONSTITUTION §VII)
-- **Rename** app from Macwarden → Prizm — Xcode project, target, scheme, bundle IDs,
+- **Rename** app from Prizm → Prizm — Xcode project, target, scheme, bundle IDs,
   entitlements, keychain access group, Swift type names, logger subsystem, user-visible
   strings, CLAUDE.md, and all openspec change files
 - **Add** app icon — all required sizes added to `Assets.xcassets/AppIcon.appiconset`;
@@ -56,7 +56,7 @@ communication of v1 scope and limitations so users can make an informed choice.
   version, tagline, clickable GitHub link, "Built with" section, acknowledgements
 - **Bump** `CFBundleShortVersionString` and `CFBundleVersion` in `Info.plist` to `1.0.0`
 - **Update** GitHub repository About section (description, topics) and rename repo
-  `macwarden` → `prizm`; update local remote URL accordingly
+  `prizm` → `prizm`; update local remote URL accordingly
 - **Scan** repo for secrets and sensitive content before switching to public visibility
 
 ## Capabilities
@@ -87,4 +87,4 @@ _(none — no existing spec-level behavior changes)_
 - `.github/workflows/release.yml` — new release CI workflow
 - Swift source files, type names, and string literals updated as part of rename (no
   behavioural changes — rename only)
-- GitHub repo: About section updated, renamed `macwarden` → `prizm`, visibility → public
+- GitHub repo: About section updated, renamed `prizm` → `prizm`, visibility → public

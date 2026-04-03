@@ -1,21 +1,21 @@
 import Synchronization
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Failing tests for SyncRepositoryImpl (T025).
-/// These will fail until SyncRepositoryImpl + MacwardenAPIClient are implemented (T027–T030).
+/// These will fail until SyncRepositoryImpl + PrizmAPIClient are implemented (T027–T030).
 @MainActor
 final class SyncRepositoryImplTests: XCTestCase {
 
     private var sut: SyncRepositoryImpl!
-    private var mockAPI: MockMacwardenAPIClient!
-    private var mockCrypto: MockMacwardenCryptoService!
+    private var mockAPI: MockPrizmAPIClient!
+    private var mockCrypto: MockPrizmCryptoService!
     private var mockVault: MockVaultRepository!
 
     override func setUp() async throws {
         try await super.setUp()
-        mockAPI    = MockMacwardenAPIClient()
-        mockCrypto = MockMacwardenCryptoService()
+        mockAPI    = MockPrizmAPIClient()
+        mockCrypto = MockPrizmCryptoService()
         mockVault  = MockVaultRepository()
         sut = SyncRepositoryImpl(
             apiClient:       mockAPI,

@@ -1,6 +1,6 @@
 ## Context
 
-Prizm (formerly Macwarden) is functionally complete for v1 but ships with no public-facing
+Prizm (formerly Prizm) is functionally complete for v1 but ships with no public-facing
 documentation, no app icon, and no distribution pipeline. The codebase targets self-hosted
 Bitwarden/Vaultwarden servers only. Distribution is via GitHub releases (direct `.dmg`
 download) — not the Mac App Store.

@@ -7,57 +7,45 @@ import SwiftUI
 /// Each row displays a live item count sourced from `VaultBrowserViewModel.itemCounts`.
 /// The sidebar is always visible, even when a category is empty (FR-006, FR-042).
 struct SidebarView: View {
-
     @Binding var selection: SidebarSelection?
+    @State private var sidebarSections: [SidebarSection] = [.menu, .types, .trash]
     let itemCounts: [SidebarSelection: Int]
 
     var body: some View {
         List(selection: $selection) {
-            // MARK: Menu Items section
-            Section("Menu Items") {
-                SidebarRowView(
-                    title:      "All Items",
-                    systemImage: "square.grid.2x2",
-                    selection:  .allItems,
-                    count:      itemCounts[.allItems] ?? 0
-                )
-                .accessibilityIdentifier(AccessibilityID.Sidebar.allItems)
-                SidebarRowView(
-                    title:      "Favorites",
-                    systemImage: "star",
-                    selection:  .favorites,
-                    count:      itemCounts[.favorites] ?? 0
-                )
-                .accessibilityIdentifier(AccessibilityID.Sidebar.favorites)
-            }
-
-            // MARK: Types section
-            Section("Types") {
-                ForEach(ItemType.allCases, id: \.self) { type in
-                    SidebarRowView(
-                        title:      type.displayName,
-                        systemImage: type.sfSymbol,
-                        selection:  .type(type),
-                        count:      itemCounts[.type(type)] ?? 0
-                    )
-                    .accessibilityIdentifier(AccessibilityID.Sidebar.type(type.displayName))
+            ForEach(sidebarSections, id: \.self) { section in
+                // Check if the section is NOT trash to show the header
+                Section(header: section == .trash ? nil : Text(section.title)) {
+                    renderRows(for: section)
                 }
             }
-
-            // MARK: Trash section
-            // Shown without a badge count when empty so users know the section exists.
-            Section {
-                SidebarRowView(
-                    title:       "Trash",
-                    systemImage: "trash",
-                    selection:   .trash,
-                    count:       itemCounts[.trash] ?? 0
-                )
-                .accessibilityIdentifier(AccessibilityID.Sidebar.trash)
+            .onMove { from, to in
+                sidebarSections.move(fromOffsets: from, toOffset: to)
             }
         }
-        .navigationTitle("Macwarden")
+        .navigationTitle("Prizm")
     }
+
+    // Helper to render the specific rows for each section type
+    @ViewBuilder
+    private func renderRows(for section: SidebarSection) -> some View {
+        switch section {
+        case .menu:
+            SidebarRowView(title: "All Items", systemImage: "square.grid.2x2", selection: .allItems, count: itemCounts[.allItems] ?? 0)
+            SidebarRowView(title: "Favorites", systemImage: "star", selection: .favorites, count: itemCounts[.favorites] ?? 0)
+        case .types:
+            ForEach(ItemType.allCases, id: \.self) { type in
+                SidebarRowView(title: type.displayName, systemImage: type.sfSymbol, selection: .type(type), count: itemCounts[.type(type)] ?? 0)
+            }
+        case .trash:
+            SidebarRowView(title: "Trash", systemImage: "trash", selection: .trash, count: itemCounts[.trash] ?? 0)
+        }
+    }
+}
+
+enum SidebarSection: String, CaseIterable {
+    case menu, types, trash
+    var title: String { self.rawValue.capitalized }
 }
 
 // MARK: - SidebarRowView

@@ -1,4 +1,4 @@
-# Macwarden Development Guidelines
+# Prizm Development Guidelines
 
 **Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0) — READ THIS FIRST.**
 The Constitution defines seven non-negotiable principles that govern every decision in this
@@ -19,18 +19,18 @@ architectural decision, consult the Constitution. Violations are blocking PR rej
 - **Storage**: macOS Keychain (secrets), UserDefaults (UI prefs), in-memory (decrypted vault)
 - **Networking**: `URLSession` (no third-party networking library)
 - **Testing**: XCTest (unit + integration), XCUITest (UI journeys)
-- **Logging**: `os.Logger` with subsystem `com.macwarden`
+- **Logging**: `os.Logger` with subsystem `com.prizm`
 
 ## Project Structure
 
 ```text
-Macwarden/
-├── Macwarden.xcodeproj/
+Prizm/
+├── Prizm.xcodeproj/
 ├── App/                # @main, AppContainer (DI), Config
 ├── Domain/             # Entities, UseCase protocols, Repository protocols, Utilities
 ├── Data/               # Crypto, Network, Keychain, Repository impls, UseCase impls, Mappers
 ├── Presentation/       # SwiftUI Views, ViewModels, Components
-├── MacwardenTests/     # Unit + integration tests (XCTest)
+├── PrizmTests/     # Unit + integration tests (XCTest)
 └── Tests/UITests/      # UI journey tests (XCUITest)
 
 openspec/
@@ -40,7 +40,7 @@ openspec/
 
 ## Setup
 
-**Local config:** Copy `Macwarden/LocalConfig.xcconfig.template` → `Macwarden/LocalConfig.xcconfig`
+**Local config:** Copy `Prizm/LocalConfig.xcconfig.template` → `Prizm/LocalConfig.xcconfig`
 and fill in your Team ID. This file is gitignored. **Build will fail without it.**
 
 **Team ID (code signing):** The Xcode project requires a valid Apple Developer Team ID for code signing. If the Team ID is not set (empty or `""` in the project file), **ask the user for their Team ID before running any build or test commands** — do not attempt to build without it, as the build will fail with a signing error.
@@ -49,16 +49,16 @@ and fill in your Team ID. This file is gitignored. **Build will fail without it.
 
 ```bash
 # Open project
-open "Macwarden/Macwarden.xcodeproj"
+open "Prizm/Prizm.xcodeproj"
 
 # Build
-xcodebuild -project "Macwarden/Macwarden.xcodeproj" \
-           -scheme "Macwarden" -configuration Debug build
+xcodebuild -project "Prizm/Prizm.xcodeproj" \
+           -scheme "Prizm" -configuration Debug build
 
 # Run all tests
 xcodebuild test \
-  -project "Macwarden/Macwarden.xcodeproj" \
-  -scheme "Macwarden" \
+  -project "Prizm/Prizm.xcodeproj" \
+  -scheme "Prizm" \
   -destination "platform=macOS"
 ```
 
@@ -71,7 +71,7 @@ then `/opsx:archive` when done. Archived changes move to `openspec/changes/archi
 ## Design System
 
 All Presentation layer typography and spacing is defined in one place:
-`Macwarden/Presentation/DesignSystem.swift`
+`Prizm/Presentation/DesignSystem.swift`
 
 **Never use raw font or spacing literals in views.** Always reference the tokens below.
 

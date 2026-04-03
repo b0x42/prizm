@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 // @MainActor required: GetLastSyncDateUseCaseImpl is inferred @MainActor in the
 // test module because other test classes store MockSyncTimestampRepository as a

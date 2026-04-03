@@ -45,11 +45,11 @@ What is missing is a `lockVault()` entry point on `RootViewModel` and the system
 
 **Alternative considered:** Have `AuthRepositoryImpl.lockVault()` internally call `clearVault()` by holding a reference to `VaultRepository`. Rejected — would create a dependency from `AuthRepositoryImpl` into `VaultRepositoryImpl`, coupling two repositories that are currently independent.
 
-### Decision 3: Observers owned by `RootViewModel`, not `MacwardenApp`
+### Decision 3: Observers owned by `RootViewModel`, not `PrizmApp`
 
 **Chosen:** Sleep and screensaver observers set up in `RootViewModel.subscribeToFlowStates()`.
 
-**Rationale:** `RootViewModel` already owns all session lifecycle logic (login, unlock, sign-out). The observers need to call `lockVault()` which lives on `RootViewModel`. Keeping them co-located avoids passing a callback through `MacwardenApp`.
+**Rationale:** `RootViewModel` already owns all session lifecycle logic (login, unlock, sign-out). The observers need to call `lockVault()` which lives on `RootViewModel`. Keeping them co-located avoids passing a callback through `PrizmApp`.
 
 ### Decision 4: Guard with `screen == .vault` check
 

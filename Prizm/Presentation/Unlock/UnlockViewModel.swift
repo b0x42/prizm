@@ -33,7 +33,7 @@ final class UnlockViewModel: ObservableObject {
     private let auth:    any AuthRepository
     private let sync:    any SyncUseCase
     private let account: Account   // Pre-loaded from storedAccount()
-    private let logger = Logger(subsystem: "com.macwarden", category: "UnlockViewModel")
+    private let logger = Logger(subsystem: "com.prizm", category: "UnlockViewModel")
 
     // MARK: - Init
 

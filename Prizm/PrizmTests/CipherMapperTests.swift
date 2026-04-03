@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Failing tests for CipherMapper (T017).
 /// These tests will fail until CipherMapper + RawCipher are implemented (T020, T021).

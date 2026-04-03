@@ -68,7 +68,7 @@ protocol AuthRepository: AnyObject {
 
     // MARK: - Lock
 
-    /// Releases decrypted key material from `MacwardenCryptoServiceImpl`.
+    /// Releases decrypted key material from `PrizmCryptoServiceImpl`.
     /// Does NOT clear Keychain tokens — session survives lock/unlock.
     func lockVault() async
 }

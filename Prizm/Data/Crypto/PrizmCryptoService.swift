@@ -4,10 +4,10 @@ import CryptoKit
 import Argon2Swift
 import os.log
 
-// MARK: - MacwardenCryptoServiceError
+// MARK: - PrizmCryptoServiceError
 
-/// Errors thrown by `MacwardenCryptoService` operations.
-nonisolated enum MacwardenCryptoServiceError: Error, Equatable {
+/// Errors thrown by `PrizmCryptoService` operations.
+nonisolated enum PrizmCryptoServiceError: Error, Equatable {
     /// PBKDF2 or Argon2id key derivation failed.
     case kdfFailed
     /// HKDF key expansion failed.
@@ -20,14 +20,14 @@ nonisolated enum MacwardenCryptoServiceError: Error, Equatable {
     case vaultLocked
 }
 
-// MARK: - MacwardenCryptoService Protocol
+// MARK: - PrizmCryptoService Protocol
 
 /// Provides cryptographic operations for the Bitwarden vault:
 /// key derivation, key stretching, server hash computation, and vault lock/unlock.
 ///
 /// Implemented as an `actor` to protect the in-memory key material from data races.
 /// All async methods must be called with `await`.
-protocol MacwardenCryptoService: Actor {
+protocol PrizmCryptoService: Actor {
 
     /// Whether the vault is currently unlocked (key material is in memory).
     var isUnlocked: Bool { get }
@@ -94,7 +94,7 @@ protocol MacwardenCryptoService: Actor {
     ///
     /// - Parameter ciphers: Raw encrypted ciphers from the sync response.
     /// - Returns: Tuple of successfully decrypted `VaultItem`s and a failure count.
-    /// - Throws: `MacwardenCryptoServiceError.vaultLocked` if the vault is not unlocked.
+    /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is not unlocked.
     func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int)
 
     /// Loads `keys` into memory, marking the vault as unlocked.
@@ -103,19 +103,19 @@ protocol MacwardenCryptoService: Actor {
     /// Zeroes and discards all in-memory key material, locking the vault.
     ///
     /// After this call, `isUnlocked` returns `false` and any attempt to decrypt
-    /// vault items will throw `MacwardenCryptoServiceError.vaultLocked`.
+    /// vault items will throw `PrizmCryptoServiceError.vaultLocked`.
     func lockVault() async
 
     /// Returns the current vault symmetric key pair for callers that need to perform
     /// encryption (e.g. the reverse cipher mapper for PUT /ciphers/{id}).
     ///
-    /// - Throws: `MacwardenCryptoServiceError.vaultLocked` if the vault is locked.
+    /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is locked.
     func currentKeys() async throws -> CryptoKeys
 }
 
-// MARK: - MacwardenCryptoServiceImpl
+// MARK: - PrizmCryptoServiceImpl
 
-/// Concrete implementation of `MacwardenCryptoService`.
+/// Concrete implementation of `PrizmCryptoService`.
 ///
 /// Key derivation algorithms:
 /// - **PBKDF2-SHA256** (RFC 8018 §5.2, NIST SP 800-132): used when
@@ -125,9 +125,9 @@ protocol MacwardenCryptoService: Actor {
 /// - **HKDF** (RFC 5869): used for key stretching in `stretchKey`.  Implemented
 ///   using CryptoKit `HKDF<SHA256>` which is the recommended approach on Apple
 ///   platforms (CryptoKit is FIPS 140-3 certified since macOS 12).
-actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
+actor PrizmCryptoServiceImpl: PrizmCryptoService {
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "MacwardenCryptoService")
+    private let logger = Logger(subsystem: "com.prizm", category: "PrizmCryptoService")
 
     // MARK: - State
 
@@ -160,7 +160,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
 
     func currentKeys() throws -> CryptoKeys {
         guard let vaultKeys = keys else {
-            throw MacwardenCryptoServiceError.vaultLocked
+            throw PrizmCryptoServiceError.vaultLocked
         }
         return vaultKeys
     }
@@ -169,7 +169,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
 
     func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int) {
         guard let vaultKeys = keys else {
-            throw MacwardenCryptoServiceError.vaultLocked
+            throw PrizmCryptoServiceError.vaultLocked
         }
         logger.info("decryptList: starting with \(ciphers.count) ciphers")
         let mapper = CipherMapper()
@@ -205,7 +205,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
 
     func makeMasterKey(password: Data, email: String, kdf: KdfParams) async throws -> Data {
         guard let emailData = email.lowercased().data(using: .utf8) else {
-            throw MacwardenCryptoServiceError.kdfFailed
+            throw PrizmCryptoServiceError.kdfFailed
         }
 
         logger.debug("KDF: using \(String(describing: kdf.type)) with \(kdf.iterations) iterations")
@@ -222,7 +222,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
             // Argon2id requires memory + parallelism params
             guard let memory      = kdf.memory,
                   let parallelism = kdf.parallelism else {
-                throw MacwardenCryptoServiceError.kdfFailed
+                throw PrizmCryptoServiceError.kdfFailed
             }
             return try argon2idDerive(
                 password:    password,
@@ -285,7 +285,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
             enc = try EncString(string: encUserKey)
         } catch {
             logger.error("Failed to parse encUserKey EncString: \(error, privacy: .public)")
-            throw MacwardenCryptoServiceError.invalidEncUserKey
+            throw PrizmCryptoServiceError.invalidEncUserKey
         }
 
         let keyData: Data
@@ -293,12 +293,12 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
             keyData = try enc.decrypt(keys: stretchedKeys)
         } catch {
             logger.error("Failed to decrypt encUserKey: \(error, privacy: .public)")
-            throw MacwardenCryptoServiceError.invalidEncUserKey
+            throw PrizmCryptoServiceError.invalidEncUserKey
         }
 
         guard keyData.count == 64 else {
             logger.error("Decrypted symmetric key has wrong length: \(keyData.count, privacy: .public) bytes (expected 64)")
-            throw MacwardenCryptoServiceError.invalidSymmetricKeyLength
+            throw PrizmCryptoServiceError.invalidSymmetricKeyLength
         }
 
         return CryptoKeys(
@@ -321,7 +321,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
     ///   - salt:     Salt bytes.
     ///   - rounds:   Iteration count (≥ 1).
     ///   - keyLen:   Desired output key length in bytes (typically 32).
-    /// - Throws: `MacwardenCryptoServiceError.kdfFailed` if CommonCrypto returns a non-zero status.
+    /// - Throws: `PrizmCryptoServiceError.kdfFailed` if CommonCrypto returns a non-zero status.
     private func pbkdf2SHA256(password: Data, salt: Data, rounds: UInt32, keyLen: Int) throws -> Data {
         var derivedKey = Data(count: keyLen)
         let status = derivedKey.withUnsafeMutableBytes { dkPtr in
@@ -342,7 +342,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
             }
         }
         guard status == kCCSuccess else {
-            throw MacwardenCryptoServiceError.kdfFailed
+            throw PrizmCryptoServiceError.kdfFailed
         }
         return derivedKey
     }
@@ -364,7 +364,7 @@ actor MacwardenCryptoServiceImpl: MacwardenCryptoService {
     ///   - iterations:  Time cost (number of passes).
     ///   - memory:      Memory cost in KiB.
     ///   - parallelism: Degree of parallelism (number of threads).
-    /// - Throws: `MacwardenCryptoServiceError.kdfFailed` if Argon2Swift returns an error.
+    /// - Throws: `PrizmCryptoServiceError.kdfFailed` if Argon2Swift returns an error.
     private func argon2idDerive(
         password:    Data,
         salt:        Data,

@@ -11,7 +11,7 @@ import os.log
 /// Missing or invalid headers result in `400 Bad Request` / `403 Forbidden` from the server.
 ///
 /// Implemented as an `actor` to serialise the mutable `baseURL` and `accessToken` state.
-protocol MacwardenAPIClientProtocol: Actor {
+protocol PrizmAPIClientProtocol: Actor {
 
     /// The base URL configured by `AuthRepositoryImpl` after the user enters their server address.
     var baseURL: URL? { get }
@@ -202,7 +202,7 @@ nonisolated enum IdentityTokenError: Error, Equatable {
 
 // MARK: - Errors
 
-/// Errors thrown by `MacwardenAPIClientImpl` at the transport layer.
+/// Errors thrown by `PrizmAPIClientImpl` at the transport layer.
 ///
 /// Higher-level semantic errors (e.g. `.invalidCredentials`, `.unauthorized`) are mapped
 /// by the repository layer (`AuthRepositoryImpl`, `SyncRepositoryImpl`) from these raw codes.
@@ -242,7 +242,7 @@ extension APIError: LocalizedError {
 ///
 /// Header requirements: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 /// DeviceType enum values: https://github.com/bitwarden/server/blob/main/src/Core/Enums/DeviceType.cs
-actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
+actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - Private state
 
@@ -251,8 +251,8 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
 
     private let session:   URLSession
     private let logger:    Logger = Logger(
-        subsystem: "com.macwarden",
-        category:  "MacwardenAPIClient"
+        subsystem: "com.prizm",
+        category:  "PrizmAPIClient"
     )
 
     // MARK: - Bitwarden client identification headers
@@ -264,7 +264,7 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
         // Vaultwarden gates SSH key ciphers (type 5) behind >= 2024.12.0.
         static let clientVersion = "2024.12.0"
         static let deviceType    = "7"
-        static let userAgent     = "Macwarden/2024.12.0"
+        static let userAgent     = "Prizm/2024.12.0"
     }
 
     // MARK: - Init
@@ -337,7 +337,7 @@ actor MacwardenAPIClientImpl: MacwardenAPIClientProtocol {
             "client_id":       ClientHeaders.clientId,
             "deviceType":      ClientHeaders.deviceType,
             "deviceIdentifier": deviceIdentifier,
-            "deviceName":      "Macwarden",
+            "deviceName":      "Prizm",
         ]
         if let token    = twoFactorToken    { params["twoFactorToken"]    = token }
         if let provider = twoFactorProvider { params["twoFactorProvider"] = String(provider) }

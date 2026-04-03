@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Failing tests for EncString parser + decryption (T015).
 /// These tests will fail until EncString + CryptoKeys are implemented (T019).

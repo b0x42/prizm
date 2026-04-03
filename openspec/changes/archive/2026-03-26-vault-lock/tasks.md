@@ -19,7 +19,7 @@
 
 ## 4. Lock Vault Menu Command
 
-- [x] 4.1 Add a `CommandGroup` entry in `MacwardenApp.commands` with a "Lock Vault" `Button`, `.keyboardShortcut("l", modifiers: .command)`, and `.disabled(!rootVM.isVaultUnlocked)`
+- [x] 4.1 Add a `CommandGroup` entry in `PrizmApp.commands` with a "Lock Vault" `Button`, `.keyboardShortcut("l", modifiers: .command)`, and `.disabled(!rootVM.isVaultUnlocked)`
 - [x] 4.2 Add `isVaultUnlocked: Bool` computed property to `RootViewModel` (true when `screen == .vault || screen == .syncing`)
 
 ## 5. UI Test

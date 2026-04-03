@@ -1,6 +1,6 @@
 ## Why
 
-Users accumulate stale or unwanted entries in their vault and currently have no way to remove them from within Macwarden. Bitwarden's soft-delete model (trash / restore) already exists server-side — this change surfaces those actions in the app so users can clean up their vault and safely undo accidental deletions.
+Users accumulate stale or unwanted entries in their vault and currently have no way to remove them from within Prizm. Bitwarden's soft-delete model (trash / restore) already exists server-side — this change surfaces those actions in the app so users can clean up their vault and safely undo accidental deletions.
 
 ## What Changes
 

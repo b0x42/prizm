@@ -1,10 +1,10 @@
 import Foundation
-@testable import Macwarden
+@testable import Prizm
 
-/// Test double for `MacwardenAPIClientProtocol`.
+/// Test double for `PrizmAPIClientProtocol`.
 ///
 /// Configure stubs before calling the SUT; inspect recorded calls after.
-actor MockMacwardenAPIClient: MacwardenAPIClientProtocol {
+actor MockPrizmAPIClient: PrizmAPIClientProtocol {
 
     // MARK: - Configuration state
     // nonisolated(unsafe) allows tests to read/write without await — safe in single-threaded tests.

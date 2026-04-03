@@ -1,19 +1,19 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
-/// Failing tests for MacwardenCryptoServiceImpl (T016).
-/// These tests will fail until MacwardenCryptoServiceImpl is implemented (T022).
+/// Failing tests for PrizmCryptoServiceImpl (T016).
+/// These tests will fail until PrizmCryptoServiceImpl is implemented (T022).
 ///
 /// KDF test vectors are from the Bitwarden Security Whitepaper and RFC 8018 / NIST SP 800-132.
 /// HKDF vectors follow RFC 5869.
 @MainActor
-final class MacwardenCryptoServiceTests: XCTestCase {
+final class PrizmCryptoServiceTests: XCTestCase {
 
-    private var sut: MacwardenCryptoService!
+    private var sut: PrizmCryptoService!
 
     override func setUp() async throws {
         try await super.setUp()
-        sut = MacwardenCryptoServiceImpl()
+        sut = PrizmCryptoServiceImpl()
     }
 
     // MARK: - PBKDF2-SHA256 Key Derivation

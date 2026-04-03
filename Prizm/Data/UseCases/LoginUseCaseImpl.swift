@@ -16,7 +16,7 @@ final class LoginUseCaseImpl: LoginUseCase {
     private let auth: any AuthRepository
     private let sync: any SyncRepository
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "LoginUseCase")
+    private let logger = Logger(subsystem: "com.prizm", category: "LoginUseCase")
 
     init(auth: any AuthRepository, sync: any SyncRepository) {
         self.auth = auth

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// T063: Unit tests for search — per-type field matching (FR-012),
 /// category scoping, empty results, term preservation.
@@ -83,7 +83,7 @@ final class SearchVaultTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        vault = VaultRepositoryImpl(apiClient: MockMacwardenAPIClient(), crypto: MockMacwardenCryptoService())
+        vault = VaultRepositoryImpl(apiClient: MockPrizmAPIClient(), crypto: MockPrizmCryptoService())
         vault.populate(items: Self.allFixtures, syncedAt: Self.now)
         sut = SearchVaultUseCaseImpl(vault: vault)
     }

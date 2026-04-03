@@ -60,7 +60,7 @@ final class ItemEditViewModel: ObservableObject {
 
     private let editUseCase: (any EditVaultItemUseCase)?
     private let createUseCase: (any CreateVaultItemUseCase)?
-    private let logger  = Logger(subsystem: "com.macwarden", category: "ItemEditViewModel")
+    private let logger  = Logger(subsystem: "com.prizm", category: "ItemEditViewModel")
 
     /// Called on save success with the server-confirmed `VaultItem` so the caller
     /// (VaultBrowserViewModel or parent) can refresh the list pane.

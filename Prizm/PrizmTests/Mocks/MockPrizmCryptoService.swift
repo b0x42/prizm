@@ -1,8 +1,8 @@
 import Foundation
-@testable import Macwarden
+@testable import Prizm
 
-/// Test double for `MacwardenCryptoService`.
-actor MockMacwardenCryptoService: MacwardenCryptoService {
+/// Test double for `PrizmCryptoService`.
+actor MockPrizmCryptoService: PrizmCryptoService {
 
     // MARK: - State
     // nonisolated(unsafe) allows tests to read/write without await — safe in single-threaded tests.
@@ -25,7 +25,7 @@ actor MockMacwardenCryptoService: MacwardenCryptoService {
     nonisolated(unsafe) var stubbedDecryptList:  [VaultItem] = []
     nonisolated(unsafe) var stubbedFailedCount:  Int = 0
 
-    // MARK: - MacwardenCryptoService
+    // MARK: - PrizmCryptoService
 
     func makeMasterKey(password: Data, email: String, kdf: KdfParams) async throws -> Data {
         stubbedMasterKey
@@ -56,7 +56,7 @@ actor MockMacwardenCryptoService: MacwardenCryptoService {
     }
 
     func currentKeys() throws -> CryptoKeys {
-        guard _isUnlocked else { throw MacwardenCryptoServiceError.vaultLocked }
+        guard _isUnlocked else { throw PrizmCryptoServiceError.vaultLocked }
         return stubbedVaultKeys
     }
 

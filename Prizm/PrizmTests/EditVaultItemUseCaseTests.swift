@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Tests for `EditVaultItemUseCaseImpl`.
 ///

@@ -13,7 +13,7 @@
 
 ## 2. Keychain entitlement
 
-- [x] 2.1 Add `keychain-access-groups` key to `Macwarden.entitlements` with value `$(AppIdentifierPrefix)com.macwarden`
+- [x] 2.1 Add `keychain-access-groups` key to `Prizm.entitlements` with value `$(AppIdentifierPrefix)com.prizm`
 
 ## 3. KeychainService — data protection keychain
 
@@ -27,12 +27,12 @@
 
 ## 5. Clear old login-keychain items
 
-- [x] 5.1 Open Keychain Access.app, find items under service `com.macwarden`, delete them (or simply sign out of the app before building)
+- [x] 5.1 Open Keychain Access.app, find items under service `com.prizm`, delete them (or simply sign out of the app before building)
 
 ## 6. Verify
 
 - [x] 6.1 Build and run — confirm zero keychain password dialogs appear on startup
 - [x] 6.2 Sign in and unlock — confirm zero keychain password dialogs appear
 - [x] 6.3 Rebuild without changing code — confirm still zero prompts
-- [x] 6.4 Confirm `project.pbxproj` contains no Team ID (`grep DEVELOPMENT_TEAM Macwarden/Macwarden.xcodeproj/project.pbxproj` should return empty or only a blank assignment)
+- [x] 6.4 Confirm `project.pbxproj` contains no Team ID (`grep DEVELOPMENT_TEAM Prizm/Prizm.xcodeproj/project.pbxproj` should return empty or only a blank assignment)
 - [x] 6.5 Run existing `KeychainServiceTests` — confirm they pass

@@ -1,6 +1,6 @@
 import XCTest
 import SwiftUI
-@testable import Macwarden
+@testable import Prizm
 
 // MARK: - CardBackgroundTests
 

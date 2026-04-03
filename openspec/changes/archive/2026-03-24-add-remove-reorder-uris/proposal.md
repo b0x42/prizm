@@ -21,7 +21,7 @@ Login vault items store one or more website URIs that serve two purposes: lettin
 
 ## Impact
 
-- `Macwarden/Domain/Entities/DraftVaultItem.swift` — new initializer on `DraftLoginURI`, remove v1 scope comment
-- `Macwarden/Presentation/Vault/Edit/LoginEditForm.swift` — add/remove/reorder UI controls in the Websites section
+- `Prizm/Domain/Entities/DraftVaultItem.swift` — new initializer on `DraftLoginURI`, remove v1 scope comment
+- `Prizm/Presentation/Vault/Edit/LoginEditForm.swift` — add/remove/reorder UI controls in the Websites section
 - No API changes needed — the Bitwarden API accepts the full `uris` array on save (full replacement)
 - No mapper changes — `CipherMapper` already handles variable-length URI arrays

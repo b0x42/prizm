@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Failing tests for LoginUseCaseImpl (T026).
 /// These will fail until LoginUseCaseImpl + AuthRepositoryImpl + SyncRepositoryImpl are implemented.

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Unit tests for `RootViewModel.lockVault()`.
 @MainActor

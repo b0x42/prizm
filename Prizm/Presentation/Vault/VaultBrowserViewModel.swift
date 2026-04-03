@@ -72,7 +72,7 @@ final class VaultBrowserViewModel: ObservableObject {
     private let restoreUseCase:         any RestoreVaultItemUseCase
     private var syncTimestamp:          any SyncTimestampRepository
     private var getLastSyncDate:        any GetLastSyncDateUseCase
-    private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
+    private let logger = Logger(subsystem: "com.prizm", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Typography
 //
-// All font roles for the Macwarden Presentation layer.
+// All font roles for the Prizm Presentation layer.
 //
 // Use these constants instead of raw `.font(...)` values to keep
 // the type scale consistent across every view. Change a role here
@@ -48,7 +48,7 @@ enum Typography {
     /// Large icon on the Login, TOTP, and Unlock screens (keyhole / app symbol).
     static let screenIcon: Font    = .system(size: 48)
 
-    /// Primary heading on the Login, TOTP, and Unlock screens ("Welcome to Macwarden").
+    /// Primary heading on the Login, TOTP, and Unlock screens ("Welcome to Prizm").
     static let screenHeading: Font = .title.bold()
 
     /// Secondary body copy on the Login, TOTP, and Unlock screens.
@@ -57,7 +57,7 @@ enum Typography {
 
 // MARK: - Spacing
 //
-// Named spacing tokens for the Macwarden Presentation layer.
+// Named spacing tokens for the Prizm Presentation layer.
 //
 // Prefer these over inline CGFloat literals so that layout rhythm
 // stays consistent and tweaks propagate everywhere at once.

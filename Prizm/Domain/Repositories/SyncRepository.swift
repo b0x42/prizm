@@ -10,7 +10,7 @@ protocol SyncRepository: Actor {
     ///
     /// Sequence:
     /// 1. GET `/sync?excludeDomains=true` → encrypted JSON.
-    /// 2. Decrypt each cipher via `MacwardenCryptoServiceImpl`.
+    /// 2. Decrypt each cipher via `PrizmCryptoServiceImpl`.
     /// 3. Populate `VaultRepositoryImpl` in-memory store.
     ///
     /// - Parameter progress: Callback fired with human-readable status messages

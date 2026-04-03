@@ -113,10 +113,10 @@ self-hosted Bitwarden." Topics: `macos`, `swift`, `swiftui`, `bitwarden`, `vault
 
 #### Scenario: User lands on the GitHub repo page
 - **WHEN** a user visits the repository on GitHub
-- **THEN** the About section shows the Prizm description and relevant topics, not the old Macwarden text
+- **THEN** the About section shows the Prizm description and relevant topics, not the old Prizm text
 
 ### Requirement: GitHub repository is renamed to match the app name
-The GitHub repository SHALL be renamed from `macwarden` to `prizm` and the local git
+The GitHub repository SHALL be renamed from `prizm` to `prizm` and the local git
 remote URL SHALL be updated to match. All existing GitHub links (issues, PRs, stars)
 are automatically forwarded by GitHub after a rename.
 

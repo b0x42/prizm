@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Tests for `Date.syncStatusLabel(relativeTo:calendar:)` — the relative-label formatter
 /// used by the vault browser sidebar's sync status view.

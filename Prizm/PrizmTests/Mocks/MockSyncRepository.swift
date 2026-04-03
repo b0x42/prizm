@@ -1,5 +1,5 @@
 import Foundation
-@testable import Macwarden
+@testable import Prizm
 
 /// Test double for `SyncRepository` — used by `LoginUseCaseTests`.
 actor MockSyncRepository: SyncRepository {

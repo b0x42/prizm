@@ -18,7 +18,7 @@ final class UnlockUseCaseImpl: UnlockUseCase {
     private let auth: any AuthRepository
     private let sync: any SyncRepository
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "UnlockUseCase")
+    private let logger = Logger(subsystem: "com.prizm", category: "UnlockUseCase")
 
     init(auth: any AuthRepository, sync: any SyncRepository) {
         self.auth = auth

@@ -13,12 +13,12 @@ import os.log
 @MainActor
 final class VaultRepositoryImpl: VaultRepository {
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "VaultRepository")
+    private let logger = Logger(subsystem: "com.prizm", category: "VaultRepository")
 
     // MARK: - Dependencies (write path)
 
-    private let apiClient: any MacwardenAPIClientProtocol
-    private let crypto:    any MacwardenCryptoService
+    private let apiClient: any PrizmAPIClientProtocol
+    private let crypto:    any PrizmCryptoService
     private let mapper:    CipherMapper
 
     // MARK: - State
@@ -29,8 +29,8 @@ final class VaultRepositoryImpl: VaultRepository {
     // MARK: - Init
 
     init(
-        apiClient: any MacwardenAPIClientProtocol,
-        crypto:    any MacwardenCryptoService,
+        apiClient: any PrizmAPIClientProtocol,
+        crypto:    any PrizmCryptoService,
         mapper:    CipherMapper = CipherMapper()
     ) {
         self.apiClient = apiClient
@@ -112,7 +112,7 @@ final class VaultRepositoryImpl: VaultRepository {
     ///   for the full algorithm reference and security notes.
     ///
     /// - Data flow (re-encryption boundary):
-    ///   1. Obtain current symmetric keys from `MacwardenCryptoService` — throws immediately
+    ///   1. Obtain current symmetric keys from `PrizmCryptoService` — throws immediately
     ///      if the vault is locked, preventing writes from a locked state.
     ///   2. `CipherMapper.toRawCipher` encrypts every sensitive field with the vault key.
     ///      No plaintext value crosses this call boundary in the outbound direction.
@@ -128,7 +128,7 @@ final class VaultRepositoryImpl: VaultRepository {
     ///   • Offline writes are not queued; a network failure surfaces as a thrown error
     ///     and leaves the local cache unchanged (see TODO below).
     ///
-    /// - Throws: `VaultError.vaultLocked` if the vault is locked (translated from `MacwardenCryptoServiceError`).
+    /// - Throws: `VaultError.vaultLocked` if the vault is locked (translated from `PrizmCryptoServiceError`).
     /// - Throws: `APIError` on network or HTTP failure.
     /// - Throws: `CipherMapperError` if the reverse mapper or response mapper fails.
     func update(_ draft: DraftVaultItem) async throws -> VaultItem {
@@ -138,13 +138,13 @@ final class VaultRepositoryImpl: VaultRepository {
         // changes without a second user confirmation.
 
         // Step 1: Obtain current symmetric keys — throws if vault is locked.
-        // Translate MacwardenCryptoServiceError.vaultLocked → VaultError.vaultLocked so
+        // Translate PrizmCryptoServiceError.vaultLocked → VaultError.vaultLocked so
         // callers receive the Domain-layer error type promised by the VaultRepository protocol.
         // Other crypto errors (kdfFailed, invalidEncUserKey, etc.) propagate unchanged.
         let keys: CryptoKeys
         do {
             keys = try await crypto.currentKeys()
-        } catch MacwardenCryptoServiceError.vaultLocked {
+        } catch PrizmCryptoServiceError.vaultLocked {
             throw VaultError.vaultLocked
         }
 
@@ -178,7 +178,7 @@ final class VaultRepositoryImpl: VaultRepository {
         let keys: CryptoKeys
         do {
             keys = try await crypto.currentKeys()
-        } catch MacwardenCryptoServiceError.vaultLocked {
+        } catch PrizmCryptoServiceError.vaultLocked {
             throw VaultError.vaultLocked
         }
 
@@ -197,7 +197,7 @@ final class VaultRepositoryImpl: VaultRepository {
     /// Soft-deletes the active item with `id` by calling `PUT /ciphers/{id}/delete`.
     ///
     /// - Security goal: no vault key material is needed — only the cipher ID is sent.
-    ///   The access token (held by `MacwardenAPIClientImpl`) authorises the operation.
+    ///   The access token (held by `PrizmAPIClientImpl`) authorises the operation.
     /// - Bitwarden endpoint: `PUT /api/ciphers/{id}/delete` — moves the cipher to Trash.
     /// - On success the local cache entry is updated (`isDeleted = true`) immediately so
     ///   the UI reflects the change without waiting for a full re-sync.

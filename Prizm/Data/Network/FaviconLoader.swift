@@ -20,7 +20,7 @@ actor FaviconLoader {
 
     private let session:  URLSession
     private let iconsBase: URL
-    private let logger = Logger(subsystem: "com.macwarden", category: "FaviconLoader")
+    private let logger = Logger(subsystem: "com.prizm", category: "FaviconLoader")
 
     // MARK: - In-memory cache
 

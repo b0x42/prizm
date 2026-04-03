@@ -84,4 +84,4 @@ The system SHALL display a "Trash" entry in the sidebar that, when selected, sho
 - **WHEN** the user selects the Trash sidebar entry and no items are in trash
 - **THEN** the Trash view displays the message "No items in trash" as a heading and "Items you delete will appear here" as supporting text, with no list content
 
-> **Note on auto-purge copy**: Bitwarden (official cloud) permanently deletes trashed items after 30 days server-side. Vaultwarden (self-hosted) does **not** auto-purge by default — it requires the admin to set `TRASH_AUTO_DELETE_DAYS`, and the period is configurable. Because Macwarden targets both servers, the supporting text intentionally omits the "30 days" timeframe to avoid a misleading promise on self-hosted instances.
+> **Note on auto-purge copy**: Bitwarden (official cloud) permanently deletes trashed items after 30 days server-side. Vaultwarden (self-hosted) does **not** auto-purge by default — it requires the admin to set `TRASH_AUTO_DELETE_DAYS`, and the period is configurable. Because Prizm targets both servers, the supporting text intentionally omits the "30 days" timeframe to avoid a misleading promise on self-hosted instances.

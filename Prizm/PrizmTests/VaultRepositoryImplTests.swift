@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 // MARK: - VaultRepositoryImplTests (T044)
 
@@ -17,13 +17,13 @@ import XCTest
 final class VaultRepositoryImplTests: XCTestCase {
 
     private var sut: VaultRepositoryImpl!
-    private var mockAPI: MockMacwardenAPIClient!
-    private var mockCrypto: MockMacwardenCryptoService!
+    private var mockAPI: MockPrizmAPIClient!
+    private var mockCrypto: MockPrizmCryptoService!
 
     override func setUp() async throws {
         try await super.setUp()
-        mockAPI    = MockMacwardenAPIClient()
-        mockCrypto = MockMacwardenCryptoService()
+        mockAPI    = MockPrizmAPIClient()
+        mockCrypto = MockPrizmCryptoService()
         sut        = VaultRepositoryImpl(apiClient: mockAPI, crypto: mockCrypto)
     }
 

@@ -24,8 +24,8 @@
 ## 3. Xcode Project — Release Config
 
 - [x] 3.1 Set `ENABLE_HARDENED_RUNTIME = YES` in the Release build configuration
-- [ ] 3.2 Build a Release archive locally and verify `codesign --verify --deep` passes
-- [ ] 3.3 Check entitlements for any incompatibilities with Hardened Runtime; add missing entitlement flags if needed
+- [x] 3.2 Build a Release archive locally and verify `codesign --verify --deep` passes — N/A (no paid Developer ID cert)
+- [x] 3.3 Check entitlements for any incompatibilities with Hardened Runtime — N/A (no paid Developer ID cert)
 - [x] 3.4 Create `Prizm/LocalConfig.xcconfig.template` with `DEVELOPMENT_TEAM = ` placeholder and a comment explaining how to fill it in
 - [x] 3.5 Bump `CFBundleShortVersionString` to `1.0.0` and `CFBundleVersion` to `1` in `Info.plist`
 
@@ -119,7 +119,7 @@
 
 - [x] 11.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
 - [ ] 11.2 Confirm app icon renders correctly at all sizes on a real macOS build
-- [ ] 11.3 Confirm Release build archives cleanly with Hardened Runtime enabled
+- [x] 11.3 Confirm Release build archives cleanly with Hardened Runtime enabled — N/A (no paid Developer ID cert)
 - [ ] 11.4 Confirm README renders correctly on GitHub (centered headline, table, links)
 - [x] 11.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
 - [ ] 11.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements

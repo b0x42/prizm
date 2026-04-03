@@ -22,6 +22,6 @@ A password manager must be lockable. Currently the vault stays open indefinitely
 
 ## Impact
 
-- `MacwardenApp.swift` — new ⌘L `CommandGroup` entry
+- `PrizmApp.swift` — new ⌘L `CommandGroup` entry
 - `RootViewModel` — new `lockVault()` method, sleep and screensaver observers added to `subscribeToFlowStates()`
 - No new dependencies; no API changes; no Keychain changes

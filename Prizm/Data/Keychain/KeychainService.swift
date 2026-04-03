@@ -19,7 +19,7 @@ nonisolated enum KeychainError: Error, Equatable {
 /// Provides read, write, and delete access to the macOS Keychain.
 ///
 /// Keys are stored as generic passwords (`kSecClassGenericPassword`) scoped to the
-/// `com.macwarden` service, accessible only when the device is unlocked and
+/// `com.prizm` service, accessible only when the device is unlocked and
 /// not backed up to iCloud (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`).
 ///
 /// All operations are synchronous and throw `KeychainError` on failure.
@@ -45,25 +45,25 @@ protocol KeychainService {
 /// that appear on every new debug build when using the legacy login keychain.
 ///
 /// Each item carries:
-/// - `kSecAttrService`: `"com.macwarden"` — scopes items to this app.
+/// - `kSecAttrService`: `"com.prizm"` — scopes items to this app.
 /// - `kSecAttrAccount`: caller-provided `key` — allows multiple distinct items.
 /// - `kSecAttrAccessible`: `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — secrets
 ///   are available only while the device is unlocked and are not backed up to iCloud
 ///   or migrated to new devices (per Bitwarden Security Whitepaper §5: Keychain Storage).
 /// - `kSecUseDataProtectionKeychain`: `true` — opts into the modern keychain stack;
 ///   the access group is inferred from the first entry in the `keychain-access-groups`
-///   entitlement (`$(AppIdentifierPrefix)com.macwarden`).
+///   entitlement (`$(AppIdentifierPrefix)com.prizm`).
 final class KeychainServiceImpl: KeychainService {
 
-    private let service = "com.macwarden"
-    private let logger = Logger(subsystem: "com.macwarden", category: "KeychainService")
+    private let service = "com.prizm"
+    private let logger = Logger(subsystem: "com.prizm", category: "KeychainService")
 
     /// Returns the base Keychain query dictionary for `key`.
     ///
     /// `kSecUseDataProtectionKeychain: true` routes all queries to the modern data
     /// protection keychain. The access group is not set explicitly — for sandboxed apps,
     /// Security.framework automatically uses the first entry in the `keychain-access-groups`
-    /// entitlement (`$(AppIdentifierPrefix)com.macwarden`). Setting it explicitly here
+    /// entitlement (`$(AppIdentifierPrefix)com.prizm`). Setting it explicitly here
     /// would require embedding the resolved Team ID in source code.
     private func baseQuery(for key: String) -> [CFString: Any] {
         [

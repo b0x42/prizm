@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Data protection keychain access
-The app SHALL store and retrieve all keychain items using the data protection keychain (`kSecUseDataProtectionKeychain: true`) scoped to the `$(AppIdentifierPrefix)com.macwarden` access group, so that access is controlled by the app's entitlements rather than per-binary code-signature ACLs.
+The app SHALL store and retrieve all keychain items using the data protection keychain (`kSecUseDataProtectionKeychain: true`) scoped to the `$(AppIdentifierPrefix)com.prizm` access group, so that access is controlled by the app's entitlements rather than per-binary code-signature ACLs.
 
 #### Scenario: New build reads keychain without prompt
 - **WHEN** a developer builds and runs a new version of the app
@@ -9,7 +9,7 @@ The app SHALL store and retrieve all keychain items using the data protection ke
 
 #### Scenario: Items scoped to access group
 - **WHEN** a keychain item is written
-- **THEN** it is stored with `kSecAttrAccessGroup` set to the resolved `$(AppIdentifierPrefix)com.macwarden` value
+- **THEN** it is stored with `kSecAttrAccessGroup` set to the resolved `$(AppIdentifierPrefix)com.prizm` value
 
 ### Requirement: Team ID excluded from repo
 The git repository SHALL NOT contain the developer's Team ID or Apple ID in any committed file.

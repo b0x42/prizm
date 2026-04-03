@@ -1,20 +1,20 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Failing tests for AuthRepositoryImpl (T023, T024).
-/// These will fail until AuthRepositoryImpl + MacwardenAPIClient are implemented (T027–T029).
+/// These will fail until AuthRepositoryImpl + PrizmAPIClient are implemented (T027–T029).
 @MainActor
 final class AuthRepositoryImplTests: XCTestCase {
 
     private var sut: AuthRepositoryImpl!
-    private var mockAPI: MockMacwardenAPIClient!
-    private var mockCrypto: MockMacwardenCryptoService!
+    private var mockAPI: MockPrizmAPIClient!
+    private var mockCrypto: MockPrizmCryptoService!
     private var mockKeychain: MockKeychainService!
 
     override func setUp() async throws {
         try await super.setUp()
-        mockAPI      = MockMacwardenAPIClient()
-        mockCrypto   = MockMacwardenCryptoService()
+        mockAPI      = MockPrizmAPIClient()
+        mockCrypto   = MockPrizmCryptoService()
         mockKeychain = MockKeychainService()
         sut = AuthRepositoryImpl(
             apiClient:  mockAPI,

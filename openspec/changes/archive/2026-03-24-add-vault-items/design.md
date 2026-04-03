@@ -1,6 +1,6 @@
 ## Context
 
-Macwarden already has a complete edit flow: `DraftVaultItem` → `CipherMapper.toRawCipher` → `PUT /api/ciphers/{id}` → cache splice. Item creation follows the same data path except:
+Prizm already has a complete edit flow: `DraftVaultItem` → `CipherMapper.toRawCipher` → `PUT /api/ciphers/{id}` → cache splice. Item creation follows the same data path except:
 1. There is no existing `VaultItem` to initialise the draft from — a blank draft is needed.
 2. The API endpoint is `POST /api/ciphers` (no `{id}` in the path) and the server assigns the ID.
 3. The response item is appended to the cache rather than spliced in-place.

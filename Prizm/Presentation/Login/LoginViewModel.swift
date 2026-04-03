@@ -33,7 +33,7 @@ final class LoginViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let loginUseCase: any LoginUseCase
-    private let logger = Logger(subsystem: "com.macwarden", category: "LoginViewModel")
+    private let logger = Logger(subsystem: "com.prizm", category: "LoginViewModel")
 
     // MARK: - Init
 

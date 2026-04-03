@@ -1,6 +1,6 @@
 ## Context
 
-Macwarden previously used custom column headers (`listColumnHeader`, `detailColumnHeader`) with a custom `NativeSearchField` (`NSViewRepresentable` wrapping `NSSearchField`) and manually positioned action buttons. This added complexity without meaningful UX benefit over native SwiftUI APIs.
+Prizm previously used custom column headers (`listColumnHeader`, `detailColumnHeader`) with a custom `NativeSearchField` (`NSViewRepresentable` wrapping `NSSearchField`) and manually positioned action buttons. This added complexity without meaningful UX benefit over native SwiftUI APIs.
 
 The implementation now uses native SwiftUI `.searchable(placement: .sidebar)` for search and `.toolbar` with `ToolbarItem` for action buttons, which is simpler, more maintainable, and automatically adapts to macOS conventions.
 

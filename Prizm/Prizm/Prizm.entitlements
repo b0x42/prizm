@@ -12,7 +12,7 @@
 	     $(AppIdentifierPrefix) is resolved at build time to TEAMID. from LocalConfig.xcconfig. -->
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)com.macwarden</string>
+		<string>$(AppIdentifierPrefix)com.prizm</string>
 	</array>
 </dict>
 </plist>

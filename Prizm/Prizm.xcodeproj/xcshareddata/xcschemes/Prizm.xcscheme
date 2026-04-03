@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "434D9EB92F670B9C00052BCB"
-               BuildableName = "Macwarden.app"
-               BlueprintName = "Macwarden"
-               ReferencedContainer = "container:Macwarden.xcodeproj">
+               BuildableName = "Prizm.app"
+               BlueprintName = "Prizm"
+               ReferencedContainer = "container:Prizm.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -34,9 +34,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4309FD0C2F68121F0031C9F4"
-               BuildableName = "MacwardenTests.xctest"
-               BlueprintName = "MacwardenTests"
-               ReferencedContainer = "container:Macwarden.xcodeproj">
+               BuildableName = "PrizmTests.xctest"
+               BlueprintName = "PrizmTests"
+               ReferencedContainer = "container:Prizm.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -56,9 +56,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "434D9EB92F670B9C00052BCB"
-            BuildableName = "Macwarden.app"
-            BlueprintName = "Macwarden"
-            ReferencedContainer = "container:Macwarden.xcodeproj">
+            BuildableName = "Prizm.app"
+            BlueprintName = "Prizm"
+            ReferencedContainer = "container:Prizm.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -79,9 +79,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "434D9EB92F670B9C00052BCB"
-            BuildableName = "Macwarden.app"
-            BlueprintName = "Macwarden"
-            ReferencedContainer = "container:Macwarden.xcodeproj">
+            BuildableName = "Prizm.app"
+            BlueprintName = "Prizm"
+            ReferencedContainer = "container:Prizm.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

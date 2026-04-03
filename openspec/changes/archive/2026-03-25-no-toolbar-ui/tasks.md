@@ -5,7 +5,7 @@
 
 ## 2. Window Chrome
 
-- [x] 2.1 Change `.windowStyle(.titleBar)` to `.windowStyle(.hiddenTitleBar)` in `MacwardenApp.swift`
+- [x] 2.1 Change `.windowStyle(.titleBar)` to `.windowStyle(.hiddenTitleBar)` in `PrizmApp.swift`
 - [x] 2.2 Remove `.windowToolbarStyle(.unified)` from the `WindowGroup` scene
 
 ## 3. VaultBrowserView Rewrite

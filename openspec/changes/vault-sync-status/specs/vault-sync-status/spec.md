@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Last sync timestamp is persisted after a successful sync
-The system SHALL record the date and time of the most recent successful vault sync per account. The timestamp SHALL be persisted to UserDefaults under a key scoped to the account email (e.g. `com.macwarden.lastSyncDate.<email>`) so that it survives app restarts and does not bleed across accounts. The timestamp SHALL be updated each time a sync completes successfully and SHALL NOT be updated when a sync fails.
+The system SHALL record the date and time of the most recent successful vault sync per account. The timestamp SHALL be persisted to UserDefaults under a key scoped to the account email (e.g. `com.prizm.lastSyncDate.<email>`) so that it survives app restarts and does not bleed across accounts. The timestamp SHALL be updated each time a sync completes successfully and SHALL NOT be updated when a sync fails.
 
 #### Scenario: Timestamp written on successful sync
 - **WHEN** a vault sync completes successfully

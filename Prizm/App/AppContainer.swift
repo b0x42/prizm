@@ -12,8 +12,8 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Data layer
 
-    let apiClient:     MacwardenAPIClientImpl
-    let crypto:        MacwardenCryptoServiceImpl
+    let apiClient:     PrizmAPIClientImpl
+    let crypto:        PrizmCryptoServiceImpl
     let keychain:      KeychainServiceImpl
     let vaultStore:    VaultRepositoryImpl
     let faviconLoader: FaviconLoader
@@ -40,8 +40,8 @@ final class AppContainer: ObservableObject {
     // MARK: - Init
 
     init() {
-        let api      = MacwardenAPIClientImpl()
-        let crypto   = MacwardenCryptoServiceImpl()
+        let api      = PrizmAPIClientImpl()
+        let crypto   = PrizmCryptoServiceImpl()
         let keychain = KeychainServiceImpl()
         let vault    = VaultRepositoryImpl(apiClient: api, crypto: crypto)
 

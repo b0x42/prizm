@@ -23,9 +23,9 @@ Every new Xcode build changes the app's code signature, invalidating the per-ite
 
 ## Impact
 
-- `Macwarden/Macwarden/Macwarden.entitlements` — add `keychain-access-groups`
-- `Macwarden/Data/Keychain/KeychainService.swift` — add `kSecUseDataProtectionKeychain` and `kSecAttrAccessGroup` to all queries
-- `Macwarden/Data/Repositories/AuthRepositoryImpl.swift` — remove duplicate keychain reads in `unlockWithPassword`
-- `Macwarden/Macwarden.xcodeproj/project.pbxproj` — clear `DEVELOPMENT_TEAM`, wire xcconfig
+- `Prizm/Prizm/Prizm.entitlements` — add `keychain-access-groups`
+- `Prizm/Data/Keychain/KeychainService.swift` — add `kSecUseDataProtectionKeychain` and `kSecAttrAccessGroup` to all queries
+- `Prizm/Data/Repositories/AuthRepositoryImpl.swift` — remove duplicate keychain reads in `unlockWithPassword`
+- `Prizm/Prizm.xcodeproj/project.pbxproj` — clear `DEVELOPMENT_TEAM`, wire xcconfig
 - New files: `LocalConfig.xcconfig.template`, `LocalConfig.xcconfig` (gitignored), `.gitignore` update
 - Existing keychain items (login keychain) will not auto-migrate — fresh login required after the change (one-time)

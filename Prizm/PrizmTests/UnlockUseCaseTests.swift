@@ -1,5 +1,5 @@
 import XCTest
-@testable import Macwarden
+@testable import Prizm
 
 /// Failing tests for UnlockUseCaseImpl (T039).
 /// These will fail until UnlockUseCaseImpl is implemented (T041).

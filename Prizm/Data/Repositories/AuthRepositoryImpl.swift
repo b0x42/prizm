@@ -10,7 +10,7 @@ import os.log
 ///   2. Derive master key (PBKDF2 or Argon2id) locally
 ///   3. POST `/connect/token` → access + refresh tokens
 ///   4. Decrypt encUserKey → vault symmetric keys
-///   5. Unlock `MacwardenCryptoServiceImpl` with vault keys
+///   5. Unlock `PrizmCryptoServiceImpl` with vault keys
 ///   6. Persist tokens + metadata in Keychain
 ///
 /// Two-factor flow: `loginWithPassword` returns `.requiresTwoFactor` and stores
@@ -23,11 +23,11 @@ final class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Dependencies
 
-    private let apiClient:  any MacwardenAPIClientProtocol
-    private let crypto:     any MacwardenCryptoService
+    private let apiClient:  any PrizmAPIClientProtocol
+    private let crypto:     any PrizmCryptoService
     private let keychain:   any KeychainService
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "AuthRepository")
+    private let logger = Logger(subsystem: "com.prizm", category: "AuthRepository")
 
     // MARK: - Server configuration
 
@@ -50,8 +50,8 @@ final class AuthRepositoryImpl: AuthRepository {
     // MARK: - Init
 
     init(
-        apiClient: any MacwardenAPIClientProtocol,
-        crypto:    any MacwardenCryptoService,
+        apiClient: any PrizmAPIClientProtocol,
+        crypto:    any PrizmCryptoService,
         keychain:  any KeychainService
     ) {
         self.apiClient = apiClient

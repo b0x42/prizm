@@ -19,7 +19,7 @@ struct VaultBrowserView: View {
     @State private var showPermanentDeleteAlert = false
     @State private var isSearchFieldFocused = false
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "UI.VaultBrowser")
+    private let logger = Logger(subsystem: "com.prizm", category: "UI.VaultBrowser")
 
     var body: some View {
         NavigationSplitView(

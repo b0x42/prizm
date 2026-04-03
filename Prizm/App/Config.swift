@@ -1,6 +1,6 @@
 //
 //  Config.swift
-//  Macwarden
+//  Prizm
 //
 //  Created by Benjamin Burzan on 16.03.26.
 //
@@ -13,7 +13,7 @@ extension Notification.Name {
     /// Posted on the main thread whenever the vault is locked (sign-out or explicit lock).
     /// `ItemEditViewModel` subscribes to dismiss the edit sheet immediately, without a
     /// confirmation prompt, and clear the `DraftVaultItem` from memory (Constitution §III).
-    static let vaultDidLock = Notification.Name("com.macwarden.vaultDidLock")
+    static let vaultDidLock = Notification.Name("com.prizm.vaultDidLock")
 }
 
 // MARK: - App config

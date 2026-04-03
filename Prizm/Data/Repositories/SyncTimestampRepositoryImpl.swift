@@ -9,7 +9,7 @@ import os.log
 /// - Thread safety: implemented as an `actor` (CLAUDE.md: actor for shared mutable state in
 ///   the Data layer) to guard against concurrent reads/writes from the sync completion path
 ///   and the ViewModel load path.
-/// - Key format: `com.macwarden.lastSyncDate.<email>` — scoped per account so that
+/// - Key format: `com.prizm.lastSyncDate.<email>` — scoped per account so that
 ///   switching accounts never shows a timestamp from a previous session.
 /// - Format: ISO-8601 string via `ISO8601DateFormatter` — human-readable in developer tools.
 actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
@@ -44,7 +44,7 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
     ///   - defaults: The `UserDefaults` suite to write to. Defaults to `.standard`.
     ///     Pass a test-suite instance in unit tests to avoid polluting real defaults.
     init(email: String, defaults: UserDefaults = .standard) {
-        self.key      = "com.macwarden.lastSyncDate.\(email.lowercased())"
+        self.key      = "com.prizm.lastSyncDate.\(email.lowercased())"
         self.defaults = defaults
     }
 
@@ -74,7 +74,7 @@ actor SyncTimestampRepositoryImpl: SyncTimestampRepository {
         // §V Observability: log that a sync timestamp was recorded. Timestamp is non-sensitive.
         // Local Logger allocation required because the actor-isolated `logger` property is not
         // accessible from a nonisolated context. os.Logger is a lightweight struct — no cost.
-        Logger(subsystem: "com.macwarden", category: "SyncTimestampRepository")
+        Logger(subsystem: "com.prizm", category: "SyncTimestampRepository")
             .info("Sync timestamp recorded: \(iso, privacy: .public)")
     }
 }

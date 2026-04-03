@@ -6,7 +6,7 @@ import os.log
 /// Concrete implementation of `SyncRepository`.
 ///
 /// Fetches the encrypted vault from the Bitwarden server, decrypts personal ciphers
-/// via `MacwardenCryptoServiceImpl.decryptList`, and populates the in-memory `VaultRepository`.
+/// via `PrizmCryptoServiceImpl.decryptList`, and populates the in-memory `VaultRepository`.
 ///
 /// Organisation ciphers (`organizationId != nil`) are skipped in v1. The encrypted
 /// private key needed to decrypt per-org symmetric keys is present in the token response
@@ -24,11 +24,11 @@ actor SyncRepositoryImpl: SyncRepository {
 
     // MARK: - Dependencies
 
-    private let apiClient:       any MacwardenAPIClientProtocol
-    private let crypto:          any MacwardenCryptoService
+    private let apiClient:       any PrizmAPIClientProtocol
+    private let crypto:          any PrizmCryptoService
     private let vaultRepository: any VaultRepository
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "SyncRepository")
+    private let logger = Logger(subsystem: "com.prizm", category: "SyncRepository")
 
     // MARK: - State
 
@@ -37,8 +37,8 @@ actor SyncRepositoryImpl: SyncRepository {
     // MARK: - Init
 
     init(
-        apiClient:       any MacwardenAPIClientProtocol,
-        crypto:          any MacwardenCryptoService,
+        apiClient:       any PrizmAPIClientProtocol,
+        crypto:          any PrizmCryptoService,
         vaultRepository: any VaultRepository
     ) {
         self.apiClient       = apiClient
@@ -99,7 +99,7 @@ actor SyncRepositoryImpl: SyncRepository {
         let (items, failedCount) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
         logger.info("Decrypted \(items.count) cipher(s); \(failedCount) failure(s)")
         if DebugConfig.isEnabled && failedCount > 0 {
-            logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check MacwardenCryptoService logs for per-cipher errors")
+            logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check PrizmCryptoService logs for per-cipher errors")
         }
 
         // Phase 3: Populate the in-memory vault store.

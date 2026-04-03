@@ -1,5 +1,5 @@
 import Foundation
-@testable import Macwarden
+@testable import Prizm
 
 /// Deterministic `RandomnessProvider` for reproducible tests.
 /// Returns bytes from a repeating seed sequence.
