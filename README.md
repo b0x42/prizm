@@ -151,4 +151,4 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 
 ---
 
-*Not affiliated with Bitwarden, Inc. or 8bit Solutions LLC.*
+*Not affiliated with Bitwarden, Inc., 8bit Solutions LLC, or the Vaultwarden project.*
