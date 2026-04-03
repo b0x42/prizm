@@ -21,7 +21,7 @@ The current vault browser uses a standard macOS unified toolbar with a floating 
 
 ## Impact
 
-- `MacwardenApp.swift`: window style + toolbar style modifiers
+- `PrizmApp.swift`: window style + toolbar style modifiers
 - `VaultBrowserView.swift`: remove custom `listColumnHeader`, `detailColumnHeader`, `NativeSearchField` usage; use native `.searchable` and `.toolbar` for all controls
 - `ItemDetailView.swift`: remove `.toolbar {}` block; actions driven by parent via existing callback props and `editTrigger`
 - `NativeSearchField.swift`: deleted (replaced by native `.searchable`)

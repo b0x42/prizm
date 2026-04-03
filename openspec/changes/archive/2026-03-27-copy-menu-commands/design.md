@@ -18,7 +18,7 @@
 
 **Chosen:** `RootViewModel` owns the copy helpers because it already owns menu bar state (`menuBarCanEdit`, `menuBarCanSave`).
 
-**Rationale:** Menu commands live in `MacwardenApp.commands` which has access to `rootVM`. Keeping copy logic alongside existing menu state is consistent.
+**Rationale:** Menu commands live in `PrizmApp.commands` which has access to `rootVM`. Keeping copy logic alongside existing menu state is consistent.
 
 ### Decision 2: Login-only for v1
 

@@ -1,6 +1,6 @@
 ## Why
 
-The detail pane card style uses drop shadows and a stacked (label-on-top, value-below) field layout. macOS native apps — System Settings, Apple's Passwords app — use shadowless cards differentiated by background contrast and a horizontal label-left/value-right field layout. Aligning with the native pattern makes Macwarden feel more at home on macOS.
+The detail pane card style uses drop shadows and a stacked (label-on-top, value-below) field layout. macOS native apps — System Settings, Apple's Passwords app — use shadowless cards differentiated by background contrast and a horizontal label-left/value-right field layout. Aligning with the native pattern makes Prizm feel more at home on macOS.
 
 ## What Changes
 

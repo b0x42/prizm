@@ -2,7 +2,7 @@
 
 - [x] 1.1 Create Xcode project with App Sandbox + Hardened Runtime
 - [x] 1.2 Add Argon2Swift as vendored local SPM package (`LocalPackages/Argon2Swift/`) via `XCLocalSwiftPackageReference`
-- [x] 1.3 Create App layer files (`MacwardenApp.swift`, `AppContainer.swift`, `Config.swift`)
+- [x] 1.3 Create App layer files (`PrizmApp.swift`, `AppContainer.swift`, `Config.swift`)
 - [x] 1.4 Create directory structure (`Domain/`, `Data/Crypto/`, `Data/Network/Models/`, `Data/Keychain/`, `Data/Mappers/`, `Data/Repositories/`, `Presentation/`, `Tests/`)
 
 ## 2. Domain Layer — Entities & Protocols
@@ -36,7 +36,7 @@
 - [x] 4.2 Write failing unit tests: `AuthRepositoryImpl.loginWithTOTP` (TOTP challenge flow + rememberDevice flag)
 - [x] 4.3 Write failing unit tests: `SyncRepositoryImpl.sync()` (progress callbacks, personal-cipher-only `decryptList`, `SyncResult`)
 - [x] 4.4 Write failing unit tests: `LoginUseCase` (full orchestration: preLogin → login → optional TOTP → sync)
-- [x] 4.5 Implement `MacwardenAPIClient` (URLSession; preLogin POST, identityToken POST form-encoded, sync GET; all required headers including `Device-Type` + `X-Device-Identifier`)
+- [x] 4.5 Implement `PrizmAPIClient` (URLSession; preLogin POST, identityToken POST form-encoded, sync GET; all required headers including `Device-Type` + `X-Device-Identifier`)
 - [x] 4.6 Implement device identifier generation (UUID v4 on first launch, Keychain key `bw.macos:deviceIdentifier`)
 - [x] 4.7 Implement `AuthRepositoryImpl`: `validateServerURL`, `setServerEnvironment`, `loginWithPassword`, `loginWithTOTP`
 - [x] 4.8 Implement `SyncRepositoryImpl`: `sync()` with progress callbacks; personal ciphers only; graceful per-cipher failure
@@ -44,7 +44,7 @@
 - [x] 4.10 Build `LoginView` + `LoginViewModel`
 - [x] 4.11 Build `TOTPPromptView` (TOTP code input + "Remember this device" checkbox)
 - [x] 4.12 Build `SyncProgressView` (full-screen, sequential status messages)
-- [x] 4.13 Wire app state machine in `AppContainer` + `MacwardenApp`
+- [x] 4.13 Wire app state machine in `AppContainer` + `PrizmApp`
 - [x] 4.14 XCUITest: full login journey (blank login screen → server URL + credentials → vault browser)
 
 ## 5. User Story 2 — Vault Unlock
@@ -88,7 +88,7 @@
 
 - [x] 8.1 Wire Sign Out in macOS menu (File menu) + `NSAlert` confirmation; on confirm → `AuthRepository.signOut()` → blank `LoginView`
 - [x] 8.2 Build sync error banner (system yellow tint, ≤44pt height, spans item list + detail columns, explicit × dismiss button, auto-dismiss on next successful sync)
-- [x] 8.3 Add `os.Logger` calls to all auth, sync, vault, and network code paths (subsystem `com.macwarden`; secrets MUST NOT appear in logs)
+- [x] 8.3 Add `os.Logger` calls to all auth, sync, vault, and network code paths (subsystem `com.prizm`; secrets MUST NOT appear in logs)
 - [x] 8.4 Constitution check: audit every `catch {}` block; audit every file import for layer boundary violations; verify all crypto files have doc comments citing standards
 - [x] 8.5 Create `SECURITY.md` at repo root (encrypted data + algorithms; key storage + access conditions; threat model; non-goals)
 - [x] 8.6 Validate quickstart.md end-to-end from clean checkout (build + run all tests)

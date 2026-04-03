@@ -1,6 +1,6 @@
 ## Context
 
-Macwarden currently allows users to view and edit vault items but provides no way to delete or restore them. Bitwarden's server already implements a soft-delete model: deleting a cipher moves it to a trash collection (sets `deletedDate`); it can be restored or permanently purged. The macOS client needs to expose these actions through the existing `VaultRepository` abstraction, map the new `deletedDate` field, and surface trash management UI.
+Prizm currently allows users to view and edit vault items but provides no way to delete or restore them. Bitwarden's server already implements a soft-delete model: deleting a cipher moves it to a trash collection (sets `deletedDate`); it can be restored or permanently purged. The macOS client needs to expose these actions through the existing `VaultRepository` abstraction, map the new `deletedDate` field, and surface trash management UI.
 
 The existing architecture — Domain use cases, Data repository implementations, and SwiftUI Presentation — is a clean fit for this change with no architectural deviation needed.
 

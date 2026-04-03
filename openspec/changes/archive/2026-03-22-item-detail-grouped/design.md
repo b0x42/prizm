@@ -22,7 +22,7 @@ The change is confined entirely to the Presentation layer. Domain entities and D
 
 ### 1. `CardBackground` ViewModifier + `DetailSectionCard` wrapper view
 
-**Decision**: Add `Macwarden/Presentation/Components/CardBackground.swift` containing:
+**Decision**: Add `Prizm/Presentation/Components/CardBackground.swift` containing:
 1. A `CardBackground` `ViewModifier` — applies `.background(Color("CardBackground"))`, `.cornerRadius(20)`, and `.shadow(color: .black.opacity(0.2), radius: 4)`.
 2. A `View` extension `.cardBackground()` for ergonomic call sites.
 3. A `DetailSectionCard` view that accepts an optional title `String` and a `@ViewBuilder` content closure, rendering a `VStack` of field rows wrapped in `.cardBackground()`.

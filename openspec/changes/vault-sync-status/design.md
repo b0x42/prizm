@@ -28,7 +28,7 @@ The last-sync timestamp is not a secret — it is a UI preference. Storing it in
 
 ### Decision: Store as ISO-8601 string in UserDefaults, keyed per account
 
-`Date` encodes cleanly as an ISO-8601 `String` with `ISO8601DateFormatter`. The UserDefaults key is scoped to the account email (`com.macwarden.lastSyncDate.<email>`) so that switching accounts does not show a stale timestamp from the previous account.
+`Date` encodes cleanly as an ISO-8601 `String` with `ISO8601DateFormatter`. The UserDefaults key is scoped to the account email (`com.prizm.lastSyncDate.<email>`) so that switching accounts does not show a stale timestamp from the previous account.
 
 **Alternative considered**: `TimeInterval` (Double) with a shared key. Rejected — ISO-8601 is self-documenting in developer tools, and per-account keying is necessary for correctness.
 

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project Prizm/Prizm.xcodeproj \
+            -scheme Prizm \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            CODE_SIGN_STYLE=Automatic \
+            build
+
+      - name: Test
+        run: |
+          xcodebuild test \
+            -project Prizm/Prizm.xcodeproj \
+            -scheme Prizm \
+            -destination "platform=macOS" \
+            CODE_SIGN_STYLE=Automatic

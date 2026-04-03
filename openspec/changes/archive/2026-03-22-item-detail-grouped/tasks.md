@@ -6,7 +6,7 @@
 
 ## 2. CardBackground Component — Implementation
 
-- [x] 2.1 Create `Macwarden/Presentation/Components/CardBackground.swift` with `CardBackground` `ViewModifier` (`.background(Color("CardBackground"))`, `.cornerRadius(20)`, `.shadow(color: .black.opacity(0.2), radius: 4)`) and `.cardBackground()` `View` extension
+- [x] 2.1 Create `Prizm/Presentation/Components/CardBackground.swift` with `CardBackground` `ViewModifier` (`.background(Color("CardBackground"))`, `.cornerRadius(20)`, `.shadow(color: .black.opacity(0.2), radius: 4)`) and `.cardBackground()` `View` extension
 - [x] 2.2 Create `DetailSectionCard` view in the same file: optional title header + `@ViewBuilder` content wrapped in `.cardBackground()`
 - [x] 2.3 Add `CardBackground.swift` to the Xcode project target build phase
 - [x] 2.4 Add accessibility identifier `Detail.cardHeader.<sectionName>` to card header labels in `DetailSectionCard`

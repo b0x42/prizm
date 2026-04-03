@@ -1,10 +1,10 @@
 ## Why
 
-macOS assigns ⌘N to "New Window" by default in `WindowGroup`. Macwarden uses ⌘N for "New Item" in the vault browser. Both compete for the same shortcut — the system command wins when focus is outside the toolbar, opening a duplicate window instead of the item picker. Remapping "New Window" to ⌥⌘N eliminates the conflict.
+macOS assigns ⌘N to "New Window" by default in `WindowGroup`. Prizm uses ⌘N for "New Item" in the vault browser. Both compete for the same shortcut — the system command wins when focus is outside the toolbar, opening a duplicate window instead of the item picker. Remapping "New Window" to ⌥⌘N eliminates the conflict.
 
 ## What Changes
 
-- Override the default "New Window" command in `MacwardenApp.commands` to use ⌥⌘N instead of ⌘N
+- Override the default "New Window" command in `PrizmApp.commands` to use ⌥⌘N instead of ⌘N
 - ⌘N remains exclusively for "New Item" in the vault browser
 
 ## Capabilities
@@ -19,4 +19,4 @@ macOS assigns ⌘N to "New Window" by default in `WindowGroup`. Macwarden uses �
 
 ## Impact
 
-- `MacwardenApp.swift` — add a `CommandGroup(replacing: .newItem)` to remap the shortcut
+- `PrizmApp.swift` — add a `CommandGroup(replacing: .newItem)` to remap the shortcut

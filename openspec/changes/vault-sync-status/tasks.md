@@ -7,7 +7,7 @@
 ## 2. Data Layer — Tests First (§IV TDD)
 
 - [x] 2.1 Write failing unit tests for `SyncTimestampRepositoryImpl` covering: write, read-back, nil-before-first-write, persistence across init, and isolation between two instances initialized with different emails — tests must fail before 2.2
-- [x] 2.2 Implement `SyncTimestampRepositoryImpl` as an `actor` in `Data/` (CLAUDE.md: actor for shared mutable state); initialized with account email; stores ISO-8601 string under `com.macwarden.lastSyncDate.<email>` in UserDefaults
+- [x] 2.2 Implement `SyncTimestampRepositoryImpl` as an `actor` in `Data/` (CLAUDE.md: actor for shared mutable state); initialized with account email; stores ISO-8601 string under `com.prizm.lastSyncDate.<email>` in UserDefaults
 
 ## 3. Presentation Formatter — Tests First (§IV TDD)
 

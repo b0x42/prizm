@@ -1,6 +1,6 @@
 ## Context
 
-Macwarden's vault browser (001-vault-browser-ui) is read-only. All domain entities (`VaultItem`, `LoginContent`, etc.) are immutable value types (`let` fields). The Data layer already handles decryption via `MacwardenCryptoService` and communicates with the Bitwarden/Vaultwarden REST API via `MacwardenAPIClient`. There is no existing write path (no PUT/POST cipher calls).
+Prizm's vault browser (001-vault-browser-ui) is read-only. All domain entities (`VaultItem`, `LoginContent`, etc.) are immutable value types (`let` fields). The Data layer already handles decryption via `PrizmCryptoService` and communicates with the Bitwarden/Vaultwarden REST API via `PrizmAPIClient`. There is no existing write path (no PUT/POST cipher calls).
 
 The Bitwarden API cipher update endpoint (`PUT /ciphers/{id}`) accepts a JSON body with re-encrypted field values in `EncString` format — the same format already used for decryption. The existing `CipherMapper` translates `RawCipher` → `VaultItem` (read direction only).
 
@@ -87,7 +87,7 @@ After a successful PUT, `VaultRepositoryImpl` replaces the item in the in-memory
 |---|---|
 | Re-encryption bug silently corrupts a vault item | Unit test the reverse mapper round-trip (encrypt → decrypt → compare) against known Bitwarden test vectors |
 | Edit sheet state lost on app backgrounding | Acceptable for v1 — `DraftVaultItem` is in-memory only; add persistence in a future change if needed |
-| PUT API shape differs between Bitwarden cloud and self-hosted Vaultwarden | Existing sync already targets both; same `MacwardenAPIClient` pattern applies. Test against Vaultwarden locally. |
+| PUT API shape differs between Bitwarden cloud and self-hosted Vaultwarden | Existing sync already targets both; same `PrizmAPIClient` pattern applies. Test against Vaultwarden locally. |
 | Large identity forms are verbose on macOS | Use the same card-section layout as detail views; group fields into collapsible sections if user feedback warrants |
 | Custom field reordering UX on macOS | Use `List` with `.onMove` — native macOS drag-to-reorder, same approach used in system apps |
 

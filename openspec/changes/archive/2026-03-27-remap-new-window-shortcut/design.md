@@ -1,6 +1,6 @@
 ## Context
 
-SwiftUI's `WindowGroup` automatically provides a "New Window" menu item bound to ⌘N. Macwarden's vault browser binds ⌘N to "New Item" via `.keyboardShortcut("n", modifiers: .command)` on the toolbar button. When focus is outside the toolbar, the system command wins and opens a duplicate window.
+SwiftUI's `WindowGroup` automatically provides a "New Window" menu item bound to ⌘N. Prizm's vault browser binds ⌘N to "New Item" via `.keyboardShortcut("n", modifiers: .command)` on the toolbar button. When focus is outside the toolbar, the system command wins and opens a duplicate window.
 
 ## Goals / Non-Goals
 
