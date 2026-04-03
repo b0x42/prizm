@@ -69,7 +69,7 @@
 - [x] 6.5 Create `.github/ISSUE_TEMPLATE/bug_report.md` — fields: description, steps to reproduce, expected vs actual behaviour, macOS version, Prizm version, Vaultwarden version
 - [x] 6.6 Create `.github/ISSUE_TEMPLATE/feature_request.md` — fields: problem statement, proposed solution, alternatives considered
 - [x] 6.7 Create `.github/pull_request_template.md` — sections: what this changes, how to test, checklist (tests pass, no new Macwarden refs, follows Constitution)
-- [ ] 6.8 Create `assets/social-preview.png` (1280×640px) — use the screenshot as the base with the Prizm logo and tagline overlaid; set as the GitHub repository social preview image in Settings → Social preview
+- [x] 6.8 Create `assets/social-preview.png` (1280×640px) — use the screenshot as the base with the Prizm logo and tagline overlaid; set as the GitHub repository social preview image in Settings → Social preview
 
 ## 7. Pre-Release Repository Cleanup
 
