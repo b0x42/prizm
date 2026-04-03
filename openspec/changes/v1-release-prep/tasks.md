@@ -66,6 +66,11 @@
   16. **Mission & Principles** — adapted from approved draft (closing statement)
 - [ ] 6.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
 - [ ] 6.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
+- [ ] 6.4 Add `CODE_OF_CONDUCT.md` — use the Contributor Covenant v2.1 (industry standard, one page, no customisation needed)
+- [ ] 6.5 Create `.github/ISSUE_TEMPLATE/bug_report.md` — fields: description, steps to reproduce, expected vs actual behaviour, macOS version, Prizm version, Vaultwarden version
+- [ ] 6.6 Create `.github/ISSUE_TEMPLATE/feature_request.md` — fields: problem statement, proposed solution, alternatives considered
+- [ ] 6.7 Create `.github/pull_request_template.md` — sections: what this changes, how to test, checklist (tests pass, no new Macwarden refs, follows Constitution)
+- [ ] 6.8 Create `assets/social-preview.png` (1280×640px) — use the screenshot as the base with the Prizm logo and tagline overlaid; set as the GitHub repository social preview image in Settings → Social preview
 
 ## 7. Pre-Release Repository Cleanup
 
@@ -73,7 +78,8 @@
 - [ ] 7.2 Verify `.gitignore` covers all sensitive local files (`LocalConfig.xcconfig`, `*.p12`, `*.mobileprovision`, `.env`, `xcuserdata/`)
 - [ ] 7.3 Review all TODO/FIXME comments — confirm none reveal exploitable security gaps; acceptable ones should be framed as improvement opportunities, not vulnerabilities
 - [ ] 7.4 Review open issues and PR descriptions for any private information before the repo goes public
-- [ ] 7.5 Switch repo visibility to public on GitHub — **do this manually after all other tasks are complete**
+- [ ] 7.5 Enable branch protection on `main`: require at least one PR approval, require CI to pass, disallow direct pushes — configure in GitHub Settings → Branches → Add rule
+- [ ] 7.6 Switch repo visibility to public on GitHub — **do this manually after all other tasks are complete**
 
 ## 8. Repository Rename
 

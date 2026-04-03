@@ -128,6 +128,40 @@ are automatically forwarded by GitHub after a rename.
 - **WHEN** the local remote URL is updated
 - **THEN** `git remote get-url origin` returns `https://github.com/b0x42/prizm`
 
+### Requirement: Community health files exist
+The repository SHALL contain the standard GitHub community health files so contributors
+know the expectations before opening issues or pull requests.
+
+- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1
+- `.github/ISSUE_TEMPLATE/bug_report.md` — structured bug report template
+- `.github/ISSUE_TEMPLATE/feature_request.md` — structured feature request template
+- `.github/pull_request_template.md` — PR checklist including: tests pass, no Macwarden refs remain, change follows the Constitution
+
+#### Scenario: User opens a new issue
+- **WHEN** a user clicks "New issue" on GitHub
+- **THEN** they are offered the bug report and feature request templates with pre-filled fields to guide them
+
+#### Scenario: User opens a pull request
+- **WHEN** a user opens a pull request
+- **THEN** the PR description is pre-filled with the template checklist
+
+### Requirement: Social preview image exists
+The repository SHALL have a social preview image (`assets/social-preview.png`, 1280×640px)
+set in GitHub Settings → Social preview, so the repo looks professional when shared on
+social media or messaging apps.
+
+#### Scenario: Repo link is shared
+- **WHEN** a user shares the GitHub URL in Slack, Twitter, or iMessage
+- **THEN** the preview card shows the Prizm icon, name, and tagline — not a blank or generic GitHub card
+
+### Requirement: Branch protection on main
+The `main` branch SHALL be protected: direct pushes are disallowed, CI must pass before
+merge, and at least one review is required. Configured in GitHub Settings → Branches.
+
+#### Scenario: Contributor pushes directly to main
+- **WHEN** anyone attempts to push directly to `main`
+- **THEN** GitHub rejects the push and instructs them to open a pull request
+
 ### Requirement: README screenshot is a real app capture (macOS only)
 The screenshot in `README.md` SHALL be an actual capture of the running Prizm app, not
 a placeholder. Capture is automated via `screencapture` on macOS and committed to
