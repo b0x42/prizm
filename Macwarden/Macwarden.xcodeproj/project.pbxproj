@@ -28,6 +28,7 @@
 		4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE72F6809A40031C9F4 /* AppContainer.swift */; };
 		4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE92F6809C10031C9F4 /* Config.swift */; };
 		43947740EA3343DC9C888402 /* MacwardenAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E819470C1E544509A3DDD52F /* MacwardenAPIClient.swift */; };
+		43EB6FEB2F7EEFFE0047ED9F /* Prizm_V1.icon in Resources */ = {isa = PBXBuildFile; fileRef = 43EB6FEA2F7EEFFE0047ED9F /* Prizm_V1.icon */; };
 		48716DD27A3B45A6872E0DC2 /* UnlockUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */; };
 		48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */; };
 		4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */; };
@@ -138,6 +139,7 @@
 		4309FCE92F6809C10031C9F4 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		4309FD0D2F68121F0031C9F4 /* MacwardenTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacwardenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		434D9EBA2F670B9C00052BCB /* Macwarden.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Macwarden.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		43EB6FEA2F7EEFFE0047ED9F /* Prizm_V1.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Prizm_V1.icon; sourceTree = "<group>"; };
 		4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCase.swift; sourceTree = "<group>"; };
 		4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepositoryImpl.swift; sourceTree = "<group>"; };
 		4F246F209ADA45F99C9B17DB /* LoginDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginDetailView.swift; sourceTree = "<group>"; };
@@ -210,6 +212,16 @@
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		43EB6FED2F7EF09C0047ED9F /* Exceptions for "Macwarden" folder in "Macwarden" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 434D9EB92F670B9C00052BCB /* Macwarden */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4309FD0E2F68121F0031C9F4 /* MacwardenTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -218,6 +230,9 @@
 		};
 		434D9EBC2F670B9C00052BCB /* Macwarden */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				43EB6FED2F7EF09C0047ED9F /* Exceptions for "Macwarden" folder in "Macwarden" target */,
+			);
 			path = Macwarden;
 			sourceTree = "<group>";
 		};
@@ -532,6 +547,7 @@
 		434D9EB12F670B9C00052BCB = {
 			isa = PBXGroup;
 			children = (
+					43EB6FEA2F7EEFFE0047ED9F /* Prizm_V1.icon */,
 				4309FCFD2F680CD40031C9F4 /* Tests */,
 				4309FCF62F680C950031C9F4 /* Presentation */,
 				4309FCEF2F680AE70031C9F4 /* Data */,
@@ -746,6 +762,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0001070000000700000007 /* eff-large-wordlist.txt in Resources */,
+				43EB6FEB2F7EEFFE0047ED9F /* Prizm_V1.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1033,8 +1050,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V1;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Macwarden/Macwarden.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1054,6 +1072,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Macwarden/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1074,13 +1093,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -1089,8 +1109,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V1;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Macwarden/Macwarden.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1110,6 +1131,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Macwarden/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1130,13 +1152,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;

@@ -1,0 +1,43 @@
+{
+  "fill-specializations" : [
+    {
+      "value" : "system-light"
+    },
+    {
+      "appearance" : "dark",
+      "value" : "automatic"
+    }
+  ],
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "layer-1-outer-light.png",
+          "name" : "layer-1-outer-light"
+        },
+        {
+          "image-name" : "layer-2-middle-light.png",
+          "name" : "layer-2-middle-light"
+        },
+        {
+          "image-name" : "layer-3-inner-light.png",
+          "name" : "layer-3-inner-light"
+        }
+      ],
+      "name" : "Light",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
