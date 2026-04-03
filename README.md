@@ -1,110 +1,143 @@
-# Macwarden
+<div align="center">
 
-[![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org/)
-[![macOS](https://img.shields.io/badge/macOS-26%2B-blue.svg)](https://www.apple.com/macos/)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-4-purple.svg)](https://developer.apple.com/swiftui/)
+# Prizm
 
-A native Bitwarden client for macOS. Connect to your self-hosted [Bitwarden](https://bitwarden.com/) or [Vaultwarden](https://github.com/dani-garcia/vaultwarden) server and browse and edit your vault in a fast, lightweight desktop app.
+[![CI](https://github.com/b0x42/prizm/actions/workflows/ci.yml/badge.svg)](https://github.com/b0x42/prizm/actions/workflows/ci.yml)
+[![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org/)
+[![macOS 26+](https://img.shields.io/badge/macOS-26%2B-blue.svg)](https://www.apple.com/macos/)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## Screenshots
+Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift.
 
-*Coming soon*
+*Your secrets. Your server. Our user interface.*
 
-## Features
+</div>
 
-- **Connect to your server** — works with any self-hosted Bitwarden or Vaultwarden instance
-- **Browse everything** — Logins, Cards, Identities, Secure Notes, and SSH Keys
-- **Create items** — add new Logins, Cards, Identities, Secure Notes, and SSH Keys directly from the vault browser; items sync to your server immediately
-- **Edit items** — update fields, names, notes, custom fields, and website URIs; changes sync back to your server
-- **Manage website URIs** — add, remove, and reorder URIs on Login items with inline match-type configuration
-- **Delete and restore** — move items to Trash, restore accidental deletions, or permanently delete individual items
-- **Find items fast** — real-time search across names, usernames, URIs, and more
-- **Native macOS** — built with SwiftUI, feels right at home
+---
 
-## Keyboard Shortcuts
+![Screenshot placeholder](docs/screenshot-placeholder.png)
 
-| Shortcut | Action |
-|---|---|
-| ⌘N | New Login item |
-| ⌥⌘N | New window |
-| ⌘E | Edit selected item |
-| ⌘S | Save edits |
-| ⌘L | Lock vault |
-| ⌘F | Global search across all items |
-| ⇧⌘C | Copy username |
-| ⌥⌘C | Copy password |
-| ⌃⌘C | Copy TOTP code |
-| ⌥⇧⌘C | Copy website |
-| ⇧⌘Q | Sign out |
-| ⌥ (hold) | Peek at masked passwords and secrets |
-| ↑ ↓ | Navigate item list |
-| ⇥ | Move between panes |
-| ↩ | Submit (login, unlock, TOTP) |
+*(Screenshot coming soon)*
+
+---
+
+## Why Prizm
+
+The official Bitwarden desktop app is built with Electron — a Chromium-based web wrapper. It works, but it doesn't feel like a Mac app.
+
+Prizm fills that gap: a fully native macOS client, built in SwiftUI, that connects to the same self-hosted Vaultwarden or Bitwarden server you already run. It looks and behaves like a real Mac app because it is one.
+
+If you self-host your passwords and care about software quality on your own machine, Prizm is for you.
+
+## Privacy
+
+Prizm collects nothing. No telemetry, no analytics, no crash reporting, no usage data. There is no Prizm server — the app talks exclusively to your Vaultwarden or Bitwarden instance. Nothing leaves your server.
+
+The app is open source. Verify this claim by reading the code.
 
 ## Security
 
 All cryptography runs locally on your device:
 
-- Master password never leaves your machine
-- PBKDF2-SHA256 and Argon2id key derivation
-- AES-256-CBC + HMAC-SHA256 authenticated encryption
-- Session data stored in macOS Keychain (device-only, no iCloud)
-- Clipboard auto-clear after 30 seconds
-- Sign-out clears all local data
+- **Argon2id key derivation** (RFC 9106, memory-hard) — makes offline brute-force attacks computationally infeasible
+- **AES-256-CBC + HMAC-SHA256** authenticated encryption — all vault data stays encrypted in memory and in transit
+- **macOS Keychain** storage (device-only, `WhenUnlockedThisDeviceOnly`) — session keys never touch iCloud
+
+See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specifications, and what the app does not protect against.
+
+## Features
+
+- Browse, search, and manage your entire vault
+- View all item types: logins, cards, identities, secure notes, SSH keys
+- Create, edit, and delete vault items
+- Soft delete with Trash, restore accidental deletions, permanently delete
+- Star items as favourites
+- Generate strong passwords and passphrases
+- Copy username, password, TOTP code, and website with one click
+- Reveal masked fields by holding Option
+- Global search across all vault items (⌘F) with match highlighting
+- Lock vault with ⌘L; auto-locks on sleep and screensaver
+- Sync status indicator in sidebar
+- Alphabetical sections in item list
+- New item shortcut ⌘N
 
 ## Requirements
 
 - macOS 26 or later
-- A self-hosted Bitwarden or Vaultwarden server
+- A self-hosted [Vaultwarden](https://github.com/dani-garcia/vaultwarden) or [Bitwarden](https://bitwarden.com/) server
 
-## Getting Started for Development
+Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
+
+## Install
+
+### Unsigned DMG (simplest)
+
+A signed, notarized DMG requires an Apple Developer ID certificate ($99/year). This project is a solo open-source effort — that cost is not justified for early releases. Until that changes, the DMG is unsigned.
+
+**How to open an unsigned app on macOS:**
+
+After downloading, right-click (Control-click) the `.app` and choose **Open**, then confirm. You only need to do this once. After that, you can open it normally.
+
+Alternatively, from Terminal:
 
 ```bash
-git clone https://github.com/b0x42/macwarden.git
-cd macwarden
-open "Macwarden/Macwarden.xcodeproj"
+xattr -dr com.apple.quarantine /Applications/Prizm.app
 ```
 
-Before building, set up your local signing config:
+*Release downloads will be linked here once the first release ships.*
+
+### Build from source
 
 ```bash
-cp Macwarden/LocalConfig.xcconfig.template Macwarden/LocalConfig.xcconfig
+git clone https://github.com/b0x42/prizm.git
+cd prizm
+cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
+# Fill in your Apple Team ID in LocalConfig.xcconfig, then:
+open "Prizm/Prizm.xcodeproj"
 ```
 
-Open `Macwarden/LocalConfig.xcconfig` and fill in your Apple Team ID (find it in Xcode → Settings → Accounts, or at developer.apple.com → Membership). A free Apple ID is sufficient for local development.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup instructions, including how to get a free Team ID.
 
-Then build and run with `⌘R`. No package managers or dependency installs needed.
+## Roadmap
 
-### Debug Mode
+| Now (v1.0) | Next | Later |
+|---|---|---|
+| Browse, create, edit, delete all item types | Browser auto-fill extension | Face ID / Touch ID unlock |
+| Trash, restore, permanent delete | Organisation vault support | iCloud Keychain sync |
+| Favourites, global search | Passkey support | Menu bar quick-copy |
+| Password & passphrase generator | Multiple accounts | Biometric lock |
+| Auto-lock on sleep / screensaver | Watchtower / breach check | |
+| Custom About window | | |
 
-Add `--debug-mode` to the Xcode scheme's Run → Arguments to enable verbose logging in the Data layer. Never enable in production — debug output includes cipher counts and HTTP response structure.
+## Known Limitations
 
-## Architecture
-
-Clean Architecture with three layers and strict dependency direction:
-
-```
-App/              Entry point, DI container, root state machine
-Domain/           Protocols, entities, use cases (zero dependencies)
-Data/             Crypto, network, keychain, mappers, repository implementations
-Presentation/     SwiftUI views and view models
-```
-
-- Swift 6 strict concurrency (`actor`, `@MainActor`, `nonisolated`)
-- Zero third-party dependencies (except vendored [Argon2Swift](https://github.com/nicklama/Argon2Swift) for KDF)
-- All encryption via CommonCrypto (FIPS 140-2) and CryptoKit
-
-## Testing
-
-`⌘U` in Xcode runs the full test suite:
-
-- Unit tests for crypto, repositories, use cases, mappers, and UI components
-- XCUITests for login, unlock, vault browsing, search, and keyboard navigation
+- **Personal vault only** — Organisation ciphers are skipped during sync.
+- **No browser auto-fill** — There is no browser extension. Copy-paste is the current workflow.
+- **No biometric unlock** — Touch ID / Face ID unlock is not yet implemented.
+- **macOS 26 required** — The app uses SwiftUI features only available in macOS 26.
+- **Passkeys not supported** — SSH key items are viewable but passkey-based login is not implemented.
+- **No offline vault creation** — Creating or editing items requires an active server connection.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, code conventions, and how to submit changes.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for prerequisites, build instructions, and the architecture overview.
 
-## License
+Changes follow an **openspec** workflow: each feature lives in `openspec/changes/<name>/` with a proposal, design, and task list before any code is written. See `openspec/` for active and archived changes.
 
-This project is not affiliated with Bitwarden, Inc.
+Pull requests welcome. Please open an issue first for anything significant.
+
+## Mission & Principles
+
+Prizm exists to give macOS users a native, auditable, trustworthy interface to their self-hosted password vault.
+
+**Native-first.** SwiftUI only. No Electron, no web views, no compromise on the Mac experience.
+
+**Security-first.** No hand-rolled crypto. Every algorithm is a vetted standard with a public specification. Every security decision is documented so you can verify it.
+
+**Radical transparency.** This is security software. You should be able to read the code, understand the cryptography, and decide whether to trust it. That's why it's open source and why the security documentation is thorough.
+
+**Simple and honest.** Build what's needed. Say what's not supported. No dark patterns, no growth hacks, no telemetry.
+
+---
+
+*Not affiliated with Bitwarden, Inc. or 8bit Solutions LLC.*

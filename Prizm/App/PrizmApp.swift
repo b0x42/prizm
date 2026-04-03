@@ -1,6 +1,6 @@
 //
-//  MacwardenApp.swift
-//  Macwarden
+//  PrizmApp.swift
+//  Prizm
 //
 //  Created by Benjamin on 15.03.26.
 //
@@ -11,11 +11,14 @@ import SwiftUI
 import os.log
 
 @main
-struct MacwardenApp: App {
+struct PrizmApp: App {
 
     @StateObject private var container: AppContainer
     @StateObject private var rootVM:    RootViewModel
     @State       private var optionKeyMonitor = OptionKeyMonitor()
+
+    // Used by the About menu item to open the custom About window scene.
+    @Environment(\.openWindow) private var openWindow
 
     init() {
         let c = AppContainer()
@@ -33,6 +36,13 @@ struct MacwardenApp: App {
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
+            // Replace the default "About Prizm" panel with our custom SwiftUI window.
+            CommandGroup(replacing: .appInfo) {
+                Button("About Prizm") {
+                    openWindow(id: "about")
+                }
+            }
+
             CommandGroup(replacing: .newItem) {
                 Button("New Window") {
                     NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
@@ -99,6 +109,17 @@ struct MacwardenApp: App {
                 .disabled(!rootVM.selectedFieldAvailable(.website))
             }
         }
+
+        // Custom About window — opened via Prizm → About Prizm.
+        // hiddenTitleBar: AboutView provides its own header with the app icon and name,
+        // so the system title bar would be redundant.
+        // contentSize resizability: window sizes to AboutView's fixed 380pt width; no
+        // free resize since the content is a fixed-layout info panel.
+        Window("About Prizm", id: "about") {
+            AboutView()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
     }
 
     @ViewBuilder
@@ -196,7 +217,7 @@ final class RootViewModel: ObservableObject {
     /// The login content of the currently selected item, or nil. Drives copy command disabled state.
     @Published private(set) var selectedLogin: LoginContent?
 
-    private let logger = Logger(subsystem: "com.macwarden", category: "RootViewModel")
+    private let logger = Logger(subsystem: "com.prizm", category: "RootViewModel")
 
     let loginVM:          LoginViewModel
     @Published var unlockVM: UnlockViewModel?

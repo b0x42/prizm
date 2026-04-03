@@ -24,10 +24,10 @@
 		3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */; };
 		3E04D7AC0223458CB329663C /* CustomField.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB323D45FF2440C95C0BA70 /* CustomField.swift */; };
 		421368787851407FBCA9D99F /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212734E66AE74662AD28E6CB /* TrashView.swift */; };
-		4309FCE32F6807970031C9F4 /* MacwardenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE12F6807970031C9F4 /* MacwardenApp.swift */; };
+		4309FCE32F6807970031C9F4 /* PrizmApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE12F6807970031C9F4 /* PrizmApp.swift */; };
 		4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE72F6809A40031C9F4 /* AppContainer.swift */; };
 		4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4309FCE92F6809C10031C9F4 /* Config.swift */; };
-		43947740EA3343DC9C888402 /* MacwardenAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E819470C1E544509A3DDD52F /* MacwardenAPIClient.swift */; };
+		43947740EA3343DC9C888402 /* PrizmAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E819470C1E544509A3DDD52F /* PrizmAPIClient.swift */; };
 		43EB6FEB2F7EEFFE0047ED9F /* Prizm_V1.icon in Resources */ = {isa = PBXBuildFile; fileRef = 43EB6FEA2F7EEFFE0047ED9F /* Prizm_V1.icon */; };
 		48716DD27A3B45A6872E0DC2 /* UnlockUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */; };
 		48891CE90AC444CF810E1256 /* DeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */; };
@@ -76,7 +76,7 @@
 		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
 		C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */; };
 		C3D4E5F607182940B5C6D7E8 /* EditVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */; };
-		C3D4E5F6A7B849C0D1E2F3A4 /* MacwardenCryptoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D710BEABBB4ADD9ADFCD1F /* MacwardenCryptoService.swift */; };
+		C3D4E5F6A7B849C0D1E2F3A4 /* PrizmCryptoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D710BEABBB4ADD9ADFCD1F /* PrizmCryptoService.swift */; };
 		C3DDB598E8834E85833D86FE /* VaultBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */; };
 		C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */; };
 		C8D9E0F1A2B34895C9D0E1F2 /* SyncStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E0F1A2B3C44895D0E1F2A3 /* SyncStatusView.swift */; };
@@ -100,7 +100,9 @@
 		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
 		FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */; };
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
-/* End PBXBuildFile section */
+				B1335B23AD5F4D1CB28E3F19 /* AboutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */; };
+		77DF6B9FF920443AA5F94219 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABEC630F6934ED883504C9D /* AboutView.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		4309FD112F68121F0031C9F4 /* PBXContainerItemProxy */ = {
@@ -108,7 +110,7 @@
 			containerPortal = 434D9EB22F670B9C00052BCB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 434D9EB92F670B9C00052BCB;
-			remoteInfo = Macwarden;
+			remoteInfo = Prizm;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -134,11 +136,11 @@
 		3FBB82A6241244DD890E615C /* EncString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncString.swift; sourceTree = "<group>"; };
 		40543834D81F44848D37A737 /* IdentityDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityDetailView.swift; sourceTree = "<group>"; };
 		42858B188901413C9FD6C6E6 /* DeleteVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
-		4309FCE12F6807970031C9F4 /* MacwardenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacwardenApp.swift; sourceTree = "<group>"; };
+		4309FCE12F6807970031C9F4 /* PrizmApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrizmApp.swift; sourceTree = "<group>"; };
 		4309FCE72F6809A40031C9F4 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		4309FCE92F6809C10031C9F4 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		4309FD0D2F68121F0031C9F4 /* MacwardenTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacwardenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		434D9EBA2F670B9C00052BCB /* Macwarden.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Macwarden.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4309FD0D2F68121F0031C9F4 /* PrizmTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrizmTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		434D9EBA2F670B9C00052BCB /* Prizm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Prizm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		43EB6FEA2F7EEFFE0047ED9F /* Prizm_V1.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Prizm_V1.icon; sourceTree = "<group>"; };
 		4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCase.swift; sourceTree = "<group>"; };
 		4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepositoryImpl.swift; sourceTree = "<group>"; };
@@ -188,14 +190,14 @@
 		D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNoteEditForm.swift; sourceTree = "<group>"; };
 		D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCase.swift; sourceTree = "<group>"; };
 		D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSelection.swift; sourceTree = "<group>"; };
-		D8D710BEABBB4ADD9ADFCD1F /* MacwardenCryptoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacwardenCryptoService.swift; sourceTree = "<group>"; };
+		D8D710BEABBB4ADD9ADFCD1F /* PrizmCryptoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrizmCryptoService.swift; sourceTree = "<group>"; };
 		D9E0F1A2B3C44895D0E1F2A3 /* SyncStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusView.swift; sourceTree = "<group>"; };
 		DF8949A6D242488CBEC15CC0 /* ItemListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemListView.swift; sourceTree = "<group>"; };
 		E25C290F2D7A470EB4AB8698 /* KdfParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KdfParams.swift; sourceTree = "<group>"; };
 		E312819D0F20492CADB986E4 /* SSHKeyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyDetailView.swift; sourceTree = "<group>"; };
 		E4F5A6B7C8D94893E5F6A7B8 /* SyncTimestampRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTimestampRepositoryImpl.swift; sourceTree = "<group>"; };
 		E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBrowserView.swift; sourceTree = "<group>"; };
-		E819470C1E544509A3DDD52F /* MacwardenAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacwardenAPIClient.swift; sourceTree = "<group>"; };
+		E819470C1E544509A3DDD52F /* PrizmAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrizmAPIClient.swift; sourceTree = "<group>"; };
 		EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
 		EF90E0F31DF248FB9D12F74D /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
 		F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryImpl.swift; sourceTree = "<group>"; };
@@ -210,30 +212,32 @@
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+				EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "About/AboutViewModel.swift"; sourceTree = "<group>"; };
+		4ABEC630F6934ED883504C9D /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "About/AboutView.swift"; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		43EB6FED2F7EF09C0047ED9F /* Exceptions for "Macwarden" folder in "Macwarden" target */ = {
+		43EB6FED2F7EF09C0047ED9F /* Exceptions for "Prizm" folder in "Prizm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 434D9EB92F670B9C00052BCB /* Macwarden */;
+			target = 434D9EB92F670B9C00052BCB /* Prizm */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4309FD0E2F68121F0031C9F4 /* MacwardenTests */ = {
+		4309FD0E2F68121F0031C9F4 /* PrizmTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MacwardenTests;
+			path = PrizmTests;
 			sourceTree = "<group>";
 		};
-		434D9EBC2F670B9C00052BCB /* Macwarden */ = {
+		434D9EBC2F670B9C00052BCB /* Prizm */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				43EB6FED2F7EF09C0047ED9F /* Exceptions for "Macwarden" folder in "Macwarden" target */,
+				43EB6FED2F7EF09C0047ED9F /* Exceptions for "Prizm" folder in "Prizm" target */,
 			);
-			path = Macwarden;
+			path = Prizm;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -260,7 +264,7 @@
 		4309FCE62F6808620031C9F4 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				4309FCE12F6807970031C9F4 /* MacwardenApp.swift */,
+				4309FCE12F6807970031C9F4 /* PrizmApp.swift */,
 				4309FCE72F6809A40031C9F4 /* AppContainer.swift */,
 				4309FCE92F6809C10031C9F4 /* Config.swift */,
 			);
@@ -338,7 +342,7 @@
 				1307284FEED04829B5C4B587 /* CryptoKeys.swift */,
 				AA0002040000000400000004 /* CryptographicRandomnessProvider.swift */,
 				3FBB82A6241244DD890E615C /* EncString.swift */,
-				D8D710BEABBB4ADD9ADFCD1F /* MacwardenCryptoService.swift */,
+				D8D710BEABBB4ADD9ADFCD1F /* PrizmCryptoService.swift */,
 			);
 			path = Crypto;
 			sourceTree = "<group>";
@@ -346,7 +350,7 @@
 		4309FCF12F680BD10031C9F4 /* Network */ = {
 			isa = PBXGroup;
 			children = (
-				E819470C1E544509A3DDD52F /* MacwardenAPIClient.swift */,
+				E819470C1E544509A3DDD52F /* PrizmAPIClient.swift */,
 				50445584AD814B6EBD971FDA /* FaviconLoader.swift */,
 				4309FCF22F680BDF0031C9F4 /* Models */,
 			);
@@ -394,6 +398,8 @@
 			children = (
 				BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */,
 				FF00112233445566778899AA /* DesignSystem.swift */,
+				EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */,
+				4ABEC630F6934ED883504C9D /* AboutView.swift */,
 				CE7CA2E3F69D4D26BA2E50F2 /* Unlock */,
 				498456596EC249F78737016A /* Sync */,
 				7D6DFC79E63B457284977CA8 /* Login */,
@@ -547,15 +553,15 @@
 		434D9EB12F670B9C00052BCB = {
 			isa = PBXGroup;
 			children = (
-					43EB6FEA2F7EEFFE0047ED9F /* Prizm_V1.icon */,
+				43EB6FEA2F7EEFFE0047ED9F /* Prizm_V1.icon */,
 				4309FCFD2F680CD40031C9F4 /* Tests */,
 				4309FCF62F680C950031C9F4 /* Presentation */,
 				4309FCEF2F680AE70031C9F4 /* Data */,
 				4309FCEB2F680ABF0031C9F4 /* Domain */,
 				4309FCE62F6808620031C9F4 /* App */,
 				AA0003020000000200000002 /* Resources */,
-				434D9EBC2F670B9C00052BCB /* Macwarden */,
-				4309FD0E2F68121F0031C9F4 /* MacwardenTests */,
+				434D9EBC2F670B9C00052BCB /* Prizm */,
+				4309FD0E2F68121F0031C9F4 /* PrizmTests */,
 				434D9EBB2F670B9C00052BCB /* Products */,
 				432865942F71415A00B94A37 /* Recovered References */,
 			);
@@ -564,8 +570,8 @@
 		434D9EBB2F670B9C00052BCB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				434D9EBA2F670B9C00052BCB /* Macwarden.app */,
-				4309FD0D2F68121F0031C9F4 /* MacwardenTests.xctest */,
+				434D9EBA2F670B9C00052BCB /* Prizm.app */,
+				4309FD0D2F68121F0031C9F4 /* PrizmTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -661,9 +667,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4309FD0C2F68121F0031C9F4 /* MacwardenTests */ = {
+		4309FD0C2F68121F0031C9F4 /* PrizmTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4309FD152F68121F0031C9F4 /* Build configuration list for PBXNativeTarget "MacwardenTests" */;
+			buildConfigurationList = 4309FD152F68121F0031C9F4 /* Build configuration list for PBXNativeTarget "PrizmTests" */;
 			buildPhases = (
 				4309FD092F68121F0031C9F4 /* Sources */,
 				4309FD0A2F68121F0031C9F4 /* Frameworks */,
@@ -675,18 +681,18 @@
 				4309FD122F68121F0031C9F4 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4309FD0E2F68121F0031C9F4 /* MacwardenTests */,
+				4309FD0E2F68121F0031C9F4 /* PrizmTests */,
 			);
-			name = MacwardenTests;
+			name = PrizmTests;
 			packageProductDependencies = (
 			);
-			productName = MacwardenTests;
-			productReference = 4309FD0D2F68121F0031C9F4 /* MacwardenTests.xctest */;
+			productName = PrizmTests;
+			productReference = 4309FD0D2F68121F0031C9F4 /* PrizmTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		434D9EB92F670B9C00052BCB /* Macwarden */ = {
+		434D9EB92F670B9C00052BCB /* Prizm */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 434D9EC52F670B9E00052BCB /* Build configuration list for PBXNativeTarget "Macwarden" */;
+			buildConfigurationList = 434D9EC52F670B9E00052BCB /* Build configuration list for PBXNativeTarget "Prizm" */;
 			buildPhases = (
 				434D9EB62F670B9C00052BCB /* Sources */,
 				434D9EB72F670B9C00052BCB /* Frameworks */,
@@ -697,14 +703,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				434D9EBC2F670B9C00052BCB /* Macwarden */,
+				434D9EBC2F670B9C00052BCB /* Prizm */,
 			);
-			name = Macwarden;
+			name = Prizm;
 			packageProductDependencies = (
 				59F9054E12044EC582D79C90 /* Argon2Swift */,
 			);
-			productName = Macwarden;
-			productReference = 434D9EBA2F670B9C00052BCB /* Macwarden.app */;
+			productName = Prizm;
+			productReference = 434D9EBA2F670B9C00052BCB /* Prizm.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -726,7 +732,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 434D9EB52F670B9C00052BCB /* Build configuration list for PBXProject "Macwarden" */;
+			buildConfigurationList = 434D9EB52F670B9C00052BCB /* Build configuration list for PBXProject "Prizm" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -743,8 +749,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				434D9EB92F670B9C00052BCB /* Macwarden */,
-				4309FD0C2F68121F0031C9F4 /* MacwardenTests */,
+				434D9EB92F670B9C00052BCB /* Prizm */,
+				4309FD0C2F68121F0031C9F4 /* PrizmTests */,
 			);
 		};
 /* End PBXProject section */
@@ -794,10 +800,12 @@
 				714B2A1113A34984901FCC03 /* UnlockUseCase.swift in Sources */,
 				398F032CED024F6584FF693D /* SyncUseCase.swift in Sources */,
 				4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */,
-				4309FCE32F6807970031C9F4 /* MacwardenApp.swift in Sources */,
+				4309FCE32F6807970031C9F4 /* PrizmApp.swift in Sources */,
+				B1335B23AD5F4D1CB28E3F19 /* AboutViewModel.swift in Sources */,
+				77DF6B9FF920443AA5F94219 /* AboutView.swift in Sources */,
 				4309FCE82F6809B20031C9F4 /* AppContainer.swift in Sources */,
 				4309FCEA2F6809C30031C9F4 /* Config.swift in Sources */,
-				43947740EA3343DC9C888402 /* MacwardenAPIClient.swift in Sources */,
+				43947740EA3343DC9C888402 /* PrizmAPIClient.swift in Sources */,
 				FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */,
 				B2390AAAD10D4CE69AD6660C /* AuthRepositoryImpl.swift in Sources */,
 				3CE951E495E649489E3DADAC /* SyncRepositoryImpl.swift in Sources */,
@@ -835,7 +843,7 @@
 				2D9BD6B00E6145FA83F324D7 /* ItemDetailView.swift in Sources */,
 				A1B2C3D4E5F647A8B9C0D1E2 /* CryptoKeys.swift in Sources */,
 				B2C3D4E5F6A748B9C0D1E2F3 /* EncString.swift in Sources */,
-				C3D4E5F6A7B849C0D1E2F3A4 /* MacwardenCryptoService.swift in Sources */,
+				C3D4E5F6A7B849C0D1E2F3A4 /* PrizmCryptoService.swift in Sources */,
 				D4E5F6A7B8C94AD1E2F3A4B5 /* RawCipher.swift in Sources */,
 				E5F6A7B8C9D04BE2F3A4B5C6 /* SyncResponse.swift in Sources */,
 				F6A7B8C9D0E14CF3A4B5C6D7 /* CipherMapper.swift in Sources */,
@@ -878,7 +886,7 @@
 /* Begin PBXTargetDependency section */
 		4309FD122F68121F0031C9F4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 434D9EB92F670B9C00052BCB /* Macwarden */;
+			target = 434D9EB92F670B9C00052BCB /* Prizm */;
 			targetProxy = 4309FD112F68121F0031C9F4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -893,8 +901,8 @@
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.MacwardenTests;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.PrizmTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -902,7 +910,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macwarden.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Macwarden";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Prizm.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prizm";
 			};
 			name = Debug;
 		};
@@ -915,8 +923,8 @@
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.MacwardenTests;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.PrizmTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -924,7 +932,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macwarden.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Macwarden";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Prizm.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prizm";
 			};
 			name = Release;
 		};
@@ -1053,7 +1061,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V1;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = Macwarden/Macwarden.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Prizm/Prizm.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -1072,7 +1080,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Macwarden/Info.plist;
+				INFOPLIST_FILE = Prizm/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1087,8 +1095,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Macwarden;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1112,12 +1120,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V1;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = Macwarden/Macwarden.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Prizm/Prizm.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = QQLP5WK88A;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
@@ -1131,7 +1140,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Macwarden/Info.plist;
+				INFOPLIST_FILE = Prizm/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1146,8 +1155,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Macwarden;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1167,7 +1176,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4309FD152F68121F0031C9F4 /* Build configuration list for PBXNativeTarget "MacwardenTests" */ = {
+		4309FD152F68121F0031C9F4 /* Build configuration list for PBXNativeTarget "PrizmTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4309FD132F68121F0031C9F4 /* Debug */,
@@ -1176,7 +1185,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		434D9EB52F670B9C00052BCB /* Build configuration list for PBXProject "Macwarden" */ = {
+		434D9EB52F670B9C00052BCB /* Build configuration list for PBXProject "Prizm" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				434D9EC32F670B9E00052BCB /* Debug */,
@@ -1185,7 +1194,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		434D9EC52F670B9E00052BCB /* Build configuration list for PBXNativeTarget "Macwarden" */ = {
+		434D9EC52F670B9E00052BCB /* Build configuration list for PBXNativeTarget "Prizm" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				434D9EC62F670B9E00052BCB /* Debug */,
