@@ -100,11 +100,20 @@
   - Alphabetical sections in item list
   - Keyboard shortcut ⌘N for new item
 
-## 10. Verification
+## 10. Screenshot Capture (macOS only)
 
-- [ ] 10.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
-- [ ] 10.2 Confirm app icon renders correctly at all sizes on a real macOS build
-- [ ] 10.3 Confirm Release build archives cleanly with Hardened Runtime enabled
-- [ ] 10.4 Confirm README renders correctly on GitHub (centered headline, table, links)
-- [ ] 10.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
-- [ ] 10.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements
+> **Constraint:** These tasks require a macOS host with Prizm built and runnable. Skip on Linux CI.
+
+- [ ] 10.1 Build a Debug or Release copy of Prizm on macOS and launch it
+- [ ] 10.2 Use `screencapture` to capture the main window: get the window ID via `osascript -e 'tell app "Prizm" to id of window 1'`, then run `screencapture -l <windowid> -o docs/screenshots/prizm-main.png`
+- [ ] 10.3 Crop / resize the screenshot to a consistent width (e.g. 1200px) if needed
+- [ ] 10.4 Commit the screenshot to `docs/screenshots/prizm-main.png` and replace the placeholder in `README.md`
+
+## 11. Verification
+
+- [ ] 11.1 Grep for any remaining `Macwarden` or `macwarden` references across all files — must be zero
+- [ ] 11.2 Confirm app icon renders correctly at all sizes on a real macOS build
+- [ ] 11.3 Confirm Release build archives cleanly with Hardened Runtime enabled
+- [ ] 11.4 Confirm README renders correctly on GitHub (centered headline, icon, table, links)
+- [ ] 11.5 Confirm SECURITY.md satisfies CONSTITUTION §VII checklist (security goal, algorithm + spec ref, deviations, intentional omissions)
+- [ ] 11.6 Confirm About window shows correct version, tagline, working GitHub link, and acknowledgements

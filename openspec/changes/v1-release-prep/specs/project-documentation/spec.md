@@ -128,6 +128,20 @@ are automatically forwarded by GitHub after a rename.
 - **WHEN** the local remote URL is updated
 - **THEN** `git remote get-url origin` returns `https://github.com/b0x42/prizm`
 
+### Requirement: README screenshot is a real app capture (macOS only)
+The screenshot in `README.md` SHALL be an actual capture of the running Prizm app, not
+a placeholder. Capture is automated via `screencapture` on macOS and committed to
+`docs/screenshots/prizm-main.png`. This task MUST be run on a macOS host — it cannot
+be automated on Linux.
+
+#### Scenario: User sees a screenshot in the README
+- **WHEN** a user visits the GitHub repository
+- **THEN** the screenshot shows the real Prizm UI (vault list + detail pane), not a placeholder image
+
+#### Scenario: Screenshot is captured automatically
+- **WHEN** this task is executed on macOS
+- **THEN** Prizm is launched, the main window ID is retrieved via AppleScript, `screencapture -l` captures it losslessly, and the result is saved to `docs/screenshots/prizm-main.png`
+
 ### Requirement: LocalConfig.xcconfig.template exists
 The repository SHALL contain `Prizm/LocalConfig.xcconfig.template` so contributors
 can onboard without reading CLAUDE.md to discover the required file.
