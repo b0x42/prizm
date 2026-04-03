@@ -66,9 +66,9 @@
 - [x] 6.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
 - [x] 6.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
 - [ ] 6.4 Add `CODE_OF_CONDUCT.md` — use the Contributor Covenant v2.1 (industry standard, one page, no customisation needed)
-- [ ] 6.5 Create `.github/ISSUE_TEMPLATE/bug_report.md` — fields: description, steps to reproduce, expected vs actual behaviour, macOS version, Prizm version, Vaultwarden version
-- [ ] 6.6 Create `.github/ISSUE_TEMPLATE/feature_request.md` — fields: problem statement, proposed solution, alternatives considered
-- [ ] 6.7 Create `.github/pull_request_template.md` — sections: what this changes, how to test, checklist (tests pass, no new Macwarden refs, follows Constitution)
+- [x] 6.5 Create `.github/ISSUE_TEMPLATE/bug_report.md` — fields: description, steps to reproduce, expected vs actual behaviour, macOS version, Prizm version, Vaultwarden version
+- [x] 6.6 Create `.github/ISSUE_TEMPLATE/feature_request.md` — fields: problem statement, proposed solution, alternatives considered
+- [x] 6.7 Create `.github/pull_request_template.md` — sections: what this changes, how to test, checklist (tests pass, no new Macwarden refs, follows Constitution)
 - [ ] 6.8 Create `assets/social-preview.png` (1280×640px) — use the screenshot as the base with the Prizm logo and tagline overlaid; set as the GitHub repository social preview image in Settings → Social preview
 
 ## 7. Pre-Release Repository Cleanup
