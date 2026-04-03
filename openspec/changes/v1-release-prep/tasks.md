@@ -47,21 +47,22 @@
 ## 6. Documentation
 
 - [ ] 6.1 Write `README.md` using this exact structure:
-  1. Centered `# Prizm` headline
-  2. Badge row: CI build status, Swift 6.2, macOS 26+, license
-  3. One-liner: "Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift."
-  4. Tagline: "Your secrets. Your server. Our user interface."
-  5. Screenshot placeholder
-  6. **Why Prizm** — Mac Gap framing, honest comparison to official Bitwarden client (native vs. Electron)
-  7. **Privacy** — no telemetry, no analytics, no cloud; nothing leaves your server
-  8. **Security** — 3-bullet inline summary (Argon2id RFC 9106, AES-256-CBC + HMAC-SHA256, macOS Keychain) + link to SECURITY.md
-  9. **Features** — user-centric list (what you can do, not how it works)
-  10. **Requirements** — macOS 26+, self-hosted Vaultwarden or Bitwarden; note tested against Vaultwarden 1.35.4
-  11. **Install** — (a) unsigned DMG + Gatekeeper bypass with honest explanation of why it is unsigned, (b) build from source one-liner, (c) link to DEVELOPMENT.md
-  12. **Roadmap** — Now/Next/Later table
-  13. **Known Limitations** — direct honest list
-  14. **Contributing** — link to DEVELOPMENT.md, mention openspec workflow
-  15. **Mission & Principles** — adapted from approved draft (closing statement)
+  1. Centered app icon image (use the exported PNG from Assets.xcassets, e.g. 128px)
+  2. Centered `# Prizm` headline
+  3. Badge row: CI build status, Swift 6.2, macOS 26+, license
+  4. One-liner: "Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift."
+  5. Tagline: "Your secrets. Your server. Our user interface."
+  6. Screenshot placeholder
+  7. **Why Prizm** — Mac Gap framing, honest comparison to official Bitwarden client (native vs. Electron)
+  8. **Privacy** — no telemetry, no analytics, no cloud; nothing leaves your server
+  9. **Security** — 3-bullet inline summary (Argon2id RFC 9106, AES-256-CBC + HMAC-SHA256, macOS Keychain) + link to SECURITY.md
+  10. **Features** — user-centric list (what you can do, not how it works)
+  11. **Requirements** — macOS 26+, self-hosted Vaultwarden or Bitwarden; note tested against Vaultwarden 1.35.4
+  12. **Install** — (a) unsigned DMG + Gatekeeper bypass with honest explanation of why it is unsigned, (b) build from source one-liner, (c) link to DEVELOPMENT.md
+  13. **Roadmap** — Now/Next/Later table
+  14. **Known Limitations** — direct honest list
+  15. **Contributing** — link to DEVELOPMENT.md, mention openspec workflow
+  16. **Mission & Principles** — adapted from approved draft (closing statement)
 - [ ] 6.2 Write `DEVELOPMENT.md` — prerequisites (Xcode version, macOS 26+), cloning, LocalConfig.xcconfig setup (with note that build fails without it), build command, test command, architecture overview (three-layer), openspec workflow, contributing notes, GitHub secrets documentation for release signing (`CERT_P12`, `CERT_PASSWORD`, `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, `NOTARYTOOL_ISSUER_ID`) with description and source for each
 - [ ] 6.3 Write `SECURITY.md` — threat model, encryption algorithm and key derivation with inline spec references (Argon2id per RFC 9106, EncString per Bitwarden Security Whitepaper), key storage (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`), what is and is not protected (explicit out-of-scope threats), vulnerability reporting via GitHub Security Advisories (private disclosure)
 

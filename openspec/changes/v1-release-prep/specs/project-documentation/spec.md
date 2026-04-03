@@ -3,13 +3,13 @@
 ### Requirement: README exists and is release-quality
 The repository SHALL contain a `README.md` at the root that serves as the primary
 landing page for users discovering Prizm on GitHub. It SHALL follow this structure:
-centered headline → badges → one-liner → tagline → screenshot → Why Prizm →
+app icon → centered headline → badges → one-liner → tagline → screenshot → Why Prizm →
 Privacy → Security → Features → Requirements → Install → Roadmap →
 Known Limitations → Contributing → Mission & Principles.
 
 #### Scenario: User lands on the GitHub repo
 - **WHEN** a user visits the GitHub repository
-- **THEN** they see a centered `# Prizm` headline, badges (build status, Swift version, macOS version, license), a one-sentence description ("Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift."), and the tagline "Your secrets. Your server. Our user interface."
+- **THEN** they see the Prizm app icon centered above the headline, followed by a centered `# Prizm` headline, badges (build status, Swift version, macOS version, license), a one-sentence description ("Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift."), and the tagline "Your secrets. Your server. Our user interface."
 
 #### Scenario: User scans badges
 - **WHEN** a user glances at the badge row
