@@ -345,7 +345,9 @@ nonisolated final class CipherMapper {
             identity:       identityData,
             secureNote:     secureNoteData,
             sshKey:         sshKeyData,
-            fields:         encFields.isEmpty ? nil : encFields
+            fields:         encFields.isEmpty ? nil : encFields,
+            key:            nil,
+            attachments:    nil
         )
     }
 
