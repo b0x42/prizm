@@ -20,7 +20,7 @@ final class AttachmentRowViewModelTests: XCTestCase {
     private var normalAttachment: Attachment!
     private var incompleteAttachment: Attachment!
 
-    override func setUp() {
+    override func setUp() async throws {
         mockDownload = MockRowDownloadUseCase()
         mockDelete   = MockRowDeleteUseCase()
         mockUpload   = MockRowUploadUseCase()
@@ -241,7 +241,7 @@ private final class MockRowUploadUseCase: UploadAttachmentUseCase {
     }
 }
 
-private final class MockTempFileManager: TempFileManaging {
+private final class MockTempFileManager: TempFileManaging, @unchecked Sendable {
     private(set) var registerCalled = false
     private(set) var cleanupCalled  = false
 

@@ -4,16 +4,17 @@ import XCTest
 /// Unit tests for `AttachmentTempFileManager` (task 7.2c).
 ///
 /// Uses `register(url:deleteAfter:)` to control cleanup timing without sleeping.
+@MainActor
 final class AttachmentTempFileManagerTests: XCTestCase {
 
     private var sut: AttachmentTempFileManager!
     private var createdURLs: [URL] = []
 
-    override func setUp() {
+    override func setUp() async throws {
         sut = AttachmentTempFileManager()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         for url in createdURLs { try? FileManager.default.removeItem(at: url) }
         createdURLs.removeAll()
     }

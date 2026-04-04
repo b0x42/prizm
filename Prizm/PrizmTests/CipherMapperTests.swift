@@ -51,7 +51,9 @@ final class CipherMapperTests: XCTestCase {
             identity:       identity,
             secureNote:     secureNote,
             sshKey:         sshKey,
-            fields:         []
+            fields:         [],
+            key:            nil,
+            attachments:    nil
         )
     }
 

@@ -44,7 +44,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             isDeleted:    false,
             creationDate: Date(),
             revisionDate: Date(),
-            content:      .secureNote(SecureNoteContent(note: nil)),
+            content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  []
         )
         vaultRepo.populate(items: [item], syncedAt: Date())
@@ -59,7 +59,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             fileUploadType: 0
         )
 
-        let attachment = try await sut.upload(
+        _ = try await sut.upload(
             cipherId:  cipherId,
             fileName:  plainFileName,
             data:      plainData,
@@ -340,16 +340,16 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             url:                "https://cdn.example.com/file",
             isUploadIncomplete: false
         )
-        vaultRepo.populatedItems[0] = VaultItem(
+        vaultRepo.populate(items: [VaultItem(
             id:           cipherId,
             name:         "Test Item",
             isFavorite:   false,
             isDeleted:    false,
             creationDate: Date(),
             revisionDate: Date(),
-            content:      .secureNote(SecureNoteContent(note: nil)),
+            content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  [existing]
-        )
+        )], syncedAt: Date())
 
         try await sut.delete(cipherId: cipherId, attachmentId: attachmentId)
 
@@ -381,16 +381,16 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             url:                "https://cdn.example.com/delete",
             isUploadIncomplete: false
         )
-        vaultRepo.populatedItems[0] = VaultItem(
+        vaultRepo.populate(items: [VaultItem(
             id:           cipherId,
             name:         "Test Item",
             isFavorite:   false,
             isDeleted:    false,
             creationDate: Date(),
             revisionDate: Date(),
-            content:      .secureNote(SecureNoteContent(note: nil)),
+            content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  [keep, toDelete]
-        )
+        )], syncedAt: Date())
 
         try await sut.delete(cipherId: cipherId, attachmentId: attachmentId)
 
@@ -409,7 +409,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
 private final class URLProtocolStub: URLProtocol {
 
     private static let queue = DispatchQueue(label: "com.prizm.tests.URLProtocolStub")
-    private static var registry: [String: (data: Data, statusCode: Int)] = [:]
+    private nonisolated(unsafe) static var registry: [String: (data: Data, statusCode: Int)] = [:]
 
     static func register(url: URL, data: Data, statusCode: Int) {
         queue.sync { registry[url.absoluteString] = (data, statusCode) }
@@ -417,7 +417,7 @@ private final class URLProtocolStub: URLProtocol {
     }
 
     static func unregister(url: URL) {
-        queue.sync { registry.removeValue(forKey: url.absoluteString) }
+        _ = queue.sync { registry.removeValue(forKey: url.absoluteString) }
     }
 
     override class func canInit(with request: URLRequest) -> Bool {

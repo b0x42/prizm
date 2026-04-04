@@ -54,8 +54,14 @@ actor VaultKeyCache {
     /// Zeroing before clearing reduces the window during which key bytes remain on the
     /// heap after the cache is discarded (Constitution §III).
     func clear() {
+        // Pre-capture count before starting the _modify accessor: accessing cache[key]
+        // inside the resetBytes argument while _modify already holds exclusive write
+        // access to cache[key] causes a simultaneous-access violation at runtime.
         for key in cache.keys {
-            cache[key]?.resetBytes(in: 0..<(cache[key]?.count ?? 0))
+            let count = cache[key]?.count ?? 0
+            if count > 0 {
+                cache[key]?.resetBytes(in: 0..<count)
+            }
         }
         cache.removeAll()
         logger.info("VaultKeyCache cleared — key material zeroed")

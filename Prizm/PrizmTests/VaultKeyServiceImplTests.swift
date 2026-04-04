@@ -2,6 +2,7 @@ import XCTest
 @testable import Prizm
 
 /// Tests for `VaultKeyServiceImpl` — key resolution order and vault-lock handling.
+@MainActor
 final class VaultKeyServiceImplTests: XCTestCase {
 
     private var cache: VaultKeyCache!

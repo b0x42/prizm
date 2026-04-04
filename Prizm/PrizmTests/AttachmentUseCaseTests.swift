@@ -28,7 +28,7 @@ private final class MockAttachmentRepository: AttachmentRepository {
     }
 }
 
-private final class MockVaultKeyService: VaultKeyService {
+private final class MockVaultKeyService: VaultKeyService, @unchecked Sendable {
     var keyResult: Result<Data, Error> = .success(Data(repeating: 0xAB, count: 64))
     var cipherKeyCalled = false
 
@@ -40,13 +40,14 @@ private final class MockVaultKeyService: VaultKeyService {
 
 // MARK: - UploadAttachmentUseCaseImpl Tests
 
+@MainActor
 final class UploadAttachmentUseCaseTests: XCTestCase {
 
     private var mockRepo: MockAttachmentRepository!
     private var mockKeyService: MockVaultKeyService!
     private var sut: UploadAttachmentUseCaseImpl!
 
-    override func setUp() {
+    override func setUp() async throws {
         mockRepo       = MockAttachmentRepository()
         mockKeyService = MockVaultKeyService()
         sut            = UploadAttachmentUseCaseImpl(repository: mockRepo, vaultKeyService: mockKeyService)
@@ -92,6 +93,7 @@ final class UploadAttachmentUseCaseTests: XCTestCase {
 
 // MARK: - DownloadAttachmentUseCaseImpl Tests
 
+@MainActor
 final class DownloadAttachmentUseCaseTests: XCTestCase {
 
     private var mockRepo: MockAttachmentRepository!
@@ -103,7 +105,7 @@ final class DownloadAttachmentUseCaseTests: XCTestCase {
         size: 64, sizeName: "64 B", url: "https://cdn.example.com/file", isUploadIncomplete: false
     )
 
-    override func setUp() {
+    override func setUp() async throws {
         mockRepo       = MockAttachmentRepository()
         mockKeyService = MockVaultKeyService()
         sut            = DownloadAttachmentUseCaseImpl(repository: mockRepo, vaultKeyService: mockKeyService)
@@ -142,12 +144,13 @@ final class DownloadAttachmentUseCaseTests: XCTestCase {
 
 // MARK: - DeleteAttachmentUseCaseImpl Tests
 
+@MainActor
 final class DeleteAttachmentUseCaseTests: XCTestCase {
 
     private var mockRepo: MockAttachmentRepository!
     private var sut: DeleteAttachmentUseCaseImpl!
 
-    override func setUp() {
+    override func setUp() async throws {
         mockRepo = MockAttachmentRepository()
         sut      = DeleteAttachmentUseCaseImpl(repository: mockRepo)
         // Note: no VaultKeyService — delete requires no key material (Constitution §VI)

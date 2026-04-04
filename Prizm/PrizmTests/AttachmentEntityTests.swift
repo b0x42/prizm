@@ -7,7 +7,7 @@ final class AttachmentEntityTests: XCTestCase {
     // MARK: - Attachment value semantics
 
     func test_attachment_isValueType() {
-        var a = Attachment(
+        let a = Attachment(
             id: "att-1", fileName: "photo.jpg", encryptedKey: "2.abc|def|ghi",
             size: 1024, sizeName: "1 KB", url: "https://example.com/file", isUploadIncomplete: false
         )
