@@ -96,7 +96,7 @@ Each use case SHALL be a struct or final class in `Domain/UseCases/` holding inj
 The Data layer SHALL provide an `AttachmentMapper` with the following signature:
 
 ```swift
-func map(_ dto: AttachmentDTO, cipherKey: Data) throws -> Attachment
+func map(_ dto: AttachmentDTO, cipherKey: CryptoKeys) throws -> Attachment
 ```
 
 `AttachmentDTO` mirrors the raw sync JSON shape: `{ "id": String, "fileName": EncString, "key": EncString, "size": String, "sizeName": String, "url": String? }`. `VaultSyncMapper` (or equivalent) SHALL call `AttachmentMapper.map(_:cipherKey:)` for each element of `ciphers[].attachments`, supplying the cipher's resolved key. The mapper SHALL:
