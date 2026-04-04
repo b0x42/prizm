@@ -76,7 +76,7 @@ final class CipherMapperTests: XCTestCase {
             )
         )
 
-        let item = try sut.map(raw: raw, keys: mockKeys)
+        let (item, _) = try sut.map(raw: raw, keys: mockKeys)
         XCTAssertEqual(item.id, "uuid-login")
         XCTAssertEqual(item.name, "My Login")
         XCTAssertFalse(item.isFavorite)
@@ -101,7 +101,7 @@ final class CipherMapperTests: XCTestCase {
             secureNote: RawSecureNoteData(type: 0)
         )
 
-        let item = try sut.map(raw: raw, keys: mockKeys)
+        let (item, _) = try sut.map(raw: raw, keys: mockKeys)
         XCTAssertEqual(item.name, "My Note")
         XCTAssertTrue(item.isFavorite)
 
@@ -128,7 +128,7 @@ final class CipherMapperTests: XCTestCase {
             )
         )
 
-        let item = try sut.map(raw: raw, keys: mockKeys)
+        let (item, _) = try sut.map(raw: raw, keys: mockKeys)
         XCTAssertEqual(item.name, "Visa")
 
         guard case .card(let card) = item.content else {
@@ -159,7 +159,7 @@ final class CipherMapperTests: XCTestCase {
             )
         )
 
-        let item = try sut.map(raw: raw, keys: mockKeys)
+        let (item, _) = try sut.map(raw: raw, keys: mockKeys)
         XCTAssertEqual(item.name, "My Identity")
 
         guard case .identity(let identity) = item.content else {
@@ -184,7 +184,7 @@ final class CipherMapperTests: XCTestCase {
             )
         )
 
-        let item = try sut.map(raw: raw, keys: mockKeys)
+        let (item, _) = try sut.map(raw: raw, keys: mockKeys)
         XCTAssertEqual(item.name, "My SSH Key")
 
         guard case .sshKey(let ssh) = item.content else {
@@ -225,7 +225,7 @@ final class CipherMapperTests: XCTestCase {
             secureNote:  RawSecureNoteData(type: 0)
         )
 
-        let item = try sut.map(raw: raw, keys: mockKeys)
+        let (item, _) = try sut.map(raw: raw, keys: mockKeys)
         XCTAssertTrue(item.isDeleted)
     }
 }

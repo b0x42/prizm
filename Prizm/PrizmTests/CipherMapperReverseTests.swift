@@ -27,7 +27,7 @@ final class CipherMapperReverseTests: XCTestCase {
     private func roundTrip(_ item: VaultItem) throws -> VaultItem {
         let draft      = DraftVaultItem(item)
         let rawCipher  = try sut.toRawCipher(draft, encryptedWith: keys)
-        return try sut.map(raw: rawCipher, keys: keys)
+        return try sut.map(raw: rawCipher, keys: keys).item
     }
 
     private func makeItem(content: ItemContent) -> VaultItem {
