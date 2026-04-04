@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Distribution method for direct download (outside the Mac App Store).
+         Requires a Developer ID Application certificate (paid Apple Developer account).
+         See DEVELOPMENT.md for signing setup instructions. -->
+    <key>method</key>
+    <string>developer-id</string>
+
+    <key>bundleIDProvisioningProfiles</key>
+    <dict>
+        <!-- Replace TEAM_ID_HERE with your 10-character Apple Developer Team ID.
+             This file is committed to the repo and contains no secrets.
+             The actual certificate and credentials live in GitHub Actions secrets. -->
+        <key>de.b0x42.Prizm</key>
+        <string>Prizm Developer ID</string>
+    </dict>
+
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <key>stripSwiftSymbols</key>
+    <true/>
+
+    <key>installerSigningCertificate</key>
+    <string>Developer ID Installer</string>
+
+    <key>teamID</key>
+    <string>TEAM_ID_HERE</string>
+</dict>
+</plist>

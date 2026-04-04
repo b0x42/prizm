@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
+
+      - name: Create CI signing config
+        run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
+
+      - name: Build (no signing)
+        run: |
+          xcodebuild \
+            -project "Prizm/Prizm.xcodeproj" \
+            -scheme "Prizm" \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcpretty || exit ${PIPESTATUS[0]}
+
+      - name: Test (no signing)
+        run: |
+          xcodebuild test \
+            -project "Prizm/Prizm.xcodeproj" \
+            -scheme "Prizm" \
+            -destination "platform=macOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty || exit ${PIPESTATUS[0]}

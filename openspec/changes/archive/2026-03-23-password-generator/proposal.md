@@ -28,6 +28,6 @@ The vault edit flow has no way to generate strong passwords or passphrases, forc
 - **New**: `Presentation/Vault/Edit/PasswordGeneratorViewModel.swift` — `@MainActor ObservableObject` owning generator state.
 - **Modified**: `Presentation/Vault/Edit/LoginEditForm.swift` — generator button on password field.
 - **Modified**: `Presentation/Vault/Edit/EditFieldRow.swift` — optional generator button slot.
-- **New tests**: `MacwardenTests/PasswordGeneratorTests.swift` — unit tests covering character-set composition, length bounds, ambiguous-char exclusion, passphrase word count, separator injection, entropy lower bound.
-- **New tests**: `MacwardenTests/PasswordGeneratorViewModelTests.swift` — unit tests covering config-change regeneration, clipboard copy, UserDefaults persistence, and default-settings restoration on first launch.
+- **New tests**: `PrizmTests/PasswordGeneratorTests.swift` — unit tests covering character-set composition, length bounds, ambiguous-char exclusion, passphrase word count, separator injection, entropy lower bound.
+- **New tests**: `PrizmTests/PasswordGeneratorViewModelTests.swift` — unit tests covering config-change regeneration, clipboard copy, UserDefaults persistence, and default-settings restoration on first launch.
 - **No breaking changes.**

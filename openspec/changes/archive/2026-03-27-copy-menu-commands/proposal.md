@@ -1,6 +1,6 @@
 ## Why
 
-Users need to copy credentials quickly without navigating into the detail view and hovering over individual fields. 1Password provides Copy Username/Password/Code/Website in the menu bar with keyboard shortcuts — Macwarden should match this for power users.
+Users need to copy credentials quickly without navigating into the detail view and hovering over individual fields. 1Password provides Copy Username/Password/Code/Website in the menu bar with keyboard shortcuts — Prizm should match this for power users.
 
 ## What Changes
 
@@ -20,4 +20,4 @@ Users need to copy credentials quickly without navigating into the detail view a
 
 ## Impact
 
-- `MacwardenApp.swift` — new menu commands + helper methods on `RootViewModel`
+- `PrizmApp.swift` — new menu commands + helper methods on `RootViewModel`

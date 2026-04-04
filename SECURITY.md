@@ -1,6 +1,6 @@
 # Security
 
-Macwarden is a password manager. This document explains exactly how it protects your
+Prizm is a password manager. This document explains exactly how it protects your
 data — what is encrypted, where keys live, what threats it defends against, and what
 it does not. The goal is to let any developer or technically literate user audit the
 implementation and decide whether to trust it. No black boxes.
@@ -11,7 +11,7 @@ implementation and decide whether to trust it. No black boxes.
 
 Please do **not** open a public GitHub issue for security vulnerabilities.
 
-Report privately via GitHub's [Security Advisories](https://github.com/b0x42/macwarden/security/advisories/new)
+Report privately via GitHub's [Security Advisories](https://github.com/b0x42/prizm/security/advisories/new)
 or email the maintainer directly (address in the GitHub profile). Include a description
 of the issue, steps to reproduce, and any relevant log output or proof of concept.
 

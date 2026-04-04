@@ -6,8 +6,8 @@
 
 ## 2. Data layer
 
-- [x] 2.1 Add `createCipher(cipher: RawCipher) async throws -> RawCipher` to `MacwardenAPIClientProtocol` — `POST /api/ciphers` with JSON body, returns the server-created cipher
-- [x] 2.2 Implement `createCipher` in `MacwardenAPIClientImpl` — authenticated POST with `baseRequest`, JSON-encode the `RawCipher`, decode the response
+- [x] 2.1 Add `createCipher(cipher: RawCipher) async throws -> RawCipher` to `PrizmAPIClientProtocol` — `POST /api/ciphers` with JSON body, returns the server-created cipher
+- [x] 2.2 Implement `createCipher` in `PrizmAPIClientImpl` — authenticated POST with `baseRequest`, JSON-encode the `RawCipher`, decode the response
 - [x] 2.3 Add `create(_ draft: DraftVaultItem) async throws -> VaultItem` to `VaultRepository` protocol
 - [x] 2.4 Implement `create` in `VaultRepositoryImpl` — obtain keys, call `mapper.toRawCipher`, call `apiClient.createCipher`, map response, append to cache, return server-confirmed item
 
@@ -20,7 +20,7 @@
 
 ## 4. Mock & wiring
 
-- [x] 4.1 Add `createCipher` stub to `MockMacwardenAPIClient`
+- [x] 4.1 Add `createCipher` stub to `MockPrizmAPIClient`
 - [x] 4.2 Add `create` stub to `MockVaultRepository`
 - [x] 4.3 Wire `CreateVaultItemUseCaseImpl` in `AppContainer`
 

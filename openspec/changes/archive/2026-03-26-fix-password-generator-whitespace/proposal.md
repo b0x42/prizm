@@ -19,6 +19,6 @@ None.
 
 ## Impact
 
-- `Macwarden/Domain/Utilities/PasswordGenerator.swift` — `symbolChars` constant
+- `Prizm/Domain/Utilities/PasswordGenerator.swift` — `symbolChars` constant
 - All passwords generated with symbols enabled are affected (default configuration)
 - No API, persistence, or dependency changes

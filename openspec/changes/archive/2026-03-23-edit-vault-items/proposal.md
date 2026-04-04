@@ -1,6 +1,6 @@
 ## Why
 
-The vault browser is currently read-only. Users who spot an error in a saved item — a changed password, a wrong URL, a misspelled name — have no way to correct it inside Macwarden, forcing them to use the Bitwarden web vault instead. Editing is a core vault management capability and the most-requested missing feature after read support.
+The vault browser is currently read-only. Users who spot an error in a saved item — a changed password, a wrong URL, a misspelled name — have no way to correct it inside Prizm, forcing them to use the Bitwarden web vault instead. Editing is a core vault management capability and the most-requested missing feature after read support.
 
 ## What Changes
 
@@ -31,4 +31,4 @@ The vault browser is currently read-only. Users who spot an error in a saved ite
 - **Data**: `VaultRepository` protocol gains `update(_ item: DraftVaultItem) async throws`. `VaultRepositoryImpl` implements the PUT call + re-encryption. `CipherMapper` gains a reverse mapper (domain → `RawCipher` wire format).
 - **Presentation**: New `ItemEditView` + per-type edit sub-views + `ItemEditViewModel`. `ItemDetailView` gains a toolbar Edit button. A `MenuBarExtra` ("Item") exposes Edit and Save actions. Keyboard shortcuts wired via `.keyboardShortcut`.
 - **Tests**: Unit tests for `EditVaultItemUseCase`, `CipherMapper` reverse mapper, and `VaultRepositoryImpl` update path. UI journey test for the edit-and-save flow.
-- **No new dependencies** — editing uses the same `MacwardenAPIClient` and `MacwardenCryptoService` already in the Data layer.
+- **No new dependencies** — editing uses the same `PrizmAPIClient` and `PrizmCryptoService` already in the Data layer.

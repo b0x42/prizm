@@ -3,7 +3,7 @@
 - [x] 1.1 Add `eff-large-wordlist.txt` to the app bundle (resource target membership in Xcode)
 - [x] 1.2 Create `RandomnessProvider` protocol in `Domain/Utilities/RandomnessProvider.swift` — single method `randomBytes(count: Int) throws -> [UInt8]`
 - [x] 1.3 Implement `CryptographicRandomnessProvider: RandomnessProvider` in `Data/` — backed by `SecRandomCopyBytes`; document security goal and RFC reference per CLAUDE.md security-critical code standard
-- [x] 1.4 Create `MockRandomnessProvider: RandomnessProvider` in `MacwardenTests/Mocks/` — deterministic byte sequence for reproducible tests
+- [x] 1.4 Create `MockRandomnessProvider: RandomnessProvider` in `PrizmTests/Mocks/` — deterministic byte sequence for reproducible tests
 - [x] 1.5 Write failing unit tests for `PasswordGenerator` — random mode: length bounds (5, 128), uppercase-only pool, all-sets pool, at least-one-per-set guarantee, avoid-ambiguous exclusion, last-set lock prevents empty pool; use `MockRandomnessProvider`
 - [x] 1.6 Write failing unit tests for `PasswordGenerator` — passphrase mode: word count bounds (3, 10), default word count is 6, separator injection, capitalize toggle, include-number toggle, all words from EFF list; use `MockRandomnessProvider`
 - [x] 1.7 Implement `PasswordGeneratorConfig` value type — `enum Mode` (default `.password`), all option fields with defaults (passphrase word count default = 6), `UserDefaults` persistence helpers
@@ -11,7 +11,7 @@
 
 ## 2. Presentation — PasswordGeneratorViewModel
 
-- [x] 2.1 Write failing unit tests for `PasswordGeneratorViewModel` in `MacwardenTests/PasswordGeneratorViewModelTests.swift` — config changes trigger regeneration, copy writes to clipboard, settings persisted to UserDefaults, defaults restored on first launch; inject `MockRandomnessProvider` in tests
+- [x] 2.1 Write failing unit tests for `PasswordGeneratorViewModel` in `PrizmTests/PasswordGeneratorViewModelTests.swift` — config changes trigger regeneration, copy writes to clipboard, settings persisted to UserDefaults, defaults restored on first launch; inject `MockRandomnessProvider` in tests
 - [x] 2.2 Implement `PasswordGeneratorViewModel: ObservableObject` — owns `PasswordGeneratorConfig`, `generatedValue: String`, `generate()`, `copyToClipboard()` (30 s auto-clear via `VaultBrowserViewModel`-style `Task`); no `applyToField` method — the View writes through its `Binding<String?>` directly (see design D5)
 - [x] 2.3 Wire `generate()` call on every `@Published` config property change via `didSet`
 - [x] 2.4 Wire `CryptographicRandomnessProvider` into `AppContainer` — instantiate once and inject into `PasswordGeneratorViewModel` factory closure; add `makePasswordGeneratorViewModel` factory to `AppContainer`

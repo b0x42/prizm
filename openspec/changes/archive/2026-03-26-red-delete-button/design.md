@@ -29,4 +29,4 @@ Apple HIG and macOS toolbar conventions suggest delete is not a primary toolbar 
 - "Delete Permanently" never appears in Apple's toolbars — it's only in context menus or the Edit menu.
 - The hypothetical email app in Mario Guzman's [Mac Toolbar Guidelines](https://marioaguzman.github.io/design/toolbarguidelines/) ranks delete as third-priority, behind compose and reply actions.
 
-Current Macwarden approach (text "Delete" / "Delete Permanently" buttons in the toolbar with confirmation alerts) trades strict HIG alignment for discoverability — acceptable for a power-user app. Future consideration: replace text labels with a trash icon button, or move permanent delete to context menu only.
+Current Prizm approach (text "Delete" / "Delete Permanently" buttons in the toolbar with confirmation alerts) trades strict HIG alignment for discoverability — acceptable for a power-user app. Future consideration: replace text labels with a trash icon button, or move permanent delete to context menu only.

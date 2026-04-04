@@ -1,6 +1,6 @@
 ## Context
 
-Macwarden is a native macOS client for self-hosted Bitwarden and Vaultwarden. It must implement the full Bitwarden client protocol from scratch — no official SDK supports macOS. All cryptographic operations must run locally; the master password must never leave the device. The architecture follows Clean Architecture with three layers (Domain, Data, Presentation) and strict dependency direction enforced by import rules.
+Prizm is a native macOS client for self-hosted Bitwarden and Vaultwarden. It must implement the full Bitwarden client protocol from scratch — no official SDK supports macOS. All cryptographic operations must run locally; the master password must never leave the device. The architecture follows Clean Architecture with three layers (Domain, Data, Presentation) and strict dependency direction enforced by import rules.
 
 v1 is read-only (browse and copy only). Editing, deleting, and creating items are deferred to future versions.
 

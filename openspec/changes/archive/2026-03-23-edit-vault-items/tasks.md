@@ -25,7 +25,7 @@
 ## 4. Data Layer — Repository & API
 
 - [x] 4.1 Add `update(_ draft: DraftVaultItem) async throws -> VaultItem` to `VaultRepository` protocol
-- [x] 4.2 Add `PUT /ciphers/{id}` request method to `MacwardenAPIClient`
+- [x] 4.2 Add `PUT /ciphers/{id}` request method to `PrizmAPIClient`
 - [x] 4.3 Implement `VaultRepositoryImpl.update`: call reverse mapper, call API, decode response, update in-memory cache
 - [x] 4.4 Write unit tests for `VaultRepositoryImpl.update` covering success path and API error path
 

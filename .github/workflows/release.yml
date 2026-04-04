@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-dmg:
+    name: Build & Package DMG
+    runs-on: macos-15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
+
+      - name: Create signing config (unsigned release build)
+        run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
+
+      - name: Build Release (no signing)
+        run: |
+          xcodebuild \
+            -project "Prizm/Prizm.xcodeproj" \
+            -scheme "Prizm" \
+            -configuration Release \
+            -derivedDataPath build/ \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcpretty || exit ${PIPESTATUS[0]}
+
+      - name: Create DMG
+        run: |
+          APP="build/Build/Products/Release/Prizm.app"
+          VERSION="${GITHUB_REF_NAME}"
+          DMG_NAME="Prizm-${VERSION}.dmg"
+
+          STAGING="dmg-staging"
+          mkdir -p "$STAGING"
+          cp -R "$APP" "$STAGING/Prizm.app"
+          ln -s /Applications "$STAGING/Applications"
+
+          hdiutil create \
+            -volname "Prizm ${VERSION}" \
+            -srcfolder "$STAGING" \
+            -ov \
+            -format UDZO \
+            "$DMG_NAME"
+
+          echo "DMG_PATH=$DMG_NAME" >> "$GITHUB_ENV"
+
+      - name: Upload DMG to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.DMG_PATH }}
