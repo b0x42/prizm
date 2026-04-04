@@ -43,15 +43,19 @@ The system SHALL check the selected file's size before reading any bytes into me
 ---
 
 ### Requirement: Upload runs on a background task with progress indicator
-Encryption and upload SHALL execute on a background `Task`. While in progress, the confirmation sheet SHALL show a progress indicator and disable the Confirm and Cancel buttons. On success, the sheet SHALL dismiss. On failure, the sheet SHALL remain open with an inline error and re-enable the Cancel button.
+Encryption and upload SHALL execute on a background `Task`. While in progress, the confirmation sheet SHALL show a progress indicator and disable the Confirm button; the Cancel button SHALL remain enabled. On success, the sheet SHALL dismiss. On failure, the sheet SHALL remain open with an inline error.
 
 #### Scenario: Progress indicator shown during upload
 - **WHEN** the user confirms and upload begins
-- **THEN** a progress indicator SHALL be visible and both Confirm and Cancel SHALL be disabled
+- **THEN** a progress indicator SHALL be visible and the Confirm button SHALL be disabled; Cancel SHALL remain enabled
 
-#### Scenario: Upload failure shows inline error with Cancel re-enabled
+#### Scenario: Cancel during upload aborts and clears file data
+- **WHEN** the user presses Cancel while upload is in progress
+- **THEN** the upload task SHALL be cancelled, the in-memory file data buffer SHALL be zeroed, and the sheet SHALL dismiss immediately
+
+#### Scenario: Upload failure shows inline error with Cancel enabled
 - **WHEN** the upload fails (network error, server error, premium gate)
-- **THEN** the confirmation sheet SHALL remain open with an inline error message and Cancel SHALL be re-enabled
+- **THEN** the confirmation sheet SHALL remain open with an inline error message and Cancel SHALL be enabled
 
 #### Scenario: Premium gate error shown inline
 - **WHEN** the server returns HTTP 402

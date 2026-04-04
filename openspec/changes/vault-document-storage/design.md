@@ -59,13 +59,47 @@ This produces three encrypted artifacts per attachment: the file data, the attac
 
 **Decision:** Decrypted file data is NEVER written to a persistent store. For "Open", write the plaintext to a `FileManager` temp directory, open with `NSWorkspace`, then overwrite with zeroes and delete after 30 seconds. For "Save to Disk", write directly to the user-chosen path and zero the in-memory buffer immediately after.
 
-**Why:** Macwarden is a security app. Leaving decrypted files on disk — even in a temp directory — is a data exposure risk that the temp-file lifecycle mitigates.
+**Why:** Prizm is a security app. Leaving decrypted files on disk — even in a temp directory — is a data exposure risk that the temp-file lifecycle mitigates.
+
+**30-second rationale:** 30 seconds is the minimum time judged sufficient for the target application (e.g. Preview, Acrobat) to open and read the file after `NSWorkspace.shared.open` returns. It is not a security deadline — once the app has the file handle, the data is in that process's memory regardless. The 30-second window simply avoids deleting the file before the target app has finished reading it.
+
+**Timer suspension risk:** macOS may suspend background `Task` timers when the app moves to the background immediately after Open. As a safety net, `AttachmentTempFileManager` also registers for `NSApplication.didBecomeActiveNotification` and sweeps any temp files whose scheduled deletion time has passed. This ensures cleanup occurs on the next app foreground even if the timer fired while suspended.
 
 ### 5. 500 MB UI limit enforced before upload
 
 **Decision:** Reject files larger than 500 MB (524 288 000 bytes) at the file picker stage, before reading file content into memory. Show a clear error. This matches the Bitwarden server limit.
 
-### 6. Premium gate surfaced in UI, not enforced by the app
+### 6. Cipher key resolution — separate Data layer cache, not stored in VaultItem
+
+**Decision:** The effective cipher symmetric key (per-item key if present, vault key otherwise) is NOT stored in the `VaultItem` Domain entity. Instead, `VaultKeyServiceImpl` (Data layer) maintains a separate `[String: Data]` cache (cipher ID → effective key), populated during sync alongside the vault and cleared on lock.
+
+**Why:** The Constitution (§III) requires minimizing unencrypted key material in memory and keeping all crypto concerns in the Data layer. Storing a symmetric key in every `VaultItem` would:
+1. Add key material to Domain entities (violates §II — Domain should be crypto-free)
+2. Expand the key material footprint unnecessarily (violates §III)
+
+The current code discards the per-item cipher key after `CipherMapper.map(raw:keys:)` returns. `VaultKeyServiceImpl` restores access to that key via a parallel cache with the same lifecycle as the vault.
+
+**Data flow:**
+```
+SyncRepositoryImpl
+  → CipherMapper produces (VaultItem, effectiveCipherKey: Data) per cipher
+  → VaultRepository.populate(items:)      ← unchanged
+  → VaultKeyCache.populate(keys:)         ← new, [cipherId: Data]
+  → both cleared together on vault lock
+
+VaultKeyServiceImpl (Data layer)
+  → conforms to Domain VaultKeyService protocol
+  → reads from VaultKeyCache for the cipher's key
+  → falls back to crypto.currentKeys().symmetricKey when nil (cipher has no per-item key)
+  → throws VaultError.vaultLocked when cache is empty (vault is locked)
+```
+
+**Alternatives considered:**
+- *Store key in `VaultItem`* — rejected: adds crypto material to Domain entities, violates §II and §III
+- *Re-fetch raw cipher from API on demand* — rejected: network call on every attachment operation, violates §VI (unnecessary complexity)
+- *Always use vault key, ignore per-item key* — rejected: incorrect for ciphers with their own key; Bitwarden clients that wrote a per-item key would produce attachments that Prizm cannot decrypt
+
+### 7. Premium gate surfaced in UI, not enforced by the app
 
 **Decision:** Macwarden does not check the user's Bitwarden premium status before showing the Add Attachment button. If the server rejects the upload (402 or error body indicating premium required), the app surfaces the server's error message inline. Vaultwarden users are unaffected.
 
@@ -113,7 +147,8 @@ This change adds a new class of encrypted data (file attachments) to the app. Be
 |---|---|
 | Should attachment metadata appear in search results? | No for v1 — search operates on vault item name/username/URL only |
 | Size warning threshold | Warn (advisory) at 50 MB; hard block at 500 MB |
-| Download URL source | Use `Attachment.url` from sync payload directly when non-nil; re-fetch via `GET /api/ciphers/{id}/attachment/{attachmentId}` only when nil; retry once on 403 |
-| Cancel during batch upload | Allowed — Cancel button remains enabled while uploading; cancels all in-flight tasks, zeros buffers, dismisses sheet |
+| Download URL source | Use `Attachment.url` from sync payload directly when non-nil; signed URLs expire — on 403, discard the stale URL and re-fetch a fresh signed URL via `GET /api/ciphers/{id}/attachment/{attachmentId}`, then retry the blob download once; if the retry also fails, surface "Could not download attachment. Download failed. If this keeps happening, try locking and unlocking your vault." and do not retry further |
+| Cancel during upload (single-file and batch) | Allowed in both flows — Cancel button remains enabled while uploading; cancels all in-flight tasks, zeros buffers, dismisses sheet |
+| Cipher key storage | Not in VaultItem — separate VaultKeyCache in Data layer (see Decision §6) |
 | Concurrent drag-drop during active upload | Rejected — drop zone shows rejection indicator and brief inline message; user may retry after current batch completes |
 | Streaming encryption for large files | Not required for v1 — 500 MB hard limit is sufficient for in-memory encrypt/decrypt on macOS; deferred to future optimisation |
