@@ -111,6 +111,34 @@ protocol PrizmCryptoService: Actor {
     ///
     /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is locked.
     func currentKeys() async throws -> CryptoKeys
+
+    // MARK: - Attachment crypto (vault-document-storage)
+    //
+    // Declared `nonisolated` so they can be called synchronously from any concurrency
+    // context — they access no actor-isolated state and can therefore be tested via
+    // `any PrizmCryptoService` without requiring `await`.
+
+    /// Generates a cryptographically random 64-byte per-attachment key.
+    ///
+    /// See `AttachmentCrypto.swift` for the full specification.
+    nonisolated func generateAttachmentKey() throws -> Data
+
+    /// Encrypts file data using AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC).
+    /// Binary layout: `IV (16) ‖ ciphertext ‖ HMAC-SHA256 (32)`.
+    nonisolated func encryptData(_ data: Data, attachmentKey: Data) throws -> Data
+
+    /// Decrypts a binary blob produced by `encryptData`.
+    /// Verifies HMAC before decrypting (Encrypt-then-MAC).
+    nonisolated func decryptData(_ data: Data, attachmentKey: Data) throws -> Data
+
+    /// Wraps the per-attachment key as a type-2 EncString using the cipher's `CryptoKeys`.
+    nonisolated func encryptAttachmentKey(_ key: Data, cipherKey: CryptoKeys) throws -> String
+
+    /// Unwraps a per-attachment key from its EncString representation.
+    nonisolated func decryptAttachmentKey(_ encString: String, cipherKey: CryptoKeys) throws -> Data
+
+    /// Encrypts a plaintext file name as a type-2 EncString for upload metadata.
+    nonisolated func encryptFileName(_ name: String, cipherKey: CryptoKeys) throws -> String
 }
 
 // MARK: - PrizmCryptoServiceImpl

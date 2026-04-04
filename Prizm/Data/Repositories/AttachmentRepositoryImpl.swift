@@ -19,6 +19,12 @@ import os.log
 ///   - Layer 2: `encryptAttachmentKey` — EncString type-2 wrapping the 64-byte attachment key.
 ///   - File name: `encryptFileName` — EncString type-2 wrapping the plaintext name.
 ///
+/// - Crypto injection: takes `any PrizmCryptoService` (protocol, not concrete type) so that
+///   tests can supply a mock. The 6 attachment crypto methods (`generateAttachmentKey`,
+///   `encryptData`, `decryptData`, `encryptAttachmentKey`, `decryptAttachmentKey`,
+///   `encryptFileName`) are declared `nonisolated` on the protocol and implemented in
+///   `AttachmentCrypto.swift` via an extension on `PrizmCryptoServiceImpl`.
+///
 /// - Key handling:
 ///   - The 64-byte `cipherKey: Data` parameter (encKey ‖ macKey) is split into
 ///     `CryptoKeys` at the Data layer boundary (encryptionKey = first 32 bytes,
@@ -33,14 +39,14 @@ import os.log
 final class AttachmentRepositoryImpl: AttachmentRepository {
 
     private let apiClient:       any PrizmAPIClientProtocol
-    private let crypto:          PrizmCryptoServiceImpl
+    private let crypto:          any PrizmCryptoService
     private let vaultRepository: any VaultRepository
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
     init(
         apiClient:       any PrizmAPIClientProtocol,
-        crypto:          PrizmCryptoServiceImpl,
+        crypto:          any PrizmCryptoService,
         vaultRepository: any VaultRepository
     ) {
         self.apiClient       = apiClient

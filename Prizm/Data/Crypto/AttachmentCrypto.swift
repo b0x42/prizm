@@ -22,9 +22,12 @@ nonisolated enum AttachmentCryptoError: Error, Equatable {
     case invalidKeyLength
 }
 
-// MARK: - Attachment crypto extension on PrizmCryptoService
+// MARK: - Attachment crypto extension on PrizmCryptoServiceImpl
 
-/// Attachment-specific cryptographic operations added to `PrizmCryptoServiceImpl`.
+/// Concrete implementations of the six attachment-crypto requirements declared on
+/// `PrizmCryptoService` (see `PrizmCryptoService.swift`).  Placed in an extension on
+/// `PrizmCryptoServiceImpl` rather than on the protocol because the AES-CBC helpers
+/// (`aesCbcEncrypt`/`aesCbcDecrypt`) are private methods on the concrete type.
 ///
 /// All new methods are `nonisolated` so they can be called from any concurrency context
 /// without hopping onto the actor — they access no actor-isolated state.
