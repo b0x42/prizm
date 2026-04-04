@@ -94,6 +94,10 @@ VaultKeyServiceImpl (Data layer)
   → throws VaultError.vaultLocked when cache is empty (vault is locked)
 ```
 
+**Key type note:** `VaultKeyService` returns raw `Data` (64 bytes = `encryptionKey` ‖ `macKey`) so the Domain layer stays Foundation-only. `AttachmentRepositoryImpl` splits this at the Data layer boundary: `encryptionKey = cipherKey[0..<32]`, `macKey = cipherKey[32..<64]`, constructing a `CryptoKeys` to pass to `PrizmCryptoService`. `CryptoKeys` has two separate 32-byte fields (`encryptionKey`, `macKey`) — there is no single `symmetricKey` field. When falling back to the vault key in `VaultKeyServiceImpl`, concatenate `keys.encryptionKey + keys.macKey`.
+
+**In-memory cache update:** `AttachmentRepositoryImpl` injects `VaultRepository` and calls `updateAttachments(_:for:)` after successful upload or delete, patching the in-memory vault cache in-place. This follows the same pattern as `VaultRepositoryImpl.update` and `.create`.
+
 **Alternatives considered:**
 - *Store key in `VaultItem`* — rejected: adds crypto material to Domain entities, violates §II and §III
 - *Re-fetch raw cipher from API on demand* — rejected: network call on every attachment operation, violates §VI (unnecessary complexity)
