@@ -1,6 +1,6 @@
 ## Context
 
-Macwarden already stores five vault item types with end-to-end encryption using Bitwarden's AES-256-CBC + HMAC-SHA256 EncString scheme, backed by `BitwardenCryptoService`. The Bitwarden/Vaultwarden server provides a first-class Attachments API: file data is encrypted client-side, uploaded to the server (via a signed URL), and returned as part of the vault sync. Vaultwarden stores attachment files on disk or in S3-compatible storage; Bitwarden cloud requires a premium account.
+Prizm already stores five vault item types with end-to-end encryption using Bitwarden's AES-256-CBC + HMAC-SHA256 EncString scheme, backed by `PrizmCryptoService`. The Bitwarden/Vaultwarden server provides a first-class Attachments API: file data is encrypted client-side, uploaded to the server (via a signed URL), and returned as part of the vault sync. Vaultwarden stores attachment files on disk or in S3-compatible storage; Bitwarden cloud requires a premium account.
 
 An earlier draft of this design proposed local-only encrypted file storage in the app container. That approach was rejected because it cannot sync across devices and diverges from the Bitwarden standard, which would require a full rewrite to add sync later. The standard API is the right foundation.
 
@@ -101,7 +101,7 @@ VaultKeyServiceImpl (Data layer)
 
 ### 7. Premium gate surfaced in UI, not enforced by the app
 
-**Decision:** Macwarden does not check the user's Bitwarden premium status before showing the Add Attachment button. If the server rejects the upload (402 or error body indicating premium required), the app surfaces the server's error message inline. Vaultwarden users are unaffected.
+**Decision:** Prizm does not check the user's Bitwarden premium status before showing the Add Attachment button. If the server rejects the upload (402 or error body indicating premium required), the app surfaces the server's error message inline. Vaultwarden users are unaffected.
 
 **Rationale:** Proactively gating the feature requires an extra API call (profile fetch) and maintenance burden as Bitwarden changes its plan tiers. The server is the authoritative source; reflecting its error is sufficient.
 
@@ -147,7 +147,7 @@ This change adds a new class of encrypted data (file attachments) to the app. Be
 |---|---|
 | Should attachment metadata appear in search results? | No for v1 — search operates on vault item name/username/URL only |
 | Size warning threshold | Warn (advisory) at 50 MB; hard block at 500 MB |
-| Download URL source | Use `Attachment.url` from sync payload directly when non-nil; signed URLs expire — on 403, discard the stale URL and re-fetch a fresh signed URL via `GET /api/ciphers/{id}/attachment/{attachmentId}`, then retry the blob download once; if the retry also fails, surface "Could not download attachment. Download failed. If this keeps happening, try locking and unlocking your vault." and do not retry further |
+| Download URL source | Use `Attachment.url` from sync payload directly when non-nil; signed URLs expire — on 403, discard the stale URL and re-fetch a fresh signed URL via `GET /api/ciphers/{id}/attachment/{attachmentId}`, then retry the blob download once; if the retry also fails, surface "Download failed. If this keeps happening, try locking and unlocking your vault." and do not retry further |
 | Cancel during upload (single-file and batch) | Allowed in both flows — Cancel button remains enabled while uploading; cancels all in-flight tasks, zeros buffers, dismisses sheet |
 | Cipher key storage | Not in VaultItem — separate VaultKeyCache in Data layer (see Decision §6) |
 | Concurrent drag-drop during active upload | Rejected — drop zone shows rejection indicator and brief inline message; user may retry after current batch completes |

@@ -1,6 +1,6 @@
 ## Why
 
-Users need a secure place to store sensitive files (PDFs, images, documents) alongside their vault credentials. Bitwarden and Vaultwarden both provide a first-class **Attachments API** for exactly this — files are encrypted client-side before upload and sync across all devices via the existing vault sync mechanism. Implementing attachments using the standard API means Macwarden users get full cross-device sync with zero additional server infrastructure, and Vaultwarden users get it entirely free.
+Users need a secure place to store sensitive files (PDFs, images, documents) alongside their vault credentials. Bitwarden and Vaultwarden both provide a first-class **Attachments API** for exactly this — files are encrypted client-side before upload and sync across all devices via the existing vault sync mechanism. Implementing attachments using the standard API means Prizm users get full cross-device sync with zero additional server infrastructure, and Vaultwarden users get it entirely free.
 
 ## What Changes
 
@@ -31,7 +31,7 @@ Users need a secure place to store sensitive files (PDFs, images, documents) alo
 ## Impact
 
 - **Domain layer**: New `Attachment` entity; `CipherDetail` (or equivalent) gains `attachments: [Attachment]`; new `AttachmentRepository` protocol
-- **Data layer**: `AttachmentRepositoryImpl` — new upload/download/delete network calls; `AttachmentCryptoService` (two-layer key scheme); `AttachmentMapper` for sync payload → `Attachment`
+- **Data layer**: `AttachmentRepositoryImpl` — new upload/download/delete network calls; `PrizmCryptoService` extended with two-layer attachment crypto; `AttachmentMapper` for sync payload → `Attachment`; `VaultKeyCache` + `VaultKeyServiceImpl` for cipher key resolution
 - **Presentation layer**: Attachments section in detail view; `AttachmentAddViewModel` + `AttachmentRowView`; file picker and progress UI
 - **No breaking changes** to existing vault item types, stored data, or sync behaviour
 - **Bitwarden cloud users** require a premium account to use attachments; Vaultwarden users have no such restriction
