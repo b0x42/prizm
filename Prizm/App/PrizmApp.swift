@@ -183,6 +183,8 @@ struct PrizmApp: App {
 protocol RootViewModelDependencies: AnyObject {
     var authRepo: any AuthRepository { get }
     var vaultRepo: any VaultRepository { get }
+    /// The per-cipher attachment key cache. Cleared on vault lock alongside the vault store.
+    var vaultKeyCache: VaultKeyCache { get }
     func makeLoginViewModel() -> LoginViewModel
     func makeUnlockViewModel(account: Account) -> UnlockViewModel
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel

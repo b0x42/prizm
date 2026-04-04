@@ -123,6 +123,7 @@ final class RootViewModelLockTests: XCTestCase {
 private final class MockRootDependencies: RootViewModelDependencies {
     let authRepo: any AuthRepository
     let vaultRepo: any VaultRepository
+    let vaultKeyCache = VaultKeyCache()
 
     private let mockLoginUseCase = MockLoginUseCase()
     private let mockSyncUseCase = MockSyncUseCase()
