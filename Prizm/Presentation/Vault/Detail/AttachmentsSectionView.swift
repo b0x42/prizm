@@ -24,6 +24,10 @@ struct AttachmentsSectionView: View {
     var onAddTapped:  () -> Void       = {}
     var onDropFiles:  ([URL]) -> Void  = { _ in }
 
+    /// `true` while `NSOpenPanel` is blocking — disables the "Add Attachment" button
+    /// and shows a small spinner so the UI doesn't appear frozen.
+    var isPicking: Bool = false
+
     /// Factory for `AttachmentRowViewModel` — injected from AppContainer so the
     /// section view never imports Data layer types directly (Constitution §II).
     /// When nil (e.g. in task-5 callers before ViewModels are wired), row actions no-op.
@@ -83,12 +87,21 @@ struct AttachmentsSectionView: View {
         Button {
             onAddTapped()
         } label: {
-            Label("Add Attachment", systemImage: "paperclip")
-                .font(Typography.fieldValue)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 6) {
+                if isPicking {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "paperclip")
+                }
+                Text("Add Attachment")
+                    .font(Typography.fieldValue)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(Color.accentColor)
+        .foregroundStyle(isPicking ? Color.secondary : Color.accentColor)
+        .disabled(isPicking)
         .padding(.vertical, Spacing.rowVertical)
         .padding(.horizontal, Spacing.rowHorizontal)
         .accessibilityIdentifier(AccessibilityID.Attachment.addButton)

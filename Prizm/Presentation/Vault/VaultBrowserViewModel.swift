@@ -216,6 +216,17 @@ final class VaultBrowserViewModel: ObservableObject {
         }
     }
 
+    /// Re-reads the currently selected item from the vault store and updates `itemSelection`.
+    ///
+    /// Called after a successful attachment upload so the detail pane reflects the new
+    /// attachment list without requiring a full vault sync. Safe to call on cancel — if
+    /// the item hasn't changed the assignment is a no-op.
+    func refreshItemSelection() {
+        guard let currentId = itemSelection?.id else { return }
+        guard let updated = try? vault.allItems().first(where: { $0.id == currentId }) else { return }
+        itemSelection = updated
+    }
+
     /// Refreshes sidebar item counts from the vault store.
     func refreshCounts() {
         do {

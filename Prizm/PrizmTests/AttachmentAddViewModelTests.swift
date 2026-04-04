@@ -174,6 +174,51 @@ final class AttachmentAddViewModelTests: XCTestCase {
         XCTAssertNil(sut.selectedFileURL)
         XCTAssertNil(sut.sizeError)
     }
+
+    // MARK: - isPickingFile (task 8b.6)
+
+    func test_isPickingFile_trueWhilePickerIsRunning() {
+        var capturedDuringPick = false
+        // The filePicker closure runs synchronously inside selectFile() while
+        // isPickingFile is true — capture the value mid-call.
+        let sut = AttachmentAddViewModel(
+            cipherId:      "cipher-1",
+            uploadUseCase: MockUploadUseCase(result: .success(
+                Attachment(id: "att-1", fileName: "doc.txt", encryptedKey: "2.a|b|c",
+                           size: 22, sizeName: "22 B", url: nil, isUploadIncomplete: false)
+            )),
+            filePicker: { [weak sut] in
+                capturedDuringPick = sut?.isPickingFile ?? false
+                return (url: self.tempFileURL, bytes: 22)
+            }
+        )
+
+        sut.selectFile()
+
+        XCTAssertTrue(capturedDuringPick, "isPickingFile must be true while the picker is running")
+        XCTAssertFalse(sut.isPickingFile, "isPickingFile must be false after picker returns")
+    }
+
+    func test_isPickingFile_falseAfterCancel() {
+        var capturedDuringPick = false
+        let sut = AttachmentAddViewModel(
+            cipherId:      "cipher-1",
+            uploadUseCase: MockUploadUseCase(result: .success(
+                Attachment(id: "att-1", fileName: "doc.txt", encryptedKey: "2.a|b|c",
+                           size: 22, sizeName: "22 B", url: nil, isUploadIncomplete: false)
+            )),
+            filePicker: { [weak sut] in
+                capturedDuringPick = sut?.isPickingFile ?? false
+                return nil  // simulate user cancelling NSOpenPanel
+            }
+        )
+
+        sut.selectFile()
+
+        XCTAssertTrue(capturedDuringPick, "isPickingFile must be true while the picker is running")
+        XCTAssertFalse(sut.isPickingFile, "isPickingFile must be false after cancel")
+        XCTAssertFalse(sut.isConfirming)
+    }
 }
 
 // MARK: - Test doubles

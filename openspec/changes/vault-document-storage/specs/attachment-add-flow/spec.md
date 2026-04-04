@@ -142,3 +142,40 @@ If the vault locks while an upload is in progress, the system SHALL cancel the u
 #### Scenario: Vault lock zeros in-flight file data
 - **WHEN** the vault locks while upload is in progress
 - **THEN** the upload task SHALL be cancelled, in-memory file bytes SHALL be zeroed, and the confirmation sheet SHALL dismiss immediately
+
+---
+
+### Requirement: Add Attachment button shows picking state while file panel is open
+`AttachmentAddViewModel` SHALL expose a `isPickingFile: Bool` property that is `true` while `NSOpenPanel.runModal()` is executing and `false` at all other times. `AttachmentsSectionView` SHALL accept an `isPicking: Bool` parameter and, when `true`, SHALL disable the "Add Attachment" button and replace the paperclip icon with a small `ProgressView` so the UI does not appear unresponsive during the NSOpenPanel blocking call.
+
+#### Scenario: Button disables while panel is open
+- **WHEN** the user clicks "Add Attachment"
+- **THEN** `isPickingFile` SHALL be set to `true` before `NSOpenPanel` runs
+- **AND** the "Add Attachment" button SHALL be disabled and show a spinner
+
+#### Scenario: Button re-enables after file selected
+- **WHEN** the user picks a file and `NSOpenPanel` returns
+- **THEN** `isPickingFile` SHALL be set to `false`
+- **AND** the "Add Attachment" button SHALL re-enable
+
+#### Scenario: Button re-enables after cancel
+- **WHEN** the user cancels `NSOpenPanel` without selecting a file
+- **THEN** `isPickingFile` SHALL be set to `false`
+- **AND** the "Add Attachment" button SHALL re-enable
+
+---
+
+### Requirement: Attachment list refreshes immediately after upload sheet dismisses
+After either the single-file confirm sheet or the batch upload sheet is dismissed, the detail pane SHALL immediately reflect the updated attachment list — newly uploaded attachments SHALL appear without requiring navigation away or a full vault sync.
+
+#### Scenario: Single-file upload — attachment appears after confirm sheet dismisses
+- **WHEN** the user confirms a single-file upload and the confirm sheet dismisses
+- **THEN** the attachment section card SHALL update to show the newly uploaded attachment row
+
+#### Scenario: Batch upload — attachments appear after batch sheet dismisses
+- **WHEN** all batch uploads succeed and the batch sheet auto-dismisses
+- **THEN** the attachment section card SHALL update to show all newly uploaded attachment rows
+
+#### Scenario: Cancel does not break the section
+- **WHEN** the user cancels an upload sheet without uploading
+- **THEN** the attachment section card SHALL remain unchanged and no error SHALL be shown

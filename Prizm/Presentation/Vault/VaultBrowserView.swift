@@ -108,6 +108,7 @@ struct VaultBrowserView: View {
                     makeAddAttachmentViewModel:     makeAddAttachmentViewModel,
                     makeBatchAttachmentViewModel:   makeBatchAttachmentViewModel,
                     makeAttachmentRowViewModel:     makeAttachmentRowViewModel,
+                    onAttachmentsChanged:           { viewModel.refreshItemSelection() },
                     onEditSheetChanged:             { viewModel.handleEditSheetState($0) },
                     onSoftDelete:                   { id in await viewModel.performSoftDelete(id: id) },
                     onRestore:                      { id in await viewModel.performRestore(id: id) },

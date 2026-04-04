@@ -17,6 +17,10 @@ struct ItemDetailView: View {
     /// Factory for `AttachmentRowViewModel` — passed to `AttachmentsSectionView` so each
     /// row gets its own ViewModel instance (Constitution §II decoupling).
     var makeAttachmentRowViewModel: ((String, Attachment) -> AttachmentRowViewModel)? = nil
+    /// Called when an attachment upload sheet is dismissed, whether the upload
+    /// succeeded or was cancelled. The parent view uses this to refresh `itemSelection`
+    /// so the attachment list in the detail pane reflects the new server state.
+    var onAttachmentsChanged: (() -> Void)? = nil
     var onEditSheetChanged: ((Bool) -> Void)? = nil
     var onSoftDelete: ((String) async -> Void)? = nil
     var onRestore: ((String) async -> Void)? = nil
@@ -57,6 +61,7 @@ struct ItemDetailView: View {
             }
             .sheet(isPresented: $isAddAttachmentSheetPresented, onDismiss: {
                 addAttachmentViewModel = nil
+                onAttachmentsChanged?()
             }) {
                 if let vm = addAttachmentViewModel {
                     AttachmentConfirmSheet(viewModel: vm, isPresented: $isAddAttachmentSheetPresented)
@@ -64,6 +69,7 @@ struct ItemDetailView: View {
             }
             .sheet(isPresented: $isBatchAttachmentSheetPresented, onDismiss: {
                 batchAttachmentViewModel = nil
+                onAttachmentsChanged?()
             }) {
                 if let vm = batchAttachmentViewModel {
                     AttachmentBatchSheet(viewModel: vm, isPresented: $isBatchAttachmentSheetPresented)
@@ -173,7 +179,8 @@ struct ItemDetailView: View {
             onDropFiles:      { urls in openBatchAttachmentSheet(for: item, with: urls) },
             makeRowViewModel: makeAttachmentRowViewModel.map { factory in
                 { attachment in factory(item.id, attachment) }
-            }
+            },
+            isPicking:        addAttachmentViewModel?.isPickingFile ?? false
         )
     }
 

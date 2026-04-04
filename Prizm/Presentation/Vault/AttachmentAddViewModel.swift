@@ -48,6 +48,11 @@ final class AttachmentAddViewModel {
     /// bytes are NOT loaded into memory until Confirm).
     private(set) var fileSizeBytes: Int = 0
 
+    /// `true` while `NSOpenPanel.runModal()` is blocking the main thread.
+    /// Used by `AttachmentsSectionView` to disable the "Add Attachment" button and
+    /// show a spinner so the UI does not appear unresponsive during the modal call.
+    private(set) var isPickingFile: Bool = false
+
     /// `true` while the Confirm sheet is presented.
     private(set) var isConfirming: Bool = false
 
@@ -103,6 +108,8 @@ final class AttachmentAddViewModel {
     /// Reading file size at selection time (rather than at confirm time) lets the UI display
     /// the size and advisory/error message immediately. Bytes are NOT read here.
     func selectFile() {
+        isPickingFile = true
+        defer { isPickingFile = false }
         guard let (url, bytes) = filePicker() else { return }
 
         // Max 500 MB (task 6.2)

@@ -106,6 +106,15 @@
 - [x] 8.1 Update `SECURITY.md` at repo root to document: attachment encryption scheme (AES-256-CBC + HMAC-SHA256 two-layer key scheme, three encrypted artifacts), where keys live (cipher key from Keychain → attachment key in memory only), temp file lifetime, and attachment-specific threat model additions (§VII)
 - [x] 8.2 Add §VII-compliant doc-comment blocks to every Data layer file that touches crypto or key material for this feature — at minimum: `AttachmentRepositoryImpl`, `AttachmentMapper`, `VaultKeyCache`, `VaultKeyServiceImpl`, and any `PrizmCryptoService` extension. Each block SHALL state the security goal, name the algorithm or key-handling scheme + spec ref, call out any deviations, and note any intentional omissions (e.g. no caching, no key persistence beyond vault lock)
 
+## 8b. Upload Loading UX
+
+- [x] 8b.1 Add `onAttachmentsChanged: (() -> Void)?` callback to `ItemDetailView`; call it from `onDismiss` of both the single-file confirm sheet and the batch upload sheet
+- [x] 8b.2 Add `refreshItemSelection()` to `VaultBrowserViewModel` — looks up the current `itemSelection` by ID in `vault.allItems()` and updates it; wire to `onAttachmentsChanged` in `VaultBrowserView`
+- [x] 8b.3 Add `private(set) var isPickingFile: Bool = false` to `AttachmentAddViewModel`; set `true` at the start of `selectFile()` before `filePicker()` runs, clear to `false` after it returns (both pick and cancel paths)
+- [x] 8b.4 Add `var isPicking: Bool = false` to `AttachmentsSectionView`; when `true`, replace the paperclip `Label` in the "Add Attachment" button with an `HStack` of `ProgressView().controlSize(.small)` + `Text("Add Attachment")` and set `.disabled(true)` on the button
+- [x] 8b.5 In `ItemDetailView.attachmentsSection(for:)`, pass `isPicking: addAttachmentViewModel?.isPickingFile ?? false` to `AttachmentsSectionView`
+- [x] 8b.6 Unit tests for `isPickingFile`: verify `true` during file picking (injectable `filePicker`), `false` after pick, `false` after cancel
+
 ## 9. XCUITest
 
 - [x] 9.1 Write UI journey: open a vault item → click Add Attachment → select a small test file → confirm → verify attachment row appears with correct name → click Open → verify a progress indicator appears then clears (temp file verification is not practical from XCUITest; open success is inferred from loading state resolving without error) → click Delete → confirm → verify row is gone
