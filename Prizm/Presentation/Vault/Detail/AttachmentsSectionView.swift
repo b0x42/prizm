@@ -131,7 +131,7 @@ private struct AttachmentRowViewWithViewModel: View {
                     Button("Delete", role: .destructive) { vm.delete() }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text(""\(vm.attachment.fileName)" will be permanently deleted.")
+                    Text(verbatim: ""\(vm.attachment.fileName)" will be permanently deleted.")
                 }
                 .overlay(alignment: .bottom) {
                     if let error = vm.actionError ?? vm.retryError {
