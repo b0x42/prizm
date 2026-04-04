@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Attachment domain entity
-The system SHALL define an `Attachment` value type (`struct`) in the Domain layer with fields: `id: String`, `fileName: String` (decrypted), `encryptedFileName: String` (EncString, as received from server), `encryptedKey: String` (EncString — the attachment key wrapped with the cipher key), `size: Int` (parsed from the server's string representation), `sizeName: String` (human-readable size string as returned by server, e.g. `"1.5 MB"` — used directly in UI, not re-formatted client-side per §VI), `url: String?`, `isUploadIncomplete: Bool` (true when `url` is nil, indicating the blob upload was interrupted after metadata creation). The Domain layer SHALL NOT import CommonCrypto, CryptoKit, or any Data-layer module.
+The system SHALL define an `Attachment` value type (`struct`) in the Domain layer with fields: `id: String`, `fileName: String` (decrypted), `encryptedKey: String` (EncString — the attachment key wrapped with the cipher key), `size: Int` (parsed from the server's string representation), `sizeName: String` (human-readable size string as returned by server, e.g. `"1.5 MB"` — used directly in UI, not re-formatted client-side per §VI), `url: String?`, `isUploadIncomplete: Bool` (true when `url` is nil, indicating the blob upload was interrupted after metadata creation). The Domain layer SHALL NOT import CommonCrypto, CryptoKit, or any Data-layer module.
 
 Note on `size`: the Bitwarden API returns `size` as a JSON string (e.g. `"12345"`), not a number. `AttachmentMapper` SHALL parse it to `Int`; if parsing fails the mapper SHALL throw a typed error.
 
@@ -9,9 +9,9 @@ Note on `size`: the Bitwarden API returns `size` as a JSON string (e.g. `"12345"
 - **WHEN** the Domain layer is compiled
 - **THEN** `Attachment` SHALL compile with `import Foundation` only
 
-#### Scenario: Attachment exposes both encrypted and decrypted file name
+#### Scenario: Attachment exposes decrypted file name for display
 - **WHEN** an `Attachment` is inspected
-- **THEN** it SHALL expose `fileName` (plaintext, for display) and `encryptedFileName` (EncString, for upload metadata)
+- **THEN** it SHALL expose `fileName` (plaintext, for display); the encrypted form is not stored on the entity (§VI — not needed after mapping)
 
 ---
 
@@ -101,7 +101,6 @@ func map(_ dto: AttachmentDTO, cipherKey: Data) throws -> Attachment
 
 `AttachmentDTO` mirrors the raw sync JSON shape: `{ "id": String, "fileName": EncString, "key": EncString, "size": String, "sizeName": String, "url": String? }`. `VaultSyncMapper` (or equivalent) SHALL call `AttachmentMapper.map(_:cipherKey:)` for each element of `ciphers[].attachments`, supplying the cipher's resolved key. The mapper SHALL:
 - Decrypt `fileName` from its EncString form using the provided cipher key → `Attachment.fileName`
-- Preserve `fileName` EncString verbatim → `Attachment.encryptedFileName`
 - Preserve `key` EncString verbatim → `Attachment.encryptedKey`
 - Parse `size` from `String` to `Int` → `Attachment.size`; throw a typed error if non-numeric
 - Map `sizeName` verbatim → `Attachment.sizeName`

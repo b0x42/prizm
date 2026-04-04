@@ -65,7 +65,7 @@ The system SHALL delete an attachment via `DELETE /api/ciphers/{cipherId}/attach
 ---
 
 ### Requirement: Structured logging for all attachment operations
-All attachment network and crypto operations SHALL emit structured log entries via `os.Logger` with subsystem `com.macwarden` and category `attachments`. Log levels SHALL follow §V of the Constitution: `.debug` for trace (e.g. "starting upload for cipherId X"), `.info` for normal flow completion (e.g. "attachment uploaded successfully"), `.error` for recoverable faults (e.g. network failure, 402 response), `.fault` for unrecoverable states. Secrets (attachment keys, file contents, access tokens) MUST NOT appear in any log output.
+All attachment network and crypto operations SHALL emit structured log entries via `os.Logger` with subsystem `com.prizm` and category `attachments`. Log levels SHALL follow §V of the Constitution: `.debug` for trace (e.g. "starting upload for cipherId X"), `.info` for normal flow completion (e.g. "attachment uploaded successfully"), `.error` for recoverable faults (e.g. network failure, 402 response), `.fault` for unrecoverable states. Secrets (attachment keys, file contents, access tokens) MUST NOT appear in any log output.
 
 #### Scenario: Upload start and success are logged at correct levels
 - **WHEN** an upload begins
