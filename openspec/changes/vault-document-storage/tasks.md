@@ -1,6 +1,6 @@
 ## 1. Domain Layer
 
-- [ ] 1.1 Add `Attachment` struct to `Domain/Entities/` with fields: `id: String`, `fileName: String`, `encryptedFileName: String`, `encryptedKey: String`, `size: Int`, `sizeName: String`, `url: String?`, `isUploadIncomplete: Bool` (defaults to `false`)
+- [ ] 1.1 Add `Attachment` struct to `Domain/Entities/` with fields: `id: String`, `fileName: String`, `encryptedKey: String`, `size: Int`, `sizeName: String`, `url: String?`, `isUploadIncomplete: Bool` (defaults to `false`)
 - [ ] 1.2 Add `attachments: [Attachment]` field to the cipher detail entity (or equivalent `VaultItem` sub-type); treat `null` from server as `[]`
 - [ ] 1.3 Define `AttachmentRepository` protocol in `Domain/` with `upload(cipherId:fileName:data:cipherKey:)`, `download(cipherId:attachment:cipherKey:)`, and `delete(cipherId:attachmentId:)` methods
 - [ ] 1.4 Define `VaultKeyService` protocol in `Domain/` with `cipherKey(for cipherId: String) async throws -> Data`; Foundation-only; throws when vault is locked
@@ -13,14 +13,14 @@
 - [ ] 1b.1 Create `VaultKeyCache` class in the Data layer: stores `[String: Data]` (cipher ID → effective symmetric key); provides `populate(keys: [String: Data])`, `key(for cipherId: String) -> Data?`, and `clear()` methods; cleared on vault lock alongside `VaultRepositoryImpl`
 - [ ] 1b.2 Update `CipherMapper.map(raw:keys:)` to also return the effective cipher key as `Data` — use `raw.key` (EncString, decrypt with vault key) if non-nil, otherwise use vault symmetric key directly; return as a tuple `(VaultItem, cipherKey: Data)` or equivalent
 - [ ] 1b.3 Update `SyncRepositoryImpl` (or wherever sync mapping is orchestrated) to collect the `cipherKey` values from each `CipherMapper.map` call and populate `VaultKeyCache` after sync completes; clear `VaultKeyCache` in the same code path that clears `VaultRepositoryImpl` on lock/sign-out
-- [ ] 1b.4 Implement `VaultKeyServiceImpl` (Data layer) conforming to the Domain `VaultKeyService` protocol: reads from `VaultKeyCache`; falls back to `crypto.currentKeys().symmetricKey` when `key(for:)` returns nil; throws `VaultError.vaultLocked` when the cache is empty (vault locked)
+- [ ] 1b.4 Implement `VaultKeyServiceImpl` (Data layer) conforming to the Domain `VaultKeyService` protocol: reads from `VaultKeyCache` for the cipher's per-item key; if the cache has no entry for the cipher ID (either no per-item key exists, or cipher was created after last sync), fall back to `crypto.currentKeys().symmetricKey`; if `currentKeys()` throws `PrizmCryptoServiceError.vaultLocked`, translate to `VaultError.vaultLocked` and rethrow — do NOT infer locked state from an empty or missing cache entry, as a missing entry is valid for newly created ciphers
 - [ ] 1b.5 Register `VaultKeyCache` and `VaultKeyServiceImpl` in `AppContainer` (DI); inject `VaultKeyServiceImpl` into the three attachment use cases
 - [ ] 1b.6 Write unit tests for `VaultKeyCache`: populate/lookup/clear lifecycle; returns nil for unknown cipher ID; cleared state returns nil for all lookups
-- [ ] 1b.7 Write unit tests for `VaultKeyServiceImpl`: returns per-item key when present in cache; falls back to vault key when cache entry is nil; throws `VaultError.vaultLocked` when cache is empty
+- [ ] 1b.7 Write unit tests for `VaultKeyServiceImpl`: returns per-item key when present in cache; falls back to vault key when cache entry is nil (cipher has no per-item key); falls back to vault key when cipher ID is absent from cache (newly created cipher, not yet synced); throws `VaultError.vaultLocked` when `currentKeys()` throws — NOT when the cache merely has no entry for that cipher ID
 
 ## 2. Crypto Layer
 
-- [ ] 2.1 Add `generateAttachmentKey() throws -> Data` (64-byte random key via `SecRandomCopyBytes`) to `BitwardenCryptoService`
+- [ ] 2.1 Add `generateAttachmentKey() throws -> Data` (64-byte random key via `SecRandomCopyBytes`) to `PrizmCryptoService`
 - [ ] 2.2 Add `encryptData(_ data: Data, attachmentKey: Data) throws -> Data` — AES-256-CBC + HMAC-SHA256, binary layout: IV ‖ ciphertext ‖ HMAC
 - [ ] 2.3 Add `decryptData(_ data: Data, attachmentKey: Data) throws -> Data` — verify MAC before decrypt (Encrypt-then-MAC)
 - [ ] 2.4 Add `encryptAttachmentKey(_ key: Data, cipherKey: SymmetricKey) throws -> String` — wraps attachment key as EncString type 2
@@ -36,7 +36,7 @@
 
 - [ ] 3.1 Create `AttachmentRepositoryImpl` conforming to `AttachmentRepository`
 - [ ] 3.2 Implement `upload` — generate attachment key, encrypt file name, encrypt file data, POST metadata to `/api/ciphers/{id}/attachment/v2`, dispatch to `fileUploadType` 0 (POST `/api/ciphers/{id}/attachment/{attachmentId}` multipart `data` field) or 1 (Azure PUT + `x-ms-blob-type: BlockBlob` header), zero key material after completion
-- [ ] 3.3 Implement `download` — GET encrypted blob from `Attachment.url` if non-nil, otherwise fetch a fresh signed URL via GET `/api/ciphers/{id}/attachment/{attachmentId}` first; on 403, discard the stale URL, re-fetch a fresh signed URL, and retry the blob download once; if the retry also fails, throw `AttachmentError.downloadFailed` with message "Could not download attachment. Download failed. If this keeps happening, try locking and unlocking your vault."; decrypt blob with attachment key (decrypted from `encryptedKey`), zero key and ciphertext buffers after decryption
+- [ ] 3.3 Implement `download` — GET encrypted blob from `Attachment.url` if non-nil, otherwise fetch a fresh signed URL via GET `/api/ciphers/{id}/attachment/{attachmentId}` first; on 403, discard the stale URL, re-fetch a fresh signed URL, and retry the blob download once; if the retry also fails, throw `AttachmentError.downloadFailed` with message "Download failed. If this keeps happening, try locking and unlocking your vault."; decrypt blob with attachment key (decrypted from `encryptedKey`), zero key and ciphertext buffers after decryption
 - [ ] 3.4 Implement `delete` — DELETE `/api/ciphers/{id}/attachment/{attachmentId}`, remove from in-memory cache on 200
 - [ ] 3.5 Handle HTTP 402 response from upload → throw typed `AttachmentError.premiumRequired`
 - [ ] 3.6 Register `AttachmentRepositoryImpl` in `AppContainer` (DI)
@@ -52,7 +52,7 @@
 
 ## 5. Presentation — Attachments Section in Detail Pane
 
-- [ ] 5.1 Add an Attachments section card to the vault item detail view below all existing field cards, using design system tokens (`Typography.sectionHeader`, `Spacing.cardTop/cardBottom/rowVertical/rowHorizontal`)
+- [ ] 5.1 Add an Attachments section card to the vault item detail view below all existing field cards, using design system tokens (`Typography.sectionHeader`, `Spacing.cardTop/cardBottom/rowVertical/rowHorizontal`); the card is ALWAYS visible regardless of attachment count — it shows an empty state with just the "Add Attachment" button when the item has no attachments
 - [ ] 5.2 Render one `AttachmentRowView` per `Attachment` in the list, showing `attachment.fileName` and `attachment.sizeName` (use server-provided string directly — do not reformat)
 - [ ] 5.3 Add "Add Attachment" button at the bottom of the Attachments card (visible even when attachment list is empty)
 - [ ] 5.4 Add `.onDrop(of: [.fileURL], isTargeted: $isDragTargeted, perform:)` to the Attachments section card; bind `isDragTargeted` to a highlight style (border or background tint)
@@ -61,7 +61,7 @@
 
 - [ ] 6.1 Create `AttachmentAddViewModel` (`@Observable`) with state for single-file flow: `selectedFileURL`, `fileName`, `fileSizeBytes`, `isConfirming`, `isUploading`, `sizeError`, `uploadError`
 - [ ] 6.2 Implement file selection via `NSOpenPanel`; read file size only (not contents) to validate ≤500 MB before reading bytes
-- [ ] 6.3 Create `AttachmentConfirmSheet` — shows file name, size, size/advisory messages, progress indicator, Confirm/Cancel buttons; wired to `AttachmentAddViewModel`
+- [ ] 6.3 Create `AttachmentConfirmSheet` — shows file name, size (formatted via `ByteCountFormatter.string(fromByteCount: Int64(fileSizeBytes), countStyle: .file)`), size/advisory messages, progress indicator, Confirm/Cancel buttons; wired to `AttachmentAddViewModel`
 - [ ] 6.4 Implement Confirm action — background `Task`, call `UploadAttachmentUseCase.execute(cipherId:fileName:data:)` with no key parameter (key resolved internally by use case — §II/§III), handle 402 (premium), handle vault lock (cancel task + zero buffers + dismiss), show progress; Cancel button remains enabled during upload
 - [ ] 6.4b Implement Cancel-during-upload in `AttachmentAddViewModel` — cancel the in-flight upload `Task`, zero the in-memory file data buffer, dismiss the sheet immediately; no discard prompt
 - [ ] 6.5 Write unit tests for `AttachmentAddViewModel`: 500 MB rejection, 50–500 MB advisory, successful upload path, vault lock abort, premium error display, cancel-during-upload zeros buffer and dismisses
@@ -69,7 +69,7 @@
 ## 6b. Presentation — Drag-and-Drop Batch Upload Flow
 
 - [ ] 6b.1 Create `AttachmentBatchItem` model: `url: URL`, `fileName: String`, `sizeName: String`, `sizeBytes: Int`, `state: BatchItemState` (enum: `.valid`, `.tooLarge`, `.uploading`, `.succeeded`, `.failed(String)`)
-- [ ] 6b.2 Create `AttachmentBatchViewModel` (`@Observable`) — accepts `[URL]` from drop handler; builds `[AttachmentBatchItem]` reading file size only (not contents); exposes `canConfirm: Bool` (true if ≥1 valid item); exposes `isUploading: Bool` (true while any task is in flight)
+- [ ] 6b.2 Create `AttachmentBatchViewModel` (`@Observable`) — accepts `[URL]` from drop handler; builds `[AttachmentBatchItem]` reading file size only (not contents); compute `sizeName` locally using `ByteCountFormatter.string(fromByteCount: Int64(sizeBytes), countStyle: .file)` (server has not yet seen the file at this point); exposes `canConfirm: Bool` (true if ≥1 valid item); exposes `isUploading: Bool` (true while any task is in flight)
 - [ ] 6b.3 Create `AttachmentBatchSheet` — lists all items with name, sizeName, per-row state (error badge for too-large, spinner for uploading, checkmark for success, error message for failed); Confirm/Cancel buttons driven by `canConfirm`; Cancel button remains enabled during upload (pressing it cancels all in-flight tasks, zeros buffers, dismisses sheet)
 - [ ] 6b.4 Implement `.onDrop` handler in the Attachments section view — extract file URLs from `NSItemProvider`; if `isUploading` is true, reject the drop and show a brief inline message "Upload in progress — please wait"; otherwise pass URLs to `AttachmentBatchViewModel` and present `AttachmentBatchSheet`
 - [ ] 6b.5 Implement Confirm action in `AttachmentBatchViewModel` — launch a concurrent background `Task` per valid item; each calls `UploadAttachmentUseCase.execute(cipherId:fileName:data:)`; update per-item state on success/failure; zero file bytes after each upload; dismiss sheet automatically when all succeed
@@ -90,7 +90,7 @@
 ## 7. Presentation — View / Download / Delete Flow
 
 - [ ] 7.1 Create `AttachmentRowViewModel` per attachment row (`@Observable`) with state: `isLoading`, `actionError`
-- [ ] 7.2 Create `AttachmentTempFileManager` (Data layer) responsible for temp file lifecycle: tracks `[(url: URL, deleteAfter: Date)]`; `register(url:)` records the file with a 30-second deletion deadline; `cleanup()` zeroes and deletes all entries past their deadline; registers for `NSApplication.didBecomeActiveNotification` and calls `cleanup()` on each foreground to catch any timers that fired while the app was suspended
+- [ ] 7.2 Create `AttachmentTempFileManager` (App layer — `App/`) responsible for temp file lifecycle: tracks `[(url: URL, deleteAfter: Date)]`; `register(url:)` records the file with a 30-second deletion deadline; `cleanup()` zeroes and deletes all entries past their deadline; registers for `NSApplication.didBecomeActiveNotification` and calls `cleanup()` on each foreground to catch any timers that fired while the app was suspended; placed in App layer because it imports AppKit (`NSApplication`) per §II
 - [ ] 7.2b Implement Open action in `AttachmentRowViewModel` — background `Task`, call `DownloadAttachmentUseCase.execute(cipherId:attachment:)` with no key parameter (§II/§III), write plaintext to `FileManager.default.temporaryDirectory/<uuid>.<ext>`, call `NSWorkspace.shared.open`, register the temp file with `AttachmentTempFileManager`; schedule a `Task.sleep(for: .seconds(30))` + `cleanup()` call to handle the common case where the app stays in foreground
 - [ ] 7.3 Implement Save to Disk action — `NSSavePanel` pre-filled with `attachment.fileName`, on confirm call `DownloadAttachmentUseCase.execute(cipherId:attachment:)` with no key parameter, write to chosen path, zero buffer; no-op on cancel
 - [ ] 7.4 Implement Delete action — show confirmation alert with file name, call `DeleteAttachmentUseCase.execute(...)` on confirm, remove row from list on success, show inline error on failure
@@ -99,7 +99,7 @@
 ## 8. Documentation & Transparency
 
 - [ ] 8.1 Update `SECURITY.md` at repo root to document: attachment encryption scheme (AES-256-CBC + HMAC-SHA256 two-layer key scheme, three encrypted artifacts), where keys live (cipher key from Keychain → attachment key in memory only), temp file lifetime, and attachment-specific threat model additions (§VII)
-- [ ] 8.2 Add §VII-compliant doc-comment blocks to every Data layer file that touches crypto for this feature — at minimum: `AttachmentRepositoryImpl`, `AttachmentMapper`, and any `BitwardenCryptoService` extension. Each block SHALL state the security goal, name the algorithm + spec ref, call out any deviations, and note any intentional omissions (e.g. no caching)
+- [ ] 8.2 Add §VII-compliant doc-comment blocks to every Data layer file that touches crypto for this feature — at minimum: `AttachmentRepositoryImpl`, `AttachmentMapper`, and any `PrizmCryptoService` extension. Each block SHALL state the security goal, name the algorithm + spec ref, call out any deviations, and note any intentional omissions (e.g. no caching)
 
 ## 9. XCUITest
 

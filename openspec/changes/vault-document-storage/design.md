@@ -63,7 +63,7 @@ This produces three encrypted artifacts per attachment: the file data, the attac
 
 **30-second rationale:** 30 seconds is the minimum time judged sufficient for the target application (e.g. Preview, Acrobat) to open and read the file after `NSWorkspace.shared.open` returns. It is not a security deadline — once the app has the file handle, the data is in that process's memory regardless. The 30-second window simply avoids deleting the file before the target app has finished reading it.
 
-**Timer suspension risk:** macOS may suspend background `Task` timers when the app moves to the background immediately after Open. As a safety net, `AttachmentTempFileManager` also registers for `NSApplication.didBecomeActiveNotification` and sweeps any temp files whose scheduled deletion time has passed. This ensures cleanup occurs on the next app foreground even if the timer fired while suspended.
+**Timer suspension risk:** macOS may suspend background `Task` timers when the app moves to the background immediately after Open. As a safety net, `AttachmentTempFileManager` (App layer — imports `NSApplication`) registers for `NSApplication.didBecomeActiveNotification` and sweeps any temp files whose scheduled deletion time has passed. This ensures cleanup occurs on the next app foreground even if the timer fired while suspended. Placed in `App/` rather than Data layer because it requires AppKit (§II).
 
 ### 5. 500 MB UI limit enforced before upload
 
@@ -126,6 +126,7 @@ Per §I of the Constitution, AppKit usage must be documented and justified here.
 | `NSOpenPanel` | `attachment-add-flow` | SwiftUI has no equivalent file-open panel API on macOS that allows "any file type" with a native sheet presentation. `fileImporter()` (SwiftUI) is limited to `UTType` allowlists and does not support the same UX flexibility. AppKit is the correct choice per §I. |
 | `NSSavePanel` | `attachment-view-flow` | SwiftUI `fileExporter()` requires a `FileDocument` conformance which is inappropriate for arbitrary binary data being written outside the app's document model. `NSSavePanel` is the correct choice. |
 | `NSWorkspace.shared.open(_:)` | `attachment-view-flow` | SwiftUI and Foundation have no equivalent API for opening a file with the system default application on macOS. This is the only sanctioned approach. |
+| `NSApplication.didBecomeActiveNotification` | `AttachmentTempFileManager` (App layer) | Required to sweep expired temp files when the app returns to foreground after suspension. No SwiftUI equivalent for app-lifecycle notifications at this granularity. |
 
 ### Feature Complexity (§VI)
 
