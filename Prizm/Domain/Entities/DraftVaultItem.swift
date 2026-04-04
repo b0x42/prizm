@@ -305,6 +305,11 @@ extension VaultItem {
         self.creationDate = draft.creationDate
         self.revisionDate = draft.revisionDate
         self.reprompt = draft.reprompt
+        // Drafts do not carry attachment state — attachments are managed via
+        // AttachmentRepository and written back through the server response, not through
+        // the edit draft. Preserve an empty list here; the actual attachments come from
+        // the fresh VaultItem returned by PUT /ciphers/{id}.
+        self.attachments = []
         self.content = {
             switch draft.content {
             case .login(let c):
