@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**", "fix/**"]
   pull_request:
     branches: [main]
 
 jobs:
-  build-and-test:
+  test:
     name: Build & Test
     runs-on: macos-15
 
@@ -16,25 +16,32 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+        # Pick the latest Xcode available on the runner; override if you need a specific version.
+        run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
 
-      - name: Create LocalConfig.xcconfig
-        run: echo "DEVELOPMENT_TEAM = " > Prizm/LocalConfig.xcconfig
+      - name: Create CI signing config
+        # CI builds are unsigned. The template leaves DEVELOPMENT_TEAM empty, which is correct.
+        # LocalConfig.xcconfig is git-ignored, so we generate it here on every run.
+        run: cp Macwarden/LocalConfig.xcconfig.template Macwarden/LocalConfig.xcconfig
 
-      - name: Build
+      - name: Build (no signing)
         run: |
           xcodebuild \
-            -project Prizm/Prizm.xcodeproj \
-            -scheme Prizm \
+            -project "Macwarden/Macwarden.xcodeproj" \
+            -scheme "Macwarden" \
             -configuration Debug \
-            -destination "platform=macOS" \
-            CODE_SIGN_STYLE=Automatic \
-            build
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcpretty || exit ${PIPESTATUS[0]}
 
-      - name: Test
+      - name: Test (no signing)
         run: |
           xcodebuild test \
-            -project Prizm/Prizm.xcodeproj \
-            -scheme Prizm \
+            -project "Macwarden/Macwarden.xcodeproj" \
+            -scheme "Macwarden" \
             -destination "platform=macOS" \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty || exit ${PIPESTATUS[0]}
