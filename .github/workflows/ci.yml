@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        # Pick the latest Xcode available on the runner; override if you need a specific version.
+        run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
+
+      - name: Create CI signing config
+        # CI builds are unsigned. The template leaves DEVELOPMENT_TEAM empty, which is correct.
+        # LocalConfig.xcconfig is git-ignored, so we generate it here on every run.
+        run: cp Macwarden/LocalConfig.xcconfig.template Macwarden/LocalConfig.xcconfig
+
+      - name: Build (no signing)
+        run: |
+          xcodebuild \
+            -project "Macwarden/Macwarden.xcodeproj" \
+            -scheme "Macwarden" \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcpretty || exit ${PIPESTATUS[0]}
+
+      - name: Test (no signing)
+        run: |
+          xcodebuild test \
+            -project "Macwarden/Macwarden.xcodeproj" \
+            -scheme "Macwarden" \
+            -destination "platform=macOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty || exit ${PIPESTATUS[0]}

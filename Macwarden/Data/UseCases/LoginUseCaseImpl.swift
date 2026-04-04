@@ -6,21 +6,20 @@ import os.log
 /// Orchestrates the full account login flow:
 ///   1. Validate + set server URL.
 ///   2. Call `AuthRepository.loginWithPassword`.
-///   3. If `.success`: call `SyncRepository.sync` to populate the vault.
-///   4. If `.requiresTwoFactor`: return immediately — sync is deferred to after TOTP.
+///   3. If `.success`: return immediately — background sync is triggered by `LoginViewModel`
+///      via `SyncService.trigger()` after the auth flow transitions to `.vault`.
+///   4. If `.requiresTwoFactor`: return — sync deferred until after TOTP completes.
 ///
-/// `SyncRepository.sync` is called here (not inside `AuthRepository`) to keep the
-/// Domain layer orchestration visible and testable at the use-case level.
+/// Sync is no longer called here. `SyncService` in `AppContainer` is the sole entry
+/// point for sync, keeping use cases focused on auth.
 final class LoginUseCaseImpl: LoginUseCase {
 
     private let auth: any AuthRepository
-    private let sync: any SyncRepository
 
     private let logger = Logger(subsystem: "com.macwarden", category: "LoginUseCase")
 
-    init(auth: any AuthRepository, sync: any SyncRepository) {
+    init(auth: any AuthRepository) {
         self.auth = auth
-        self.sync = sync
     }
 
     func execute(serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
@@ -39,23 +38,13 @@ final class LoginUseCaseImpl: LoginUseCase {
 
         switch result {
         case .success:
-            // Step 4: Sync vault immediately after successful login.
-            // Sync is best-effort: if the server is temporarily unreachable the user
-            // still lands in the vault browser showing items from the last sync.
-            // Failing the entire login on a sync error would lock users out even when
-            // the server is degraded — unacceptable for a password manager.
-            logger.info("Login succeeded — starting vault sync")
-            do {
-                _ = try await sync.sync(progress: { _ in })
-            } catch {
-                logger.error("Post-login sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
-            }
+            logger.info("Login succeeded — background sync will be triggered by LoginViewModel")
             return result
 
         case .requiresTwoFactor:
             // Sync is deferred until TOTP is accepted. At this point we have derived the
             // master key but do not yet have an access token, so a sync request would be
-            // rejected with 401. The vault populates after completeTOTP succeeds below.
+            // rejected with 401.
             logger.info("Login requires 2FA")
             return result
         }
@@ -64,12 +53,7 @@ final class LoginUseCaseImpl: LoginUseCase {
     func completeTOTP(code: String, rememberDevice: Bool) async throws -> Account {
         logger.info("Completing TOTP")
         let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
-        // Sync failure is non-fatal — show vault with whatever was synced (FR-049).
-        do {
-            _ = try await sync.sync(progress: { _ in })
-        } catch {
-            logger.error("Post-TOTP sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
-        }
+        logger.info("TOTP succeeded — background sync will be triggered by LoginViewModel")
         return account
     }
 

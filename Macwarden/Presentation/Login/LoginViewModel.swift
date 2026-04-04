@@ -9,7 +9,6 @@ enum LoginFlowState: Equatable {
     case login
     case loading
     case totpPrompt
-    case syncing(message: String)
     case vault
 }
 
@@ -33,12 +32,14 @@ final class LoginViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let loginUseCase: any LoginUseCase
+    private let syncService:  any SyncStatusProviding
     private let logger = Logger(subsystem: "com.macwarden", category: "LoginViewModel")
 
     // MARK: - Init
 
-    init(loginUseCase: any LoginUseCase) {
+    init(loginUseCase: any LoginUseCase, syncService: any SyncStatusProviding) {
         self.loginUseCase = loginUseCase
+        self.syncService  = syncService
     }
 
     // MARK: - Actions
@@ -74,6 +75,9 @@ final class LoginViewModel: ObservableObject {
                     // the published property (and therefore the SwiftUI state graph).
                     password  = ""
                     flowState = .vault
+                    // Background sync begins immediately; the vault browser is shown
+                    // without waiting for the network round-trip (design §4).
+                    syncService.trigger()
 
                 case .requiresTwoFactor(let method):
                     guard case .authenticatorApp = method else {
@@ -114,6 +118,7 @@ final class LoginViewModel: ObservableObject {
             do {
                 let _ = try await loginUseCase.completeTOTP(code: code, rememberDevice: rememberDevice)
                 flowState = .vault
+                syncService.trigger()
             } catch let err as AuthError {
                 logger.error("TOTP submission failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription

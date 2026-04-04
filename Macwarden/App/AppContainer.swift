@@ -23,6 +23,11 @@ final class AppContainer: ObservableObject {
     let authRepository: AuthRepositoryImpl
     let syncRepository: SyncRepositoryImpl
 
+    // MARK: - Sync service
+
+    /// Centralised sync coordinator. Injected into auth ViewModels and `VaultBrowserViewModel`.
+    let syncService: SyncService
+
     // MARK: - Domain use cases
 
     let syncUseCase:                     SyncUseCaseImpl
@@ -62,6 +67,8 @@ final class AppContainer: ObservableObject {
         let accountEmail = auth.storedAccount()?.email ?? ""
         let syncTimestamp = SyncTimestampRepositoryImpl(email: accountEmail)
 
+        let syncUseCase = SyncUseCaseImpl(sync: sync)
+
         self.apiClient       = api
         self.crypto          = crypto
         self.keychain        = keychain
@@ -69,9 +76,10 @@ final class AppContainer: ObservableObject {
         self.faviconLoader   = FaviconLoader()
         self.authRepository  = auth
         self.syncRepository  = sync
-        self.syncUseCase                     = SyncUseCaseImpl(sync: sync)
-        self.loginUseCase                    = LoginUseCaseImpl(auth: auth, sync: sync)
-        self.unlockUseCase                   = UnlockUseCaseImpl(auth: auth, sync: sync)
+        self.syncService                     = SyncService(sync: syncUseCase)
+        self.syncUseCase                     = syncUseCase
+        self.loginUseCase                    = LoginUseCaseImpl(auth: auth)
+        self.unlockUseCase                   = UnlockUseCaseImpl(auth: auth)
         self.searchVaultUseCase              = SearchVaultUseCaseImpl(vault: vault)
         self.editVaultItemUseCase            = EditVaultItemUseCaseImpl(repository: vault)
         self.createVaultItemUseCase          = CreateVaultItemUseCaseImpl(repository: vault)
@@ -95,14 +103,14 @@ final class AppContainer: ObservableObject {
         return (repo, GetLastSyncDateUseCaseImpl(repository: repo))
     }
 
-    /// Creates a `LoginViewModel` pre-wired with the container's login use case.
+    /// Creates a `LoginViewModel` pre-wired with the container's login use case and sync service.
     func makeLoginViewModel() -> LoginViewModel {
-        LoginViewModel(loginUseCase: loginUseCase)
+        LoginViewModel(loginUseCase: loginUseCase, syncService: syncService)
     }
 
     /// Creates an `UnlockViewModel` for a returning user with a stored session.
     func makeUnlockViewModel(account: Account) -> UnlockViewModel {
-        UnlockViewModel(auth: authRepository, sync: syncUseCase, account: account)
+        UnlockViewModel(auth: authRepository, syncService: syncService, account: account)
     }
 
     /// Creates a `VaultBrowserViewModel` backed by the live vault store.
@@ -114,7 +122,8 @@ final class AppContainer: ObservableObject {
             permanentDelete: permanentDeleteVaultItemUseCase,
             restore:         restoreVaultItemUseCase,
             syncTimestamp:   syncTimestampRepository,
-            getLastSyncDate: getLastSyncDateUseCase
+            getLastSyncDate: getLastSyncDateUseCase,
+            syncService:     syncService
         )
     }
 

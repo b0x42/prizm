@@ -7,6 +7,7 @@ final class LoginViewModelTests: XCTestCase {
 
     private var sut:          LoginViewModel!
     private var mockUseCase:  MockLoginUseCase!
+    private var mockSync:     MockSyncService!
     private var cancellables: Set<AnyCancellable> = []
 
     private func makeAccount() -> Account {
@@ -24,7 +25,8 @@ final class LoginViewModelTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         mockUseCase = MockLoginUseCase()
-        sut         = LoginViewModel(loginUseCase: mockUseCase)
+        mockSync    = MockSyncService()
+        sut         = LoginViewModel(loginUseCase: mockUseCase, syncService: mockSync)
     }
 
     override func tearDown() async throws {
@@ -53,6 +55,49 @@ final class LoginViewModelTests: XCTestCase {
 
         await fulfillment(of: [exp], timeout: 2.0)
         XCTAssertEqual(sut.password, "", "Password field must be cleared after successful login")
+    }
+
+    /// signIn() triggers a background sync on successful login.
+    func testSignIn_success_triggersSyncService() async throws {
+        mockUseCase.stubbedResult = .success(makeAccount())
+        sut.serverURL = "https://vault.example.com"
+        sut.email     = "alice@example.com"
+        sut.password  = "SuperSecret1!"
+
+        let exp = expectation(description: "flow reaches .vault")
+        sut.$flowState
+            .filter { $0 == .vault }
+            .first()
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.signIn()
+
+        await fulfillment(of: [exp], timeout: 2.0)
+        XCTAssertEqual(mockSync.triggerCallCount, 1,
+                       "SyncService.trigger() must be called exactly once on successful login")
+    }
+
+    /// signIn() does NOT trigger sync on auth failure.
+    func testSignIn_failure_doesNotTriggerSync() async throws {
+        mockUseCase.executeError = AuthError.invalidCredentials
+        sut.serverURL = "https://vault.example.com"
+        sut.email     = "alice@example.com"
+        sut.password  = "SuperSecret1!"
+
+        let exp = expectation(description: "flow returns to .login")
+        sut.$flowState
+            .dropFirst()
+            .filter { $0 == .login }
+            .first()
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.signIn()
+
+        await fulfillment(of: [exp], timeout: 2.0)
+        XCTAssertEqual(mockSync.triggerCallCount, 0,
+                       "SyncService.trigger() must NOT be called on failed login")
     }
 
     /// signIn() clears the password field when the server returns .requiresTwoFactor (Constitution §III).
@@ -86,6 +131,28 @@ final class LoginViewModelTests: XCTestCase {
 
         XCTAssertEqual(mockUseCase.executeCallCount, 0,
                        "execute must not be called when password is empty")
+    }
+
+    // MARK: - TOTP: trigger sync on success
+
+    /// submitTOTP() triggers a background sync on success.
+    func testSubmitTOTP_success_triggersSyncService() async throws {
+        mockUseCase.stubbedResult = .success(makeAccount())
+        sut.serverURL = "https://vault.example.com"
+        sut.email     = "alice@example.com"
+
+        let exp = expectation(description: "flow reaches .vault after TOTP")
+        sut.$flowState
+            .filter { $0 == .vault }
+            .first()
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.submitTOTP(code: "123456", rememberDevice: false)
+
+        await fulfillment(of: [exp], timeout: 2.0)
+        XCTAssertEqual(mockSync.triggerCallCount, 1,
+                       "SyncService.trigger() must be called exactly once after TOTP success")
     }
 
     // MARK: - cancelTOTP

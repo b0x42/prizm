@@ -11,9 +11,11 @@ import os.log
 struct VaultBrowserView: View {
 
     @ObservedObject var viewModel: VaultBrowserViewModel
-    let faviconLoader: FaviconLoader
-    let makeEditViewModel: (VaultItem) -> ItemEditViewModel
+    let faviconLoader:       FaviconLoader
+    let makeEditViewModel:   (VaultItem) -> ItemEditViewModel
     let makeCreateViewModel: (ItemType) -> ItemEditViewModel
+    let account:             Account
+    let syncService:         any SyncStatusProviding
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
@@ -24,29 +26,27 @@ struct VaultBrowserView: View {
     var body: some View {
         NavigationSplitView(
             sidebar: {
-                VStack(spacing: 0) {
-                    SidebarView(
-                        selection: Binding(
-                            get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
-                            set: { newValue in
-                                if let value = newValue {
-                                    // Defer the mutation out of SwiftUI's view-update pass.
-                                    // Setting @Published directly inside Binding.set fires
-                                    // objectWillChange during the current render, triggering
-                                    // the "Publishing changes from within view updates" warning.
-                                    Task { @MainActor in viewModel.sidebarSelection = value }
-                                }
+                SidebarView(
+                    selection: Binding(
+                        get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
+                        set: { newValue in
+                            if let value = newValue {
+                                // Defer the mutation out of SwiftUI's view-update pass.
+                                // Setting @Published directly inside Binding.set fires
+                                // objectWillChange during the current render, triggering
+                                // the "Publishing changes from within view updates" warning.
+                                Task { @MainActor in viewModel.sidebarSelection = value }
                             }
-                        ),
-                        itemCounts: viewModel.itemCounts
-                    )
-                    SyncStatusView(label: viewModel.syncStatusLabel)
-                }
+                        }
+                    ),
+                    itemCounts:  viewModel.itemCounts,
+                    account:     account,
+                    syncService: syncService
+                )
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
             },
             content: {
                 VStack(spacing: 0) {
-                    syncErrorBanner
                     if viewModel.sidebarSelection == .trash {
                         TrashView(
                             items:             viewModel.displayedItems,
@@ -219,32 +219,5 @@ struct VaultBrowserView: View {
         }
     }
 
-    // MARK: - Sync Error Banner
-
-    @ViewBuilder
-    private var syncErrorBanner: some View {
-        if let message = viewModel.syncErrorMessage {
-            HStack {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.yellow)
-                Text(message)
-                    .font(Typography.bannerText)
-                Spacer()
-                Button {
-                    viewModel.dismissSyncError()
-                } label: {
-                    Image(systemName: "xmark")
-                        .imageScale(.small)
-                }
-                .buttonStyle(.plain)
-                .help("Dismiss")
-                .accessibilityIdentifier(AccessibilityID.Vault.syncErrorDismiss)
-            }
-            .padding(.horizontal, Spacing.bannerHorizontal)
-            .padding(.vertical, Spacing.bannerVertical)
-            .background(Color.yellow.opacity(0.15))
-            .frame(maxHeight: 44)
-            .accessibilityIdentifier(AccessibilityID.Vault.syncErrorBanner)
-        }
-    }
 }
+

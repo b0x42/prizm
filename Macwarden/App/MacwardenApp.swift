@@ -119,29 +119,30 @@ struct MacwardenApp: App {
                 UnlockView(viewModel: unlockVM)
             }
 
-        case .syncing(let message):
-            SyncProgressView(message: message)
-
         case .vault:
-            VaultBrowserView(
-                viewModel:         rootVM.vaultBrowserVM,
-                faviconLoader:     container.faviconLoader,
-                makeEditViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] item in
-                    let vm = container.makeItemEditViewModel(for: item)
-                    // Wire the list-pane refresh callback to the shared VaultBrowserViewModel.
-                    vm.onSaveSuccess = { [weak vaultBrowserVM] updatedItem in
-                        vaultBrowserVM?.handleItemSaved(updatedItem)
-                    }
-                    return vm
-                },
-                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type in
-                    let vm = container.makeItemCreateViewModel(for: type)
-                    vm.onSaveSuccess = { [weak vaultBrowserVM] item in
-                        vaultBrowserVM?.handleItemSaved(item)
-                    }
-                    return vm
-                }
-            )
+            if let account = container.authRepository.storedAccount() {
+                VaultBrowserView(
+                    viewModel:         rootVM.vaultBrowserVM,
+                    faviconLoader:     container.faviconLoader,
+                    makeEditViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] item in
+                        let vm = container.makeItemEditViewModel(for: item)
+                        // Wire the list-pane refresh callback to the shared VaultBrowserViewModel.
+                        vm.onSaveSuccess = { [weak vaultBrowserVM] updatedItem in
+                            vaultBrowserVM?.handleItemSaved(updatedItem)
+                        }
+                        return vm
+                    },
+                    makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type in
+                        let vm = container.makeItemCreateViewModel(for: type)
+                        vm.onSaveSuccess = { [weak vaultBrowserVM] item in
+                            vaultBrowserVM?.handleItemSaved(item)
+                        }
+                        return vm
+                    },
+                    account:     account,
+                    syncService: container.syncService
+                )
+            }
         }
     }
 }
@@ -153,6 +154,8 @@ struct MacwardenApp: App {
 protocol RootViewModelDependencies: AnyObject {
     var authRepo: any AuthRepository { get }
     var vaultRepo: any VaultRepository { get }
+    /// The shared sync coordinator; reset on every vault lock.
+    var syncService: any SyncStatusProviding { get }
     func makeLoginViewModel() -> LoginViewModel
     func makeUnlockViewModel(account: Account) -> UnlockViewModel
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel
@@ -164,6 +167,8 @@ protocol RootViewModelDependencies: AnyObject {
 extension AppContainer: RootViewModelDependencies {
     var authRepo: any AuthRepository { authRepository }
     var vaultRepo: any VaultRepository { vaultStore }
+    // syncService is already a stored property on AppContainer; the protocol conformance
+    // is satisfied automatically — no extra wrapper needed.
 }
 
 /// Top-level state machine that decides which screen to show.
@@ -179,7 +184,6 @@ final class RootViewModel: ObservableObject {
         case loading
         case totpPrompt
         case unlock
-        case syncing(message: String)
         case vault
     }
 
@@ -323,7 +327,6 @@ final class RootViewModel: ObservableObject {
         case .login:       screen = .login
         case .loading:     screen = .loading
         case .totpPrompt:  screen = .totpPrompt
-        case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:       transitionToVault(caller: "handleLoginFlow")
         }
         logger.info("Screen transition → \(String(describing: state))")
@@ -332,7 +335,7 @@ final class RootViewModel: ObservableObject {
     /// Whether the user has an active session (vault or unlock screen).
     var isSignedIn: Bool {
         switch screen {
-        case .vault, .unlock, .syncing: return true
+        case .vault, .unlock: return true
         default: return false
         }
     }
@@ -369,6 +372,9 @@ final class RootViewModel: ObservableObject {
     /// No-op if the vault is not currently unlocked.
     func lockVault() {
         guard isVaultUnlocked else { return }
+        // Cancel any in-flight background sync and clear its error state so the
+        // sidebar footer does not show a stale error icon after the next unlock.
+        container.syncService.reset()
         Task {
             await container.authRepo.lockVault()
             container.vaultRepo.clearVault()
@@ -382,20 +388,17 @@ final class RootViewModel: ObservableObject {
         }
     }
 
-    /// Whether the vault is currently unlocked (vault browser or sync in progress).
+    /// Whether the vault is currently unlocked (vault browser is visible).
     var isVaultUnlocked: Bool {
-        switch screen {
-        case .vault, .syncing: return true
-        default: return false
-        }
+        if case .vault = screen { return true }
+        return false
     }
 
     func handleUnlockFlow(_ state: UnlockFlowState) {
         switch state {
-        case .unlock:       screen = .unlock
-        case .loading:      screen = .unlock   // stay on unlock screen with spinner
-        case .syncing(let msg): screen = .syncing(message: msg)
-        case .vault:        transitionToVault(caller: "handleUnlockFlow")
+        case .unlock:  screen = .unlock
+        case .loading: screen = .unlock   // stay on unlock screen with spinner
+        case .vault:   transitionToVault(caller: "handleUnlockFlow")
         case .login:
             // "Sign in with a different account" — reset to login.
             unlockVM = nil

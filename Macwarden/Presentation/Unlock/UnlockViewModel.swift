@@ -7,7 +7,6 @@ import os.log
 enum UnlockFlowState: Equatable {
     case unlock
     case loading
-    case syncing(message: String)
     case vault
     /// Returned to login (triggered by "Sign in with a different account").
     case login
@@ -30,17 +29,17 @@ final class UnlockViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let auth:    any AuthRepository
-    private let sync:    any SyncUseCase
-    private let account: Account   // Pre-loaded from storedAccount()
+    private let auth:        any AuthRepository
+    private let syncService: any SyncStatusProviding
+    private let account:     Account   // Pre-loaded from storedAccount()
     private let logger = Logger(subsystem: "com.macwarden", category: "UnlockViewModel")
 
     // MARK: - Init
 
-    init(auth: any AuthRepository, sync: any SyncUseCase, account: Account) {
-        self.auth    = auth
-        self.sync    = sync
-        self.account = account
+    init(auth: any AuthRepository, syncService: any SyncStatusProviding, account: Account) {
+        self.auth        = auth
+        self.syncService = syncService
+        self.account     = account
     }
 
     // MARK: - Derived properties
@@ -68,8 +67,11 @@ final class UnlockViewModel: ObservableObject {
                 _ = try await auth.unlockWithPassword(passwordData)
                 // Clear the password field after a successful unlock so the plaintext
                 // does not linger in the published property.
-                password = ""
-                await performSync()
+                password  = ""
+                flowState = .vault
+                // Background sync begins immediately; the vault browser is shown
+                // without waiting for the network round-trip (design §4).
+                syncService.trigger()
             } catch let err as AuthError {
                 logger.error("Unlock failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
@@ -95,18 +97,5 @@ final class UnlockViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Private
-
-    private func performSync() async {
-        flowState = .syncing(message: "Preparing…")
-        do {
-            _ = try await sync.execute(progress: { [weak self] message in
-                Task { @MainActor [weak self] in self?.flowState = .syncing(message: message) }
-            })
-            flowState = .vault
-        } catch {
-            logger.error("Post-unlock sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
-            flowState = .vault
-        }
-    }
 }
+

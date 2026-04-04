@@ -52,8 +52,9 @@ nonisolated enum AccessibilityID {
         static let searchField       = "vault.search"
         static let lastSyncedLabel   = "vault.lastSynced"
         static let syncStatusLabel   = "vault.syncStatus"
-        static let syncErrorBanner   = "vault.syncErrorBanner"
-        static let syncErrorDismiss  = "vault.syncErrorDismiss"
+        // syncErrorBanner / syncErrorDismiss removed: replaced by SidebarFooterView error sheet
+        static let sidebarSyncError  = "sidebar.syncError"
+        static let sidebarSyncErrorDismiss = "sidebar.syncError.dismiss"
     }
 
     // MARK: - Sidebar (US3)

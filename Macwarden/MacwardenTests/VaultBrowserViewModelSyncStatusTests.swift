@@ -70,14 +70,8 @@ final class VaultBrowserViewModelSyncStatusTests: XCTestCase {
         XCTAssertTrue(sut.syncStatusLabel.hasPrefix("Synced"))
     }
 
-    // MARK: - 6. handleSyncError does NOT call recordSuccessfulSync
-
-    func testHandleSyncError_doesNotRecordTimestamp() async {
-        sut.handleSyncError("Network unavailable")
-
-        XCTAssertFalse(syncRepo.recordCalled, "recordSuccessfulSync() must not be called on sync failure")
-    }
 }
+
 
 // MARK: - Stubs
 

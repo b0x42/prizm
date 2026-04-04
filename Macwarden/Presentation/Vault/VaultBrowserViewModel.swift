@@ -44,7 +44,6 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published private(set) var displayedItems: [VaultItem] = []
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
     @Published private(set) var lastSyncedAt: Date?
-    @Published var syncErrorMessage: String? = nil
     /// Reflects whether the edit sheet is currently open. Used by `MenuBarViewModel`
     /// to enable/disable the Edit and Save menu bar actions.
     @Published private(set) var editSheetOpen: Bool = false
@@ -72,6 +71,9 @@ final class VaultBrowserViewModel: ObservableObject {
     private let restoreUseCase:         any RestoreVaultItemUseCase
     private var syncTimestamp:          any SyncTimestampRepository
     private var getLastSyncDate:        any GetLastSyncDateUseCase
+    /// The background sync coordinator. Called after every successful mutation to push
+    /// local changes to the server. Typed as the Domain protocol so tests can inject mocks.
+    private let syncService: (any SyncStatusProviding)?
     private let logger = Logger(subsystem: "com.macwarden", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
@@ -113,7 +115,8 @@ final class VaultBrowserViewModel: ObservableObject {
         permanentDelete: any PermanentDeleteVaultItemUseCase,
         restore:         any RestoreVaultItemUseCase,
         syncTimestamp:   any SyncTimestampRepository,
-        getLastSyncDate: any GetLastSyncDateUseCase
+        getLastSyncDate: any GetLastSyncDateUseCase,
+        syncService:     (any SyncStatusProviding)? = nil
     ) {
         self.vault                  = vault
         self.search                 = search
@@ -122,6 +125,7 @@ final class VaultBrowserViewModel: ObservableObject {
         self.restoreUseCase         = restore
         self.syncTimestamp          = syncTimestamp
         self.getLastSyncDate        = getLastSyncDate
+        self.syncService            = syncService
         refreshItems()
         refreshCounts()
         // Load persisted timestamp first; fall back to in-memory value from the vault store
@@ -198,11 +202,6 @@ final class VaultBrowserViewModel: ObservableObject {
         }
     }
 
-    /// Dismisses the sync error banner (FR-049).
-    func dismissSyncError() {
-        syncErrorMessage = nil
-    }
-
     // MARK: - Refresh
 
     /// Refreshes `displayedItems` from the vault store based on current selection + search query.
@@ -252,12 +251,6 @@ final class VaultBrowserViewModel: ObservableObject {
         syncTimestamp.recordSuccessfulSync()
         refreshItems()
         refreshCounts()
-        syncErrorMessage = nil
-    }
-
-    /// Called when a sync fails mid-session (FR-049).
-    func handleSyncError(_ message: String) {
-        syncErrorMessage = message
     }
 
     /// Called by `ItemDetailView` when the edit sheet opens or closes.
@@ -273,6 +266,7 @@ final class VaultBrowserViewModel: ObservableObject {
         itemSelection = updatedItem
         refreshItems()
         refreshCounts()
+        syncService?.trigger()
     }
 
     // MARK: - Toggle Favorite
@@ -284,6 +278,7 @@ final class VaultBrowserViewModel: ObservableObject {
             do {
                 let updated = try await vault.update(draft)
                 handleItemSaved(updated)
+                syncService?.trigger()
             } catch {
                 logger.error("Toggle favorite failed: \(error.localizedDescription, privacy: .public)")
             }
@@ -304,6 +299,7 @@ final class VaultBrowserViewModel: ObservableObject {
             if itemSelection?.id == id { itemSelection = nil }
             refreshItems()
             refreshCounts()
+            syncService?.trigger()
         } catch {
             logger.error("Soft-delete failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             actionError = error.localizedDescription
@@ -321,6 +317,7 @@ final class VaultBrowserViewModel: ObservableObject {
             if itemSelection?.id == id { itemSelection = nil }
             refreshItems()
             refreshCounts()
+            syncService?.trigger()
         } catch {
             logger.error("Restore failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             actionError = error.localizedDescription
@@ -339,6 +336,7 @@ final class VaultBrowserViewModel: ObservableObject {
             if itemSelection?.id == id { itemSelection = nil }
             refreshItems()
             refreshCounts()
+            syncService?.trigger()
         } catch {
             logger.error("Permanent delete failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             actionError = error.localizedDescription

@@ -6,10 +6,14 @@ import SwiftUI
 ///
 /// Each row displays a live item count sourced from `VaultBrowserViewModel.itemCounts`.
 /// The sidebar is always visible, even when a category is empty (FR-006, FR-042).
+/// A persistent footer (`SidebarFooterView`) is pinned below the list via
+/// `.safeAreaInset(edge: .bottom)` so it stays visible regardless of scroll position.
 struct SidebarView: View {
 
     @Binding var selection: SidebarSelection?
-    let itemCounts: [SidebarSelection: Int]
+    let itemCounts:  [SidebarSelection: Int]
+    let account:     Account
+    let syncService: any SyncStatusProviding
 
     var body: some View {
         List(selection: $selection) {
@@ -57,6 +61,14 @@ struct SidebarView: View {
             }
         }
         .navigationTitle("Macwarden")
+        // Pin the footer below the scrollable list so it stays visible at all times
+        // without disturbing the List's insets or safe area.
+        .safeAreaInset(edge: .bottom) {
+            SidebarFooterView(
+                vaultName:   account.name ?? account.email,
+                syncService: syncService
+            )
+        }
     }
 }
 

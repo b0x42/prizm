@@ -7,7 +7,7 @@ final class UnlockViewModelTests: XCTestCase {
 
     private var sut:          UnlockViewModel!
     private var mockAuth:     MockAuthRepository!
-    private var mockSync:     MockSyncUseCase!
+    private var mockSync:     MockSyncService!
     private var cancellables: Set<AnyCancellable> = []
 
     private let stubAccount = Account(
@@ -23,8 +23,8 @@ final class UnlockViewModelTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         mockAuth = MockAuthRepository()
-        mockSync = MockSyncUseCase()
-        sut      = UnlockViewModel(auth: mockAuth, sync: mockSync, account: stubAccount)
+        mockSync = MockSyncService()
+        sut      = UnlockViewModel(auth: mockAuth, syncService: mockSync, account: stubAccount)
     }
 
     override func tearDown() async throws {
@@ -53,10 +53,51 @@ final class UnlockViewModelTests: XCTestCase {
         XCTAssertEqual(sut.password, "", "Password field must be cleared after successful unlock")
     }
 
+    // MARK: - unlock: sync triggered on success
+
+    /// unlock() triggers a background sync after a successful unlock.
+    func testUnlock_success_triggersSyncService() async throws {
+        mockAuth.stubbedLoginResult = .success(stubAccount)
+        sut.password = "SuperSecret1!"
+
+        let exp = expectation(description: "flow reaches .vault")
+        sut.$flowState
+            .filter { $0 == .vault }
+            .first()
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.unlock()
+
+        await fulfillment(of: [exp], timeout: 2.0)
+        XCTAssertEqual(mockSync.triggerCallCount, 1,
+                       "SyncService.trigger() must be called exactly once on successful unlock")
+    }
+
+    // MARK: - unlock: sync NOT triggered on failure
+
+    /// unlock() does NOT trigger sync on wrong password.
+    func testUnlock_wrongPassword_doesNotTriggerSync() async throws {
+        mockAuth.unlockWithPasswordError = AuthError.invalidCredentials
+        sut.password = "WrongPassword!"
+
+        let exp = expectation(description: "unlock fails with error message")
+        sut.$errorMessage
+            .compactMap { $0 }
+            .first()
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.unlock()
+        await fulfillment(of: [exp], timeout: 2.0)
+
+        XCTAssertEqual(mockSync.triggerCallCount, 0,
+                       "SyncService.trigger() must NOT be called on failed unlock")
+    }
+
     // MARK: - unlock: wrong password
 
     /// Configures a wrong-password unlock and waits for the async Task to complete.
-    /// Both wrong-password assertions share this setup to avoid duplication.
     private func runUnlockWithWrongPassword() async {
         mockAuth.unlockWithPasswordError = AuthError.invalidCredentials
         sut.password = "WrongPassword!"

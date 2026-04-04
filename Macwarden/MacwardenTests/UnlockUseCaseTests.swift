@@ -1,40 +1,40 @@
 import XCTest
 @testable import Macwarden
 
-/// Failing tests for UnlockUseCaseImpl (T039).
-/// These will fail until UnlockUseCaseImpl is implemented (T041).
+/// Tests for UnlockUseCaseImpl.
+///
+/// After the background-sync-service refactor, UnlockUseCaseImpl no longer calls sync.
+/// Sync is triggered by UnlockViewModel via SyncService.trigger() after the flow
+/// transitions to .vault.
 @MainActor
 final class UnlockUseCaseTests: XCTestCase {
 
     private var sut:      UnlockUseCaseImpl!
     private var mockAuth: MockAuthRepository!
-    private var mockSync: MockSyncRepository!
 
     private let masterPassword = Data("masterPassword1!".utf8)
 
     override func setUp() async throws {
         try await super.setUp()
         mockAuth = MockAuthRepository()
-        mockSync = MockSyncRepository()
-        sut      = UnlockUseCaseImpl(auth: mockAuth, sync: mockSync)
+        sut      = UnlockUseCaseImpl(auth: mockAuth)
     }
 
-    // MARK: - T039: execute(masterPassword:)
+    // MARK: - execute(masterPassword:)
 
-    /// Full success path: unlocks vault locally, syncs to repopulate in-memory store.
-    func testExecute_validPassword_returnsAccountAndSyncs() async throws {
+    /// Full success path: unlocks vault locally and returns the account.
+    /// Sync is NOT called from the use case — that is now SyncService's responsibility.
+    func testExecute_validPassword_returnsAccount() async throws {
         mockAuth.stubbedLoginResult = .success(makeAccount())
-        mockSync.stubbedSyncResult  = makeSyncResult()
 
         let account = try await sut.execute(masterPassword: masterPassword)
 
         XCTAssertEqual(account.email, "alice@example.com")
         XCTAssertTrue(mockAuth.unlockWithPasswordCalled, "Expected unlockWithPassword to be called")
-        XCTAssertTrue(mockSync.syncCalled,               "Expected sync to re-populate vault after unlock")
     }
 
-    /// Wrong master password propagates as AuthError.invalidCredentials without syncing.
-    func testExecute_wrongPassword_throwsWithoutSync() async throws {
+    /// Wrong master password propagates as AuthError.invalidCredentials.
+    func testExecute_wrongPassword_throws() async throws {
         mockAuth.unlockWithPasswordError = AuthError.invalidCredentials
 
         let sut = self.sut!
@@ -42,20 +42,6 @@ final class UnlockUseCaseTests: XCTestCase {
             try await sut.execute(masterPassword: Data("wrong!".utf8))
         ) { error in
             XCTAssertEqual(error as? AuthError, .invalidCredentials)
-        }
-        XCTAssertFalse(mockSync.syncCalled, "Sync must not be called after failed unlock")
-    }
-
-    /// Sync failure after successful unlock is propagated.
-    func testExecute_syncFailure_throws() async throws {
-        mockAuth.stubbedLoginResult = .success(makeAccount())
-        mockSync.syncShouldThrow    = SyncError.networkUnavailable
-
-        let sut = self.sut!
-        await XCTAssertThrowsErrorAsync(
-            try await sut.execute(masterPassword: masterPassword)
-        ) { error in
-            XCTAssertEqual(error as? SyncError, .networkUnavailable)
         }
     }
 
@@ -82,9 +68,5 @@ final class UnlockUseCaseTests: XCTestCase {
                 overrides: nil
             )
         )
-    }
-
-    private func makeSyncResult() -> SyncResult {
-        SyncResult(syncedAt: Date(), totalCiphers: 0, failedDecryptionCount: 0)
     }
 }
