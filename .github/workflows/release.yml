@@ -10,7 +10,7 @@ jobs:
     name: Build & Package DMG
     runs-on: macos-15
     permissions:
-      contents: write   # needed to create the GitHub release and upload assets
+      contents: write
 
     steps:
       - name: Checkout
@@ -20,13 +20,13 @@ jobs:
         run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
 
       - name: Create signing config (unsigned release build)
-        run: cp Macwarden/LocalConfig.xcconfig.template Macwarden/LocalConfig.xcconfig
+        run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
 
       - name: Build Release (no signing)
         run: |
           xcodebuild \
-            -project "Macwarden/Macwarden.xcodeproj" \
-            -scheme "Macwarden" \
+            -project "Prizm/Prizm.xcodeproj" \
+            -scheme "Prizm" \
             -configuration Release \
             -derivedDataPath build/ \
             CODE_SIGN_IDENTITY="" \
@@ -36,28 +36,25 @@ jobs:
 
       - name: Create DMG
         run: |
-          APP="build/Build/Products/Release/Macwarden.app"
-          VERSION="${GITHUB_REF_NAME}"          # e.g. v1.2.3
-          DMG_NAME="Macwarden-${VERSION}.dmg"
+          APP="build/Build/Products/Release/Prizm.app"
+          VERSION="${GITHUB_REF_NAME}"
+          DMG_NAME="Prizm-${VERSION}.dmg"
 
-          # Build a staging folder: app + Applications shortcut so users can drag-install.
           STAGING="dmg-staging"
           mkdir -p "$STAGING"
-          cp -R "$APP" "$STAGING/Macwarden.app"
+          cp -R "$APP" "$STAGING/Prizm.app"
           ln -s /Applications "$STAGING/Applications"
 
           hdiutil create \
-            -volname "Macwarden ${VERSION}" \
+            -volname "Prizm ${VERSION}" \
             -srcfolder "$STAGING" \
             -ov \
             -format UDZO \
             "$DMG_NAME"
 
           echo "DMG_PATH=$DMG_NAME" >> "$GITHUB_ENV"
-          echo "DMG_NAME=$DMG_NAME" >> "$GITHUB_ENV"
 
-      - name: Create GitHub Release and upload DMG
+      - name: Upload DMG to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.DMG_PATH }}
-          generate_release_notes: true

@@ -16,19 +16,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Select Xcode
-        # Pick the latest Xcode available on the runner; override if you need a specific version.
         run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
 
       - name: Create CI signing config
-        # CI builds are unsigned. The template leaves DEVELOPMENT_TEAM empty, which is correct.
-        # LocalConfig.xcconfig is git-ignored, so we generate it here on every run.
-        run: cp Macwarden/LocalConfig.xcconfig.template Macwarden/LocalConfig.xcconfig
+        run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
 
       - name: Build (no signing)
         run: |
           xcodebuild \
-            -project "Macwarden/Macwarden.xcodeproj" \
-            -scheme "Macwarden" \
+            -project "Prizm/Prizm.xcodeproj" \
+            -scheme "Prizm" \
             -configuration Debug \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -38,8 +35,8 @@ jobs:
       - name: Test (no signing)
         run: |
           xcodebuild test \
-            -project "Macwarden/Macwarden.xcodeproj" \
-            -scheme "Macwarden" \
+            -project "Prizm/Prizm.xcodeproj" \
+            -scheme "Prizm" \
             -destination "platform=macOS" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
