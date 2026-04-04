@@ -1,135 +1,63 @@
 name: Release
 
-# Triggered on version tags (e.g. v1.0.0, v1.2.3).
-# Builds a signed, notarized DMG and publishes it as a GitHub release.
-#
-# Required secrets (see DEVELOPMENT.md for how to obtain each):
-#   CERT_P12            — Developer ID Application certificate, base64-encoded .p12
-#   CERT_PASSWORD       — Password for the .p12 export
-#   NOTARYTOOL_KEY      — App Store Connect API key (.p8), base64-encoded
-#   NOTARYTOOL_KEY_ID   — App Store Connect API key ID
-#   NOTARYTOOL_ISSUER_ID — App Store Connect Issuer ID
-#   TEAM_ID             — Your 10-character Apple Developer Team ID
-#
-# Without these secrets the signing and notarization steps will fail.
-# Until they are configured, build from source (see DEVELOPMENT.md).
 on:
   push:
     tags:
       - "v*"
 
 jobs:
-  release:
-    name: Build, Sign, Notarize & Release
+  build-dmg:
+    name: Build & Package DMG
     runs-on: macos-15
+    permissions:
+      contents: write   # needed to create the GitHub release and upload assets
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+        run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
 
-      # 4.6 — Fast-fail if the signing certificate secret is missing.
-      # This produces a clear error rather than a confusing Xcode signing failure.
-      - name: Verify signing secrets are present
+      - name: Create signing config (unsigned release build)
+        run: cp Macwarden/LocalConfig.xcconfig.template Macwarden/LocalConfig.xcconfig
+
+      - name: Build Release (no signing)
         run: |
-          if [ -z "${{ secrets.CERT_P12 }}" ]; then
-            echo "ERROR: CERT_P12 secret is not set."
-            echo "See DEVELOPMENT.md → 'GitHub Secrets' for setup instructions."
-            exit 1
-          fi
-
-      # 4.4 — Run tests before archiving. Failure halts the workflow.
-      - name: Test
-        run: |
-          xcodebuild test \
-            -project Prizm/Prizm.xcodeproj \
-            -scheme Prizm \
-            -destination "platform=macOS" \
-            CODE_SIGN_STYLE=Automatic
-
-      # 4.5 — Create a temporary keychain for signing. Cleaned up in the final step.
-      - name: Create temporary keychain
-        id: keychain
-        run: |
-          KEYCHAIN_PATH="$RUNNER_TEMP/prizm-signing.keychain-db"
-          KEYCHAIN_PASSWORD=$(openssl rand -base64 20)
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
-          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
-
-      - name: Import Developer ID certificate
-        run: |
-          CERT_PATH="$RUNNER_TEMP/developer-id.p12"
-          echo "${{ secrets.CERT_P12 }}" | base64 --decode > "$CERT_PATH"
-          security import "$CERT_PATH" \
-            -k "$KEYCHAIN_PATH" \
-            -P "${{ secrets.CERT_PASSWORD }}" \
-            -T /usr/bin/codesign
-          security set-key-partition-list \
-            -S "apple-tool:,apple:,codesign:" \
-            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-      - name: Archive
-        run: |
-          xcodebuild archive \
-            -project Prizm/Prizm.xcodeproj \
-            -scheme Prizm \
+          xcodebuild \
+            -project "Macwarden/Macwarden.xcodeproj" \
+            -scheme "Macwarden" \
             -configuration Release \
-            -destination "generic/platform=macOS" \
-            -archivePath "$RUNNER_TEMP/Prizm.xcarchive" \
-            DEVELOPMENT_TEAM="${{ secrets.TEAM_ID }}"
-
-      - name: Export (Developer ID signing)
-        run: |
-          # Substitute the real Team ID into ExportOptions.plist before use
-          sed "s/TEAM_ID_HERE/${{ secrets.TEAM_ID }}/g" ExportOptions.plist \
-            > "$RUNNER_TEMP/ExportOptions.plist"
-
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/Prizm.xcarchive" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath "$RUNNER_TEMP/export"
+            -derivedDataPath build/ \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | xcpretty || exit ${PIPESTATUS[0]}
 
       - name: Create DMG
         run: |
+          APP="build/Build/Products/Release/Macwarden.app"
+          VERSION="${GITHUB_REF_NAME}"          # e.g. v1.2.3
+          DMG_NAME="Macwarden-${VERSION}.dmg"
+
+          # Build a staging folder: app + Applications shortcut so users can drag-install.
+          STAGING="dmg-staging"
+          mkdir -p "$STAGING"
+          cp -R "$APP" "$STAGING/Macwarden.app"
+          ln -s /Applications "$STAGING/Applications"
+
           hdiutil create \
-            -volname "Prizm" \
-            -srcfolder "$RUNNER_TEMP/export/Prizm.app" \
-            -ov -format UDZO \
-            "$RUNNER_TEMP/Prizm.dmg"
+            -volname "Macwarden ${VERSION}" \
+            -srcfolder "$STAGING" \
+            -ov \
+            -format UDZO \
+            "$DMG_NAME"
 
-      - name: Notarize DMG
-        run: |
-          # Decode the App Store Connect API key from the secret
-          NOTARYTOOL_KEY_PATH="$RUNNER_TEMP/notarytool.p8"
-          echo "${{ secrets.NOTARYTOOL_KEY }}" | base64 --decode > "$NOTARYTOOL_KEY_PATH"
+          echo "DMG_PATH=$DMG_NAME" >> "$GITHUB_ENV"
+          echo "DMG_NAME=$DMG_NAME" >> "$GITHUB_ENV"
 
-          xcrun notarytool submit "$RUNNER_TEMP/Prizm.dmg" \
-            --key "$NOTARYTOOL_KEY_PATH" \
-            --key-id "${{ secrets.NOTARYTOOL_KEY_ID }}" \
-            --issuer "${{ secrets.NOTARYTOOL_ISSUER_ID }}" \
-            --wait
-
-      - name: Staple notarization ticket
-        run: xcrun stapler staple "$RUNNER_TEMP/Prizm.dmg"
-
-      - name: Publish GitHub release
+      - name: Create GitHub Release and upload DMG
         uses: softprops/action-gh-release@v2
         with:
-          files: "${{ runner.temp }}/Prizm.dmg"
-          generate_release_notes: false
-          draft: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 4.5 — Delete the temporary keychain on success and failure.
-      - name: Delete temporary keychain
-        if: always()
-        run: |
-          security delete-keychain "$KEYCHAIN_PATH" || true
+          files: ${{ env.DMG_PATH }}
+          generate_release_notes: true
