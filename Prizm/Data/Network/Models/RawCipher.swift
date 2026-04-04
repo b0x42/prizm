@@ -34,6 +34,13 @@ nonisolated struct RawCipher: Codable {
     let secureNote:     RawSecureNoteData?
     let sshKey:         RawSSHKeyData?
     let fields:         [RawField]?
+    /// Per-cipher symmetric key wrapped as an EncString. When present, this key encrypts
+    /// the cipher's fields instead of the vault-level key. When nil, the vault-level key
+    /// is used directly (Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping").
+    let key:            String?         // EncString, optional
+    /// File attachments belonging to this cipher. Nil when the server returns no
+    /// attachments or omits the field entirely; treated as `[]` by `CipherMapper`.
+    let attachments:    [AttachmentDTO]?
 }
 
 // MARK: - Login

@@ -9,6 +9,14 @@ struct ItemDetailView: View {
     let faviconLoader:     FaviconLoader
     let onCopy:            (String) -> Void
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
+    /// Factory that creates an `AttachmentAddViewModel` for the given cipher ID.
+    /// Injected from `AppContainer` so `ItemDetailView` stays decoupled from Data layer.
+    var makeAddAttachmentViewModel: ((String) -> AttachmentAddViewModel)? = nil
+    /// Factory that creates an `AttachmentBatchViewModel` for a drag-and-drop upload.
+    var makeBatchAttachmentViewModel: ((String) -> AttachmentBatchViewModel)? = nil
+    /// Factory for `AttachmentRowViewModel` — passed to `AttachmentsSectionView` so each
+    /// row gets its own ViewModel instance (Constitution §II decoupling).
+    var makeAttachmentRowViewModel: ((String, Attachment) -> AttachmentRowViewModel)? = nil
     var onEditSheetChanged: ((Bool) -> Void)? = nil
     var onSoftDelete: ((String) async -> Void)? = nil
     var onRestore: ((String) async -> Void)? = nil
@@ -19,6 +27,12 @@ struct ItemDetailView: View {
     @State private var isEditSheetPresented = false
     @State private var editViewModel: ItemEditViewModel?
 
+    @State private var isAddAttachmentSheetPresented = false
+    @State private var addAttachmentViewModel: AttachmentAddViewModel?
+
+    @State private var isBatchAttachmentSheetPresented = false
+    @State private var batchAttachmentViewModel: AttachmentBatchViewModel?
+
     var body: some View {
         if let item {
             ScrollView {
@@ -27,6 +41,7 @@ struct ItemDetailView: View {
 
                     itemHeader(for: item)
                     typeDetailView(for: item)
+                    attachmentsSection(for: item)
 
                     Spacer(minLength: 20)
                     metadataFooter(for: item)
@@ -38,6 +53,20 @@ struct ItemDetailView: View {
             }) {
                 if let vm = editViewModel {
                     ItemEditView(viewModel: vm, isPresented: $isEditSheetPresented)
+                }
+            }
+            .sheet(isPresented: $isAddAttachmentSheetPresented, onDismiss: {
+                addAttachmentViewModel = nil
+            }) {
+                if let vm = addAttachmentViewModel {
+                    AttachmentConfirmSheet(viewModel: vm, isPresented: $isAddAttachmentSheetPresented)
+                }
+            }
+            .sheet(isPresented: $isBatchAttachmentSheetPresented, onDismiss: {
+                batchAttachmentViewModel = nil
+            }) {
+                if let vm = batchAttachmentViewModel {
+                    AttachmentBatchSheet(viewModel: vm, isPresented: $isBatchAttachmentSheetPresented)
                 }
             }
             .onChange(of: editTrigger) { if !item.isDeleted { openEditSheet(for: item) } }
@@ -132,6 +161,47 @@ struct ItemDetailView: View {
         case .secureNote: .secureNote
         case .sshKey:     .sshKey
         }
+    }
+
+    // MARK: - Attachments section
+
+    @ViewBuilder
+    private func attachmentsSection(for item: VaultItem) -> some View {
+        AttachmentsSectionView(
+            attachments:      item.attachments,
+            onAddTapped:      { openAddAttachmentSheet(for: item) },
+            onDropFiles:      { urls in openBatchAttachmentSheet(for: item, with: urls) },
+            makeRowViewModel: makeAttachmentRowViewModel.map { factory in
+                { attachment in factory(item.id, attachment) }
+            }
+        )
+    }
+
+    private func openAddAttachmentSheet(for item: VaultItem) {
+        guard !isAddAttachmentSheetPresented,
+              let factory = makeAddAttachmentViewModel else { return }
+        let vm = factory(item.id)
+        addAttachmentViewModel = vm
+        // NSOpenPanel runs modally (blocking) — present it first, then show the
+        // confirmation sheet only if the user actually selected a valid file.
+        vm.selectFile()
+        if vm.isConfirming {
+            isAddAttachmentSheetPresented = true
+        } else {
+            // User cancelled the panel or file was invalid — no sheet to show.
+            addAttachmentViewModel = nil
+        }
+    }
+
+    private func openBatchAttachmentSheet(for item: VaultItem, with urls: [URL]) {
+        // Reject new drops while an upload is already in progress (task 6b.4).
+        if let existing = batchAttachmentViewModel, existing.isUploading { return }
+        guard !isBatchAttachmentSheetPresented,
+              let factory = makeBatchAttachmentViewModel else { return }
+        let vm = factory(item.id)
+        vm.loadItems(from: urls)
+        batchAttachmentViewModel          = vm
+        isBatchAttachmentSheetPresented   = true
     }
 
     @ViewBuilder

@@ -161,6 +161,15 @@ struct PrizmApp: App {
                         vaultBrowserVM?.handleItemSaved(item)
                     }
                     return vm
+                },
+                makeAddAttachmentViewModel: { cipherId in
+                    container.makeAddAttachmentViewModel(for: cipherId)
+                },
+                makeBatchAttachmentViewModel: { cipherId in
+                    container.makeBatchAttachmentViewModel(for: cipherId)
+                },
+                makeAttachmentRowViewModel: { cipherId, attachment in
+                    container.makeAttachmentRowViewModel(cipherId: cipherId, attachment: attachment)
                 }
             )
         }
@@ -393,6 +402,9 @@ final class RootViewModel: ObservableObject {
         Task {
             await container.authRepo.lockVault()
             container.vaultRepo.clearVault()
+            // Clear the attachment key cache in the same lock path as the vault store.
+            // Key material must not outlive the vault session (Constitution §III).
+            await container.vaultKeyCache.clear()
             if let account = container.authRepo.storedAccount() {
                 unlockVM = container.makeUnlockViewModel(account: account)
                 screen = .unlock

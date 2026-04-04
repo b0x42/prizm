@@ -113,6 +113,37 @@ protocol PrizmAPIClientProtocol: Actor {
     /// On success the server returns the created cipher, decoded back into `RawCipher`.
     func createCipher(cipher: RawCipher) async throws -> RawCipher
 
+    // MARK: - Attachment endpoints
+
+    /// POST `/api/ciphers/{cipherId}/attachment/v2` — creates attachment metadata on the server.
+    ///
+    /// Returns the attachment ID, a signed upload URL (or Bitwarden-hosted URL for fileUploadType 0),
+    /// and the file upload type (0 = Bitwarden-hosted, 1 = Azure blob storage).
+    ///
+    /// Reference: Bitwarden Server API POST /api/ciphers/{id}/attachment/v2
+    func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse
+
+    /// POST `/api/ciphers/{cipherId}/attachment/{attachmentId}` — uploads a file blob via multipart.
+    ///
+    /// Used when `fileUploadType == 0` (Bitwarden-hosted storage).
+    /// The encrypted blob is sent as the `data` field of a multipart/form-data body.
+    func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws
+
+    /// PUT `<signedURL>` with `x-ms-blob-type: BlockBlob` — uploads to Azure Blob Storage.
+    ///
+    /// Used when `fileUploadType == 1` (Azure). The signed URL is provided by the v2 metadata response.
+    /// The request body is the raw encrypted blob with the Azure-required header.
+    func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws
+
+    /// GET `/api/ciphers/{cipherId}/attachment/{attachmentId}` — fetches a fresh signed download URL.
+    ///
+    /// Returns an `AttachmentDownloadResponse` containing the signed URL valid for a limited time.
+    /// Called when `Attachment.url` is nil or returns HTTP 403.
+    func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse
+
+    /// DELETE `/api/ciphers/{cipherId}/attachment/{attachmentId}` — deletes an attachment.
+    func deleteAttachment(cipherId: String, attachmentId: String) async throws
+
 }
 
 // MARK: - Wire Models
@@ -226,6 +257,41 @@ extension APIError: LocalizedError {
             return "No server URL is configured."
         }
     }
+}
+
+// MARK: - Attachment wire models
+
+/// Request body for POST `/api/ciphers/{id}/attachment/v2`.
+///
+/// `fileName` is an EncString (encrypted). `key` is the per-attachment key wrapped as
+/// an EncString. Both are produced by `AttachmentRepositoryImpl` before sending.
+///
+/// Reference: Bitwarden Server API POST /api/ciphers/{id}/attachment/v2
+nonisolated struct AttachmentMetadataRequest: Encodable {
+    let fileName:     String    // EncString
+    let key:          String    // EncString — per-attachment key wrapped with cipher key
+    let fileSize:     Int
+    let adminRequest: Bool      // always false for personal vault
+
+    // Server expects camelCase — synthesized Encodable matches.
+}
+
+/// Response from POST `/api/ciphers/{id}/attachment/v2`.
+///
+/// `fileUploadType`: 0 = Bitwarden-hosted (POST to API), 1 = Azure (PUT to signed URL).
+/// `url` is the signed upload destination (Azure) or the API upload endpoint (Bitwarden-hosted).
+/// `attachmentId` is the server-assigned ID for the new attachment.
+nonisolated struct AttachmentMetadataResponse: Decodable {
+    let attachmentId:   String
+    let url:            String
+    let fileUploadType: Int
+}
+
+/// Response from GET `/api/ciphers/{id}/attachment/{attachmentId}`.
+///
+/// Contains a fresh signed download URL for the encrypted blob.
+nonisolated struct AttachmentDownloadResponse: Decodable {
+    let url: String
 }
 
 // MARK: - Implementation
@@ -581,6 +647,81 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if DebugConfig.isEnabled {
             logger.debug("[debug] restoreCipher ← ok id=\(id, privacy: .public)")
         }
+    }
+
+    // MARK: - createAttachmentMetadata
+
+    func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/v2")
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        request.httpBody = try JSONEncoder().encode(body)
+        return try await perform(request: request)
+    }
+
+    // MARK: - uploadAttachmentBitwardenHosted
+
+    func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/\(attachmentId)")
+
+        // Multipart/form-data with a single `data` field containing the encrypted blob.
+        let boundary = UUID().uuidString
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"data\"; filename=\"attachment\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+        body.append(encryptedBlob)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        request.httpBody = body
+        try await performEmpty(request: request)
+    }
+
+    // MARK: - uploadAttachmentAzure
+
+    func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws {
+        // Azure Blob Storage requires `x-ms-blob-type: BlockBlob` on PUT uploads.
+        // Reference: https://learn.microsoft.com/en-us/rest/api/storageservices/put-blob
+        var request = URLRequest(url: signedURL)
+        request.httpMethod = "PUT"
+        request.setValue("BlockBlob", forHTTPHeaderField: "x-ms-blob-type")
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        request.httpBody = encryptedBlob
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw APIError.httpError(statusCode: code, body: "Azure upload failed")
+        }
+    }
+
+    // MARK: - fetchAttachmentDownloadURL
+
+    func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/\(attachmentId)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        return try await perform(request: request)
+    }
+
+    // MARK: - deleteAttachment
+
+    func deleteAttachment(cipherId: String, attachmentId: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/\(attachmentId)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "DELETE"
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        try await performEmpty(request: request)
     }
 
     // MARK: - refreshAccessToken

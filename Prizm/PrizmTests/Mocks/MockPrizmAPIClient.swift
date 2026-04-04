@@ -174,4 +174,64 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         if let err = restoreShouldThrow { throw err }
     }
 
+    // MARK: - Stubs: attachment endpoints
+
+    nonisolated(unsafe) var createAttachmentMetadataResponse: AttachmentMetadataResponse?
+    nonisolated(unsafe) var createAttachmentMetadataShouldThrow: Error?
+    nonisolated(unsafe) var createAttachmentMetadataCallCount: Int = 0
+    nonisolated(unsafe) var lastAttachmentMetadataRequest: AttachmentMetadataRequest?
+
+    func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse {
+        createAttachmentMetadataCallCount += 1
+        lastAttachmentMetadataRequest = body
+        if let err = createAttachmentMetadataShouldThrow { throw err }
+        return createAttachmentMetadataResponse ?? AttachmentMetadataResponse(
+            attachmentId: "att-123",
+            url: "https://cdn.example.com/upload-signed",
+            fileUploadType: 0
+        )
+    }
+
+    nonisolated(unsafe) var uploadBitwardenHostedShouldThrow: Error?
+    nonisolated(unsafe) var uploadBitwardenHostedCallCount: Int = 0
+    nonisolated(unsafe) var lastUploadedCipherId: String?
+    nonisolated(unsafe) var lastUploadedAttachmentId: String?
+
+    func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws {
+        uploadBitwardenHostedCallCount += 1
+        lastUploadedCipherId = cipherId
+        lastUploadedAttachmentId = attachmentId
+        if let err = uploadBitwardenHostedShouldThrow { throw err }
+    }
+
+    nonisolated(unsafe) var uploadAzureShouldThrow: Error?
+    nonisolated(unsafe) var uploadAzureCallCount: Int = 0
+    nonisolated(unsafe) var lastAzureSignedURL: URL?
+
+    func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws {
+        uploadAzureCallCount += 1
+        lastAzureSignedURL = signedURL
+        if let err = uploadAzureShouldThrow { throw err }
+    }
+
+    nonisolated(unsafe) var fetchAttachmentDownloadURLResponse: AttachmentDownloadResponse?
+    nonisolated(unsafe) var fetchAttachmentDownloadURLShouldThrow: Error?
+    nonisolated(unsafe) var fetchAttachmentDownloadURLCallCount: Int = 0
+
+    func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse {
+        fetchAttachmentDownloadURLCallCount += 1
+        if let err = fetchAttachmentDownloadURLShouldThrow { throw err }
+        return fetchAttachmentDownloadURLResponse ?? AttachmentDownloadResponse(url: "https://cdn.example.com/download-signed")
+    }
+
+    nonisolated(unsafe) var deleteAttachmentShouldThrow: Error?
+    nonisolated(unsafe) var deleteAttachmentCallCount: Int = 0
+    nonisolated(unsafe) var lastDeletedAttachmentId: String?
+
+    func deleteAttachment(cipherId: String, attachmentId: String) async throws {
+        deleteAttachmentCallCount += 1
+        lastDeletedAttachmentId = attachmentId
+        if let err = deleteAttachmentShouldThrow { throw err }
+    }
+
 }

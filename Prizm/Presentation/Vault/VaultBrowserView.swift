@@ -14,6 +14,13 @@ struct VaultBrowserView: View {
     let faviconLoader: FaviconLoader
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
     let makeCreateViewModel: (ItemType) -> ItemEditViewModel
+    /// Factory for creating `AttachmentAddViewModel` — injected from AppContainer to
+    /// keep the Presentation layer decoupled from the Data layer (Constitution §II).
+    var makeAddAttachmentViewModel: ((String) -> AttachmentAddViewModel)? = nil
+    /// Factory for creating `AttachmentBatchViewModel` — injected from AppContainer.
+    var makeBatchAttachmentViewModel: ((String) -> AttachmentBatchViewModel)? = nil
+    /// Factory for `AttachmentRowViewModel` — injected from AppContainer.
+    var makeAttachmentRowViewModel: ((String, Attachment) -> AttachmentRowViewModel)? = nil
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
@@ -94,16 +101,19 @@ struct VaultBrowserView: View {
             },
             detail: {
                 ItemDetailView(
-                    item:                viewModel.itemSelection,
-                    faviconLoader:       faviconLoader,
-                    onCopy:              { viewModel.copy($0) },
-                    makeEditViewModel:   makeEditViewModel,
-                    onEditSheetChanged: { viewModel.handleEditSheetState($0) },
-                    onSoftDelete:        { id in await viewModel.performSoftDelete(id: id) },
-                    onRestore:           { id in await viewModel.performRestore(id: id) },
-                    onPermanentDelete:   { id in await viewModel.performPermanentDelete(id: id) },
-                    editTrigger:         viewModel.editTrigger,
-                    saveTrigger:         viewModel.saveTrigger
+                    item:                           viewModel.itemSelection,
+                    faviconLoader:                  faviconLoader,
+                    onCopy:                         { viewModel.copy($0) },
+                    makeEditViewModel:              makeEditViewModel,
+                    makeAddAttachmentViewModel:     makeAddAttachmentViewModel,
+                    makeBatchAttachmentViewModel:   makeBatchAttachmentViewModel,
+                    makeAttachmentRowViewModel:     makeAttachmentRowViewModel,
+                    onEditSheetChanged:             { viewModel.handleEditSheetState($0) },
+                    onSoftDelete:                   { id in await viewModel.performSoftDelete(id: id) },
+                    onRestore:                      { id in await viewModel.performRestore(id: id) },
+                    onPermanentDelete:              { id in await viewModel.performPermanentDelete(id: id) },
+                    editTrigger:                    viewModel.editTrigger,
+                    saveTrigger:                    viewModel.saveTrigger
                 )
                 .toolbar {
                     if let item = viewModel.itemSelection {

@@ -131,6 +131,33 @@ final class MockVaultRepository: VaultRepository {
         if let error = stubbedRestoreError { throw error }
     }
 
+    // MARK: - updateAttachments stubbing
+
+    private(set) var updateAttachmentsCallCount: Int = 0
+    private(set) var lastUpdatedAttachments: [Attachment]?
+    private(set) var lastUpdateAttachmentsCipherId: String?
+
+    func updateAttachments(_ attachments: [Attachment], for cipherId: String) async {
+        updateAttachmentsCallCount += 1
+        lastUpdatedAttachments = attachments
+        lastUpdateAttachmentsCipherId = cipherId
+        // Patch in-memory state so allItems() reflects the update
+        if let idx = populatedItems.firstIndex(where: { $0.id == cipherId }) {
+            let old = populatedItems[idx]
+            populatedItems[idx] = VaultItem(
+                id:           old.id,
+                name:         old.name,
+                isFavorite:   old.isFavorite,
+                isDeleted:    old.isDeleted,
+                creationDate: old.creationDate,
+                revisionDate: old.revisionDate,
+                content:      old.content,
+                reprompt:     old.reprompt,
+                attachments:  attachments
+            )
+        }
+    }
+
 }
 
 // MARK: - ItemContent helper

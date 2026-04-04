@@ -45,16 +45,27 @@ nonisolated final class CipherMapper {
 
     // MARK: - Public API
 
-    /// Maps a single `RawCipher` to a `VaultItem`.
+    /// Maps a single `RawCipher` to a `VaultItem` and returns the effective cipher key.
+    ///
+    /// The returned tuple is used by:
+    /// - **Callers that only need the item** (`SyncRepositoryImpl`, `VaultRepositoryImpl.update`,
+    ///   `VaultRepositoryImpl.create`): destructure and discard the `cipherKey` value.
+    /// - **`SyncRepositoryImpl`**: collect all `cipherKey` values and populate `VaultKeyCache`.
+    ///
+    /// **Effective cipher key derivation** (Bitwarden Security Whitepaper §4):
+    /// - If `raw.key` is non-nil (cipher has a per-item symmetric key), decrypt it with the
+    ///   vault key and return the 64-byte plaintext as the effective key.
+    /// - If `raw.key` is nil, the cipher uses the vault-level key directly — return
+    ///   `keys.encryptionKey + keys.macKey` (64 bytes).
     ///
     /// - Parameters:
     ///   - raw:  The encrypted wire-format cipher from the sync response.
-    ///   - keys: The symmetric key pair used to decrypt EncString fields.
-    /// - Returns: A decrypted `VaultItem` ready for display in the vault browser.
+    ///   - keys: The vault-level symmetric key pair used to decrypt EncString fields.
+    /// - Returns: A tuple of the decrypted `VaultItem` and its 64-byte effective cipher key.
     /// - Throws: `CipherMapperError.organisationCipherSkipped` for org ciphers.
     /// - Throws: `CipherMapperError.unsupportedCipherType` for unknown type integers.
     /// - Throws: `EncStringError` or `CipherMapperError.fieldDecryptionFailed` on decryption failure.
-    func map(raw: RawCipher, keys: CryptoKeys) throws -> VaultItem {
+    func map(raw: RawCipher, keys: CryptoKeys) throws -> (item: VaultItem, cipherKey: Data) {
         // Organisation ciphers are excluded from the personal vault view
         if raw.organizationId != nil {
             throw CipherMapperError.organisationCipherSkipped
@@ -76,7 +87,37 @@ nonisolated final class CipherMapper {
         let creationDate  = raw.creationDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
         let revisionDate  = raw.revisionDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
 
-        return VaultItem(
+        // Map attachments through AttachmentMapper (task 6c.1).
+        // The AttachmentMapper takes the vault-level `keys` (CryptoKeys) — not raw Data — because
+        // CipherMapper already has CryptoKeys at this point, avoiding a needless split/re-join.
+        let attachmentMapper = AttachmentMapper()
+        let attachments: [Attachment] = (raw.attachments ?? []).compactMap { dto in
+            do {
+                return try attachmentMapper.map(dto, cipherKey: keys)
+            } catch {
+                Self.logger.error("Attachment mapping failed for cipher \(raw.id, privacy: .public): \(error, privacy: .public)")
+                return nil
+            }
+        }
+
+        // Effective cipher key: per-item key if present, otherwise vault-level key.
+        // Reference: Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping".
+        let cipherKey: Data
+        if let encItemKey = raw.key {
+            // Per-item key: decrypt the EncString-wrapped key using the vault key.
+            do {
+                let enc = try EncString(string: encItemKey)
+                cipherKey = try enc.decrypt(keys: keys)
+            } catch {
+                Self.logger.error("Per-item key decryption failed for cipher \(raw.id, privacy: .public); falling back to vault key")
+                cipherKey = keys.encryptionKey + keys.macKey
+            }
+        } else {
+            // No per-item key — use the vault-level key directly.
+            cipherKey = keys.encryptionKey + keys.macKey
+        }
+
+        let item = VaultItem(
             id:           raw.id,
             name:         name,
             isFavorite:   raw.favorite,
@@ -84,8 +125,10 @@ nonisolated final class CipherMapper {
             creationDate: creationDate,
             revisionDate: revisionDate,
             content:      content,
-            reprompt:     raw.reprompt ?? 0
+            reprompt:     raw.reprompt ?? 0,
+            attachments:  attachments
         )
+        return (item: item, cipherKey: cipherKey)
     }
 
     // MARK: - Private: Content dispatch

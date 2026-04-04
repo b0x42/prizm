@@ -27,6 +27,7 @@ actor SyncRepositoryImpl: SyncRepository {
     private let apiClient:       any PrizmAPIClientProtocol
     private let crypto:          any PrizmCryptoService
     private let vaultRepository: any VaultRepository
+    private let vaultKeyCache:   VaultKeyCache
 
     private let logger = Logger(subsystem: "com.prizm", category: "SyncRepository")
 
@@ -39,11 +40,38 @@ actor SyncRepositoryImpl: SyncRepository {
     init(
         apiClient:       any PrizmAPIClientProtocol,
         crypto:          any PrizmCryptoService,
-        vaultRepository: any VaultRepository
+        vaultRepository: any VaultRepository,
+        vaultKeyCache:   VaultKeyCache
     ) {
         self.apiClient       = apiClient
         self.crypto          = crypto
         self.vaultRepository = vaultRepository
+        self.vaultKeyCache   = vaultKeyCache
+    }
+
+    // MARK: - SyncRepository
+
+    // MARK: - Private helpers
+
+    /// Collects per-item cipher keys for all personal ciphers that have a per-item key
+    /// (`raw.key != nil`). Returns a `[cipherId: 64-byte Data]` map suitable for
+    /// passing to `VaultKeyCache.populate(keys:)`.
+    ///
+    /// Only ciphers with an explicit per-item key are included. Ciphers that use the
+    /// vault-level key directly (no `raw.key`) are handled by the `VaultKeyServiceImpl`
+    /// fallback path and are intentionally excluded to avoid storing duplicate key material.
+    private func collectCipherKeys(ciphers: [RawCipher]) async -> [String: Data] {
+        guard let vaultKeys = try? await crypto.currentKeys() else {
+            return [:]
+        }
+        var result: [String: Data] = [:]
+        let mapper = CipherMapper()
+        for cipher in ciphers where cipher.organizationId == nil && cipher.key != nil {
+            if let (_, cipherKey) = try? mapper.map(raw: cipher, keys: vaultKeys) {
+                result[cipher.id] = cipherKey
+            }
+        }
+        return result
     }
 
     // MARK: - SyncRepository
@@ -101,6 +129,18 @@ actor SyncRepositoryImpl: SyncRepository {
         if DebugConfig.isEnabled && failedCount > 0 {
             logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check PrizmCryptoService logs for per-cipher errors")
         }
+
+        // Phase 2b: Collect per-cipher effective keys and populate the key cache.
+        // This pass runs independently of decryptList so the crypto service protocol
+        // does not need to be modified. Only personal ciphers with a non-nil per-item
+        // key generate a cache entry; vault-key-only ciphers are handled by the
+        // VaultKeyServiceImpl fallback path and are intentionally excluded here to
+        // avoid storing a duplicate of the vault key for every cipher in the cache.
+        let cipherKeyMap = await collectCipherKeys(
+            ciphers: syncResponse.ciphers
+        )
+        await vaultKeyCache.populate(keys: cipherKeyMap)
+        logger.info("VaultKeyCache populated with \(cipherKeyMap.count, privacy: .public) per-item key(s)")
 
         // Phase 3: Populate the in-memory vault store.
         let syncedAt = Date()

@@ -184,7 +184,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
                 continue
             }
             do {
-                let item = try mapper.map(raw: cipher, keys: vaultKeys)
+                let (item, _) = try mapper.map(raw: cipher, keys: vaultKeys)
                 items.append(item)
                 if DebugConfig.isEnabled {
                     logger.debug("[debug] cipher[\(index, privacy: .public)] OK — type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private)")
