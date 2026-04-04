@@ -60,4 +60,20 @@ actor MockPrizmCryptoService: PrizmCryptoService {
         return stubbedVaultKeys
     }
 
+    // MARK: - Attachment crypto stubs
+
+    nonisolated(unsafe) var stubbedAttachmentKey: Data = Data(count: 32)
+    nonisolated(unsafe) var stubbedEncryptedData: Data = Data()
+    nonisolated(unsafe) var stubbedDecryptedData: Data = Data()
+    nonisolated(unsafe) var stubbedEncAttachmentKey: String = "2.stubEncKey|stub|stub"
+    nonisolated(unsafe) var stubbedDecAttachmentKey: Data = Data(count: 32)
+    nonisolated(unsafe) var stubbedEncFileName: String = "2.stubName|stub|stub"
+
+    nonisolated func generateAttachmentKey() throws -> Data { stubbedAttachmentKey }
+    nonisolated func encryptData(_ data: Data, attachmentKey: Data) throws -> Data { stubbedEncryptedData }
+    nonisolated func decryptData(_ data: Data, attachmentKey: Data) throws -> Data { stubbedDecryptedData }
+    nonisolated func encryptAttachmentKey(_ key: Data, cipherKey: CryptoKeys) throws -> String { stubbedEncAttachmentKey }
+    nonisolated func decryptAttachmentKey(_ encString: String, cipherKey: CryptoKeys) throws -> Data { stubbedDecAttachmentKey }
+    nonisolated func encryptFileName(_ name: String, cipherKey: CryptoKeys) throws -> String { stubbedEncFileName }
+
 }
