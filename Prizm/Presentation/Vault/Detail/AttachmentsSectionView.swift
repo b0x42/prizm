@@ -130,14 +130,12 @@ struct AttachmentsSectionView: View {
 private struct AttachmentRowViewWithViewModel: View {
 
     let attachment: Attachment
-    let factory:    (Attachment) -> AttachmentRowViewModel
 
     @State private var viewModel: AttachmentRowViewModel
     @State private var showDeleteAlert = false
 
     init(attachment: Attachment, factory: (Attachment) -> AttachmentRowViewModel) {
         self.attachment = attachment
-        self.factory    = factory
         // State(initialValue:) stores the value only on the first insertion into the
         // view hierarchy; subsequent re-renders preserve the existing state value, so
         // the factory is not called more than once per logical row lifetime.
