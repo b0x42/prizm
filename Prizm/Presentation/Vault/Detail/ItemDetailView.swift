@@ -198,7 +198,13 @@ struct ItemDetailView: View {
             await vm.selectFile()
             isPickingAttachment = false
             if vm.isConfirming {
-                addAttachmentViewModel = vm   // non-nil → .sheet(item:) presents immediately
+                // Single file — show the per-file confirm sheet.
+                addAttachmentViewModel = vm
+            } else if !vm.pickedURLs.isEmpty, let batchFactory = makeBatchAttachmentViewModel {
+                // Multiple files — route to the batch sheet that already handles N files.
+                let batchVM = batchFactory(item.id)
+                batchVM.loadItems(from: vm.pickedURLs)
+                batchAttachmentViewModel = batchVM
             }
         }
     }

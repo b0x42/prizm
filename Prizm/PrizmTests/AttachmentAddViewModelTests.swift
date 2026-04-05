@@ -35,7 +35,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
         AttachmentAddViewModel(
             cipherId:     "cipher-1",
             uploadUseCase: MockUploadUseCase(result: uploadResult),
-            filePicker:    { pickerResult }
+            filePicker:    { pickerResult.map { [$0] } ?? [] }
         )
     }
 

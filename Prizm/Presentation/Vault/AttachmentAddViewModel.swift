@@ -33,8 +33,9 @@ final class AttachmentAddViewModel: Identifiable {
     private let cipherId: String
     private let uploadUseCase: any UploadAttachmentUseCase
     /// Injectable file-picker closure — defaults to `NSOpenPanel` in production.
-    /// Receives no arguments and returns `(url: URL, bytes: Int)` on success or `nil` on cancel.
-    private let filePicker: () -> (url: URL, bytes: Int)?
+    /// Returns all selected `(url, bytes)` pairs; empty array means the user cancelled.
+    /// Multiple results trigger the batch sheet; a single result triggers the confirm sheet.
+    private let filePicker: () -> [(url: URL, bytes: Int)]
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
@@ -70,6 +71,10 @@ final class AttachmentAddViewModel: Identifiable {
     /// `true` when the sheet should be dismissed (set by `cancel()` or upload success).
     private(set) var isDismissed: Bool = false
 
+    /// Non-empty when the user selected multiple files — the caller should route to the
+    /// batch sheet instead of the single-file confirm sheet.
+    private(set) var pickedURLs: [URL] = []
+
     /// Advisory message shown when file is ≥50 MB but ≤500 MB.
     private(set) var sizeAdvisory: String? = nil
 
@@ -83,24 +88,27 @@ final class AttachmentAddViewModel: Identifiable {
     init(
         cipherId: String,
         uploadUseCase: any UploadAttachmentUseCase,
-        filePicker: (() -> (url: URL, bytes: Int)?)? = nil
+        filePicker: (() -> [(url: URL, bytes: Int)])? = nil
     ) {
         self.cipherId      = cipherId
         self.uploadUseCase = uploadUseCase
         self.filePicker    = filePicker ?? AttachmentAddViewModel.defaultNSOpenPanel
     }
 
-    /// Default file picker implementation using `NSOpenPanel.runModal()`.
+    /// Default file picker using `NSOpenPanel` with multiple-selection enabled.
+    /// Returns one entry per selected file; empty means cancelled.
     /// Extracted as a static so it is not captured in `self` and does not keep the ViewModel alive.
-    private static let defaultNSOpenPanel: () -> (url: URL, bytes: Int)? = {
+    private static func defaultNSOpenPanel() -> [(url: URL, bytes: Int)] {
         let panel = NSOpenPanel()
         panel.canChooseFiles          = true
         panel.canChooseDirectories    = false
         panel.allowsMultipleSelection = true
-        panel.message                 = "Choose a file to attach"
-        guard panel.runModal() == .OK, let url = panel.url else { return nil }
-        let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-        return (url, bytes)
+        panel.message                 = "Choose files to attach"
+        guard panel.runModal() == .OK else { return [] }
+        return panel.urls.map { url in
+            let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+            return (url, bytes)
+        }
     }
 
     // MARK: - File selection (task 6.2)
@@ -119,7 +127,16 @@ final class AttachmentAddViewModel: Identifiable {
         // Yield to the run loop so SwiftUI renders the spinner before runModal() blocks.
         await Task.yield()
         defer { isPickingFile = false }
-        guard let (url, bytes) = filePicker() else { return }
+        let results = filePicker()
+        guard !results.isEmpty else { return }   // user cancelled
+
+        // Multiple files selected — expose URLs for the caller to route to the batch sheet.
+        if results.count > 1 {
+            pickedURLs = results.map(\.url)
+            return
+        }
+
+        let (url, bytes) = results[0]
 
         // Max 500 MB (task 6.2)
         let maxBytes = 500 * 1024 * 1024
