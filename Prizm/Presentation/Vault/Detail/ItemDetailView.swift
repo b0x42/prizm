@@ -177,10 +177,10 @@ struct ItemDetailView: View {
             attachments:      item.attachments,
             onAddTapped:      { openAddAttachmentSheet(for: item) },
             onDropFiles:      { urls in openBatchAttachmentSheet(for: item, with: urls) },
+            isPicking:        addAttachmentViewModel?.isPickingFile ?? false,
             makeRowViewModel: makeAttachmentRowViewModel.map { factory in
                 { attachment in factory(item.id, attachment) }
-            },
-            isPicking:        addAttachmentViewModel?.isPickingFile ?? false
+            }
         )
     }
 
