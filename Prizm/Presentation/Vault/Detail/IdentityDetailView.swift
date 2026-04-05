@@ -35,8 +35,7 @@ struct IdentityDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
 
                 if hasPersonalInfo {
                     DetailSectionCard("Personal Info") {
@@ -96,7 +95,6 @@ struct IdentityDetailView: View {
                     }
                 }
             }
-        }
     }
 
     // MARK: - Private helpers

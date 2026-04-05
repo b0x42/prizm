@@ -19,8 +19,7 @@ struct LoginDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
 
                 if hasCredentials {
                     DetailSectionCard("Credentials") {
@@ -79,6 +78,5 @@ struct LoginDetailView: View {
                     }
                 }
             }
-        }
     }
 }
