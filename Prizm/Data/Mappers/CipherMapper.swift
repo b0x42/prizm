@@ -87,21 +87,11 @@ nonisolated final class CipherMapper {
         let creationDate  = raw.creationDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
         let revisionDate  = raw.revisionDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
 
-        // Map attachments through AttachmentMapper (task 6c.1).
-        // The AttachmentMapper takes the vault-level `keys` (CryptoKeys) — not raw Data — because
-        // CipherMapper already has CryptoKeys at this point, avoiding a needless split/re-join.
-        let attachmentMapper = AttachmentMapper()
-        let attachments: [Attachment] = (raw.attachments ?? []).compactMap { dto in
-            do {
-                return try attachmentMapper.map(dto, cipherKey: keys)
-            } catch {
-                Self.logger.error("Attachment mapping failed for cipher \(raw.id, privacy: .public): \(error, privacy: .public)")
-                return nil
-            }
-        }
-
         // Effective cipher key: per-item key if present, otherwise vault-level key.
         // Reference: Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping".
+        // Must be resolved BEFORE attachment mapping so that attachment filenames are
+        // decrypted with the correct key — ciphers that have a per-item key use it for
+        // their attachments too (vault-level key would cause MAC verification failures).
         let cipherKey: Data
         if let encItemKey = raw.key {
             // Per-item key: decrypt the EncString-wrapped key using the vault key.
@@ -115,6 +105,24 @@ nonisolated final class CipherMapper {
         } else {
             // No per-item key — use the vault-level key directly.
             cipherKey = keys.encryptionKey + keys.macKey
+        }
+
+        // Build CryptoKeys from the resolved 64-byte cipher key (first 32 bytes = enc, last 32 = mac).
+        let effectiveKeys = CryptoKeys(
+            encryptionKey: cipherKey.prefix(32),
+            macKey:        cipherKey.suffix(32)
+        )
+
+        // Map attachments using the cipher's effective key, not the raw vault key.
+        // Attachment filenames are encrypted under the same key as the cipher's fields.
+        let attachmentMapper = AttachmentMapper()
+        let attachments: [Attachment] = (raw.attachments ?? []).compactMap { dto in
+            do {
+                return try attachmentMapper.map(dto, cipherKey: effectiveKeys)
+            } catch {
+                Self.logger.error("Attachment mapping failed for cipher \(raw.id, privacy: .public): \(error, privacy: .public)")
+                return nil
+            }
         }
 
         let item = VaultItem(
