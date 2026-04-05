@@ -37,6 +37,10 @@ final class AttachmentRowViewModel {
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
+    /// Called after a successful delete or retry-upload so the parent view can refresh
+    /// `itemSelection` and reflect the updated attachment list without waiting for a sync.
+    var onAttachmentChanged: (() -> Void)? = nil
+
     // MARK: - State (observable)
 
     private(set) var isLoading:   Bool    = false
@@ -157,7 +161,8 @@ final class AttachmentRowViewModel {
                     attachmentId: self.attachment.id
                 )
                 self.logger.info("delete: removed \(self.attachment.id, privacy: .public)")
-                // The row disappears via VaultRepository.updateAttachments — no extra state needed.
+                self.onAttachmentChanged?()
+                // The row disappears via VaultRepository.updateAttachments once itemSelection refreshes.
             } catch {
                 self.actionError = "Could not delete attachment: \(error.localizedDescription)"
                 self.logger.error("delete failed: \(error.localizedDescription, privacy: .public)")
@@ -212,7 +217,7 @@ final class AttachmentRowViewModel {
 
                 // Zero bytes on success (§III).
                 fileData.resetBytes(in: 0..<fileData.count)
-                // The incomplete row disappears and a new normal row appears via updateAttachments.
+                self.onAttachmentChanged?()
                 self.logger.info("retryUpload: succeeded for \(self.attachment.id, privacy: .public)")
             } catch {
                 fileData.resetBytes(in: 0..<fileData.count)

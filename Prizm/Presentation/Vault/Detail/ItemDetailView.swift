@@ -179,7 +179,11 @@ struct ItemDetailView: View {
             onDropFiles:      { urls in openBatchAttachmentSheet(for: item, with: urls) },
             isPicking:        addAttachmentViewModel?.isPickingFile ?? false,
             makeRowViewModel: makeAttachmentRowViewModel.map { factory in
-                { attachment in factory(item.id, attachment) }
+                { [onAttachmentsChanged] attachment in
+                    let vm = factory(item.id, attachment)
+                    vm.onAttachmentChanged = onAttachmentsChanged
+                    return vm
+                }
             }
         )
     }
