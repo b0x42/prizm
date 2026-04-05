@@ -215,7 +215,9 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
                 let (item, _) = try mapper.map(raw: cipher, keys: vaultKeys)
                 items.append(item)
                 if DebugConfig.isEnabled {
-                    logger.debug("[debug] cipher[\(index, privacy: .public)] OK — type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private)")
+                    let rawAttachmentCount = cipher.attachments?.count ?? 0
+                    let mappedAttachmentCount = item.attachments.count
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] OK — type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private) rawAttachments=\(rawAttachmentCount, privacy: .public) mappedAttachments=\(mappedAttachmentCount, privacy: .public)")
                 }
             } catch {
                 failedCount += 1
