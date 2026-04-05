@@ -63,7 +63,9 @@ nonisolated struct AttachmentBatchItem: Identifiable {
 ///   "Upload incomplete" on the next sync.
 @Observable
 @MainActor
-final class AttachmentBatchViewModel {
+final class AttachmentBatchViewModel: Identifiable {
+
+    let id = UUID()
 
     // MARK: - Injected
 

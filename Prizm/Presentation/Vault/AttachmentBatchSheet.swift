@@ -16,7 +16,7 @@ struct AttachmentBatchSheet: View {
 
     let viewModel: AttachmentBatchViewModel
 
-    @Binding var isPresented: Bool
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -63,7 +63,7 @@ struct AttachmentBatchSheet: View {
         }
         .frame(minWidth: 440, idealWidth: 480)
         .onChange(of: viewModel.isDismissed) { _, dismissed in
-            if dismissed { isPresented = false }
+            if dismissed { dismiss() }
         }
     }
 

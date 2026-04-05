@@ -24,7 +24,9 @@ import AppKit
 ///   `NSOpenPanel` (which requires an interactive session and cannot run in XCTest).
 @Observable
 @MainActor
-final class AttachmentAddViewModel {
+final class AttachmentAddViewModel: Identifiable {
+
+    let id = UUID()
 
     // MARK: - Injected
 

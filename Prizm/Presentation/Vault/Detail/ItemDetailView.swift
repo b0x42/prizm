@@ -31,14 +31,12 @@ struct ItemDetailView: View {
     @State private var isEditSheetPresented = false
     @State private var editViewModel: ItemEditViewModel?
 
-    @State private var isAddAttachmentSheetPresented = false
+    // Both add-attachment and batch sheets use .sheet(item:) so SwiftUI receives the
+    // ViewModel directly — eliminating the race where the sheet body evaluated before
+    // the optional ViewModel state was committed, producing a blank sheet window.
     @State private var addAttachmentViewModel: AttachmentAddViewModel?
-    /// Tracks whether `NSOpenPanel` is currently blocking, independently of whether the
-    /// ViewModel is set — avoids the race where the sheet body evaluates before
-    /// `addAttachmentViewModel` is committed to SwiftUI state.
-    @State private var isPickingAttachment = false
+    @State private var isPickingAttachment = false   // drives spinner while NSOpenPanel blocks
 
-    @State private var isBatchAttachmentSheetPresented = false
     @State private var batchAttachmentViewModel: AttachmentBatchViewModel?
 
     var body: some View {
@@ -63,21 +61,15 @@ struct ItemDetailView: View {
                     ItemEditView(viewModel: vm, isPresented: $isEditSheetPresented)
                 }
             }
-            .sheet(isPresented: $isAddAttachmentSheetPresented, onDismiss: {
-                addAttachmentViewModel = nil
+            .sheet(item: $addAttachmentViewModel, onDismiss: {
                 onAttachmentsChanged?()
-            }) {
-                if let vm = addAttachmentViewModel {
-                    AttachmentConfirmSheet(viewModel: vm, isPresented: $isAddAttachmentSheetPresented)
-                }
+            }) { vm in
+                AttachmentConfirmSheet(viewModel: vm)
             }
-            .sheet(isPresented: $isBatchAttachmentSheetPresented, onDismiss: {
-                batchAttachmentViewModel = nil
+            .sheet(item: $batchAttachmentViewModel, onDismiss: {
                 onAttachmentsChanged?()
-            }) {
-                if let vm = batchAttachmentViewModel {
-                    AttachmentBatchSheet(viewModel: vm, isPresented: $isBatchAttachmentSheetPresented)
-                }
+            }) { vm in
+                AttachmentBatchSheet(viewModel: vm)
             }
             .onChange(of: editTrigger) { if !item.isDeleted { openEditSheet(for: item) } }
             .onChange(of: saveTrigger) { editViewModel?.save() }
@@ -193,7 +185,7 @@ struct ItemDetailView: View {
     }
 
     private func openAddAttachmentSheet(for item: VaultItem) {
-        guard !isAddAttachmentSheetPresented, !isPickingAttachment,
+        guard addAttachmentViewModel == nil, !isPickingAttachment,
               let factory = makeAddAttachmentViewModel else { return }
         let vm = factory(item.id)
         // isPickingAttachment drives the spinner independently of the ViewModel reference.
@@ -206,8 +198,7 @@ struct ItemDetailView: View {
             await vm.selectFile()
             isPickingAttachment = false
             if vm.isConfirming {
-                addAttachmentViewModel        = vm
-                isAddAttachmentSheetPresented = true
+                addAttachmentViewModel = vm   // non-nil → .sheet(item:) presents immediately
             }
         }
     }
@@ -215,12 +206,11 @@ struct ItemDetailView: View {
     private func openBatchAttachmentSheet(for item: VaultItem, with urls: [URL]) {
         // Reject new drops while an upload is already in progress (task 6b.4).
         if let existing = batchAttachmentViewModel, existing.isUploading { return }
-        guard !isBatchAttachmentSheetPresented,
+        guard batchAttachmentViewModel == nil,
               let factory = makeBatchAttachmentViewModel else { return }
         let vm = factory(item.id)
         vm.loadItems(from: urls)
-        batchAttachmentViewModel          = vm
-        isBatchAttachmentSheetPresented   = true
+        batchAttachmentViewModel = vm   // non-nil → .sheet(item:) presents immediately
     }
 
     @ViewBuilder
