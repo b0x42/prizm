@@ -33,6 +33,10 @@ struct ItemDetailView: View {
 
     @State private var isAddAttachmentSheetPresented = false
     @State private var addAttachmentViewModel: AttachmentAddViewModel?
+    /// Tracks whether `NSOpenPanel` is currently blocking, independently of whether the
+    /// ViewModel is set — avoids the race where the sheet body evaluates before
+    /// `addAttachmentViewModel` is committed to SwiftUI state.
+    @State private var isPickingAttachment = false
 
     @State private var isBatchAttachmentSheetPresented = false
     @State private var batchAttachmentViewModel: AttachmentBatchViewModel?
@@ -177,7 +181,7 @@ struct ItemDetailView: View {
             attachments:      item.attachments,
             onAddTapped:      { openAddAttachmentSheet(for: item) },
             onDropFiles:      { urls in openBatchAttachmentSheet(for: item, with: urls) },
-            isPicking:        addAttachmentViewModel?.isPickingFile ?? false,
+            isPicking:        isPickingAttachment,
             makeRowViewModel: makeAttachmentRowViewModel.map { factory in
                 { [onAttachmentsChanged] attachment in
                     let vm = factory(item.id, attachment)
@@ -189,20 +193,21 @@ struct ItemDetailView: View {
     }
 
     private func openAddAttachmentSheet(for item: VaultItem) {
-        guard !isAddAttachmentSheetPresented,
+        guard !isAddAttachmentSheetPresented, !isPickingAttachment,
               let factory = makeAddAttachmentViewModel else { return }
         let vm = factory(item.id)
-        addAttachmentViewModel = vm
-        // selectFile() is async so SwiftUI renders the spinner before NSOpenPanel.runModal()
-        // blocks the main thread. We observe isConfirming via the @Observable vm to show
-        // the confirmation sheet once the user picks a valid file.
+        // isPickingAttachment drives the spinner independently of the ViewModel reference.
+        // addAttachmentViewModel is only set atomically with isAddAttachmentSheetPresented so
+        // the sheet body always evaluates with non-nil data on its first render pass —
+        // eliminating the blank-sheet flash that occurred when the two writes were separated
+        // by the NSOpenPanel session.
+        isPickingAttachment = true
         Task {
             await vm.selectFile()
+            isPickingAttachment = false
             if vm.isConfirming {
+                addAttachmentViewModel        = vm
                 isAddAttachmentSheetPresented = true
-            } else {
-                // User cancelled the panel or file was invalid — no sheet to show.
-                addAttachmentViewModel = nil
             }
         }
     }
