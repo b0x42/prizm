@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 import os.log
@@ -71,6 +72,8 @@ final class AttachmentBatchViewModel: Identifiable {
 
     private let cipherId: String
     private let uploadUseCase: any UploadAttachmentUseCase
+    /// Injectable file-picker — defaults to a multi-select `NSOpenPanel`. Injected in tests.
+    private let filePicker: @MainActor () -> [URL]
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
@@ -99,9 +102,45 @@ final class AttachmentBatchViewModel: Identifiable {
 
     // MARK: - Init
 
-    init(cipherId: String, uploadUseCase: any UploadAttachmentUseCase) {
+    init(
+        cipherId:      String,
+        uploadUseCase: any UploadAttachmentUseCase,
+        filePicker:    (@MainActor () -> [URL])? = nil
+    ) {
         self.cipherId      = cipherId
         self.uploadUseCase = uploadUseCase
+        self.filePicker    = filePicker ?? AttachmentBatchViewModel.defaultNSOpenPanel
+    }
+
+    /// Default multi-select file picker using `NSOpenPanel`.
+    ///
+    /// `@MainActor` is required: macOS 26 asserts main-actor isolation at the
+    /// AppKit panel constructor site (EXC_BREAKPOINT) when the closure lacks isolation.
+    @MainActor
+    private static func defaultNSOpenPanel() -> [URL] {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles          = true
+        panel.canChooseDirectories    = false
+        panel.allowsMultipleSelection = true
+        panel.message                 = "Choose files to attach"
+        guard panel.runModal() == .OK else { return [] }
+        return panel.urls
+    }
+
+    // MARK: - File picker (button-triggered flow)
+
+    /// Opens a multi-select `NSOpenPanel`, populates `items`, and returns whether
+    /// at least one file was chosen. Used by the "Add Attachment" button so the same
+    /// batch sheet handles both drag-and-drop and file-picker flows.
+    ///
+    /// `await Task.yield()` before calling `filePicker` gives SwiftUI one render pass
+    /// to show the spinner before `NSOpenPanel.runModal()` blocks the main thread.
+    func selectFiles() async -> Bool {
+        await Task.yield()
+        let urls = filePicker()
+        guard !urls.isEmpty else { return false }
+        loadItems(from: urls)
+        return true
     }
 
     // MARK: - Load items from dropped URLs (task 6b.2)
