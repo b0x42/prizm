@@ -97,4 +97,4 @@ All existing Keychain items use `kSecAttrAccessible`, which is incompatible with
 
 ## Open Questions
 
-- Does Prizm already have a Settings screen? If not, the biometric toggle requires one to be created. The proposal assumes a settings panel — confirm scope before implementation.
+~~Does Prizm already have a Settings screen?~~ **Resolved**: Prizm does not have a Settings screen. Creating one is in scope — see `specs/settings-screen/spec.md` and tasks 8.1–8.6.
