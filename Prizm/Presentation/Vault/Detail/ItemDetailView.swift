@@ -189,14 +189,17 @@ struct ItemDetailView: View {
               let factory = makeAddAttachmentViewModel else { return }
         let vm = factory(item.id)
         addAttachmentViewModel = vm
-        // NSOpenPanel runs modally (blocking) — present it first, then show the
-        // confirmation sheet only if the user actually selected a valid file.
-        vm.selectFile()
-        if vm.isConfirming {
-            isAddAttachmentSheetPresented = true
-        } else {
-            // User cancelled the panel or file was invalid — no sheet to show.
-            addAttachmentViewModel = nil
+        // selectFile() is async so SwiftUI renders the spinner before NSOpenPanel.runModal()
+        // blocks the main thread. We observe isConfirming via the @Observable vm to show
+        // the confirmation sheet once the user picks a valid file.
+        Task {
+            await vm.selectFile()
+            if vm.isConfirming {
+                isAddAttachmentSheetPresented = true
+            } else {
+                // User cancelled the panel or file was invalid — no sheet to show.
+                addAttachmentViewModel = nil
+            }
         }
     }
 

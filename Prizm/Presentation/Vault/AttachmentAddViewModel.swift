@@ -107,8 +107,15 @@ final class AttachmentAddViewModel {
     ///
     /// Reading file size at selection time (rather than at confirm time) lets the UI display
     /// the size and advisory/error message immediately. Bytes are NOT read here.
-    func selectFile() {
+    ///
+    /// Declared `async` so callers can `await` it after setting `isPickingFile = true`,
+    /// giving SwiftUI one render pass to show the spinner before `NSOpenPanel.runModal()`
+    /// blocks the main thread. Without the `await Task.yield()`, the UI freezes between
+    /// the button tap and the panel appearing.
+    func selectFile() async {
         isPickingFile = true
+        // Yield to the run loop so SwiftUI renders the spinner before runModal() blocks.
+        await Task.yield()
         defer { isPickingFile = false }
         guard let (url, bytes) = filePicker() else { return }
 

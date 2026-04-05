@@ -41,22 +41,22 @@ final class AttachmentAddViewModelTests: XCTestCase {
 
     // MARK: - 500 MB rejection
 
-    func test_selectFile_over500MB_setSizeError() {
+    func test_selectFile_over500MB_setSizeError() async {
         let overLimit = 501 * 1024 * 1024
         let sut = makeViewModel(pickerResult: (url: tempFileURL, bytes: overLimit))
 
-        sut.selectFile()
+        await sut.selectFile()
 
         XCTAssertNotNil(sut.sizeError)
         XCTAssertFalse(sut.isConfirming)
         XCTAssertNil(sut.selectedFileURL)
     }
 
-    func test_selectFile_exactly500MB_isAllowed() {
+    func test_selectFile_exactly500MB_isAllowed() async {
         let exactly500MB = 500 * 1024 * 1024
         let sut = makeViewModel(pickerResult: (url: tempFileURL, bytes: exactly500MB))
 
-        sut.selectFile()
+        await sut.selectFile()
 
         XCTAssertNil(sut.sizeError)
         XCTAssertTrue(sut.isConfirming)
@@ -64,11 +64,11 @@ final class AttachmentAddViewModelTests: XCTestCase {
 
     // MARK: - Advisory message (50 MB – 500 MB)
 
-    func test_selectFile_between50MBAnd500MB_showsAdvisory() {
+    func test_selectFile_between50MBAnd500MB_showsAdvisory() async {
         let advisorySize = 75 * 1024 * 1024
         let sut = makeViewModel(pickerResult: (url: tempFileURL, bytes: advisorySize))
 
-        sut.selectFile()
+        await sut.selectFile()
 
         XCTAssertNotNil(sut.sizeAdvisory,
             "Advisory message should appear for files between 50 MB and 500 MB")
@@ -76,11 +76,11 @@ final class AttachmentAddViewModelTests: XCTestCase {
         XCTAssertNil(sut.sizeError)
     }
 
-    func test_selectFile_under50MB_noAdvisory() {
+    func test_selectFile_under50MB_noAdvisory() async {
         let smallSize = 10 * 1024
         let sut = makeViewModel(pickerResult: (url: tempFileURL, bytes: smallSize))
 
-        sut.selectFile()
+        await sut.selectFile()
 
         XCTAssertNil(sut.sizeAdvisory)
         XCTAssertTrue(sut.isConfirming)
@@ -90,7 +90,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
 
     func test_confirm_successfulUpload_setsDismissed() async throws {
         let sut = makeViewModel(pickerResult: (url: tempFileURL, bytes: 22))
-        sut.selectFile()
+        await sut.selectFile()
         XCTAssertTrue(sut.isConfirming)
 
         sut.confirm()
@@ -111,7 +111,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
             ),
             pickerResult: (url: tempFileURL, bytes: 22)
         )
-        sut.selectFile()
+        await sut.selectFile()
         sut.confirm()
         XCTAssertTrue(sut.isUploading)
     }
@@ -123,7 +123,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
             uploadResult: .failure(AttachmentError.premiumRequired),
             pickerResult: (url: tempFileURL, bytes: 22)
         )
-        sut.selectFile()
+        await sut.selectFile()
         sut.confirm()
 
         try await Task.sleep(for: .milliseconds(100))
@@ -136,9 +136,9 @@ final class AttachmentAddViewModelTests: XCTestCase {
 
     // MARK: - Cancel during upload
 
-    func test_cancel_setsIsDismissed() {
+    func test_cancel_setsIsDismissed() async {
         let sut = makeViewModel(pickerResult: (url: tempFileURL, bytes: 22))
-        sut.selectFile()
+        await sut.selectFile()
 
         sut.cancel()
 
@@ -154,7 +154,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
             uploadUseCase: slowUpload,
             filePicker:    { (url: self.tempFileURL, bytes: 22) }
         )
-        sut.selectFile()
+        await sut.selectFile()
         sut.confirm()
         XCTAssertTrue(sut.isUploading)
 
@@ -165,10 +165,10 @@ final class AttachmentAddViewModelTests: XCTestCase {
 
     // MARK: - Picker cancelled
 
-    func test_selectFile_pickerCancelled_noStateChange() {
+    func test_selectFile_pickerCancelled_noStateChange() async {
         let sut = makeViewModel(pickerResult: nil)
 
-        sut.selectFile()
+        await sut.selectFile()
 
         XCTAssertFalse(sut.isConfirming)
         XCTAssertNil(sut.selectedFileURL)
@@ -177,7 +177,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
 
     // MARK: - isPickingFile (task 8b.6)
 
-    func test_isPickingFile_trueWhilePickerIsRunning() {
+    func test_isPickingFile_trueWhilePickerIsRunning() async {
         var capturedDuringPick = false
         // The filePicker closure runs synchronously inside selectFile() while
         // isPickingFile is true — capture the value mid-call.
@@ -193,13 +193,13 @@ final class AttachmentAddViewModelTests: XCTestCase {
             }
         )
 
-        sut.selectFile()
+        await sut.selectFile()
 
         XCTAssertTrue(capturedDuringPick, "isPickingFile must be true while the picker is running")
         XCTAssertFalse(sut.isPickingFile, "isPickingFile must be false after picker returns")
     }
 
-    func test_isPickingFile_falseAfterCancel() {
+    func test_isPickingFile_falseAfterCancel() async {
         var capturedDuringPick = false
         let sut = AttachmentAddViewModel(
             cipherId:      "cipher-1",
@@ -213,7 +213,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
             }
         )
 
-        sut.selectFile()
+        await sut.selectFile()
 
         XCTAssertTrue(capturedDuringPick, "isPickingFile must be true while the picker is running")
         XCTAssertFalse(sut.isPickingFile, "isPickingFile must be false after cancel")
