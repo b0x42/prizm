@@ -16,9 +16,9 @@
 
 - [ ] 3.1 Write failing unit tests for `AuthRepositoryImpl` biometric methods (mock `BiometricKeychainService`)
 - [ ] 3.2 Implement `biometricUnlockAvailable` — check `LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics)` AND biometric Keychain item exists
-- [ ] 3.3 Implement `enableBiometricUnlock()` — serialize `CryptoKeys` as 64-byte blob (`encryptionKey || macKey`), write to biometric Keychain
+- [ ] 3.3 Implement `enableBiometricUnlock()` — guard that `PrizmCryptoService` has keys in memory (vault is unlocked), throwing `AuthError.biometricUnavailable` if not; serialize `CryptoKeys` as 64-byte blob (`encryptionKey || macKey`), write to biometric Keychain
 - [ ] 3.4 Implement `disableBiometricUnlock()` — delete biometric Keychain item, set `UserDefaults.biometricUnlockEnabled = false`
-- [ ] 3.5 Implement `unlockWithBiometrics()` — read biometric Keychain item, deserialize `CryptoKeys`, call `crypto.unlockWith(keys:)`, restore API client state, return `Account`; handle `.biometryCurrentSet` invalidation error → delete item + throw `AuthError.biometricInvalidated`
+- [ ] 3.5 Implement `unlockWithBiometrics()` — read biometric Keychain item, deserialize `CryptoKeys`, call `crypto.unlockWith(keys:)`, restore API client state, return `Account`; on `.biometryCurrentSet` invalidation error → delete Keychain item, set `biometricUnlockEnabled = false`, reset `biometricEnrollmentPromptShown = false`, throw `AuthError.biometricInvalidated`
 - [ ] 3.6 Add `AuthError.biometricInvalidated` and `AuthError.biometricUnavailable` cases with localized descriptions
 - [ ] 3.7 Update `signOut()` in `AuthRepositoryImpl` to call `disableBiometricUnlock()` (delete biometric Keychain item + clear preference)
 
@@ -33,8 +33,8 @@
 - [ ] 5.2 Add `unlockWithBiometrics()` to `UnlockViewModel` — call `auth.unlockWithBiometrics()`, on success call `performSync()`, on `.biometricInvalidated` show invalidation message, on cancellation show no error
 - [ ] 5.3 Add `var biometricUnlockAvailable: Bool` computed property to `UnlockViewModel`
 - [ ] 5.4 Add `triggerBiometricUnlockIfAvailable()` to `UnlockViewModel` — calls `unlockWithBiometrics()` only if available; no-op otherwise
-- [ ] 5.5 Add `showEnrollmentPrompt: Bool` published property to `UnlockViewModel`; set to `true` after successful password unlock when biometrics are available and not yet enabled and prompt not yet shown this session
-- [ ] 5.6 Add `confirmEnrollBiometric()` and `dismissEnrollmentPrompt()` actions to `UnlockViewModel`
+- [ ] 5.5 Add `showEnrollmentPrompt: Bool` and `enrollmentReason: EnrollmentReason` published properties to `UnlockViewModel`; set after successful password unlock when biometrics are available AND `biometricUnlockEnabled` is `false` AND `biometricEnrollmentPromptShown` is `false`; reason is `.reEnrollAfterInvalidation` if `AuthError.biometricInvalidated` was thrown on the previous unlock attempt, otherwise `.firstTime`
+- [ ] 5.6 Add `confirmEnrollBiometric()` and `dismissEnrollmentPrompt()` actions to `UnlockViewModel`; both set `UserDefaults.biometricEnrollmentPromptShown = true` before dismissing
 
 ## 6. UnlockView — Biometric UI
 
@@ -46,14 +46,17 @@
 
 ## 7. BiometricEnrollmentPromptView
 
-- [ ] 7.1 Create `BiometricEnrollmentPromptView` — sheet with icon, "Enable Touch ID to unlock faster" heading, brief description, `[Enable Touch ID]` and `[Not now]` buttons; wire to `UnlockViewModel`
-- [ ] 7.2 Write UI test for enrollment prompt — appears after password unlock, accept and dismiss paths
+- [ ] 7.1 Create `BiometricEnrollmentPromptView` with a `reason: EnrollmentReason` parameter (`.firstTime` / `.reEnrollAfterInvalidation`); first-time copy: heading "Enable Touch ID to unlock faster", body "You can also enable this in Settings at any time."; re-enroll copy: heading "Re-enable Touch ID", body "Your Touch ID settings changed — a fingerprint was added or removed. For your security, Prizm disabled Touch ID unlock. Would you like to re-enable it?"; both show `[Enable Touch ID]` / `[Re-enable Touch ID]` and `[Not now]` buttons wired to `UnlockViewModel`
+- [ ] 7.2 Write UI tests for enrollment prompt — first-time copy, re-enroll copy, accept path, dismiss path
 
-## 8. Settings Toggle
+## 8. Settings Screen & Toolbar Button
 
-- [ ] 8.1 Confirm whether a Settings screen exists; if not, create a minimal `SettingsView` accessible from the app menu (⌘,)
-- [ ] 8.2 Add `BiometricUnlockToggle` component to Settings — visible only when device supports biometrics; reads/writes `auth.biometricUnlockAvailable` and `UserDefaults.biometricUnlockEnabled`
-- [ ] 8.3 Write unit test for Settings toggle enable/disable paths via `UnlockViewModel` or a dedicated `SettingsViewModel`
+- [ ] 8.1 Add a SwiftUI `Settings { SettingsView() }` scene to `PrizmApp.swift` — this gives ⌘, for free via macOS conventions
+- [ ] 8.2 Create `SettingsView` with a Security section containing `BiometricUnlockToggle`; hidden entirely when device has no biometrics
+- [ ] 8.3 Add gear `ToolbarItem` to the detail column toolbar in `VaultBrowserView` (next to the search field); wire to `openSettings` environment action
+- [ ] 8.4 Add `AccessibilityID.Vault.settingsButton` identifier to the gear toolbar button
+- [ ] 8.5 Create `BiometricUnlockToggle` component — visible when biometrics available; disabled with explanatory label when vault is locked; reads/writes `biometricUnlockEnabled` via `AuthRepository`
+- [ ] 8.6 Write unit tests for `BiometricUnlockToggle` enable/disable paths and vault-locked disabled state
 
 ## 9. UI Journey Tests
 
@@ -66,3 +69,4 @@
 - [ ] 10.2 Remove any `TODO: biometric unlock` comments from existing code
 - [ ] 10.3 Verify build compiles in Swift 6 strict concurrency mode with no warnings
 - [ ] 10.4 Manual smoke test: enable Touch ID, lock vault, confirm auto-prompt fires, confirm unlock succeeds
+- [ ] 10.5 Update `SECURITY.md` — document biometric Keychain item: what is stored (`CryptoKeys`, 64 bytes), access control (`.biometryCurrentSet`, Secure Enclave-backed), conditions under which the item is created (user opt-in, vault unlocked) and deleted (sign-out, disable toggle, biometric invalidation), and that `kSecAttrSynchronizable` is not set (device-only, never backed up)

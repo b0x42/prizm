@@ -31,27 +31,37 @@ The system SHALL provide a biometric unlock path that re-opens the vault without
 
 ---
 
-### Requirement: User can enroll in biometric unlock after a successful password unlock
-After a successful password unlock, the system SHALL check whether biometric unlock is available on the device and has not yet been enabled. If both conditions are met, the system SHALL present a one-time enrollment prompt offering to enable biometric unlock. The user SHALL be able to accept or dismiss the prompt. Dismissal SHALL be remembered so the prompt does not appear again in the same session.
+### Requirement: User is offered biometric unlock once after their first successful password unlock
+After a successful password unlock, if biometric authentication is available on the device and the enrollment prompt has never been shown before, the system SHALL present the prompt exactly once. The prompt SHALL inform the user that the setting is also accessible in Settings. After the prompt is shown — regardless of the user's choice — it SHALL never appear again. Biometric unlock can still be enabled at any time via the Settings toggle.
 
 #### Scenario: Enrollment prompt appears after first successful password unlock
-- **GIVEN** biometrics are available on the device AND biometric unlock is not currently enabled AND the prompt has not been shown this session
+- **GIVEN** biometrics are available on the device AND biometric unlock is not currently enabled AND the enrollment prompt has never been shown before (`biometricEnrollmentPromptShown` is `false`)
 - **WHEN** the user successfully unlocks the vault with their master password
-- **THEN** the system SHALL present an enrollment prompt: "Enable Touch ID to unlock faster"
+- **THEN** the system SHALL present an enrollment prompt with the heading "Enable Touch ID to unlock faster" and the body "You can also enable this in Settings at any time."
+
+#### Scenario: Enrollment prompt is never shown a second time
+- **GIVEN** the enrollment prompt has previously been shown (regardless of the user's choice)
+- **WHEN** the user successfully unlocks the vault with their master password
+- **THEN** the enrollment prompt SHALL NOT appear
 
 #### Scenario: User accepts enrollment prompt
 - **WHEN** the user taps "Enable Touch ID" on the enrollment prompt
-- **THEN** the system SHALL store the vault key in a biometric-protected Keychain item AND set `biometricUnlockEnabled = true` AND the prompt SHALL be dismissed
+- **THEN** the system SHALL store the vault key in a biometric-protected Keychain item AND set `biometricUnlockEnabled = true` AND set `biometricEnrollmentPromptShown = true` AND dismiss the prompt
 
 #### Scenario: User dismisses enrollment prompt
 - **WHEN** the user taps "Not now" on the enrollment prompt
-- **THEN** the prompt SHALL be dismissed and SHALL NOT appear again this session
+- **THEN** the prompt SHALL be dismissed AND `biometricEnrollmentPromptShown` SHALL be set to `true`
 - **AND** biometric unlock SHALL remain disabled
 
 ---
 
 ### Requirement: User can enable and disable biometric unlock from Settings
-The system SHALL provide a toggle in Settings to enable or disable biometric unlock at any time. Enabling SHALL store the vault key in a biometric-protected Keychain item; disabling SHALL delete that item.
+The system SHALL provide a toggle in Settings to enable or disable biometric unlock at any time. Enabling SHALL store the vault key in a biometric-protected Keychain item; disabling SHALL delete that item. Enabling requires the vault to be unlocked — the vault symmetric key must be in memory to be stored.
+
+#### Scenario: Cannot enable biometric unlock while vault is locked
+- **GIVEN** the vault is currently locked
+- **WHEN** `enableBiometricUnlock()` is called (e.g. via the Settings toggle)
+- **THEN** the system SHALL throw `AuthError.biometricUnavailable` and the biometric Keychain item SHALL NOT be written
 
 #### Scenario: Enable biometric unlock from Settings
 - **GIVEN** the vault is unlocked and biometric unlock is currently disabled
@@ -71,18 +81,25 @@ The system SHALL provide a toggle in Settings to enable or disable biometric unl
 ---
 
 ### Requirement: Biometric unlock is invalidated gracefully when fingerprint enrollment changes
-When the system reports that the biometric Keychain item is no longer accessible (`.biometryCurrentSet` invalidated due to enrollment change), the system SHALL inform the user, clear the biometric preference, and re-offer enrollment after the next successful password unlock.
+When the system reports that the biometric Keychain item is no longer accessible (`.biometryCurrentSet` invalidated due to enrollment change), the system SHALL inform the user, clear the biometric preference, and re-offer re-enrollment after the next successful password unlock using a distinct prompt that explains why re-enrollment is needed.
 
 #### Scenario: Biometric unlock fails due to enrollment change
 - **GIVEN** biometric unlock was previously enabled AND the user has since added or removed a fingerprint
 - **WHEN** the vault locks and the biometric prompt fires
 - **THEN** the biometric unlock SHALL fail and the system SHALL display: "Your Touch ID settings have changed. Please enter your master password to continue."
-- **AND** `biometricUnlockEnabled` SHALL be set to `false` and the biometric Keychain item SHALL be deleted
+- **AND** `biometricUnlockEnabled` SHALL be set to `false`, the biometric Keychain item SHALL be deleted, and `biometricEnrollmentPromptShown` SHALL be reset to `false`
 
-#### Scenario: Re-enrollment is offered after invalidation
-- **GIVEN** biometric unlock was invalidated on the previous lock/unlock cycle
+#### Scenario: Re-enrollment prompt is offered after invalidation
+- **GIVEN** biometric unlock was invalidated on the previous lock/unlock cycle (`biometricEnrollmentPromptShown` was reset to `false`)
 - **WHEN** the user successfully unlocks the vault with their master password
-- **THEN** the enrollment prompt SHALL be shown again (same as first-time enrollment)
+- **THEN** the system SHALL present a re-enrollment prompt with the heading "Re-enable Touch ID" and the body "Your Touch ID settings changed — a fingerprint was added or removed. For your security, Prizm disabled Touch ID unlock. Would you like to re-enable it?"
+- **AND** the prompt SHALL offer `[Re-enable Touch ID]` and `[Not now]` actions
+
+#### Scenario: Re-enrollment prompt behaves identically to first-time enrollment on accept or dismiss
+- **WHEN** the user taps "Re-enable Touch ID"
+- **THEN** the system SHALL store the vault key in a biometric-protected Keychain item, set `biometricUnlockEnabled = true`, and set `biometricEnrollmentPromptShown = true`
+- **WHEN** the user taps "Not now"
+- **THEN** the prompt SHALL be dismissed, `biometricEnrollmentPromptShown` SHALL be set to `true`, and biometric unlock SHALL remain disabled
 
 ---
 

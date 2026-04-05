@@ -35,9 +35,11 @@ All existing Keychain items use `kSecAttrAccessible`, which is incompatible with
 
 ### 2. `.biometryCurrentSet` access control flag
 
-**Decision**: Use `SecAccessControlCreateWithFlags` with `.biometryCurrentSet`.
+**Decision**: Use `SecAccessControlCreateWithFlags` with `.biometryCurrentSet`. `kSecAttrSynchronizable` is not set on the biometric Keychain item — it remains device-only and is never backed up or synced to iCloud, satisfying Constitution Security Requirement property (1).
 
 **Rationale**: `.biometryCurrentSet` invalidates the Keychain item if the user adds or removes a fingerprint. This means a newly enrolled fingerprint cannot silently access an existing vault. `.biometryAny` is weaker — it would allow any fingerprint enrolled after the user opted in to unlock the vault without their knowledge.
+
+**On "UserKey MUST NOT be exported" (Bitwarden normative)**: Storing `CryptoKeys` in a biometric-protected Keychain item is on-device protected storage, not an export. The key never crosses a process boundary, a device boundary, or a network boundary. It is gated by the Secure Enclave and the user's enrolled biometrics. This satisfies the Bitwarden requirement's intent — preventing key escrow and ambient-authority decryption — while enabling biometric unlock.
 
 **Alternative rejected**: `.biometryAny` — convenient but grants implicit access to newly added biometrics.
 
@@ -66,6 +68,12 @@ All existing Keychain items use `kSecAttrAccessible`, which is incompatible with
 **Decision**: `UserDefaults.biometricUnlockEnabled` is used only as a UI hint (show/hide Touch ID button). The authoritative check before attempting biometric unlock is `BiometricKeychainService.readBiometric(key:)` — if the item is gone (invalidated or deleted), the attempt fails gracefully.
 
 **Rationale**: A UserDefaults flag alone can get out of sync with the Keychain (e.g. app reinstall, manual Keychain clear). Treating the Keychain as source of truth means the UI may show the Touch ID button but the attempt simply fails with an `.itemNotFound` error, which is handled by falling back to password and clearing the flag.
+
+**One-time enrollment prompt**: A second UserDefaults flag, `biometricEnrollmentPromptShown`, tracks whether the enrollment prompt has ever been shown. It is set to `true` after the prompt is presented — regardless of whether the user taps "Enable" or "Not now" — and is never reset under normal conditions. This means the prompt fires exactly once in the lifetime of the app install. After dismissal in either direction, the Settings toggle is the only way to enable biometric unlock. The prompt copy informs the user of this: *"You can also enable this in Settings at any time."*
+
+**Re-enrollment after invalidation**: If `.biometryCurrentSet` invalidation is detected, `biometricEnrollmentPromptShown` is reset to `false` alongside clearing `biometricUnlockEnabled` and the Keychain item. This causes the prompt to fire again after the next successful password unlock, but with different copy explaining why re-enrollment is needed: *"Your Touch ID settings changed — a fingerprint was added or removed. For your security, Prizm disabled Touch ID unlock."* The `BiometricEnrollmentPromptView` accepts a `reason` parameter (`.firstTime` / `.reenrollAfterInvalidation`) to switch copy accordingly.
+
+**Alternative rejected**: Session-scoped in-memory flag — would re-show the prompt on every app launch until the user opts in, which becomes repetitive.
 
 ---
 

@@ -16,6 +16,7 @@ Typing the master password every time the vault locks is slow and creates fricti
 ### New Capabilities
 
 - `biometric-unlock`: End-to-end biometric vault unlock — enrollment, auto-prompt on lock, invalidation handling, and settings toggle
+- `settings-screen`: macOS Settings window (⌘,) with a gear toolbar button next to the vault search field; initially contains the biometric unlock toggle
 
 ### Modified Capabilities
 
