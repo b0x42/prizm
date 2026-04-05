@@ -61,34 +61,31 @@ struct AttachmentRowView: View {
 
     @ViewBuilder
     private var normalActions: some View {
-        HStack(spacing: 4) {
-            Button {
-                onOpen()
-            } label: {
-                Label("Open", systemImage: "arrow.down.to.line")
-                    .labelStyle(.titleOnly)
+        HStack(spacing: 8) {
+            Button { onOpen() } label: {
+                Text("open")
+                    .font(.headline)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.accentColor)
             }
-            .buttonStyle(.borderless)
-            .font(Typography.utility)
+            .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityID.Attachment.openButton(attachment.id))
 
-            Button {
-                onSaveToDisk()
-            } label: {
-                Label("Save", systemImage: "tray.and.arrow.down")
-                    .labelStyle(.titleOnly)
+            Button { onSaveToDisk() } label: {
+                Text("save")
+                    .font(.headline)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.accentColor)
             }
-            .buttonStyle(.borderless)
-            .font(Typography.utility)
+            .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityID.Attachment.saveButton(attachment.id))
 
-            Button(role: .destructive) {
-                onDelete()
-            } label: {
+            Button { onDelete() } label: {
                 Image(systemName: "trash")
+                    .imageScale(.medium)
+                    .foregroundStyle(Color.red)
             }
-            .buttonStyle(.borderless)
-            .font(Typography.utility)
+            .buttonStyle(.plain)
             .accessibilityIdentifier(AccessibilityID.Attachment.deleteButton(attachment.id))
         }
         .transition(.opacity)
