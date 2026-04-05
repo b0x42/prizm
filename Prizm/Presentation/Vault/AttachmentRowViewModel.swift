@@ -29,9 +29,11 @@ final class AttachmentRowViewModel {
     private let uploadUseCase:        any UploadAttachmentUseCase
     private let tempFileManager:      any TempFileManaging
     /// Injectable file-saver: defaults to `NSSavePanel`. Injected in tests.
-    private let fileSaver:            (_ suggestedName: String) -> URL?
+    /// Must be `@MainActor` — AppKit panel classes require main-actor isolation
+    /// on macOS 26 and will trap at the constructor site otherwise.
+    private let fileSaver:            @MainActor (_ suggestedName: String) -> URL?
     /// Injectable file-picker for Retry: defaults to `NSOpenPanel`. Injected in tests.
-    private let retryFilePicker:      () -> URL?
+    private let retryFilePicker:      @MainActor () -> URL?
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
@@ -51,8 +53,8 @@ final class AttachmentRowViewModel {
         deleteUseCase:   any DeleteAttachmentUseCase,
         uploadUseCase:   any UploadAttachmentUseCase,
         tempFileManager: any TempFileManaging,
-        fileSaver:       ((_ suggestedName: String) -> URL?)? = nil,
-        retryFilePicker: (() -> URL?)? = nil
+        fileSaver:       (@MainActor (_ suggestedName: String) -> URL?)? = nil,
+        retryFilePicker: (@MainActor () -> URL?)? = nil
     ) {
         self.cipherId        = cipherId
         self.attachment      = attachment
@@ -222,6 +224,10 @@ final class AttachmentRowViewModel {
 
     // MARK: - Default panel implementations (production)
 
+    /// `@MainActor` is required: on macOS 26, AppKit panel classes assert main-actor
+    /// isolation at the constructor site (EXC_BREAKPOINT) when accessed via a
+    /// non-isolated function pointer, even when the calling thread is the main thread.
+    @MainActor
     private static func defaultSavePanel(suggestedName: String) -> URL? {
         let panel                 = NSSavePanel()
         panel.nameFieldStringValue = suggestedName
@@ -229,7 +235,9 @@ final class AttachmentRowViewModel {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    private static let defaultOpenPanel: () -> URL? = {
+    /// Same `@MainActor` requirement as `defaultSavePanel`.
+    @MainActor
+    private static func defaultOpenPanel() -> URL? {
         let panel = NSOpenPanel()
         panel.canChooseFiles          = true
         panel.canChooseDirectories    = false
