@@ -110,13 +110,20 @@ final class AttachmentRowViewModel {
     /// Zeroes the in-memory buffer immediately after writing (Constitution §III).
     func saveToDisk() {
         guard !isLoading else { return }
-        guard let saveURL = fileSaver(attachment.fileName) else { return }   // user cancelled
-
         isLoading   = true
         actionError = nil
 
-        Task { [weak self] in
+        // NSSavePanel must be constructed outside the SwiftUI button-action dispatch frame on
+        // macOS 26 — calling it synchronously from a SwiftUI action handler triggers an AppKit
+        // main-actor assertion (EXC_BREAKPOINT) even on the main thread. Deferring via Task
+        // advances past the current run-loop turn, satisfying the requirement.
+        Task { @MainActor [weak self] in
             guard let self else { return }
+            guard let saveURL = self.fileSaver(self.attachment.fileName) else {
+                // User cancelled the panel.
+                self.isLoading = false
+                return
+            }
             do {
                 var data = try await self.downloadUseCase.execute(
                     cipherId:   self.cipherId,
@@ -167,13 +174,18 @@ final class AttachmentRowViewModel {
     /// - Security: file bytes are read at picker confirmation, uploaded, then zeroed.
     func retryUpload() {
         guard !isRetrying, attachment.isUploadIncomplete else { return }
-        guard let fileURL = retryFilePicker() else { return }   // user cancelled
-
         isRetrying  = true
         retryError  = nil
 
-        Task { [weak self] in
+        // Same run-loop-turn deferral as saveToDisk — NSOpenPanel asserts @MainActor at
+        // the constructor site on macOS 26 when called synchronously from a SwiftUI action.
+        Task { @MainActor [weak self] in
             guard let self else { return }
+            guard let fileURL = self.retryFilePicker() else {
+                // User cancelled the panel.
+                self.isRetrying = false
+                return
+            }
 
             var fileData: Data
             do {
