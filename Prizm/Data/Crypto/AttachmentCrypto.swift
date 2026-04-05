@@ -41,7 +41,7 @@ nonisolated enum AttachmentCryptoError: Error, Equatable {
 /// attacks (Vaudenay, 2002).
 extension PrizmCryptoServiceImpl {
 
-    private nonisolated(unsafe) static let logger = Logger(subsystem: "com.prizm", category: "attachments")
+    private static let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
     // MARK: - 2.1 generateAttachmentKey
 
