@@ -185,18 +185,20 @@ struct ItemDetailView: View {
     }
 
     private func openAddAttachmentSheet(for item: VaultItem) {
-        // Both button-triggered and drag-and-drop uploads use the same batch sheet.
-        // The batch VM's selectFiles() opens a multi-select NSOpenPanel so the user
-        // can pick one or more files in a single interaction.
-        guard batchAttachmentViewModel == nil, !isPickingAttachment,
-              let factory = makeBatchAttachmentViewModel else { return }
+        guard addAttachmentViewModel == nil, !isPickingAttachment,
+              let factory = makeAddAttachmentViewModel else { return }
         let vm = factory(item.id)
+        // isPickingAttachment drives the spinner independently of the ViewModel reference.
+        // addAttachmentViewModel is only set atomically with isAddAttachmentSheetPresented so
+        // the sheet body always evaluates with non-nil data on its first render pass —
+        // eliminating the blank-sheet flash that occurred when the two writes were separated
+        // by the NSOpenPanel session.
         isPickingAttachment = true
         Task {
-            let picked = await vm.selectFiles()
+            await vm.selectFile()
             isPickingAttachment = false
-            if picked {
-                batchAttachmentViewModel = vm   // non-nil → .sheet(item:) presents immediately
+            if vm.isConfirming {
+                addAttachmentViewModel = vm   // non-nil → .sheet(item:) presents immediately
             }
         }
     }
