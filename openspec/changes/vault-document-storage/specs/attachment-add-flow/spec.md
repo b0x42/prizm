@@ -148,9 +148,11 @@ If the vault locks while an upload is in progress, the system SHALL cancel the u
 ### Requirement: Add Attachment button shows picking state while file panel is open
 `AttachmentAddViewModel` SHALL expose a `isPickingFile: Bool` property that is `true` while `NSOpenPanel.runModal()` is executing and `false` at all other times. `AttachmentsSectionView` SHALL accept an `isPicking: Bool` parameter and, when `true`, SHALL disable the "Add Attachment" button and replace the paperclip icon with a small `ProgressView` so the UI does not appear unresponsive during the NSOpenPanel blocking call.
 
+`selectFile()` SHALL be declared `async`. The implementation SHALL call `await Task.yield()` after setting `isPickingFile = true` and before invoking `NSOpenPanel.runModal()`, giving SwiftUI one render pass to display the spinner before the main thread is blocked. The call site in `ItemDetailView` SHALL invoke `selectFile()` inside a `Task { await vm.selectFile() }` so the button action returns immediately and the async work proceeds on the main actor.
+
 #### Scenario: Button disables while panel is open
 - **WHEN** the user clicks "Add Attachment"
-- **THEN** `isPickingFile` SHALL be set to `true` before `NSOpenPanel` runs
+- **THEN** `isPickingFile` SHALL be set to `true` and SwiftUI SHALL render the spinner before `NSOpenPanel` opens
 - **AND** the "Add Attachment" button SHALL be disabled and show a spinner
 
 #### Scenario: Button re-enables after file selected
