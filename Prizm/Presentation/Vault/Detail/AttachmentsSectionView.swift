@@ -122,42 +122,51 @@ struct AttachmentsSectionView: View {
 /// Thin wrapper that creates an `AttachmentRowViewModel` for a single row and forwards
 /// its actions to `AttachmentRowView`. Separated so the ForEach in `AttachmentsSectionView`
 /// can own one ViewModel per row without nesting @State awkwardly.
+///
+/// The ViewModel is initialised eagerly via `State(initialValue:)` so the row renders
+/// on the very first pass. The previous `onAppear`-based pattern left an empty `Group`
+/// visible until `onAppear` fired, which could be delayed or skipped on macOS when the
+/// wrapping `Group` has no visual content on first render.
 private struct AttachmentRowViewWithViewModel: View {
 
     let attachment: Attachment
     let factory:    (Attachment) -> AttachmentRowViewModel
 
-    @State private var viewModel: AttachmentRowViewModel?
+    @State private var viewModel: AttachmentRowViewModel
     @State private var showDeleteAlert = false
 
+    init(attachment: Attachment, factory: (Attachment) -> AttachmentRowViewModel) {
+        self.attachment = attachment
+        self.factory    = factory
+        // State(initialValue:) stores the value only on the first insertion into the
+        // view hierarchy; subsequent re-renders preserve the existing state value, so
+        // the factory is not called more than once per logical row lifetime.
+        _viewModel      = State(initialValue: factory(attachment))
+    }
+
     var body: some View {
-        Group {
-            if let vm = viewModel {
-                AttachmentRowView(
-                    attachment:   vm.attachment,
-                    onOpen:       { vm.open() },
-                    onSaveToDisk: { vm.saveToDisk() },
-                    onDelete:     { showDeleteAlert = true },
-                    onRetry:      { vm.retryUpload() }
-                )
-                .alert("Delete Attachment", isPresented: $showDeleteAlert) {
-                    Button("Delete", role: .destructive) { vm.delete() }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text(verbatim: "\u{201C}" + vm.attachment.fileName + "\u{201D} will be permanently deleted.")
-                }
-                .overlay(alignment: .bottom) {
-                    if let error = vm.actionError ?? vm.retryError {
-                        Text(error)
-                            .font(Typography.utility)
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, Spacing.rowHorizontal)
-                            .transition(.opacity)
-                    }
-                }
+        AttachmentRowView(
+            attachment:   viewModel.attachment,
+            onOpen:       { viewModel.open() },
+            onSaveToDisk: { viewModel.saveToDisk() },
+            onDelete:     { showDeleteAlert = true },
+            onRetry:      { viewModel.retryUpload() }
+        )
+        .alert("Delete Attachment", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) { viewModel.delete() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(verbatim: "\u{201C}" + viewModel.attachment.fileName + "\u{201D} will be permanently deleted.")
+        }
+        .overlay(alignment: .bottom) {
+            if let error = viewModel.actionError ?? viewModel.retryError {
+                Text(error)
+                    .font(Typography.utility)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, Spacing.rowHorizontal)
+                    .transition(.opacity)
             }
         }
-        .onAppear { viewModel = factory(attachment) }
     }
 }
 

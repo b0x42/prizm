@@ -263,6 +263,12 @@ final class VaultBrowserViewModel: ObservableObject {
         syncTimestamp.recordSuccessfulSync()
         refreshItems()
         refreshCounts()
+        // Re-read the selected item from the vault store so its attachment list
+        // reflects the latest sync data. Without this, itemSelection can be a
+        // stale copy (e.g. from before a cipher-key fix that silently dropped
+        // attachments), and the detail pane would show "No attachments" even
+        // after a sync that correctly mapped them.
+        refreshItemSelection()
         syncErrorMessage = nil
     }
 
