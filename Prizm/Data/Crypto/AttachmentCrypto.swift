@@ -41,6 +41,8 @@ nonisolated enum AttachmentCryptoError: Error, Equatable {
 /// attacks (Vaudenay, 2002).
 extension PrizmCryptoServiceImpl {
 
+    private nonisolated(unsafe) static let logger = Logger(subsystem: "com.prizm", category: "attachments")
+
     // MARK: - 2.1 generateAttachmentKey
 
     /// Generates a cryptographically random 64-byte per-attachment key.
@@ -58,6 +60,7 @@ extension PrizmCryptoServiceImpl {
         var keyBytes = [UInt8](repeating: 0, count: 64)
         let status = SecRandomCopyBytes(kSecRandomDefault, 64, &keyBytes)
         guard status == errSecSuccess else {
+            Self.logger.error("SecRandomCopyBytes failed generating attachment key (OSStatus \(status))")
             throw AttachmentCryptoError.keyGenerationFailed
         }
         return Data(keyBytes)
@@ -132,6 +135,7 @@ extension PrizmCryptoServiceImpl {
         }
         // Minimum: 16 (IV) + 1 (ciphertext) + 32 (HMAC) = 49
         guard data.count >= 49 else {
+            Self.logger.error("Attachment blob too short to decrypt: \(data.count) bytes (minimum 49)")
             throw AttachmentCryptoError.blobTooShort
         }
 
@@ -145,6 +149,7 @@ extension PrizmCryptoServiceImpl {
 
         // Verify HMAC over IV ‖ ciphertext before decrypting (Encrypt-then-MAC).
         guard CryptoKeys.verifyHmacSHA256(key: macKey, data: iv + ciphertext, expected: mac) else {
+            Self.logger.error("Attachment blob MAC verification failed — blob may be corrupt or tampered")
             throw AttachmentCryptoError.macMismatch
         }
 
