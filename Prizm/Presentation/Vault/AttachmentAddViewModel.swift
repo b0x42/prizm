@@ -96,7 +96,7 @@ final class AttachmentAddViewModel: Identifiable {
         let panel = NSOpenPanel()
         panel.canChooseFiles          = true
         panel.canChooseDirectories    = false
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
         panel.message                 = "Choose a file to attach"
         guard panel.runModal() == .OK, let url = panel.url else { return nil }
         let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
