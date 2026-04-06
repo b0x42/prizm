@@ -119,7 +119,16 @@ final class AttachmentBatchViewModel: Identifiable {
 
     // MARK: - Confirm (task 6b.5)
 
-    /// Launches concurrent upload Tasks for all valid items.
+    /// Maximum number of concurrent upload tasks.
+    ///
+    /// Limits memory pressure (each in-flight upload holds up to 500 MB of file bytes)
+    /// and avoids overwhelming the server or saturating the user's upstream bandwidth.
+    /// 4 was chosen as a balance: high enough to keep the connection pipeline busy on
+    /// fast networks, low enough that worst-case memory is ~2 GB (4 × 500 MB) rather
+    /// than unbounded.
+    private static let maxConcurrentUploads = 4
+
+    /// Launches up to `maxConcurrentUploads` concurrent upload Tasks for valid items.
     ///
     /// Each Task: (1) reads file bytes at confirm time; (2) uploads; (3) zeroes bytes.
     /// Per-item state is updated as each Task completes. The sheet dismisses automatically
@@ -134,28 +143,47 @@ final class AttachmentBatchViewModel: Identifiable {
             return
         }
 
-        for index in validIndices {
-            items[index].state = .uploading
-            let item = items[index]
-
-            let task = Task { [weak self] in
-                guard let self else { return }
-                await self.uploadItem(item, at: index)
-            }
-            uploadTasks.append(task)
+        // Feed indices through an AsyncStream so at most `maxConcurrentUploads` run
+        // at once. Each worker pulls the next index when it finishes, keeping the
+        // pipeline full without launching all tasks up front.
+        let (stream, continuation) = AsyncStream<Int>.makeStream()
+        for idx in validIndices {
+            items[idx].state = .uploading
+            continuation.yield(idx)
         }
+        continuation.finish()
 
-        // Watch for all-done to auto-dismiss
-        Task { [weak self] in
+        let coordinator = Task { [weak self] in
             guard let self else { return }
-            for t in self.uploadTasks { await t.value }
+            await withTaskGroup(of: Void.self) { group in
+                var iterator = stream.makeAsyncIterator()
+                // Seed the group with up to maxConcurrentUploads workers.
+                for _ in 0..<Self.maxConcurrentUploads {
+                    guard let idx = await iterator.next() else { break }
+                    let item = self.items[idx]
+                    group.addTask { [weak self] in
+                        guard let self else { return }
+                        await self.uploadItem(item, at: idx)
+                    }
+                }
+                // As each worker finishes, start the next queued item.
+                for await _ in group {
+                    if let idx = await iterator.next() {
+                        let item = self.items[idx]
+                        group.addTask { [weak self] in
+                            guard let self else { return }
+                            await self.uploadItem(item, at: idx)
+                        }
+                    }
+                }
+            }
             self.uploadTasks.removeAll()
             self.isUploading = false
-            // Auto-dismiss only if all items succeeded
             if self.items.allSatisfy({ $0.state == .succeeded || $0.state == .tooLarge }) {
                 self.isDismissed = true
             }
         }
+        uploadTasks.append(coordinator)
     }
 
     // MARK: - Cancel (task 6b.7)
