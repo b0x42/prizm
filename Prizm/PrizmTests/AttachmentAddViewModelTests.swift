@@ -152,7 +152,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
         let sut = AttachmentAddViewModel(
             cipherId:      "cipher-1",
             uploadUseCase: slowUpload,
-            filePicker:    { (url: self.tempFileURL, bytes: 22) }
+            filePicker:    { [(url: self.tempFileURL, bytes: 22)] }
         )
         await sut.selectFile()
         sut.confirm()
@@ -178,44 +178,47 @@ final class AttachmentAddViewModelTests: XCTestCase {
     // MARK: - isPickingFile (task 8b.6)
 
     func test_isPickingFile_trueWhilePickerIsRunning() async {
-        var capturedDuringPick = false
-        // The filePicker closure runs synchronously inside selectFile() while
-        // isPickingFile is true — capture the value mid-call.
+        // `selectFile()` sets isPickingFile = true then suspends at Task.yield() before
+        // calling filePicker(). By launching selectFile() in a child Task and yielding once
+        // from the test, we can observe isPickingFile between those two suspension points —
+        // avoiding the [weak sut] nil-capture problem that occurs when the closure is created
+        // before the init assigns sut.
         let sut = AttachmentAddViewModel(
             cipherId:      "cipher-1",
             uploadUseCase: MockUploadUseCase(result: .success(
                 Attachment(id: "att-1", fileName: "doc.txt", encryptedKey: "2.a|b|c",
                            size: 22, sizeName: "22 B", url: nil, isUploadIncomplete: false)
             )),
-            filePicker: { [weak sut] in
-                capturedDuringPick = sut?.isPickingFile ?? false
-                return (url: self.tempFileURL, bytes: 22)
-            }
+            filePicker: { [(url: self.tempFileURL, bytes: 22)] }
         )
 
-        await sut.selectFile()
+        XCTAssertFalse(sut.isPickingFile, "isPickingFile should start false")
 
-        XCTAssertTrue(capturedDuringPick, "isPickingFile must be true while the picker is running")
+        let task = Task { await sut.selectFile() }
+        // Yield once to let selectFile run up to its own Task.yield(), at which
+        // point isPickingFile has been set to true and selectFile is suspended.
+        await Task.yield()
+
+        XCTAssertTrue(sut.isPickingFile, "isPickingFile must be true while the picker is running")
+
+        await task.value
+
         XCTAssertFalse(sut.isPickingFile, "isPickingFile must be false after picker returns")
     }
 
     func test_isPickingFile_falseAfterCancel() async {
-        var capturedDuringPick = false
+        // Picker returns [] (cancelled) — verify isPickingFile is false after selectFile() returns.
         let sut = AttachmentAddViewModel(
             cipherId:      "cipher-1",
             uploadUseCase: MockUploadUseCase(result: .success(
                 Attachment(id: "att-1", fileName: "doc.txt", encryptedKey: "2.a|b|c",
                            size: 22, sizeName: "22 B", url: nil, isUploadIncomplete: false)
             )),
-            filePicker: { [weak sut] in
-                capturedDuringPick = sut?.isPickingFile ?? false
-                return nil  // simulate user cancelling NSOpenPanel
-            }
+            filePicker: { [] }  // simulate user cancelling NSOpenPanel
         )
 
         await sut.selectFile()
 
-        XCTAssertTrue(capturedDuringPick, "isPickingFile must be true while the picker is running")
         XCTAssertFalse(sut.isPickingFile, "isPickingFile must be false after cancel")
         XCTAssertFalse(sut.isConfirming)
     }

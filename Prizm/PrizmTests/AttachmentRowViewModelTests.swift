@@ -40,8 +40,8 @@ final class AttachmentRowViewModelTests: XCTestCase {
     }
 
     private func makeSUT(attachment: Attachment? = nil,
-                         fileSaver: ((String) -> URL?)? = nil,
-                         retryPicker: (() -> URL?)? = nil) -> AttachmentRowViewModel {
+                         fileSaver: (@MainActor (String) -> URL?)? = nil,
+                         retryPicker: (@MainActor () -> URL?)? = nil) -> AttachmentRowViewModel {
         AttachmentRowViewModel(
             cipherId:        cipherId,
             attachment:      attachment ?? normalAttachment,
@@ -80,11 +80,14 @@ final class AttachmentRowViewModelTests: XCTestCase {
 
     // MARK: - Save to Disk
 
-    func test_saveToDisk_userCancelsPanel_noDownloadTriggered() {
-        // Return nil from fileSaver to simulate panel cancel
+    func test_saveToDisk_userCancelsPanel_noDownloadTriggered() async throws {
+        // Return nil from fileSaver to simulate panel cancel.
+        // saveToDisk() sets isLoading synchronously then dispatches a Task, so we
+        // must await a tick before asserting the post-cancel state.
         let sut = makeSUT(fileSaver: { _ in nil })
 
         sut.saveToDisk()
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertFalse(mockDownload.executeCalled)
         XCTAssertFalse(sut.isLoading)

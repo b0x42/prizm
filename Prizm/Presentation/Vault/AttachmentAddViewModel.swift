@@ -35,7 +35,10 @@ final class AttachmentAddViewModel: Identifiable {
     /// Injectable file-picker closure — defaults to `NSOpenPanel` in production.
     /// Returns all selected `(url, bytes)` pairs; empty array means the user cancelled.
     /// Multiple results trigger the batch sheet; a single result triggers the confirm sheet.
-    private let filePicker: () -> [(url: URL, bytes: Int)]
+    /// `@MainActor` — AppKit panel classes require main-actor isolation on macOS 26,
+    /// and Swift 6.2's runtime isolation checks require the closure to be typed as
+    /// `@MainActor` so that @Observable property reads inside it are safely isolated.
+    private let filePicker: @MainActor () -> [(url: URL, bytes: Int)]
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
@@ -88,7 +91,7 @@ final class AttachmentAddViewModel: Identifiable {
     init(
         cipherId: String,
         uploadUseCase: any UploadAttachmentUseCase,
-        filePicker: (() -> [(url: URL, bytes: Int)])? = nil
+        filePicker: (@MainActor () -> [(url: URL, bytes: Int)])? = nil
     ) {
         self.cipherId      = cipherId
         self.uploadUseCase = uploadUseCase
@@ -98,6 +101,7 @@ final class AttachmentAddViewModel: Identifiable {
     /// Default file picker using `NSOpenPanel` with multiple-selection enabled.
     /// Returns one entry per selected file; empty means cancelled.
     /// Extracted as a static so it is not captured in `self` and does not keep the ViewModel alive.
+    @MainActor
     private static func defaultNSOpenPanel() -> [(url: URL, bytes: Int)] {
         let panel = NSOpenPanel()
         panel.canChooseFiles          = true
