@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import os.log
-import AppKit
 
 // MARK: - AttachmentAddViewModel
 
@@ -22,6 +21,8 @@ import AppKit
 ///
 /// - Testability: The `filePicker` closure is injectable so unit tests can bypass
 ///   `NSOpenPanel` (which requires an interactive session and cannot run in XCTest).
+///   The default `NSOpenPanel` implementation lives in the App layer (`AppContainer`)
+///   to keep AppKit out of the Presentation layer (Constitution §II).
 @Observable
 @MainActor
 final class AttachmentAddViewModel: Identifiable {
@@ -32,12 +33,10 @@ final class AttachmentAddViewModel: Identifiable {
 
     private let cipherId: String
     private let uploadUseCase: any UploadAttachmentUseCase
-    /// Injectable file-picker closure — defaults to `NSOpenPanel` in production.
+    /// Injectable file-picker closure.
     /// Returns all selected `(url, bytes)` pairs; empty array means the user cancelled.
     /// Multiple results trigger the batch sheet; a single result triggers the confirm sheet.
-    /// `@MainActor` — AppKit panel classes require main-actor isolation on macOS 26,
-    /// and Swift 6.2's runtime isolation checks require the closure to be typed as
-    /// `@MainActor` so that @Observable property reads inside it are safely isolated.
+    /// `@MainActor` — AppKit panel classes require main-actor isolation on macOS 26.
     private let filePicker: @MainActor () -> [(url: URL, bytes: Int)]
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
@@ -91,50 +90,23 @@ final class AttachmentAddViewModel: Identifiable {
     init(
         cipherId: String,
         uploadUseCase: any UploadAttachmentUseCase,
-        filePicker: (@MainActor () -> [(url: URL, bytes: Int)])? = nil
+        filePicker: @escaping @MainActor () -> [(url: URL, bytes: Int)]
     ) {
         self.cipherId      = cipherId
         self.uploadUseCase = uploadUseCase
-        self.filePicker    = filePicker ?? AttachmentAddViewModel.defaultNSOpenPanel
-    }
-
-    /// Default file picker using `NSOpenPanel` with multiple-selection enabled.
-    /// Returns one entry per selected file; empty means cancelled.
-    /// Extracted as a static so it is not captured in `self` and does not keep the ViewModel alive.
-    @MainActor
-    private static func defaultNSOpenPanel() -> [(url: URL, bytes: Int)] {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles          = true
-        panel.canChooseDirectories    = false
-        panel.allowsMultipleSelection = true
-        panel.message                 = "Choose files to attach"
-        guard panel.runModal() == .OK else { return [] }
-        return panel.urls.map { url in
-            let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-            return (url, bytes)
-        }
+        self.filePicker    = filePicker
     }
 
     // MARK: - File selection (task 6.2)
 
-    /// Invokes `filePicker` (defaults to `NSOpenPanel`) and validates the chosen file.
-    ///
-    /// Reading file size at selection time (rather than at confirm time) lets the UI display
-    /// the size and advisory/error message immediately. Bytes are NOT read here.
-    ///
-    /// Declared `async` so callers can `await` it after setting `isPickingFile = true`,
-    /// giving SwiftUI one render pass to show the spinner before `NSOpenPanel.runModal()`
-    /// blocks the main thread. Without the `await Task.yield()`, the UI freezes between
-    /// the button tap and the panel appearing.
+    /// Invokes `filePicker` and validates the chosen file.
     func selectFile() async {
         isPickingFile = true
-        // Yield to the run loop so SwiftUI renders the spinner before runModal() blocks.
         await Task.yield()
         defer { isPickingFile = false }
         let results = filePicker()
-        guard !results.isEmpty else { return }   // user cancelled
+        guard !results.isEmpty else { return }
 
-        // Multiple files selected — expose URLs for the caller to route to the batch sheet.
         if results.count > 1 {
             pickedURLs = results.map(\.url)
             return
@@ -142,7 +114,6 @@ final class AttachmentAddViewModel: Identifiable {
 
         let (url, bytes) = results[0]
 
-        // Max 500 MB (task 6.2)
         let maxBytes = 500 * 1024 * 1024
         if bytes > maxBytes {
             sizeError = "File exceeds the 500 MB limit (\(ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)))."
@@ -163,11 +134,6 @@ final class AttachmentAddViewModel: Identifiable {
 
     // MARK: - Confirm (task 6.4)
 
-    /// Reads file bytes, uploads, then zeroes the buffer.
-    ///
-    /// The upload `Task` is stored in `uploadTask` so `cancel()` can cancel it in-flight.
-    /// - Security: file bytes are zeroed immediately after the upload call returns,
-    ///   whether it succeeds or fails (Constitution §III).
     func confirm() {
         guard let url = selectedFileURL, !isUploading else { return }
         uploadError = nil
@@ -176,7 +142,6 @@ final class AttachmentAddViewModel: Identifiable {
         uploadTask = Task { [weak self] in
             guard let self else { return }
 
-            // Read bytes at confirm time, not at selection time (§III).
             var fileData: Data
             do {
                 fileData = try Data(contentsOf: url)
@@ -193,14 +158,12 @@ final class AttachmentAddViewModel: Identifiable {
                     fileName: self.fileName,
                     data:     fileData
                 )
-                // Zero file bytes on success immediately (§III).
                 fileData.resetBytes(in: 0..<fileData.count)
                 self.isDismissed = true
             } catch AttachmentError.premiumRequired {
                 fileData.resetBytes(in: 0..<fileData.count)
                 self.uploadError = "Attachment storage requires a premium Bitwarden subscription."
             } catch is CancellationError {
-                // Task was cancelled via cancel() — buffer already zeroed there.
                 fileData.resetBytes(in: 0..<fileData.count)
             } catch {
                 fileData.resetBytes(in: 0..<fileData.count)
@@ -215,10 +178,6 @@ final class AttachmentAddViewModel: Identifiable {
 
     // MARK: - Cancel (task 6.4b)
 
-    /// Cancels any in-flight upload, zeroes the file data buffer, and signals dismissal.
-    ///
-    /// - Security: file bytes held by the upload Task are zeroed when the Task catches
-    ///   `CancellationError` in `confirm()`. No discard prompt is shown.
     func cancel() {
         uploadTask?.cancel()
         uploadTask   = nil

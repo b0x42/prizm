@@ -43,8 +43,8 @@ actor MockPrizmCryptoService: PrizmCryptoService {
         stubbedVaultKeys
     }
 
-    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int) {
-        (items: stubbedDecryptList, failedCount: stubbedFailedCount)
+    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int, cipherKeys: [String: Data]) {
+        (items: stubbedDecryptList, failedCount: stubbedFailedCount, cipherKeys: [:])
     }
 
     func unlockWith(keys: CryptoKeys) async {

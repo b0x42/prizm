@@ -35,6 +35,8 @@ nonisolated enum CipherMapperError: Error, Equatable {
 /// - KDF derivation.
 nonisolated final class CipherMapper {
 
+    private let attachmentMapper = AttachmentMapper()
+
     private static let logger = Logger(subsystem: "com.prizm", category: "CipherMapper")
 
     private nonisolated(unsafe) static let iso8601: ISO8601DateFormatter = {
@@ -99,7 +101,7 @@ nonisolated final class CipherMapper {
                 let enc = try EncString(string: encItemKey)
                 cipherKey = try enc.decrypt(keys: keys)
             } catch {
-                Self.logger.error("Per-item key decryption failed for cipher \(raw.id, privacy: .public); falling back to vault key")
+                Self.logger.fault("Per-item key decryption failed for cipher \(raw.id, privacy: .public); falling back to vault key")
                 cipherKey = keys.encryptionKey + keys.macKey
             }
         } else {
@@ -115,7 +117,6 @@ nonisolated final class CipherMapper {
 
         // Map attachments using the cipher's effective key, not the raw vault key.
         // Attachment filenames are encrypted under the same key as the cipher's fields.
-        let attachmentMapper = AttachmentMapper()
         let attachments: [Attachment] = (raw.attachments ?? []).compactMap { dto in
             do {
                 return try attachmentMapper.map(dto, cipherKey: effectiveKeys)

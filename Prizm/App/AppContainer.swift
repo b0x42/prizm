@@ -161,28 +161,70 @@ final class AppContainer: ObservableObject {
         ItemEditViewModel(type: type, useCase: createVaultItemUseCase)
     }
 
+    // MARK: - AppKit panel defaults (App layer — Constitution §II)
+    //
+    // These closures wrap AppKit classes (NSOpenPanel, NSSavePanel, NSWorkspace) and are
+    // injected into Presentation-layer ViewModels so the Presentation layer never imports
+    // AppKit directly.
+
+    /// Default multi-file picker using `NSOpenPanel`.
+    @MainActor
+    private static func defaultNSOpenPanel() -> [(url: URL, bytes: Int)] {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles          = true
+        panel.canChooseDirectories    = false
+        panel.allowsMultipleSelection = true
+        panel.message                 = "Choose files to attach"
+        guard panel.runModal() == .OK else { return [] }
+        return panel.urls.map { url in
+            let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+            return (url, bytes)
+        }
+    }
+
+    /// Default save panel using `NSSavePanel`.
+    @MainActor
+    private static func defaultSavePanel(suggestedName: String) -> URL? {
+        let panel                  = NSSavePanel()
+        panel.nameFieldStringValue = suggestedName
+        panel.message              = "Choose where to save the attachment"
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    /// Default single-file picker for retry using `NSOpenPanel`.
+    @MainActor
+    private static func defaultRetryOpenPanel() -> URL? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles          = true
+        panel.canChooseDirectories    = false
+        panel.allowsMultipleSelection = false
+        panel.message                 = "Select the file to re-upload"
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    /// Default file opener using `NSWorkspace`.
+    @MainActor
+    private static func defaultFileOpener(url: URL) {
+        NSWorkspace.shared.open(url)
+    }
+
     /// Creates an `AttachmentAddViewModel` for the given cipher ID.
-    ///
-    /// Injected into `ItemDetailView` as a factory closure so the Presentation layer
-    /// remains decoupled from the Data layer (Constitution §II).
     @MainActor
     func makeAddAttachmentViewModel(for cipherId: String) -> AttachmentAddViewModel {
-        AttachmentAddViewModel(cipherId: cipherId, uploadUseCase: uploadAttachmentUseCase)
+        AttachmentAddViewModel(
+            cipherId:      cipherId,
+            uploadUseCase: uploadAttachmentUseCase,
+            filePicker:    Self.defaultNSOpenPanel
+        )
     }
 
     /// Creates an `AttachmentBatchViewModel` for the given cipher ID.
-    ///
-    /// Injected into `ItemDetailView` as a factory closure so the Presentation layer
-    /// remains decoupled from the Data layer (Constitution §II).
     @MainActor
     func makeBatchAttachmentViewModel(for cipherId: String) -> AttachmentBatchViewModel {
         AttachmentBatchViewModel(cipherId: cipherId, uploadUseCase: uploadAttachmentUseCase)
     }
 
     /// Creates an `AttachmentRowViewModel` for the given cipher + attachment pair.
-    ///
-    /// Injected into the attachment row at render time so each row gets its own ViewModel
-    /// instance with the correct cipher ID and attachment state.
     @MainActor
     func makeAttachmentRowViewModel(cipherId: String, attachment: Attachment) -> AttachmentRowViewModel {
         AttachmentRowViewModel(
@@ -191,7 +233,10 @@ final class AppContainer: ObservableObject {
             downloadUseCase: downloadAttachmentUseCase,
             deleteUseCase:   deleteAttachmentUseCase,
             uploadUseCase:   uploadAttachmentUseCase,
-            tempFileManager: tempFileManager
+            tempFileManager: tempFileManager,
+            fileSaver:       Self.defaultSavePanel,
+            retryFilePicker: Self.defaultRetryOpenPanel,
+            fileOpener:      Self.defaultFileOpener
         )
     }
 }

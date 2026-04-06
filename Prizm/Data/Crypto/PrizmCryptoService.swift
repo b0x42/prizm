@@ -95,7 +95,7 @@ protocol PrizmCryptoService: Actor {
     /// - Parameter ciphers: Raw encrypted ciphers from the sync response.
     /// - Returns: Tuple of successfully decrypted `VaultItem`s and a failure count.
     /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is not unlocked.
-    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int)
+    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int, cipherKeys: [String: Data])
 
     /// Loads `keys` into memory, marking the vault as unlocked.
     func unlockWith(keys: CryptoKeys) async
@@ -195,16 +195,16 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
 
     // MARK: - decryptList
 
-    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int) {
+    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int, cipherKeys: [String: Data]) {
         guard let vaultKeys = keys else {
             throw PrizmCryptoServiceError.vaultLocked
         }
         logger.info("decryptList: starting with \(ciphers.count) ciphers")
         let mapper = CipherMapper()
         var items: [VaultItem] = []
+        var cipherKeyMap: [String: Data] = [:]
         var failedCount = 0
         for (index, cipher) in ciphers.enumerated() {
-            // Organisation ciphers are not supported in v1.
             if cipher.organizationId != nil {
                 if DebugConfig.isEnabled {
                     logger.debug("[debug] cipher[\(index, privacy: .public)] skipped — organizationId present")
@@ -212,8 +212,13 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
                 continue
             }
             do {
-                let (item, _) = try mapper.map(raw: cipher, keys: vaultKeys)
+                let (item, cipherKey) = try mapper.map(raw: cipher, keys: vaultKeys)
                 items.append(item)
+                // Only cache per-item keys; vault-key-only ciphers are handled by
+                // VaultKeyServiceImpl fallback and excluded to avoid duplicate storage.
+                if cipher.key != nil {
+                    cipherKeyMap[cipher.id] = cipherKey
+                }
                 if DebugConfig.isEnabled {
                     let rawAttachmentCount = cipher.attachments?.count ?? 0
                     let mappedAttachmentCount = item.attachments.count
@@ -228,7 +233,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
             }
         }
         logger.info("decryptList: completed — \(items.count) succeeded, \(failedCount) failed")
-        return (items: items, failedCount: failedCount)
+        return (items: items, failedCount: failedCount, cipherKeys: cipherKeyMap)
     }
 
     // MARK: - makeMasterKey

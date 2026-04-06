@@ -39,6 +39,8 @@ final class AttachmentRowViewModelTests: XCTestCase {
         )
     }
 
+    private var fileOpenerCalled = false
+
     private func makeSUT(attachment: Attachment? = nil,
                          fileSaver: (@MainActor (String) -> URL?)? = nil,
                          retryPicker: (@MainActor () -> URL?)? = nil) -> AttachmentRowViewModel {
@@ -49,8 +51,9 @@ final class AttachmentRowViewModelTests: XCTestCase {
             deleteUseCase:   mockDelete,
             uploadUseCase:   mockUpload,
             tempFileManager: mockTempMgr,
-            fileSaver:       fileSaver,
-            retryFilePicker: retryPicker
+            fileSaver:       fileSaver ?? { _ in nil },
+            retryFilePicker: retryPicker ?? { nil },
+            fileOpener:      { [weak self] _ in self?.fileOpenerCalled = true }
         )
     }
 

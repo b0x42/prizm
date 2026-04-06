@@ -234,4 +234,20 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         if let err = deleteAttachmentShouldThrow { throw err }
     }
 
+    nonisolated(unsafe) var downloadBlobResult: Data = Data()
+    nonisolated(unsafe) var downloadBlobShouldThrow: Error?
+    nonisolated(unsafe) var downloadBlobCallCount: Int = 0
+    /// Sequential results keyed by call count (1-based). Falls back to `downloadBlobResult`.
+    nonisolated(unsafe) var downloadBlobSequence: [Int: Result<Data, Error>] = [:]
+
+    func downloadBlob(from url: URL) async throws -> Data {
+        downloadBlobCallCount += 1
+        if let seq = downloadBlobSequence[downloadBlobCallCount] {
+            return try seq.get()
+        }
+        if let err = downloadBlobShouldThrow { throw err }
+        return downloadBlobResult
+    }
+
+
 }

@@ -144,6 +144,13 @@ protocol PrizmAPIClientProtocol: Actor {
     /// DELETE `/api/ciphers/{cipherId}/attachment/{attachmentId}` — deletes an attachment.
     func deleteAttachment(cipherId: String, attachmentId: String) async throws
 
+    /// GET `<signedURL>` — downloads the raw encrypted blob from a signed URL.
+    ///
+    /// Used by `AttachmentRepositoryImpl` to fetch attachment blobs. Routed through the
+    /// API client (rather than `URLSession.shared`) so tests can mock the download path
+    /// and the shared session configuration (timeouts, etc.) is applied.
+    func downloadBlob(from url: URL) async throws -> Data
+
 }
 
 // MARK: - Wire Models
@@ -722,6 +729,20 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         request.httpMethod = "DELETE"
         if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         try await performEmpty(request: request)
+    }
+
+
+    // MARK: - downloadBlob
+
+    func downloadBlob(from url: URL) async throws -> Data {
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.httpError(statusCode: 0, body: "Invalid response")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw APIError.httpError(statusCode: http.statusCode, body: "")
+        }
+        return data
     }
 
     // MARK: - refreshAccessToken

@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import os.log
-import AppKit
 
 // MARK: - AttachmentRowViewModel
 
@@ -16,6 +15,10 @@ import AppKit
 ///
 /// - `attachment.isUploadIncomplete` drives the UI: when true, the row shows "Upload
 ///   incomplete" + Retry; otherwise it shows Open / Save / Delete.
+///
+/// - AppKit dependencies (`NSWorkspace`, `NSSavePanel`, `NSOpenPanel`) are injected as
+///   closures from the App layer (`AppContainer`) to keep the Presentation layer free of
+///   AppKit imports (Constitution §II).
 @Observable
 @MainActor
 final class AttachmentRowViewModel {
@@ -28,12 +31,12 @@ final class AttachmentRowViewModel {
     private let deleteUseCase:        any DeleteAttachmentUseCase
     private let uploadUseCase:        any UploadAttachmentUseCase
     private let tempFileManager:      any TempFileManaging
-    /// Injectable file-saver: defaults to `NSSavePanel`. Injected in tests.
-    /// Must be `@MainActor` — AppKit panel classes require main-actor isolation
-    /// on macOS 26 and will trap at the constructor site otherwise.
+    /// Injectable file-saver closure. Provided by AppContainer (defaults to NSSavePanel).
     private let fileSaver:            @MainActor (_ suggestedName: String) -> URL?
-    /// Injectable file-picker for Retry: defaults to `NSOpenPanel`. Injected in tests.
+    /// Injectable file-picker for Retry. Provided by AppContainer (defaults to NSOpenPanel).
     private let retryFilePicker:      @MainActor () -> URL?
+    /// Injectable file-opener closure. Provided by AppContainer (defaults to NSWorkspace.shared.open).
+    private let fileOpener:           @MainActor (_ url: URL) -> Void
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
@@ -57,8 +60,9 @@ final class AttachmentRowViewModel {
         deleteUseCase:   any DeleteAttachmentUseCase,
         uploadUseCase:   any UploadAttachmentUseCase,
         tempFileManager: any TempFileManaging,
-        fileSaver:       (@MainActor (_ suggestedName: String) -> URL?)? = nil,
-        retryFilePicker: (@MainActor () -> URL?)? = nil
+        fileSaver:       @escaping @MainActor (_ suggestedName: String) -> URL?,
+        retryFilePicker: @escaping @MainActor () -> URL?,
+        fileOpener:      @escaping @MainActor (_ url: URL) -> Void
     ) {
         self.cipherId        = cipherId
         self.attachment      = attachment
@@ -66,16 +70,13 @@ final class AttachmentRowViewModel {
         self.deleteUseCase   = deleteUseCase
         self.uploadUseCase   = uploadUseCase
         self.tempFileManager = tempFileManager
-        self.fileSaver       = fileSaver ?? AttachmentRowViewModel.defaultSavePanel(suggestedName:)
-        self.retryFilePicker = retryFilePicker ?? AttachmentRowViewModel.defaultOpenPanel
+        self.fileSaver       = fileSaver
+        self.retryFilePicker = retryFilePicker
+        self.fileOpener      = fileOpener
     }
 
     // MARK: - Open (task 7.2b)
 
-    /// Downloads and opens the attachment in the default application.
-    ///
-    /// Writes plaintext to `<tmpdir>/<uuid>.<ext>`, opens it with NSWorkspace, then
-    /// registers the file with `TempFileManaging` for cleanup after 30 seconds.
     func open() {
         guard !isLoading else { return }
         isLoading   = true
@@ -89,10 +90,9 @@ final class AttachmentRowViewModel {
                     attachment: self.attachment
                 )
                 let tmpURL = try self.writeTempFile(data: data)
-                NSWorkspace.shared.open(tmpURL)
+                self.fileOpener(tmpURL)
                 self.tempFileManager.register(url: tmpURL)
 
-                // Schedule cleanup from the foreground — covers apps that stay in foreground.
                 Task {
                     try? await Task.sleep(for: .seconds(30))
                     self.tempFileManager.cleanup()
@@ -109,22 +109,14 @@ final class AttachmentRowViewModel {
 
     // MARK: - Save to Disk (task 7.3)
 
-    /// Downloads and writes the attachment to the user-chosen path via `NSSavePanel`.
-    ///
-    /// Zeroes the in-memory buffer immediately after writing (Constitution §III).
     func saveToDisk() {
         guard !isLoading else { return }
         isLoading   = true
         actionError = nil
 
-        // NSSavePanel must be constructed outside the SwiftUI button-action dispatch frame on
-        // macOS 26 — calling it synchronously from a SwiftUI action handler triggers an AppKit
-        // main-actor assertion (EXC_BREAKPOINT) even on the main thread. Deferring via Task
-        // advances past the current run-loop turn, satisfying the requirement.
         Task { @MainActor [weak self] in
             guard let self else { return }
             guard let saveURL = self.fileSaver(self.attachment.fileName) else {
-                // User cancelled the panel.
                 self.isLoading = false
                 return
             }
@@ -134,7 +126,6 @@ final class AttachmentRowViewModel {
                     attachment: self.attachment
                 )
                 try data.write(to: saveURL)
-                // Zero plaintext buffer immediately after writing (§III).
                 data.resetBytes(in: 0..<data.count)
                 self.logger.info("saveToDisk: saved \(self.attachment.id, privacy: .public)")
             } catch {
@@ -147,7 +138,6 @@ final class AttachmentRowViewModel {
 
     // MARK: - Delete (task 7.4)
 
-    /// Deletes the attachment. Confirmation alert is shown by the View before calling this.
     func delete() {
         guard !isLoading else { return }
         isLoading   = true
@@ -162,7 +152,6 @@ final class AttachmentRowViewModel {
                 )
                 self.logger.info("delete: removed \(self.attachment.id, privacy: .public)")
                 self.onAttachmentChanged?()
-                // The row disappears via VaultRepository.updateAttachments once itemSelection refreshes.
             } catch {
                 self.actionError = "Could not delete attachment: \(error.localizedDescription)"
                 self.logger.error("delete failed: \(error.localizedDescription, privacy: .public)")
@@ -173,21 +162,14 @@ final class AttachmentRowViewModel {
 
     // MARK: - Retry Upload (task 6d.2)
 
-    /// Retries an incomplete upload: opens a file picker, deletes the orphaned metadata,
-    /// then uploads the freshly selected file as a new attachment.
-    ///
-    /// - Security: file bytes are read at picker confirmation, uploaded, then zeroed.
     func retryUpload() {
         guard !isRetrying, attachment.isUploadIncomplete else { return }
         isRetrying  = true
         retryError  = nil
 
-        // Same run-loop-turn deferral as saveToDisk — NSOpenPanel asserts @MainActor at
-        // the constructor site on macOS 26 when called synchronously from a SwiftUI action.
         Task { @MainActor [weak self] in
             guard let self else { return }
             guard let fileURL = self.retryFilePicker() else {
-                // User cancelled the panel.
                 self.isRetrying = false
                 return
             }
@@ -202,20 +184,15 @@ final class AttachmentRowViewModel {
             }
 
             do {
-                // Step 1: Delete the orphaned server metadata record.
                 try await self.deleteUseCase.execute(
                     cipherId:     self.cipherId,
                     attachmentId: self.attachment.id
                 )
-
-                // Step 2: Fresh upload.
                 _ = try await self.uploadUseCase.execute(
                     cipherId: self.cipherId,
                     fileName: self.attachment.fileName,
                     data:     fileData
                 )
-
-                // Zero bytes on success (§III).
                 fileData.resetBytes(in: 0..<fileData.count)
                 self.onAttachmentChanged?()
                 self.logger.info("retryUpload: succeeded for \(self.attachment.id, privacy: .public)")
@@ -237,29 +214,5 @@ final class AttachmentRowViewModel {
         let url  = FileManager.default.temporaryDirectory.appendingPathComponent(name)
         try data.write(to: url)
         return url
-    }
-
-    // MARK: - Default panel implementations (production)
-
-    /// `@MainActor` is required: on macOS 26, AppKit panel classes assert main-actor
-    /// isolation at the constructor site (EXC_BREAKPOINT) when accessed via a
-    /// non-isolated function pointer, even when the calling thread is the main thread.
-    @MainActor
-    private static func defaultSavePanel(suggestedName: String) -> URL? {
-        let panel                 = NSSavePanel()
-        panel.nameFieldStringValue = suggestedName
-        panel.message             = "Choose where to save the attachment"
-        return panel.runModal() == .OK ? panel.url : nil
-    }
-
-    /// Same `@MainActor` requirement as `defaultSavePanel`.
-    @MainActor
-    private static func defaultOpenPanel() -> URL? {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles          = true
-        panel.canChooseDirectories    = false
-        panel.allowsMultipleSelection = false
-        panel.message                 = "Select the file to re-upload"
-        return panel.runModal() == .OK ? panel.url : nil
     }
 }

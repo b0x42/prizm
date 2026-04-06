@@ -210,7 +210,6 @@ final class AttachmentRepositoryImplTests: XCTestCase {
     // MARK: - Download: using existing Attachment.url
 
     func test_download_withExistingURL_decryptsBlob() async throws {
-        // Produce a real encrypted blob using the same key chain
         let attachmentKey = try crypto.generateAttachmentKey()
         let encBlob       = try crypto.encryptData(plainData, attachmentKey: attachmentKey)
 
@@ -220,10 +219,8 @@ final class AttachmentRepositoryImplTests: XCTestCase {
         )
         let encKeyString  = try crypto.encryptAttachmentKey(attachmentKey, cipherKey: cipherKeys)
 
-        // Register a URLProtocol stub to serve the encrypted blob
-        let blobURL = URL(string: "https://cdn.prizm-test.invalid/blob")!
-        URLProtocolStub.register(url: blobURL, data: encBlob, statusCode: 200)
-        defer { URLProtocolStub.unregister(url: blobURL) }
+        // Mock API client returns the encrypted blob
+        apiClient.downloadBlobResult = encBlob
 
         let attachment = Attachment(
             id:                 attachmentId,
@@ -231,7 +228,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             encryptedKey:       encKeyString,
             size:               plainData.count,
             sizeName:           "32 B",
-            url:                blobURL.absoluteString,
+            url:                "https://cdn.prizm-test.invalid/blob",
             isUploadIncomplete: false
         )
 
@@ -242,6 +239,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
         )
 
         XCTAssertEqual(decrypted, plainData)
+        XCTAssertEqual(apiClient.downloadBlobCallCount, 1)
     }
 
     func test_download_withNilURL_fetchesFreshURLThenDecrypts() async throws {
@@ -254,12 +252,9 @@ final class AttachmentRepositoryImplTests: XCTestCase {
         )
         let encKeyString = try crypto.encryptAttachmentKey(attachmentKey, cipherKey: cipherKeys)
 
-        let blobURL = URL(string: "https://cdn.prizm-test.invalid/fresh-blob")!
-        URLProtocolStub.register(url: blobURL, data: encBlob, statusCode: 200)
-        defer { URLProtocolStub.unregister(url: blobURL) }
-
+        apiClient.downloadBlobResult = encBlob
         apiClient.fetchAttachmentDownloadURLResponse = AttachmentDownloadResponse(
-            url: blobURL.absoluteString
+            url: "https://cdn.prizm-test.invalid/fresh-blob"
         )
 
         let attachment = Attachment(
@@ -292,18 +287,13 @@ final class AttachmentRepositoryImplTests: XCTestCase {
         )
         let encKeyString = try crypto.encryptAttachmentKey(attachmentKey, cipherKey: cipherKeys)
 
-        // Stale URL returns 403; fresh URL returns the blob.
-        let staleURL = URL(string: "https://cdn.prizm-test.invalid/stale")!
-        let freshURL = URL(string: "https://cdn.prizm-test.invalid/fresh-after-retry")!
-        URLProtocolStub.register(url: staleURL, data: Data(), statusCode: 403)
-        URLProtocolStub.register(url: freshURL, data: encBlob, statusCode: 200)
-        defer {
-            URLProtocolStub.unregister(url: staleURL)
-            URLProtocolStub.unregister(url: freshURL)
-        }
-
+        // First call returns 403 (stale URL); second call returns the blob (fresh URL).
+        apiClient.downloadBlobSequence = [
+            1: .failure(APIError.httpError(statusCode: 403, body: "")),
+            2: .success(encBlob)
+        ]
         apiClient.fetchAttachmentDownloadURLResponse = AttachmentDownloadResponse(
-            url: freshURL.absoluteString
+            url: "https://cdn.prizm-test.invalid/fresh-after-retry"
         )
 
         let attachment = Attachment(
@@ -312,7 +302,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             encryptedKey:       encKeyString,
             size:               plainData.count,
             sizeName:           "32 B",
-            url:                staleURL.absoluteString,    // initial URL is stale
+            url:                "https://cdn.prizm-test.invalid/stale",
             isUploadIncomplete: false
         )
 
@@ -323,8 +313,8 @@ final class AttachmentRepositoryImplTests: XCTestCase {
         )
 
         XCTAssertEqual(decrypted, plainData)
-        // Should have fetched a fresh URL exactly once (on the 403)
         XCTAssertEqual(apiClient.fetchAttachmentDownloadURLCallCount, 1)
+        XCTAssertEqual(apiClient.downloadBlobCallCount, 2)
     }
 
     // MARK: - Delete
@@ -398,53 +388,4 @@ final class AttachmentRepositoryImplTests: XCTestCase {
         XCTAssertEqual(remaining.count, 1)
         XCTAssertEqual(remaining.first?.id, "att-keep")
     }
-}
-
-// MARK: - URLProtocol stub for blob download/upload tests
-
-/// Intercepts `URLSession.shared` requests matching registered URLs and returns stubbed responses.
-///
-/// Used to simulate Azure Blob Storage and signed download URL responses without a live network.
-/// Thread-safe via a serial `DispatchQueue` protecting the shared registry.
-private final class URLProtocolStub: URLProtocol {
-
-    private static let queue = DispatchQueue(label: "com.prizm.tests.URLProtocolStub")
-    private nonisolated(unsafe) static var registry: [String: (data: Data, statusCode: Int)] = [:]
-
-    static func register(url: URL, data: Data, statusCode: Int) {
-        queue.sync { registry[url.absoluteString] = (data, statusCode) }
-        URLProtocol.registerClass(URLProtocolStub.self)
-    }
-
-    static func unregister(url: URL) {
-        _ = queue.sync { registry.removeValue(forKey: url.absoluteString) }
-    }
-
-    override class func canInit(with request: URLRequest) -> Bool {
-        guard let url = request.url?.absoluteString else { return false }
-        return queue.sync { registry[url] != nil }
-    }
-
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-
-    override func startLoading() {
-        guard let url = request.url?.absoluteString,
-              let stub = URLProtocolStub.queue.sync(execute: { URLProtocolStub.registry[url] })
-        else {
-            client?.urlProtocol(self, didFailWithError: URLError(.badURL))
-            return
-        }
-
-        let response = HTTPURLResponse(
-            url:        request.url!,
-            statusCode: stub.statusCode,
-            httpVersion: "HTTP/1.1",
-            headerFields: [:]
-        )!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: stub.data)
-        client?.urlProtocolDidFinishLoading(self)
-    }
-
-    override func stopLoading() {}
 }

@@ -72,7 +72,7 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
     func upload(cipherId: String, fileName: String, data: Data, cipherKey: Data) async throws -> Attachment {
         logger.debug("upload: starting for cipher=\(cipherId, privacy: .public) size=\(data.count, privacy: .public)B")
 
-        let keys = splitKey(cipherKey)
+        let keys = try splitKey(cipherKey)
 
         // Step 1: Generate per-attachment key (64 random bytes, Constitution §III).
         var attachmentKey = try crypto.generateAttachmentKey()
@@ -162,7 +162,7 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
     func download(cipherId: String, attachment: Attachment, cipherKey: Data) async throws -> Data {
         logger.debug("download: starting for cipher=\(cipherId, privacy: .public) attachment=\(attachment.id, privacy: .public)")
 
-        let keys = splitKey(cipherKey)
+        let keys = try splitKey(cipherKey)
 
         // Resolve initial download URL.
         var downloadURL: URL
@@ -216,8 +216,12 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
     ///
     /// - Security goal: `CryptoKeys` is required by `PrizmCryptoService` methods;
     ///   the raw Data passed through the domain boundary is split here at the Data layer.
-    private func splitKey(_ raw: Data) -> CryptoKeys {
-        CryptoKeys(
+    /// - Throws: `AttachmentCryptoError.invalidKeyLength` if key is not 64 bytes.
+    private func splitKey(_ raw: Data) throws -> CryptoKeys {
+        guard raw.count >= 64 else {
+            throw AttachmentCryptoError.invalidKeyLength
+        }
+        return CryptoKeys(
             encryptionKey: raw[raw.startIndex..<raw.startIndex.advanced(by: 32)],
             macKey:        raw[raw.startIndex.advanced(by: 32)..<raw.startIndex.advanced(by: 64)]
         )
@@ -235,16 +239,9 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
         return url
     }
 
-    /// Downloads the raw bytes from a signed URL.
+    /// Downloads the raw bytes from a signed URL via the injected API client.
     private func fetchBlob(from url: URL) async throws -> Data {
-        let (data, response) = try await URLSession.shared.data(from: url)
-        guard let http = response as? HTTPURLResponse else {
-            throw AttachmentError.downloadFailed
-        }
-        guard (200..<300).contains(http.statusCode) else {
-            throw APIError.httpError(statusCode: http.statusCode, body: "")
-        }
-        return data
+        try await apiClient.downloadBlob(from: url)
     }
 
     /// Extracts the status code from an `APIError.httpError`, or nil for other error types.

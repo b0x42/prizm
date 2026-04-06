@@ -18,7 +18,7 @@ import os.log
 ///
 /// Thread safety: `entries` is protected by a `Lock` because `register` and `cleanup`
 /// may be called from background Tasks or notification callbacks.
-final class AttachmentTempFileManager: TempFileManaging {
+final class AttachmentTempFileManager: TempFileManaging, @unchecked Sendable {
 
     // MARK: - Types
 
@@ -94,7 +94,7 @@ final class AttachmentTempFileManager: TempFileManaging {
 
     /// Overwrites the file at `url` with zeros then deletes it.
     ///
-    /// - Security goal: prevents forensic recovery of plaintext attachment data from disk
+    /// - Security goal: reduces (but does not guarantee elimination of) plaintext attachment data on disk (APFS copy-on-write may retain original blocks; FileVault is recommended)
     ///   after the open action completes (Constitution §III).
     private func zeroAndDelete(_ url: URL) {
         do {
