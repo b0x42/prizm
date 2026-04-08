@@ -13,7 +13,7 @@ struct SidebarView: View {
     let folders: [Folder]
 
     // Folder actions — provided by VaultBrowserViewModel
-    var onCreateFolder: (() -> Void)?
+    var onCreateFolder: ((String) -> Void)?
     var onRenameFolder: ((String, String) -> Void)?  // (id, newName)
     var onDeleteFolder: ((Folder) -> Void)?
     var onDropItems: (([String], String) -> Void)?   // (itemIds, folderId)
@@ -21,6 +21,10 @@ struct SidebarView: View {
     // Inline rename state
     @State private var renamingFolderId: String?
     @State private var renameText: String = ""
+
+    // Inline create state
+    @State private var isCreatingFolder = false
+    @State private var newFolderName: String = "New Folder"
 
     var body: some View {
         List(selection: $selection) {
@@ -46,7 +50,8 @@ struct SidebarView: View {
                 Text(section.title)
                 Spacer()
                 Button {
-                    onCreateFolder?()
+                    newFolderName = "New Folder"
+                    isCreatingFolder = true
                 } label: {
                     Image(systemName: "folder.badge.plus")
                 }
@@ -69,6 +74,14 @@ struct SidebarView: View {
             SidebarRowView(title: "All Items", systemImage: "square.grid.2x2", selection: .allItems, count: itemCounts[.allItems] ?? 0)
             SidebarRowView(title: "Favorites", systemImage: "star", selection: .favorites, count: itemCounts[.favorites] ?? 0)
         case .folders:
+            if isCreatingFolder {
+                TextField("Folder name", text: $newFolderName, onCommit: {
+                    commitCreate()
+                })
+                .onExitCommand {
+                    isCreatingFolder = false
+                }
+            }
             ForEach(folders) { folder in
                 folderRow(folder)
             }
@@ -120,6 +133,13 @@ struct SidebarView: View {
         renamingFolderId = nil
         guard !trimmed.isEmpty, trimmed != folder.name else { return }
         onRenameFolder?(folder.id, trimmed)
+    }
+
+    private func commitCreate() {
+        let trimmed = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        isCreatingFolder = false
+        guard !trimmed.isEmpty else { return }
+        onCreateFolder?(trimmed)
     }
 }
 

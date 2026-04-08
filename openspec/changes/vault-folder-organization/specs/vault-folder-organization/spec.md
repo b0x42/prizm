@@ -120,18 +120,12 @@ The system SHALL allow folder deletion via right-click context menu → "Delete 
 ---
 
 ### Requirement: User can assign items to folders via drag-and-drop
-The system SHALL support dragging one or more items from the item list onto a folder row in the sidebar. Single-item drops SHALL use `PUT /ciphers/{id}/partial` with the target `folderId`. Multi-item drops SHALL use `PUT /ciphers/move` with the list of item IDs and the target `folderId`. The drop target folder row SHALL show SwiftUI's default `isTargeted` highlight during the drag. After a successful drop, item counts SHALL refresh for both the source and target folders. Drag-and-drop SHALL only be available from the active item list — trashed items SHALL NOT be draggable.
+The system SHALL support dragging a single item from the item list onto a folder row in the sidebar using `PUT /ciphers/{id}/partial` with the target `folderId`. The drop target folder row SHALL show SwiftUI's default `isTargeted` highlight during the drag. After a successful drop, item counts SHALL refresh for both the source and target folders. Drag-and-drop SHALL only be available from the active item list — trashed items SHALL NOT be draggable. Multi-select drag-and-drop is deferred to a follow-up change.
 
 #### Scenario: Drag single item to folder
 - **GIVEN** an item is displayed in the item list
 - **WHEN** the user drags the item onto a folder row in the sidebar
 - **THEN** the item SHALL be moved to that folder via `PUT /ciphers/{id}/partial`
-- **AND** sidebar folder counts SHALL refresh
-
-#### Scenario: Drag multiple items to folder
-- **GIVEN** multiple items are selected in the item list
-- **WHEN** the user drags the selection onto a folder row
-- **THEN** all selected items SHALL be moved to that folder via `PUT /ciphers/move`
 - **AND** sidebar folder counts SHALL refresh
 
 #### Scenario: Drop target highlights during drag
@@ -155,7 +149,7 @@ The system SHALL support dragging one or more items from the item list onto a fo
 ---
 
 ### Requirement: User can assign a folder via the item edit sheet
-The system SHALL display a folder picker in the item edit and create sheets. The picker SHALL list all folders sorted alphabetically, plus a "None" option to remove folder assignment. Selecting a folder SHALL set the `folderId` on the draft. The `folderId` SHALL be included in the cipher payload when saving via `PUT /ciphers/{id}` or `POST /api/ciphers`.
+The system SHALL display a folder picker in the item edit and create sheets when folders exist. The picker SHALL list all folders sorted alphabetically, plus a "None" option to remove folder assignment. Selecting a folder SHALL set the `folderId` on the draft. The `folderId` SHALL be included in the cipher payload when saving via `PUT /ciphers/{id}` or `POST /api/ciphers`. When no folders exist, the picker SHALL NOT be displayed.
 
 #### Scenario: Folder picker shown in edit sheet
 - **WHEN** the user opens the edit sheet for an item

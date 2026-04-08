@@ -38,7 +38,7 @@ struct VaultBrowserView: View {
                         ),
                         itemCounts: viewModel.itemCounts,
                         folders: viewModel.folders,
-                        onCreateFolder: { viewModel.createFolder(name: "New Folder") },
+                        onCreateFolder: { name in viewModel.createFolder(name: name) },
                         onRenameFolder: { id, name in viewModel.renameFolder(id: id, name: name) },
                         onDeleteFolder: { folder in
                             folderToDelete = folder
