@@ -500,7 +500,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
         let response: SyncResponse = try await perform(request: request)
         if DebugConfig.isEnabled {
-            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
+            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) folders=\(response.folders.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
         }
         return response
     }

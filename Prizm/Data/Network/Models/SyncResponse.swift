@@ -8,10 +8,23 @@ import Foundation
 /// the vault) and the list of encrypted ciphers.
 ///
 /// Reference: Bitwarden Server API `/api/sync` response schema.
-nonisolated struct SyncResponse: Codable {
+nonisolated struct SyncResponse: Decodable {
     let profile: RawProfile
     let ciphers: [RawCipher]
+    /// Decoded with a default of `[]` so that Vaultwarden instances that omit the key
+    /// (or future API variants) don't cause the entire sync decode to throw.
     let folders: [RawFolder]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        profile = try container.decode(RawProfile.self, forKey: .profile)
+        ciphers = try container.decode([RawCipher].self, forKey: .ciphers)
+        folders = (try? container.decode([RawFolder].self, forKey: .folders)) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case profile, ciphers, folders
+    }
 }
 
 // MARK: - RawProfile

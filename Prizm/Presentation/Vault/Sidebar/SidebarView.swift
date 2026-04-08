@@ -85,6 +85,12 @@ struct SidebarView: View {
             ForEach(folders) { folder in
                 folderRow(folder)
             }
+            if folders.isEmpty && !isCreatingFolder {
+                Text("No folders")
+                    .font(Typography.listSubtitle)
+                    .foregroundStyle(.secondary)
+                    .tag(SidebarSelection?.none)
+            }
         case .types:
             ForEach(ItemType.allCases, id: \.self) { type in
                 SidebarRowView(title: type.displayName, systemImage: type.sfSymbol, selection: .type(type), count: itemCounts[.type(type)] ?? 0)

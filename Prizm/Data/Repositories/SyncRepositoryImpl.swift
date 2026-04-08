@@ -103,7 +103,9 @@ actor SyncRepositoryImpl: SyncRepository {
         }
 
         // Phase 2b: Decrypt folder names.
+        logger.info("Decrypting \(syncResponse.folders.count, privacy: .public) folder(s)")
         let (folders, folderFailedCount) = try await crypto.decryptFolders(folders: syncResponse.folders)
+        logger.info("Decrypted \(folders.count, privacy: .public) folder(s); \(folderFailedCount, privacy: .public) failure(s)")
         if folderFailedCount > 0 {
             logger.error("decryptFolders: \(folderFailedCount, privacy: .public) folder(s) failed to decrypt")
         }
