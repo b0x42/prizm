@@ -54,7 +54,7 @@ struct SidebarView: View {
                     isCreatingFolder = true
                 } label: {
                     Image(systemName: "folder.badge.plus")
-                    .imageScale(.large)
+                    .font(.title3)
                 }
                 .buttonStyle(.plain)
                 .help("New Folder")
