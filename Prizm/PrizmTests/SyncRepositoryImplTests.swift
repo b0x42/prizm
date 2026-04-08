@@ -134,6 +134,7 @@ final class SyncRepositoryImplTests: XCTestCase {
             RawCipher(
                 id:             "cipher-\(i)",
                 organizationId: nil,
+                folderId:       nil,
                 type:           2,   // secureNote — simplest type
                 name:           "2.name\(i)==",
                 notes:          nil,
@@ -158,7 +159,8 @@ final class SyncRepositoryImplTests: XCTestCase {
                 key:        "2.encKey==",
                 privateKey: "2.encPrivKey=="
             ),
-            ciphers: ciphers
+            ciphers: ciphers,
+            folders: []
         )
     }
 

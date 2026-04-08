@@ -31,18 +31,18 @@
 
 ## 5. Repository Layer
 
-- [ ] 5.1 Add `folders: [Folder]` storage to `VaultRepositoryImpl`; update `populate` and `clearVault` to include folders
-- [ ] 5.2 Add `folders() throws -> [Folder]` to `VaultRepository` protocol and impl (sorted alphabetically)
-- [ ] 5.3 Update `VaultRepository.populate` to accept folders alongside items; update `MockVaultRepository` and all existing tests that call `populate`
-- [ ] 5.4 Update `SyncRepositoryImpl.sync` to call `crypto.decryptFolders` and pass results to `vaultRepository.populate`
-- [ ] 5.5 Update `VaultRepositoryImpl.items(for:)` to handle `.folder(id)` selection (filter by `folderId`)
-- [ ] 5.6 Update `VaultRepositoryImpl.itemCounts()` to include per-folder counts
-- [ ] 5.7 Update `VaultRepositoryImpl.searchItems(query:in:)` to support folder-scoped search
-- [ ] 5.8 Add folder CRUD methods to `VaultRepository` protocol: `createFolder(name:)`, `renameFolder(id:name:)`, `deleteFolder(id:)` — `VaultRepositoryImpl` encrypts name internally, calls API, updates local cache; reject empty/whitespace-only names before API call
-- [ ] 5.9 Add `moveItemToFolder(itemId:folderId:)` and `moveItemsToFolder(itemIds:folderId:)` to `VaultRepository` — `VaultRepositoryImpl` calls partial/move API, updates local folderId
-- [ ] 5.10 Update `MockVaultRepository` with all new folder methods
-- [ ] 5.11 Add `VaultRepositoryImplTests` for folder-scoped filtering, counts, and folder CRUD
-- [ ] 5.12 Add tests for move-to-folder (single and bulk, local cache update)
+- [x] 5.1 Add `folders: [Folder]` storage to `VaultRepositoryImpl`; update `populate` and `clearVault` to include folders
+- [x] 5.2 Add `folders() throws -> [Folder]` to `VaultRepository` protocol and impl (sorted alphabetically)
+- [x] 5.3 Update `VaultRepository.populate` to accept folders alongside items; update `MockVaultRepository` and all existing tests that call `populate`
+- [x] 5.4 Update `SyncRepositoryImpl.sync` to call `crypto.decryptFolders` and pass results to `vaultRepository.populate`
+- [x] 5.5 Update `VaultRepositoryImpl.items(for:)` to handle `.folder(id)` selection (filter by `folderId`)
+- [x] 5.6 Update `VaultRepositoryImpl.itemCounts()` to include per-folder counts
+- [x] 5.7 Update `VaultRepositoryImpl.searchItems(query:in:)` to support folder-scoped search
+- [x] 5.8 Add folder CRUD methods to `VaultRepository` protocol: `createFolder(name:)`, `renameFolder(id:name:)`, `deleteFolder(id:)` — `VaultRepositoryImpl` encrypts name internally, calls API, updates local cache; reject empty/whitespace-only names before API call
+- [x] 5.9 Add `moveItemToFolder(itemId:folderId:)` and `moveItemsToFolder(itemIds:folderId:)` to `VaultRepository` — `VaultRepositoryImpl` calls partial/move API, updates local folderId
+- [x] 5.10 Update `MockVaultRepository` with all new folder methods
+- [x] 5.11 Add `VaultRepositoryImplTests` for folder-scoped filtering, counts, and folder CRUD
+- [x] 5.12 Add tests for move-to-folder (single and bulk, local cache update)
 
 ## 6. Domain Use Cases
 

@@ -21,7 +21,7 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         vault = MockVaultRepository()
-        vault.populate(items: [sampleLogin, sampleCard], syncedAt: .now)
+        vault.populate(items: [sampleLogin, sampleCard], folders: [], syncedAt: .now)
         let syncRepo = MockSyncTimestampRepository(storedDate: nil)
         sut = VaultBrowserViewModel(
             vault:           vault,

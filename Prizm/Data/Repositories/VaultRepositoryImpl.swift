@@ -24,6 +24,7 @@ final class VaultRepositoryImpl: VaultRepository {
     // MARK: - State
 
     private var items: [VaultItem] = []
+    private var folderStore: [Folder] = []
     private(set) var lastSyncedAt: Date? = nil
 
     // MARK: - Init
@@ -40,14 +41,16 @@ final class VaultRepositoryImpl: VaultRepository {
 
     // MARK: - Write side (called by SyncRepositoryImpl)
 
-    func populate(items: [VaultItem], syncedAt: Date) {
-        self.items     = items
+    func populate(items: [VaultItem], folders: [Folder], syncedAt: Date) {
+        self.items       = items
+        self.folderStore = folders
         self.lastSyncedAt = syncedAt
-        logger.info("Vault populated: \(items.count) item(s)")
+        logger.info("Vault populated: \(items.count) item(s), \(folders.count) folder(s)")
     }
 
     func clearVault() {
-        items       = []
+        items        = []
+        folderStore  = []
         lastSyncedAt = nil
         logger.info("Vault cleared")
     }
@@ -58,10 +61,13 @@ final class VaultRepositoryImpl: VaultRepository {
         sorted(items.filter { !$0.isDeleted })
     }
 
+    func folders() throws -> [Folder] {
+        folderStore.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
     func items(for selection: SidebarSelection) throws -> [VaultItem] {
         switch selection {
         case .trash:
-            // Trash shows only soft-deleted items; the isDeleted filter is inverted here.
             return sorted(items.filter(\.isDeleted))
         case .allItems:
             return sorted(items.filter { !$0.isDeleted })
@@ -69,6 +75,8 @@ final class VaultRepositoryImpl: VaultRepository {
             return sorted(items.filter { !$0.isDeleted && $0.isFavorite })
         case .type(let itemType):
             return sorted(items.filter { !$0.isDeleted && $0.content.matchesItemType(itemType) })
+        case .folder(let folderId):
+            return sorted(items.filter { !$0.isDeleted && $0.folderId == folderId })
         }
     }
 
@@ -88,6 +96,9 @@ final class VaultRepositoryImpl: VaultRepository {
         counts[.trash]             = items.filter(\.isDeleted).count
         for type in ItemType.allCases {
             counts[.type(type)]    = base.filter { $0.content.matchesItemType(type) }.count
+        }
+        for folder in folderStore {
+            counts[.folder(folder.id)] = base.filter { $0.folderId == folder.id }.count
         }
         return counts
     }
@@ -208,7 +219,7 @@ final class VaultRepositoryImpl: VaultRepository {
         items[idx] = VaultItem(
             id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
             creationDate: old.creationDate, revisionDate: old.revisionDate,
-            content: old.content, reprompt: old.reprompt
+            content: old.content, reprompt: old.reprompt, folderId: old.folderId
         )
         logger.info("Vault item soft-deleted: \(id, privacy: .public)")
     }
@@ -240,9 +251,77 @@ final class VaultRepositoryImpl: VaultRepository {
         items[idx] = VaultItem(
             id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: false,
             creationDate: old.creationDate, revisionDate: old.revisionDate,
-            content: old.content, reprompt: old.reprompt
+            content: old.content, reprompt: old.reprompt, folderId: old.folderId
         )
         logger.info("Vault item restored: \(id, privacy: .public)")
+    }
+
+    // MARK: - Folder CRUD
+
+    func createFolder(name: String) async throws -> Folder {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw VaultError.decryptionFailed("empty folder name") }
+        let encName = try await encryptFolderName(trimmed)
+        let raw = try await apiClient.createFolder(encryptedName: encName)
+        let folder = Folder(id: raw.id, name: trimmed)
+        folderStore.append(folder)
+        logger.info("Folder created: \(raw.id, privacy: .public)")
+        return folder
+    }
+
+    func renameFolder(id: String, name: String) async throws -> Folder {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw VaultError.decryptionFailed("empty folder name") }
+        let encName = try await encryptFolderName(trimmed)
+        _ = try await apiClient.updateFolder(id: id, encryptedName: encName)
+        let folder = Folder(id: id, name: trimmed)
+        if let idx = folderStore.firstIndex(where: { $0.id == id }) {
+            folderStore[idx] = folder
+        }
+        logger.info("Folder renamed: \(id, privacy: .public)")
+        return folder
+    }
+
+    func deleteFolder(id: String) async throws {
+        try await apiClient.deleteFolder(id: id)
+        folderStore.removeAll { $0.id == id }
+        // Unfolder items that were in this folder (server does this too).
+        for i in items.indices where items[i].folderId == id {
+            let old = items[i]
+            items[i] = VaultItem(
+                id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: old.isDeleted,
+                creationDate: old.creationDate, revisionDate: old.revisionDate,
+                content: old.content, reprompt: old.reprompt, folderId: nil
+            )
+        }
+        logger.info("Folder deleted: \(id, privacy: .public)")
+    }
+
+    // MARK: - Move to folder
+
+    func moveItemToFolder(itemId: String, folderId: String?) async throws {
+        guard let idx = items.firstIndex(where: { $0.id == itemId }) else { return }
+        let old = items[idx]
+        try await apiClient.updateCipherPartial(id: itemId, folderId: folderId, favorite: old.isFavorite)
+        items[idx] = VaultItem(
+            id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: old.isDeleted,
+            creationDate: old.creationDate, revisionDate: old.revisionDate,
+            content: old.content, reprompt: old.reprompt, folderId: folderId
+        )
+        logger.info("Item moved to folder: \(itemId, privacy: .public)")
+    }
+
+    func moveItemsToFolder(itemIds: [String], folderId: String?) async throws {
+        try await apiClient.moveCiphersToFolder(ids: itemIds, folderId: folderId)
+        for i in items.indices where itemIds.contains(items[i].id) {
+            let old = items[i]
+            items[i] = VaultItem(
+                id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: old.isDeleted,
+                creationDate: old.creationDate, revisionDate: old.revisionDate,
+                content: old.content, reprompt: old.reprompt, folderId: folderId
+            )
+        }
+        logger.info("Bulk move to folder: \(itemIds.count, privacy: .public) item(s)")
     }
 
     // MARK: - Private helpers

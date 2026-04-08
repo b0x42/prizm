@@ -102,9 +102,15 @@ actor SyncRepositoryImpl: SyncRepository {
             logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check PrizmCryptoService logs for per-cipher errors")
         }
 
+        // Phase 2b: Decrypt folder names.
+        let (folders, folderFailedCount) = try await crypto.decryptFolders(folders: syncResponse.folders)
+        if folderFailedCount > 0 {
+            logger.error("decryptFolders: \(folderFailedCount, privacy: .public) folder(s) failed to decrypt")
+        }
+
         // Phase 3: Populate the in-memory vault store.
         let syncedAt = Date()
-        await vaultRepository.populate(items: items, syncedAt: syncedAt)
+        await vaultRepository.populate(items: items, folders: folders, syncedAt: syncedAt)
 
         return SyncResult(
             syncedAt:              syncedAt,
