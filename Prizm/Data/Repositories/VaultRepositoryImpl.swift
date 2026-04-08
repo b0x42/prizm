@@ -77,6 +77,8 @@ final class VaultRepositoryImpl: VaultRepository {
             return sorted(items.filter { !$0.isDeleted && $0.content.matchesItemType(itemType) })
         case .folder(let folderId):
             return sorted(items.filter { !$0.isDeleted && $0.folderId == folderId })
+        case .newFolder:
+            return []
         }
     }
 

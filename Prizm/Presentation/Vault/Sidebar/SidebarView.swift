@@ -25,6 +25,7 @@ struct SidebarView: View {
     // Inline create state
     @State private var isCreatingFolder = false
     @State private var newFolderName: String = "New Folder"
+    @FocusState private var isNewFolderFocused: Bool
 
     var body: some View {
         List(selection: $selection) {
@@ -52,6 +53,8 @@ struct SidebarView: View {
                 Button {
                     newFolderName = "New Folder"
                     isCreatingFolder = true
+                    selection = .newFolder
+                    isNewFolderFocused = true
                 } label: {
                     Image(systemName: "folder.badge.plus")
                         .font(.title3)
@@ -81,8 +84,11 @@ struct SidebarView: View {
                 TextField("Folder name", text: $newFolderName, onCommit: {
                     commitCreate()
                 })
+                .focused($isNewFolderFocused)
+                .tag(SidebarSelection.newFolder)
                 .onExitCommand {
                     isCreatingFolder = false
+                    selection = nil
                 }
             }
             ForEach(folders) { folder in
@@ -147,6 +153,7 @@ struct SidebarView: View {
     private func commitCreate() {
         let trimmed = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
         isCreatingFolder = false
+        selection = nil
         guard !trimmed.isEmpty else { return }
         onCreateFolder?(trimmed)
     }

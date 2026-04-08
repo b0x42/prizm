@@ -48,6 +48,8 @@ nonisolated enum SidebarSelection {
     case folder(String)
     /// Soft-deleted items awaiting permanent removal (Bitwarden Trash).
     case trash
+    /// Transient state while the user is typing a new folder name inline.
+    case newFolder
 }
 
 extension SidebarSelection {
@@ -58,6 +60,7 @@ extension SidebarSelection {
         case .type(let type):     return type.displayName
         case .folder:             return "Folder"
         case .trash:              return "Trash"
+        case .newFolder:          return "New Folder"
         }
     }
 }
@@ -70,6 +73,7 @@ extension SidebarSelection: Hashable {
         case (.type(let a), .type(let b)):             return a == b
         case (.folder(let a), .folder(let b)):         return a == b
         case (.trash, .trash):                         return true
+        case (.newFolder, .newFolder):                 return true
         default:                                       return false
         }
     }
@@ -81,6 +85,7 @@ extension SidebarSelection: Hashable {
         case .type(let type):    hasher.combine(2); hasher.combine(type)
         case .folder(let id):    hasher.combine(3); hasher.combine(id)
         case .trash:             hasher.combine(4)
+        case .newFolder:         hasher.combine(5)
         }
     }
 }

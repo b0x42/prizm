@@ -55,6 +55,8 @@ final class MockVaultRepository: VaultRepository {
             return populatedItems.filter { $0.folderId == folderId }
         case .trash:
             return populatedItems.filter(\.isDeleted)
+        case .newFolder:
+            return []
         }
     }
 
