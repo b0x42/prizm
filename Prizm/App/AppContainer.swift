@@ -34,6 +34,10 @@ final class AppContainer: ObservableObject {
     let deleteVaultItemUseCase:          DeleteVaultItemUseCaseImpl
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
     let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
+    let createFolderUseCase:             CreateFolderUseCaseImpl
+    let renameFolderUseCase:             RenameFolderUseCaseImpl
+    let deleteFolderUseCase:             DeleteFolderUseCaseImpl
+    let moveItemToFolderUseCase:         MoveItemToFolderUseCaseImpl
     let syncTimestampRepository:         SyncTimestampRepositoryImpl
     let getLastSyncDateUseCase:          any GetLastSyncDateUseCase
 
@@ -78,6 +82,10 @@ final class AppContainer: ObservableObject {
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
         self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
         self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
+        self.createFolderUseCase             = CreateFolderUseCaseImpl(repository: vault)
+        self.renameFolderUseCase             = RenameFolderUseCaseImpl(repository: vault)
+        self.deleteFolderUseCase             = DeleteFolderUseCaseImpl(repository: vault)
+        self.moveItemToFolderUseCase         = MoveItemToFolderUseCaseImpl(repository: vault)
         self.syncTimestampRepository         = syncTimestamp
         self.getLastSyncDateUseCase          = GetLastSyncDateUseCaseImpl(repository: syncTimestamp)
     }

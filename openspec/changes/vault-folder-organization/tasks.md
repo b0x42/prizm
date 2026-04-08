@@ -46,12 +46,12 @@
 
 ## 6. Domain Use Cases
 
-- [ ] 6.1 Create `CreateFolderUseCase` protocol in Domain and `CreateFolderUseCaseImpl` in Data (delegates to `VaultRepository.createFolder`)
-- [ ] 6.2 Create `RenameFolderUseCase` protocol in Domain and `RenameFolderUseCaseImpl` in Data (delegates to `VaultRepository.renameFolder`)
-- [ ] 6.3 Create `DeleteFolderUseCase` protocol in Domain and `DeleteFolderUseCaseImpl` in Data (delegates to `VaultRepository.deleteFolder`)
-- [ ] 6.4 Create `MoveItemToFolderUseCase` protocol in Domain and `MoveItemToFolderUseCaseImpl` in Data (delegates to `VaultRepository.moveItemToFolder` / `moveItemsToFolder`)
-- [ ] 6.5 Add use case tests for folder create, rename, delete, and move-to-folder
-- [ ] 6.6 Wire all folder use cases in `AppContainer`
+- [x] 6.1 Create `CreateFolderUseCase` protocol in Domain and `CreateFolderUseCaseImpl` in Data (delegates to `VaultRepository.createFolder`)
+- [x] 6.2 Create `RenameFolderUseCase` protocol in Domain and `RenameFolderUseCaseImpl` in Data (delegates to `VaultRepository.renameFolder`)
+- [x] 6.3 Create `DeleteFolderUseCase` protocol in Domain and `DeleteFolderUseCaseImpl` in Data (delegates to `VaultRepository.deleteFolder`)
+- [x] 6.4 Create `MoveItemToFolderUseCase` protocol in Domain and `MoveItemToFolderUseCaseImpl` in Data (delegates to `VaultRepository.moveItemToFolder` / `moveItemsToFolder`)
+- [x] 6.5 Add use case tests for folder create, rename, delete, and move-to-folder
+- [x] 6.6 Wire all folder use cases in `AppContainer`
 
 ## 7. Sidebar UI
 
