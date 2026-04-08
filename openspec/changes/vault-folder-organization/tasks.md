@@ -17,8 +17,8 @@
 - [ ] 3.1 Pass through `folderId` in `CipherMapper.map(raw:keys:)` → `VaultItem`
 - [ ] 3.2 Include `folderId` in `CipherMapper.toRawCipher(_:encryptedWith:)` output
 - [ ] 3.3 Update `CipherMapperTests` to verify `folderId` pass-through (forward and reverse)
-- [ ] 3.4 Add folder name decrypt in `SyncRepositoryImpl` using existing `EncString.decrypt(keys:)` path
-- [ ] 3.5 Add folder name encrypt in use case impls using existing `EncString.encrypt(data:keys:)` path
+- [ ] 3.4 Add `decryptFolders(folders: [RawFolder]) async throws -> [Folder]` to `PrizmCryptoService` protocol and impl (mirrors `decryptList` pattern)
+- [ ] 3.5 Add folder name encrypt helper in `VaultRepositoryImpl` using existing `EncString.encrypt(data:keys:)` path (called before API client methods)
 
 ## 4. API Client
 
@@ -33,25 +33,25 @@
 
 - [ ] 5.1 Add `folders: [Folder]` storage to `VaultRepositoryImpl` with populate/clear
 - [ ] 5.2 Add `folders() throws -> [Folder]` to `VaultRepository` protocol and impl (sorted alphabetically)
-- [ ] 5.3 Update `VaultRepository.populate` to accept folders alongside items
-- [ ] 5.4 Update `SyncRepositoryImpl.sync` to decrypt folder names from `syncResponse.folders` and pass to `vaultRepository.populate`
+- [ ] 5.3 Update `VaultRepository.populate` to accept folders alongside items; update `MockVaultRepository` and all existing tests that call `populate`
+- [ ] 5.4 Update `SyncRepositoryImpl.sync` to call `crypto.decryptFolders` and pass results to `vaultRepository.populate`
 - [ ] 5.5 Update `VaultRepositoryImpl.items(for:)` to handle `.folder(id)` selection (filter by `folderId`)
 - [ ] 5.6 Update `VaultRepositoryImpl.itemCounts()` to include per-folder counts
 - [ ] 5.7 Update `VaultRepositoryImpl.searchItems(query:in:)` to support folder-scoped search
-- [ ] 5.8 Add folder CRUD methods to `VaultRepository`: `createFolder`, `renameFolder`, `deleteFolder` (encrypt name, call API, update local cache)
-- [ ] 5.9 Add `moveItemToFolder(itemId:folderId:)` and `moveItemsToFolder(itemIds:folderId:)` to `VaultRepository` (call partial/move API, update local folderId)
-- [ ] 5.10 Update `MockVaultRepository` with folder methods and `folderId` support
+- [ ] 5.8 Add folder CRUD methods to `VaultRepository` protocol: `createFolder(name:)`, `renameFolder(id:name:)`, `deleteFolder(id:)` — `VaultRepositoryImpl` encrypts name internally, calls API, updates local cache
+- [ ] 5.9 Add `moveItemToFolder(itemId:folderId:)` and `moveItemsToFolder(itemIds:folderId:)` to `VaultRepository` — `VaultRepositoryImpl` calls partial/move API, updates local folderId
+- [ ] 5.10 Update `MockVaultRepository` with all new folder methods
 - [ ] 5.11 Add `VaultRepositoryImplTests` for folder-scoped filtering, counts, and folder CRUD
 - [ ] 5.12 Add tests for move-to-folder (single and bulk, local cache update)
 
 ## 6. Domain Use Cases
 
-- [ ] 6.1 Create `CreateFolderUseCase` protocol in Domain and `CreateFolderUseCaseImpl` in Data
-- [ ] 6.2 Create `RenameFolderUseCase` protocol in Domain and `RenameFolderUseCaseImpl` in Data
-- [ ] 6.3 Create `DeleteFolderUseCase` protocol in Domain and `DeleteFolderUseCaseImpl` in Data
-- [ ] 6.4 Create `MoveItemToFolderUseCase` protocol in Domain and `MoveItemToFolderUseCaseImpl` in Data (handles single and bulk)
+- [ ] 6.1 Create `CreateFolderUseCase` protocol in Domain and `CreateFolderUseCaseImpl` in Data (delegates to `VaultRepository.createFolder`)
+- [ ] 6.2 Create `RenameFolderUseCase` protocol in Domain and `RenameFolderUseCaseImpl` in Data (delegates to `VaultRepository.renameFolder`)
+- [ ] 6.3 Create `DeleteFolderUseCase` protocol in Domain and `DeleteFolderUseCaseImpl` in Data (delegates to `VaultRepository.deleteFolder`)
+- [ ] 6.4 Create `MoveItemToFolderUseCase` protocol in Domain and `MoveItemToFolderUseCaseImpl` in Data (delegates to `VaultRepository.moveItemToFolder` / `moveItemsToFolder`)
 - [ ] 6.5 Add use case tests for folder create, rename, delete, and move-to-folder
-- [ ] 6.6 Wire use cases in `AppContainer`
+- [ ] 6.6 Wire all folder use cases in `AppContainer`
 
 ## 7. Sidebar UI
 
@@ -65,7 +65,7 @@
 ## 8. Item List & Drag
 
 - [ ] 8.1 Change `ItemListView` selection from `VaultItem?` to `Set<String>` for multi-select support
-- [ ] 8.2 Update `VaultBrowserViewModel` to handle `Set<String>` selection and derive detail pane item
+- [ ] 8.2 Update `VaultBrowserViewModel` to handle `Set<String>` selection and derive detail pane item (single selected → show detail; zero or multiple → empty state)
 - [ ] 8.3 Add `.draggable` on item rows with item ID as `Transferable` payload
 - [ ] 8.4 Wire drop handler on folder rows to call `MoveItemToFolderUseCase` and refresh counts
 
@@ -73,11 +73,11 @@
 
 - [ ] 9.1 Add folder `Picker` to `ItemEditView` (all folders + "None", sorted alphabetically)
 - [ ] 9.2 Bind picker selection to `DraftVaultItem.folderId`
-- [ ] 9.3 Pass folders from `VaultRepository` through to the edit view model
+- [ ] 9.3 Pass `[Folder]` to `ItemEditViewModel` at construction time via `AppContainer` factory methods (call `vaultStore.folders()`)
 
 ## 10. ViewModel Integration
 
-- [ ] 10.1 Expose `folders` from `VaultBrowserViewModel` for sidebar rendering
+- [ ] 10.1 Expose `folders` from `VaultBrowserViewModel` (calls `vault.folders()`) for sidebar rendering
 - [ ] 10.2 Add folder CRUD actions to `VaultBrowserViewModel` calling use cases (create, rename, delete)
 - [ ] 10.3 Add move-to-folder action to `VaultBrowserViewModel` calling `MoveItemToFolderUseCase` (single and bulk)
 - [ ] 10.4 Update `refreshCounts` and `refreshItems` to include folder data

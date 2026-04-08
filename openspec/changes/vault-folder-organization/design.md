@@ -72,22 +72,24 @@ Item rows use `.draggable` with the item ID as the transferable payload. Folder 
 ### Decision 8: Folder operations go through Domain use cases
 
 Folder CRUD and move-to-folder operations follow the same use case pattern as existing item operations (`CreateVaultItemUseCase`, `EditVaultItemUseCase`, etc.). Each operation gets a protocol in Domain and an implementation in Data:
-- `CreateFolderUseCase` — encrypts name, calls API, updates repository
-- `RenameFolderUseCase` — encrypts new name, calls API, updates repository
-- `DeleteFolderUseCase` — calls API, clears folderId on affected items, updates repository
-- `MoveItemToFolderUseCase` — calls partial/move API, updates repository
+- `CreateFolderUseCase` — calls `VaultRepository.createFolder(name:)`
+- `RenameFolderUseCase` — calls `VaultRepository.renameFolder(id:name:)`
+- `DeleteFolderUseCase` — calls `VaultRepository.deleteFolder(id:)`
+- `MoveItemToFolderUseCase` — calls `VaultRepository.moveItemToFolder` / `moveItemsToFolder`
 
-ViewModels call use cases, never repository methods directly. This preserves the Clean Architecture layer boundary (Constitution §II).
+`VaultRepositoryImpl` handles encryption of folder names internally (same as how it calls `CipherMapper.toRawCipher` before `apiClient.createCipher`). Use case impls are thin coordinators — they do not call the API client or crypto directly. ViewModels call use cases, never repository methods directly. This preserves the Clean Architecture layer boundary (Constitution §II).
 
-**Rationale**: The existing codebase has a 1:1 use case per operation pattern. Folder operations are no different — they involve crypto (name encryption), API calls, and cache updates, which is exactly what use cases coordinate.
+### Decision 9: Folder name encryption happens in VaultRepositoryImpl
 
-### Decision 9: API client receives encrypted folder names, not plaintext
-
-The `PrizmAPIClientProtocol` folder methods accept already-encrypted EncString names. Encryption happens in the use case implementation (Data layer) before calling the API client, matching the existing pattern where `CipherMapper.toRawCipher` encrypts before `apiClient.createCipher` is called. Plaintext folder names never reach the API client layer.
+`VaultRepository` protocol methods accept plaintext folder names (e.g. `createFolder(name: String)`). `VaultRepositoryImpl` encrypts the name via `EncString.encrypt(data:keys:)` before passing the encrypted string to the API client. This matches the existing pattern: `VaultRepositoryImpl.create(_:)` calls `CipherMapper.toRawCipher` (which encrypts) before calling `apiClient.createCipher`. Plaintext folder names never reach the API client layer. The Domain protocol stays crypto-free (Constitution §II).
 
 ### Decision 10: Partial update response is not used to update cached cipher data
 
 The `PUT /ciphers/{id}/partial` response returns cipher details, but we only use it to confirm success. The local cache is updated by setting `folderId` on the existing `VaultItem` directly, not by re-mapping the response. This avoids re-decrypting the response and is consistent with how `deleteItem`/`restoreItem` update the cache by mutating the existing item.
+
+### Decision 11: Folder decryption goes through PrizmCryptoService
+
+`SyncRepositoryImpl` calls `crypto.decryptFolders(folders:)` — a new method on `PrizmCryptoService` that mirrors the existing `decryptList(ciphers:)` pattern. This keeps all crypto behind the service protocol boundary (Constitution §III). The method retrieves the current keys internally and decrypts each `RawFolder.name` EncString, returning `[Folder]`.
 
 ## Risks / Trade-offs
 

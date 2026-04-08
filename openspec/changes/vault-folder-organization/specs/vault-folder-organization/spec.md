@@ -59,11 +59,11 @@ The system SHALL provide a button (SF Symbol `folder.badge.plus`) on the "Folder
 ---
 
 ### Requirement: User can rename a folder
-The system SHALL support inline rename of a folder via two methods: (1) select a folder and press Enter, or (2) right-click a folder and choose "Rename" from the context menu. Both methods SHALL activate an inline editable text field on the folder row. Pressing Enter SHALL commit the new name, encrypt it, and send `PUT /api/folders/{id}` to the server. Pressing Escape SHALL cancel the rename and restore the previous name.
+The system SHALL support inline rename of a folder via SwiftUI's `.renameAction` modifier, which provides the standard macOS rename gesture: (1) click on an already-selected folder's name (single-click-to-rename, same as Finder), or (2) right-click a folder and choose "Rename" from the context menu. Both methods SHALL activate an inline editable text field on the folder row. Pressing Enter or clicking away SHALL commit the new name, encrypt it, and send `PUT /api/folders/{id}` to the server. Pressing Escape SHALL cancel the rename and restore the previous name.
 
-#### Scenario: Rename via Enter key
+#### Scenario: Rename via click on selected folder name
 - **GIVEN** a folder is selected in the sidebar
-- **WHEN** the user presses Enter
+- **WHEN** the user clicks on the folder name text
 - **THEN** the folder name SHALL become an editable text field with the current name selected
 
 #### Scenario: Rename via context menu
