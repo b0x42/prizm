@@ -498,10 +498,21 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let response: SyncResponse = try await perform(request: request)
-        if DebugConfig.isEnabled {
-            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) folders=\(response.folders.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
+        // Fetch raw data to log top-level JSON keys before decoding — diagnoses key-casing
+        // mismatches (e.g. "Folders" vs "folders") without requiring --debug-mode or test builds.
+        let (rawData, rawHTTPResponse) = try await session.data(for: request)
+        if let http = rawHTTPResponse as? HTTPURLResponse {
+            guard (200..<300).contains(http.statusCode) else {
+                let body = String(data: rawData, encoding: .utf8) ?? ""
+                throw APIError.httpError(statusCode: http.statusCode, body: body)
+            }
+            if let json = try? JSONSerialization.jsonObject(with: rawData) as? [String: Any] {
+                let keys = json.keys.sorted().joined(separator: ", ")
+                logger.info("fetchSync [\(http.statusCode, privacy: .public)] top-level keys: [\(keys, privacy: .public)]")
+            }
         }
+        let response = try JSONDecoder().decode(SyncResponse.self, from: rawData)
+        logger.info("fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) folders=\(response.folders.count, privacy: .public)")
         return response
     }
 
