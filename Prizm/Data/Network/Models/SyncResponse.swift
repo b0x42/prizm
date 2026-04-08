@@ -11,6 +11,7 @@ import Foundation
 nonisolated struct SyncResponse: Codable {
     let profile: RawProfile
     let ciphers: [RawCipher]
+    let folders: [RawFolder]
 }
 
 // MARK: - RawProfile

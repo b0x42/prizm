@@ -4,6 +4,7 @@ import Foundation
 /// Value type — safe to pass across layers without defensive copying.
 nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     let id: String
+    let folderId: String?
     let name: String
     let isFavorite: Bool
     let isDeleted: Bool
@@ -21,9 +22,10 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     init(
         id: String, name: String, isFavorite: Bool, isDeleted: Bool,
         creationDate: Date, revisionDate: Date, content: ItemContent,
-        reprompt: Int = 0
+        reprompt: Int = 0, folderId: String? = nil
     ) {
         self.id = id
+        self.folderId = folderId
         self.name = name
         self.isFavorite = isFavorite
         self.isDeleted = isDeleted

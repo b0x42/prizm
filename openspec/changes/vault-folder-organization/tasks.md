@@ -1,16 +1,16 @@
 ## 1. Wire Models & Sync
 
-- [ ] 1.1 Add `RawFolder` model (`id: String`, `name: String`, `revisionDate: String?`) to `Data/Network/Models/`
-- [ ] 1.2 Add `folders: [RawFolder]` to `SyncResponse`
-- [ ] 1.3 Add `folderId: String?` to `RawCipher`
+- [x] 1.1 Add `RawFolder` model (`id: String`, `name: String`, `revisionDate: String?`) to `Data/Network/Models/`
+- [x] 1.2 Add `folders: [RawFolder]` to `SyncResponse`
+- [x] 1.3 Add `folderId: String?` to `RawCipher`
 
 ## 2. Domain Entities
 
-- [ ] 2.1 Create `Folder` entity (`id: String`, `name: String`) in `Domain/Entities/`
-- [ ] 2.2 Add `folderId: String?` to `VaultItem` (with default `nil` in init)
-- [ ] 2.3 Add `var folderId: String?` to `DraftVaultItem` and `DraftVaultItem.blank(type:)`
-- [ ] 2.4 Add `.folder(String)` case to `SidebarSelection` (update `Equatable`, `Hashable`, `displayName`)
-- [ ] 2.5 Add `.folders` case to `SidebarSection`
+- [x] 2.1 Create `Folder` entity (`id: String`, `name: String`) in `Domain/Entities/`
+- [x] 2.2 Add `folderId: String?` to `VaultItem` (with default `nil` in init)
+- [x] 2.3 Add `var folderId: String?` to `DraftVaultItem` and `DraftVaultItem.blank(type:)`
+- [x] 2.4 Add `.folder(String)` case to `SidebarSelection` (update `Equatable`, `Hashable`, `displayName`)
+- [x] 2.5 Add `.folders` case to `SidebarSection`
 
 ## 3. Mapper & Crypto
 
