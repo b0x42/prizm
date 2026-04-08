@@ -42,7 +42,7 @@ For drag-and-drop of a single item, use `PUT /ciphers/{id}/partial` with `{ fold
 ### Decision 3: Apple Mail-style folder management in sidebar
 
 - Create: small `folder.badge.plus` SF Symbol button on the "Folders" section header
-- Rename: SwiftUI `.renameAction` / `RenameButton` for platform-standard inline rename (select + Enter, or right-click → Rename)
+- Rename: SwiftUI `.renameAction` / `RenameButton` for platform-standard inline rename (click on already-selected folder name, or right-click → Rename)
 - Delete: right-click context menu → "Delete Folder" with confirmation alert
 
 **Rationale**: Matches macOS platform conventions. SwiftUI provides `.renameAction` (macOS 14+), `.contextMenu`, and `.dropDestination` as built-in primitives. Prizm targets macOS 26, so all APIs are available.

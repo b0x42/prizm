@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: User can browse vault items by folder
-The system SHALL display a "Folders" section in the sidebar between the Menu section and the Types section. Each folder row SHALL display the folder name and a badge with the count of items assigned to that folder. Folders SHALL be sorted alphabetically by decrypted name (case-insensitive). Selecting a folder SHALL display all items assigned to that folder in the item list, regardless of item type. The item list SHALL be sorted alphabetically by name, consistent with other sidebar selections. Items without a `folderId` SHALL NOT appear under any folder — they remain accessible via All Items, Favorites, and Type filters only.
+The system SHALL display a "Folders" section in the sidebar between the Menu section and the Types section. The "Folders" section header SHALL always be visible (even when no folders exist) to provide access to the create button. Each folder row SHALL display the folder name and a badge with the count of items assigned to that folder. Folders SHALL be sorted alphabetically by decrypted name (case-insensitive). Selecting a folder SHALL display all items assigned to that folder in the item list, regardless of item type. The item list SHALL be sorted alphabetically by name, consistent with other sidebar selections. Items without a `folderId` SHALL NOT appear under any folder — they remain accessible via All Items, Favorites, and Type filters only.
 
 #### Scenario: Folders section appears in sidebar with correct counts
 - **WHEN** the vault browser opens and the user has folders
@@ -33,7 +33,7 @@ The system SHALL display a "Folders" section in the sidebar between the Menu sec
 ---
 
 ### Requirement: User can create a folder
-The system SHALL provide a button (SF Symbol `folder.badge.plus`) on the "Folders" section header. Clicking the button SHALL create a new folder with a default name "New Folder" and immediately enter inline rename mode so the user can type the desired name. Pressing Enter SHALL commit the name, encrypt it as an EncString type-2, and send `POST /api/folders` to the server. Pressing Escape SHALL cancel creation and remove the uncommitted folder row. The folder name SHALL be encrypted client-side before being sent to the server.
+The system SHALL provide a button (SF Symbol `folder.badge.plus`) on the "Folders" section header. Clicking the button SHALL create a new folder with a default name "New Folder" and immediately enter inline rename mode so the user can type the desired name. Pressing Enter SHALL commit the name, encrypt it as an EncString type-2, and send `POST /api/folders` to the server. Pressing Escape SHALL cancel creation and remove the uncommitted folder row. The folder name SHALL be encrypted client-side before being sent to the server. Empty or whitespace-only names SHALL be treated as a cancel (the folder row is removed without an API call).
 
 #### Scenario: Create folder via header button
 - **WHEN** the user clicks the folder-plus button on the Folders section header
@@ -41,7 +41,7 @@ The system SHALL provide a button (SF Symbol `folder.badge.plus`) on the "Folder
 - **AND** the text field SHALL be focused for immediate editing
 
 #### Scenario: Commit folder name with Enter
-- **GIVEN** the user is editing a new folder name
+- **GIVEN** the user is editing a new folder name with a non-empty value
 - **WHEN** the user presses Enter
 - **THEN** the folder name SHALL be encrypted and sent to the server via `POST /api/folders`
 - **AND** the folder SHALL appear in the sidebar sorted alphabetically
@@ -51,15 +51,20 @@ The system SHALL provide a button (SF Symbol `folder.badge.plus`) on the "Folder
 - **WHEN** the user presses Escape
 - **THEN** the new folder row SHALL be removed without making any API call
 
-#### Scenario: Folders section always shows when create button is needed
-- **WHEN** the user has no folders
-- **THEN** the "Folders" section header SHALL still appear with the create button, but with no folder rows beneath it
-- **AND** clicking the create button SHALL add the first folder row in inline edit mode
+#### Scenario: Empty name treated as cancel
+- **GIVEN** the user is editing a new folder name
+- **WHEN** the user clears the name to empty or whitespace-only and presses Enter
+- **THEN** the new folder row SHALL be removed without making any API call
+
+#### Scenario: Server error during folder creation
+- **GIVEN** the user commits a valid folder name
+- **WHEN** the server returns an error
+- **THEN** the uncommitted folder row SHALL be removed and an error alert SHALL be shown
 
 ---
 
 ### Requirement: User can rename a folder
-The system SHALL support inline rename of a folder via SwiftUI's `.renameAction` modifier, which provides the standard macOS rename gesture: (1) click on an already-selected folder's name (single-click-to-rename, same as Finder), or (2) right-click a folder and choose "Rename" from the context menu. Both methods SHALL activate an inline editable text field on the folder row. Pressing Enter or clicking away SHALL commit the new name, encrypt it, and send `PUT /api/folders/{id}` to the server. Pressing Escape SHALL cancel the rename and restore the previous name.
+The system SHALL support inline rename of a folder via SwiftUI's `.renameAction` modifier, which provides the standard macOS rename gesture: (1) click on an already-selected folder's name (single-click-to-rename, same as Finder), or (2) right-click a folder and choose "Rename" from the context menu. Both methods SHALL activate an inline editable text field on the folder row. Pressing Enter or clicking away SHALL commit the new name, encrypt it, and send `PUT /api/folders/{id}` to the server. Pressing Escape SHALL cancel the rename and restore the previous name. Empty or whitespace-only names SHALL be treated as a cancel.
 
 #### Scenario: Rename via click on selected folder name
 - **GIVEN** a folder is selected in the sidebar
@@ -71,7 +76,7 @@ The system SHALL support inline rename of a folder via SwiftUI's `.renameAction`
 - **THEN** the folder name SHALL become an editable text field
 
 #### Scenario: Commit rename
-- **GIVEN** the user is editing a folder name
+- **GIVEN** the user is editing a folder name with a non-empty value
 - **WHEN** the user presses Enter
 - **THEN** the new name SHALL be encrypted and sent to the server via `PUT /api/folders/{id}`
 - **AND** the folder SHALL re-sort alphabetically in the sidebar
@@ -80,6 +85,16 @@ The system SHALL support inline rename of a folder via SwiftUI's `.renameAction`
 - **GIVEN** the user is editing a folder name
 - **WHEN** the user presses Escape
 - **THEN** the folder name SHALL revert to its previous value without making any API call
+
+#### Scenario: Empty name on rename treated as cancel
+- **GIVEN** the user is editing a folder name
+- **WHEN** the user clears the name to empty or whitespace-only and presses Enter
+- **THEN** the folder name SHALL revert to its previous value without making any API call
+
+#### Scenario: Server error during rename
+- **GIVEN** the user commits a valid new folder name
+- **WHEN** the server returns an error
+- **THEN** the folder name SHALL revert to its previous value and an error alert SHALL be shown
 
 ---
 
@@ -102,10 +117,15 @@ The system SHALL allow folder deletion via right-click context menu → "Delete 
 - **WHEN** the user cancels
 - **THEN** no API call SHALL be made and the folder SHALL remain unchanged
 
+#### Scenario: Server error during folder deletion
+- **GIVEN** the user confirms folder deletion
+- **WHEN** the server returns an error
+- **THEN** the folder SHALL remain in the sidebar unchanged and an error alert SHALL be shown
+
 ---
 
 ### Requirement: User can assign items to folders via drag-and-drop
-The system SHALL support dragging one or more items from the item list onto a folder row in the sidebar. Single-item drops SHALL use `PUT /ciphers/{id}/partial` with the target `folderId`. Multi-item drops SHALL use `PUT /ciphers/move` with the list of item IDs and the target `folderId`. The drop target folder row SHALL show SwiftUI's default `isTargeted` highlight during the drag. After a successful drop, item counts SHALL refresh for both the source and target folders.
+The system SHALL support dragging one or more items from the item list onto a folder row in the sidebar. Single-item drops SHALL use `PUT /ciphers/{id}/partial` with the target `folderId`. Multi-item drops SHALL use `PUT /ciphers/move` with the list of item IDs and the target `folderId`. The drop target folder row SHALL show SwiftUI's default `isTargeted` highlight during the drag. After a successful drop, item counts SHALL refresh for both the source and target folders. Drag-and-drop SHALL only be available from the active item list — trashed items SHALL NOT be draggable.
 
 #### Scenario: Drag single item to folder
 - **GIVEN** an item is displayed in the item list
@@ -127,6 +147,15 @@ The system SHALL support dragging one or more items from the item list onto a fo
 - **GIVEN** an item is in folder "Work"
 - **WHEN** the user drags it onto folder "Personal"
 - **THEN** the item's `folderId` SHALL change to "Personal" and counts for both folders SHALL update
+
+#### Scenario: Trashed items are not draggable
+- **GIVEN** the user is viewing the Trash
+- **THEN** items in the Trash SHALL NOT be draggable to folders
+
+#### Scenario: Server error during drag-and-drop move
+- **GIVEN** the user drops an item onto a folder
+- **WHEN** the server returns an error
+- **THEN** the local cache SHALL NOT be updated and an error alert SHALL be shown
 
 ---
 

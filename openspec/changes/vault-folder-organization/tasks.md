@@ -31,14 +31,14 @@
 
 ## 5. Repository Layer
 
-- [ ] 5.1 Add `folders: [Folder]` storage to `VaultRepositoryImpl` with populate/clear
+- [ ] 5.1 Add `folders: [Folder]` storage to `VaultRepositoryImpl`; update `populate` and `clearVault` to include folders
 - [ ] 5.2 Add `folders() throws -> [Folder]` to `VaultRepository` protocol and impl (sorted alphabetically)
 - [ ] 5.3 Update `VaultRepository.populate` to accept folders alongside items; update `MockVaultRepository` and all existing tests that call `populate`
 - [ ] 5.4 Update `SyncRepositoryImpl.sync` to call `crypto.decryptFolders` and pass results to `vaultRepository.populate`
 - [ ] 5.5 Update `VaultRepositoryImpl.items(for:)` to handle `.folder(id)` selection (filter by `folderId`)
 - [ ] 5.6 Update `VaultRepositoryImpl.itemCounts()` to include per-folder counts
 - [ ] 5.7 Update `VaultRepositoryImpl.searchItems(query:in:)` to support folder-scoped search
-- [ ] 5.8 Add folder CRUD methods to `VaultRepository` protocol: `createFolder(name:)`, `renameFolder(id:name:)`, `deleteFolder(id:)` — `VaultRepositoryImpl` encrypts name internally, calls API, updates local cache
+- [ ] 5.8 Add folder CRUD methods to `VaultRepository` protocol: `createFolder(name:)`, `renameFolder(id:name:)`, `deleteFolder(id:)` — `VaultRepositoryImpl` encrypts name internally, calls API, updates local cache; reject empty/whitespace-only names before API call
 - [ ] 5.9 Add `moveItemToFolder(itemId:folderId:)` and `moveItemsToFolder(itemIds:folderId:)` to `VaultRepository` — `VaultRepositoryImpl` calls partial/move API, updates local folderId
 - [ ] 5.10 Update `MockVaultRepository` with all new folder methods
 - [ ] 5.11 Add `VaultRepositoryImplTests` for folder-scoped filtering, counts, and folder CRUD
@@ -65,7 +65,7 @@
 ## 8. Item List & Drag
 
 - [ ] 8.1 Change `ItemListView` selection from `VaultItem?` to `Set<String>` for multi-select support
-- [ ] 8.2 Update `VaultBrowserViewModel` to handle `Set<String>` selection and derive detail pane item (single selected → show detail; zero or multiple → empty state)
+- [ ] 8.2 Update `VaultBrowserViewModel` to handle `Set<String>` selection and derive detail pane item (single selected → show detail; zero or multiple → empty state); disable Edit, Copy, Favorite, Delete actions when multiple items are selected
 - [ ] 8.3 Add `.draggable` on item rows with item ID as `Transferable` payload
 - [ ] 8.4 Wire drop handler on folder rows to call `MoveItemToFolderUseCase` and refresh counts
 
@@ -78,8 +78,8 @@
 ## 10. ViewModel Integration
 
 - [ ] 10.1 Expose `folders` from `VaultBrowserViewModel` (calls `vault.folders()`) for sidebar rendering
-- [ ] 10.2 Add folder CRUD actions to `VaultBrowserViewModel` calling use cases (create, rename, delete)
-- [ ] 10.3 Add move-to-folder action to `VaultBrowserViewModel` calling `MoveItemToFolderUseCase` (single and bulk)
+- [ ] 10.2 Add folder CRUD actions to `VaultBrowserViewModel` calling use cases (create, rename, delete); surface errors via `actionError` alert; validate empty/whitespace names client-side before calling use case
+- [ ] 10.3 Add move-to-folder action to `VaultBrowserViewModel` calling `MoveItemToFolderUseCase` (single and bulk); surface errors via `actionError`; do not update local cache on failure
 - [ ] 10.4 Update `refreshCounts` and `refreshItems` to include folder data
 - [ ] 10.5 Handle folder deletion: if the deleted folder was selected, switch to All Items
 - [ ] 10.6 Add delete folder confirmation alert to `VaultBrowserView`
