@@ -55,12 +55,12 @@
 
 ## 7. Sidebar UI
 
-- [ ] 7.1 Add `.folders` section to `SidebarView` with dynamic folder rows sorted alphabetically
-- [ ] 7.2 Add `folder.badge.plus` button on the Folders section header for folder creation
-- [ ] 7.3 Add `.contextMenu` on folder rows with "Rename" and "Delete Folder" actions
-- [ ] 7.4 Implement inline rename using SwiftUI `.renameAction` on folder rows
-- [ ] 7.5 Add `.dropDestination` on folder rows to accept dragged item IDs
-- [ ] 7.6 Always show the Folders section header (with create button); show folder rows only when folders exist
+- [x] 7.1 Add `.folders` section to `SidebarView` with dynamic folder rows sorted alphabetically
+- [x] 7.2 Add `folder.badge.plus` button on the Folders section header for folder creation
+- [x] 7.3 Add `.contextMenu` on folder rows with "Rename" and "Delete Folder" actions
+- [x] 7.4 Implement inline rename using SwiftUI `.renameAction` on folder rows
+- [x] 7.5 Add `.dropDestination` on folder rows to accept dragged item IDs
+- [x] 7.6 Always show the Folders section header (with create button); show folder rows only when folders exist
 
 ## 8. Item List & Drag
 
