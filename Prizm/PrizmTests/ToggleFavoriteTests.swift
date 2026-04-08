@@ -24,6 +24,10 @@ final class ToggleFavoriteTests: XCTestCase {
             delete:          StubDelete(),
             permanentDelete: StubPermanentDelete(),
             restore:         StubRestore(),
+            createFolder:    StubCreateFolder(),
+            renameFolder:    StubRenameFolder(),
+            deleteFolder:    StubDeleteFolder(),
+            moveItem:        StubMoveItem(),
             syncTimestamp:   syncRepo,
             getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
@@ -64,3 +68,16 @@ final class ToggleFavoriteTests: XCTestCase {
 private final class StubDelete: DeleteVaultItemUseCase { func execute(id: String) async throws {} }
 private final class StubPermanentDelete: PermanentDeleteVaultItemUseCase { func execute(id: String) async throws {} }
 private final class StubRestore: RestoreVaultItemUseCase { func execute(id: String) async throws {} }
+private struct StubCreateFolder: CreateFolderUseCase {
+    func execute(name: String) async throws -> Folder { Folder(id: "stub", name: name) }
+}
+private struct StubRenameFolder: RenameFolderUseCase {
+    func execute(id: String, name: String) async throws -> Folder { Folder(id: id, name: name) }
+}
+private struct StubDeleteFolder: DeleteFolderUseCase {
+    func execute(id: String) async throws {}
+}
+private struct StubMoveItem: MoveItemToFolderUseCase {
+    func execute(itemId: String, folderId: String?) async throws {}
+    func execute(itemIds: [String], folderId: String?) async throws {}
+}

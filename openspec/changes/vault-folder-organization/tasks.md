@@ -64,22 +64,22 @@
 
 ## 8. Item List & Drag
 
-- [ ] 8.1 Change `ItemListView` selection from `VaultItem?` to `Set<String>` for multi-select support
-- [ ] 8.2 Update `VaultBrowserViewModel` to handle `Set<String>` selection and derive detail pane item (single selected → show detail; zero or multiple → empty state); disable Edit, Copy, Favorite, Delete actions when multiple items are selected
-- [ ] 8.3 Add `.draggable` on item rows with item ID as `Transferable` payload
-- [ ] 8.4 Wire drop handler on folder rows to call `MoveItemToFolderUseCase` and refresh counts
+- [x] 8.1 Change `ItemListView` selection from `VaultItem?` to `Set<String>` for multi-select support
+- [x] 8.2 Update `VaultBrowserViewModel` to handle `Set<String>` selection and derive detail pane item (single selected → show detail; zero or multiple → empty state); disable Edit, Copy, Favorite, Delete actions when multiple items are selected
+- [x] 8.3 Add `.draggable` on item rows with item ID as `Transferable` payload
+- [x] 8.4 Wire drop handler on folder rows to call `MoveItemToFolderUseCase` and refresh counts
 
 ## 9. Edit Sheet — Folder Picker
 
-- [ ] 9.1 Add folder `Picker` to `ItemEditView` (all folders + "None", sorted alphabetically)
-- [ ] 9.2 Bind picker selection to `DraftVaultItem.folderId`
-- [ ] 9.3 Pass `[Folder]` to `ItemEditViewModel` at construction time via `AppContainer` factory methods (call `vaultStore.folders()`)
+- [x] 9.1 Add folder `Picker` to `ItemEditView` (all folders + "None", sorted alphabetically)
+- [x] 9.2 Bind picker selection to `DraftVaultItem.folderId`
+- [x] 9.3 Pass `[Folder]` to `ItemEditViewModel` at construction time via `AppContainer` factory methods (call `vaultStore.folders()`)
 
 ## 10. ViewModel Integration
 
-- [ ] 10.1 Expose `folders` from `VaultBrowserViewModel` (calls `vault.folders()`) for sidebar rendering
-- [ ] 10.2 Add folder CRUD actions to `VaultBrowserViewModel` calling use cases (create, rename, delete); surface errors via `actionError` alert; validate empty/whitespace names client-side before calling use case
-- [ ] 10.3 Add move-to-folder action to `VaultBrowserViewModel` calling `MoveItemToFolderUseCase` (single and bulk); surface errors via `actionError`; do not update local cache on failure
-- [ ] 10.4 Update `refreshCounts` and `refreshItems` to include folder data
-- [ ] 10.5 Handle folder deletion: if the deleted folder was selected, switch to All Items
-- [ ] 10.6 Add delete folder confirmation alert to `VaultBrowserView`
+- [x] 10.1 Expose `folders` from `VaultBrowserViewModel` (calls `vault.folders()`) for sidebar rendering
+- [x] 10.2 Add folder CRUD actions to `VaultBrowserViewModel` calling use cases (create, rename, delete); surface errors via `actionError` alert; validate empty/whitespace names client-side before calling use case
+- [x] 10.3 Add move-to-folder action to `VaultBrowserViewModel` calling `MoveItemToFolderUseCase` (single and bulk); surface errors via `actionError`; do not update local cache on failure
+- [x] 10.4 Update `refreshCounts` and `refreshItems` to include folder data
+- [x] 10.5 Handle folder deletion: if the deleted folder was selected, switch to All Items
+- [x] 10.6 Add delete folder confirmation alert to `VaultBrowserView`

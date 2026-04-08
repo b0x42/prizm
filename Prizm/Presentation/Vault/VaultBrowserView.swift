@@ -17,6 +17,8 @@ struct VaultBrowserView: View {
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
+    @State private var showDeleteFolderAlert = false
+    @State private var folderToDelete: Folder?
     @State private var isSearchFieldFocused = false
 
     private let logger = Logger(subsystem: "com.prizm", category: "UI.VaultBrowser")
@@ -35,7 +37,14 @@ struct VaultBrowserView: View {
                             }
                         ),
                         itemCounts: viewModel.itemCounts,
-                        folders: viewModel.folders
+                        folders: viewModel.folders,
+                        onCreateFolder: { viewModel.createFolder(name: "New Folder") },
+                        onRenameFolder: { id, name in viewModel.renameFolder(id: id, name: name) },
+                        onDeleteFolder: { folder in
+                            folderToDelete = folder
+                            showDeleteFolderAlert = true
+                        },
+                        onDropItems: { ids, folderId in viewModel.moveItemsToFolder(itemIds: ids, folderId: folderId) }
                     )
                     SyncStatusView(label: viewModel.syncStatusLabel)
                 }
@@ -181,6 +190,16 @@ struct VaultBrowserView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("\"\(viewModel.itemSelection?.name ?? "")\" will be permanently deleted and cannot be recovered.")
+        }
+        .alert("Delete Folder?", isPresented: $showDeleteFolderAlert) {
+            Button("Delete Folder", role: .destructive) {
+                if let folder = folderToDelete {
+                    viewModel.deleteFolder(id: folder.id)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Items in \"\(folderToDelete?.name ?? "")\" will not be deleted — they will become unfoldered.")
         }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in

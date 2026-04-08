@@ -66,27 +66,32 @@ final class ItemEditViewModel: ObservableObject {
     /// (VaultBrowserViewModel or parent) can refresh the list pane.
     var onSaveSuccess: ((VaultItem) -> Void)?
 
+    /// Available folders for the folder picker in the edit sheet.
+    let folders: [Folder]
+
     /// Retain token for the vault-lock observer.
     private nonisolated(unsafe) var lockObserver: NSObjectProtocol?
 
     // MARK: - Init
 
     /// Edit mode: initialised with an existing item.
-    init(item: VaultItem, useCase: any EditVaultItemUseCase) {
+    init(item: VaultItem, useCase: any EditVaultItemUseCase, folders: [Folder] = []) {
         self.draft    = DraftVaultItem(item)
         self.original = DraftVaultItem(item)
         self.editUseCase  = useCase
         self.createUseCase = nil
+        self.folders = folders
         subscribeToVaultLock()
     }
 
     /// Create mode: initialised with a blank draft for the given type.
-    init(type: ItemType, useCase: any CreateVaultItemUseCase) {
+    init(type: ItemType, useCase: any CreateVaultItemUseCase, folders: [Folder] = []) {
         let blank = DraftVaultItem.blank(type: type)
         self.draft    = blank
         self.original = blank
         self.editUseCase  = nil
         self.createUseCase = useCase
+        self.folders = folders
         subscribeToVaultLock()
     }
 

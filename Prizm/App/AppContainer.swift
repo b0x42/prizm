@@ -121,6 +121,10 @@ final class AppContainer: ObservableObject {
             delete:          deleteVaultItemUseCase,
             permanentDelete: permanentDeleteVaultItemUseCase,
             restore:         restoreVaultItemUseCase,
+            createFolder:    createFolderUseCase,
+            renameFolder:    renameFolderUseCase,
+            deleteFolder:    deleteFolderUseCase,
+            moveItem:        moveItemToFolderUseCase,
             syncTimestamp:   syncTimestampRepository,
             getLastSyncDate: getLastSyncDateUseCase
         )
@@ -129,11 +133,13 @@ final class AppContainer: ObservableObject {
     /// Creates an `ItemEditViewModel` for the given item, wired with the live edit use case.
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
     func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
-        ItemEditViewModel(item: item, useCase: editVaultItemUseCase)
+        let folders = (try? vaultStore.folders()) ?? []
+        return ItemEditViewModel(item: item, useCase: editVaultItemUseCase, folders: folders)
     }
 
     /// Creates an `ItemEditViewModel` in create mode for the given item type.
     func makeItemCreateViewModel(for type: ItemType) -> ItemEditViewModel {
-        ItemEditViewModel(type: type, useCase: createVaultItemUseCase)
+        let folders = (try? vaultStore.folders()) ?? []
+        return ItemEditViewModel(type: type, useCase: createVaultItemUseCase, folders: folders)
     }
 }
