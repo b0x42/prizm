@@ -108,7 +108,8 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
                 id: "pid", email: "test@example.com", name: nil,
                 key: "2.k==", privateKey: nil
             ),
-            ciphers: []
+            ciphers: [],
+            folders: []
         )
     }
 
@@ -172,6 +173,44 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         restoreCallCount += 1
         lastRestoredId = id
         if let err = restoreShouldThrow { throw err }
+    }
+
+    // MARK: - Stubs: Folder CRUD
+
+    nonisolated(unsafe) var createFolderResponse: RawFolder?
+    nonisolated(unsafe) var createFolderShouldThrow: Error?
+
+    func createFolder(encryptedName: String) async throws -> RawFolder {
+        if let err = createFolderShouldThrow { throw err }
+        return createFolderResponse ?? RawFolder(id: UUID().uuidString, name: encryptedName, revisionDate: nil)
+    }
+
+    nonisolated(unsafe) var updateFolderResponse: RawFolder?
+    nonisolated(unsafe) var updateFolderShouldThrow: Error?
+
+    func updateFolder(id: String, encryptedName: String) async throws -> RawFolder {
+        if let err = updateFolderShouldThrow { throw err }
+        return updateFolderResponse ?? RawFolder(id: id, name: encryptedName, revisionDate: nil)
+    }
+
+    nonisolated(unsafe) var deleteFolderShouldThrow: Error?
+
+    func deleteFolder(id: String) async throws {
+        if let err = deleteFolderShouldThrow { throw err }
+    }
+
+    // MARK: - Stubs: Cipher partial / move
+
+    nonisolated(unsafe) var updateCipherPartialShouldThrow: Error?
+
+    func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws {
+        if let err = updateCipherPartialShouldThrow { throw err }
+    }
+
+    nonisolated(unsafe) var moveCiphersShouldThrow: Error?
+
+    func moveCiphersToFolder(ids: [String], folderId: String?) async throws {
+        if let err = moveCiphersShouldThrow { throw err }
     }
 
 }

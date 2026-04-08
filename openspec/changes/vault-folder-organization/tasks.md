@@ -22,12 +22,12 @@
 
 ## 4. API Client
 
-- [ ] 4.1 Add `createFolder(encryptedName: String) async throws -> RawFolder` to `PrizmAPIClientProtocol` and impl (`POST /api/folders`)
-- [ ] 4.2 Add `updateFolder(id: String, encryptedName: String) async throws -> RawFolder` (`PUT /api/folders/{id}`)
-- [ ] 4.3 Add `deleteFolder(id: String) async throws` (`DELETE /api/folders/{id}`)
-- [ ] 4.4 Add `updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws` (`PUT /ciphers/{id}/partial`)
-- [ ] 4.5 Add `moveCiphersToFolder(ids: [String], folderId: String?) async throws` (`PUT /ciphers/move`)
-- [ ] 4.6 Update `MockPrizmAPIClient` with folder endpoint stubs
+- [x] 4.1 Add `createFolder(encryptedName: String) async throws -> RawFolder` to `PrizmAPIClientProtocol` and impl (`POST /api/folders`)
+- [x] 4.2 Add `updateFolder(id: String, encryptedName: String) async throws -> RawFolder` (`PUT /api/folders/{id}`)
+- [x] 4.3 Add `deleteFolder(id: String) async throws` (`DELETE /api/folders/{id}`)
+- [x] 4.4 Add `updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws` (`PUT /ciphers/{id}/partial`)
+- [x] 4.5 Add `moveCiphersToFolder(ids: [String], folderId: String?) async throws` (`PUT /ciphers/move`)
+- [x] 4.6 Update `MockPrizmAPIClient` with folder endpoint stubs
 
 ## 5. Repository Layer
 
