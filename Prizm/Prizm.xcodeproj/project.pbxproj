@@ -102,7 +102,17 @@
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
 				B1335B23AD5F4D1CB28E3F19 /* AboutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */; };
 		77DF6B9FF920443AA5F94219 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABEC630F6934ED883504C9D /* AboutView.swift */; };
-		/* End PBXBuildFile section */
+				599A7C867D6F4FA5A9B27BC2 /* Folder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC78A983744489DB1F8BCFB /* Folder.swift */; };
+		87146F7FF9C64EEA974FE521 /* CreateFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EA3A6C1A304AAF9510682E /* CreateFolderUseCase.swift */; };
+		C2ACEC2617F14F5A80A7FCED /* DeleteFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D05DB7E6EC4A74802AEE58 /* DeleteFolderUseCase.swift */; };
+		3025343DFDDB4ACE97F1EC2A /* MoveItemToFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3AF8078B4F847EBACB42331 /* MoveItemToFolderUseCase.swift */; };
+		2B6CA91FF52E48F69DA89240 /* RenameFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D6E5C134C44B349511A5DC /* RenameFolderUseCase.swift */; };
+		09856BAE1DB241E8A55EB941 /* CreateFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2508605E27F24F8FB577CE41 /* CreateFolderUseCaseImpl.swift */; };
+		211E56C54900452E87AA072F /* DeleteFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */; };
+		DACC17049E22446A8EBDF996 /* MoveItemToFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3F012437604C4281E27DC2 /* MoveItemToFolderUseCaseImpl.swift */; };
+		F945AAE42C17412F9A786BA1 /* RenameFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 548AFB0AB0424A62BEAE1492 /* RenameFolderUseCaseImpl.swift */; };
+		68A370309477440DA143EB26 /* RawFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C2BEABB748471395CEC2C6 /* RawFolder.swift */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		4309FD112F68121F0031C9F4 /* PBXContainerItemProxy */ = {
@@ -214,7 +224,17 @@
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 				EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "About/AboutViewModel.swift"; sourceTree = "<group>"; };
 		4ABEC630F6934ED883504C9D /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "About/AboutView.swift"; sourceTree = "<group>"; };
-		/* End PBXFileReference section */
+				0AC78A983744489DB1F8BCFB /* Folder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Folder.swift; sourceTree = "<group>"; };
+		E9EA3A6C1A304AAF9510682E /* CreateFolderUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFolderUseCase.swift; sourceTree = "<group>"; };
+		B5D05DB7E6EC4A74802AEE58 /* DeleteFolderUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFolderUseCase.swift; sourceTree = "<group>"; };
+		A3AF8078B4F847EBACB42331 /* MoveItemToFolderUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveItemToFolderUseCase.swift; sourceTree = "<group>"; };
+		47D6E5C134C44B349511A5DC /* RenameFolderUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameFolderUseCase.swift; sourceTree = "<group>"; };
+		2508605E27F24F8FB577CE41 /* CreateFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFolderUseCaseImpl.swift; sourceTree = "<group>"; };
+		BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFolderUseCaseImpl.swift; sourceTree = "<group>"; };
+		BE3F012437604C4281E27DC2 /* MoveItemToFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveItemToFolderUseCaseImpl.swift; sourceTree = "<group>"; };
+		548AFB0AB0424A62BEAE1492 /* RenameFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameFolderUseCaseImpl.swift; sourceTree = "<group>"; };
+		D7C2BEABB748471395CEC2C6 /* RawFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawFolder.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		43EB6FED2F7EF09C0047ED9F /* Exceptions for "Prizm" folder in "Prizm" target */ = {
@@ -291,6 +311,7 @@
 				CAB323D45FF2440C95C0BA70 /* CustomField.swift */,
 				D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */,
 				B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */,
+				0AC78A983744489DB1F8BCFB /* Folder.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -319,6 +340,10 @@
 				4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */,
 				6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
 				C2D3E4F5A6B74892C3D4E5F6 /* GetLastSyncDateUseCase.swift */,
+				E9EA3A6C1A304AAF9510682E /* CreateFolderUseCase.swift */,
+				B5D05DB7E6EC4A74802AEE58 /* DeleteFolderUseCase.swift */,
+				A3AF8078B4F847EBACB42331 /* MoveItemToFolderUseCase.swift */,
+				47D6E5C134C44B349511A5DC /* RenameFolderUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -362,6 +387,7 @@
 			children = (
 				95E5FF4D219144A18C2BC5AA /* RawCipher.swift */,
 				15F3A553820942CF9B3935FD /* SyncResponse.swift */,
+				D7C2BEABB748471395CEC2C6 /* RawFolder.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -660,6 +686,10 @@
 				75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */,
 				8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
 				A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */,
+				2508605E27F24F8FB577CE41 /* CreateFolderUseCaseImpl.swift */,
+				BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */,
+				BE3F012437604C4281E27DC2 /* MoveItemToFolderUseCaseImpl.swift */,
+				548AFB0AB0424A62BEAE1492 /* RenameFolderUseCaseImpl.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -878,6 +908,16 @@
 				AA0001040000000400000004 /* CryptographicRandomnessProvider.swift in Sources */,
 				AA0001050000000500000005 /* PasswordGeneratorViewModel.swift in Sources */,
 				AA0001060000000600000006 /* PasswordGeneratorView.swift in Sources */,
+				599A7C867D6F4FA5A9B27BC2 /* Folder.swift in Sources */,
+				87146F7FF9C64EEA974FE521 /* CreateFolderUseCase.swift in Sources */,
+				C2ACEC2617F14F5A80A7FCED /* DeleteFolderUseCase.swift in Sources */,
+				3025343DFDDB4ACE97F1EC2A /* MoveItemToFolderUseCase.swift in Sources */,
+				2B6CA91FF52E48F69DA89240 /* RenameFolderUseCase.swift in Sources */,
+				09856BAE1DB241E8A55EB941 /* CreateFolderUseCaseImpl.swift in Sources */,
+				211E56C54900452E87AA072F /* DeleteFolderUseCaseImpl.swift in Sources */,
+				DACC17049E22446A8EBDF996 /* MoveItemToFolderUseCaseImpl.swift in Sources */,
+				F945AAE42C17412F9A786BA1 /* RenameFolderUseCaseImpl.swift in Sources */,
+				68A370309477440DA143EB26 /* RawFolder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

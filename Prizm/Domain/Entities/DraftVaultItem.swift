@@ -303,6 +303,7 @@ extension VaultItem {
     /// post-save local patching if needed; normally the API response is used directly.
     init(_ draft: DraftVaultItem) {
         self.id = draft.id
+        self.folderId = draft.folderId
         self.name = draft.name
         self.isFavorite = draft.isFavorite
         self.isDeleted = draft.isDeleted
