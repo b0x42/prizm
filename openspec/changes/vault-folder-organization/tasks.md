@@ -14,11 +14,11 @@
 
 ## 3. Mapper & Crypto
 
-- [ ] 3.1 Pass through `folderId` in `CipherMapper.map(raw:keys:)` → `VaultItem`
-- [ ] 3.2 Include `folderId` in `CipherMapper.toRawCipher(_:encryptedWith:)` output
-- [ ] 3.3 Update `CipherMapperTests` to verify `folderId` pass-through (forward and reverse)
-- [ ] 3.4 Add `decryptFolders(folders: [RawFolder]) async throws -> [Folder]` to `PrizmCryptoService` protocol and impl (mirrors `decryptList` pattern)
-- [ ] 3.5 Add folder name encrypt helper in `VaultRepositoryImpl` using existing `EncString.encrypt(data:keys:)` path (called before API client methods)
+- [x] 3.1 Pass through `folderId` in `CipherMapper.map(raw:keys:)` → `VaultItem`
+- [x] 3.2 Include `folderId` in `CipherMapper.toRawCipher(_:encryptedWith:)` output
+- [x] 3.3 Update `CipherMapperTests` to verify `folderId` pass-through (forward and reverse)
+- [x] 3.4 Add `decryptFolders(folders: [RawFolder]) async throws -> [Folder]` to `PrizmCryptoService` protocol and impl (mirrors `decryptList` pattern)
+- [x] 3.5 Add folder name encrypt helper in `VaultRepositoryImpl` using existing `EncString.encrypt(data:keys:)` path (called before API client methods)
 
 ## 4. API Client
 

@@ -250,6 +250,24 @@ final class VaultRepositoryImpl: VaultRepository {
     private func sorted(_ input: [VaultItem]) -> [VaultItem] {
         input.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
+
+    /// Encrypts a plaintext folder name as a type-2 EncString using the current vault keys.
+    /// Called before folder create/rename API calls.
+    ///
+    /// - Security: AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC) with a fresh random IV.
+    ///   Same algorithm as cipher field encryption in `CipherMapper.encryptString`.
+    private func encryptFolderName(_ name: String) async throws -> String {
+        let keys: CryptoKeys
+        do {
+            keys = try await crypto.currentKeys()
+        } catch PrizmCryptoServiceError.vaultLocked {
+            throw VaultError.vaultLocked
+        }
+        guard let data = name.data(using: .utf8) else {
+            throw VaultError.decryptionFailed("utf8-encode")
+        }
+        return try EncString.encrypt(data: data, keys: keys).toString()
+    }
 }
 
 // MARK: - ItemContent search / type matching
