@@ -11,7 +11,7 @@ The existing architecture follows a clean layered pattern: wire models (`RawCiph
 - Full folder CRUD (create, rename, delete) via the Bitwarden folder API
 - Assign items to folders via edit sheet picker and drag-and-drop
 - Sidebar "Folders" section with Apple Mail-style interactions (header create button, right-click context menu, Enter-to-rename)
-- Multi-select drag-and-drop of items onto folder rows
+- Single-item drag-and-drop of items onto folder rows
 - Folder-scoped search when a folder is selected
 
 **Non-Goals:**
@@ -47,11 +47,9 @@ For drag-and-drop of a single item, use `PUT /ciphers/{id}/partial` with `{ fold
 
 **Rationale**: Matches macOS platform conventions. SwiftUI provides `.renameAction` (macOS 14+), `.contextMenu`, and `.dropDestination` as built-in primitives. Prizm targets macOS 26, so all APIs are available.
 
-### Decision 4: Multi-select via Set<String> selection on item list
+### Decision 4: Multi-select deferred to follow-up change
 
-Change `ItemListView` selection from single `VaultItem?` to `Set<String>` (item IDs) to support ⌘-click and ⇧-click multi-select. This enables bulk drag-and-drop onto folder rows.
-
-**Rationale**: SwiftUI `List(selection: Binding<Set<...>>)` provides native multi-select with standard macOS keyboard modifiers. The detail pane shows content for the last-selected item (or empty state if multiple are selected).
+Multi-select (`Set<String>` selection on `ItemListView`) was originally planned for this change but deferred due to the cross-cutting refactor required (touches ItemListView, TrashView, VaultBrowserView, VaultBrowserViewModel, and all selection callbacks). Single-item drag-and-drop covers the primary use case. Bulk drag-and-drop via `PUT /ciphers/move` is implemented in the Data layer and ready for when multi-select is added.
 
 ### Decision 5: folderId as a plain String? pass-through on VaultItem
 
@@ -94,8 +92,6 @@ The `PUT /ciphers/{id}/partial` response returns cipher details, but we only use
 ## Risks / Trade-offs
 
 **[Risk] Inline rename in NavigationSplitView sidebar has had SwiftUI bugs** → Mitigation: Use `.renameAction` (the official API) rather than hand-rolling TextField-in-List. If the API has issues on macOS 26, fall back to a rename alert/popover.
-
-**[Risk] Multi-select changes the item list selection model** → Mitigation: The detail pane shows the last-selected item when one item is selected, empty state when zero or multiple are selected. This is consistent with Finder behavior. Existing single-click-to-view behavior is preserved.
 
 **[Risk] PUT /ciphers/{id}/partial was subject to a Vaultwarden security vulnerability (CVE-2026-27898)** → Mitigation: The vulnerability was an authorization bypass (accessing other users' ciphers), patched in Vaultwarden 1.35.4. Prizm already targets 1.35.4+ as the minimum version. The endpoint itself is stable and correct for the authenticated user's own ciphers.
 

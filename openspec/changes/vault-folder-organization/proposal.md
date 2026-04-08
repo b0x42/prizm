@@ -9,7 +9,7 @@ Prizm has no concept of folders. Users who organise their Bitwarden/Vaultwarden 
 - Add a "Folders" section to the sidebar between Menu and Types, sorted alphabetically by name, with per-folder item counts
 - Add folder CRUD: create (Apple Mail-style button on section header), rename (select + Enter or right-click → Rename), delete (right-click → Delete) via the Bitwarden folder API endpoints
 - Add a folder picker to the item edit/create sheet so users can assign or change an item's folder
-- Support drag-and-drop of items (single and multi-select) onto sidebar folder rows to move items between folders, using `PUT /ciphers/{id}/partial` for single moves and `PUT /ciphers/move` for bulk moves
+- Support drag-and-drop of items onto sidebar folder rows to move items between folders, using `PUT /ciphers/{id}/partial`
 - Items without a `folderId` have no dedicated sidebar row — they remain accessible via All Items, Favorites, and Type filters
 - Folders are flat (no nested Parent/Child convention)
 - Folder names are encrypted client-side (EncString type-2) before being sent to the server, matching the existing cipher encryption pattern
@@ -20,7 +20,7 @@ Prizm has no concept of folders. Users who organise their Bitwarden/Vaultwarden 
 - `vault-folder-organization`: Folder browsing, CRUD, item-to-folder assignment, and drag-and-drop in the sidebar
 
 ### Modified Capabilities
-- `vault-browser-ui`: Sidebar gains a new "Folders" section with dynamic rows, item counts, context menus, and drop targets; `SidebarSelection` gains a `.folder(id)` case; item list supports multi-select for bulk drag operations
+- `vault-browser-ui`: Sidebar gains a new "Folders" section with dynamic rows, item counts, context menus, and drop targets; `SidebarSelection` gains a `.folder(id)` case; item list supports single-item drag-and-drop to folders
 - `vault-item-create`: Create sheet gains a folder picker field; new items can be assigned to a folder at creation time
 
 ## Impact

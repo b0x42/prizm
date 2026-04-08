@@ -64,8 +64,8 @@
 
 ## 8. Item List & Drag
 
-- [x] 8.1 Change `ItemListView` selection from `VaultItem?` to `Set<String>` for multi-select support
-- [x] 8.2 Update `VaultBrowserViewModel` to handle `Set<String>` selection and derive detail pane item (single selected → show detail; zero or multiple → empty state); disable Edit, Copy, Favorite, Delete actions when multiple items are selected
+- [x] 8.1 Add `.draggable` support to item list rows (multi-select deferred to follow-up)
+- [x] 8.2 Wire single-item drag-and-drop from item list to folder sidebar rows
 - [x] 8.3 Add `.draggable` on item rows with item ID as `Transferable` payload
 - [x] 8.4 Wire drop handler on folder rows to call `MoveItemToFolderUseCase` and refresh counts
 
