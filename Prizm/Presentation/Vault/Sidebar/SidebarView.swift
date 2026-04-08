@@ -46,7 +46,7 @@ struct SidebarView: View {
     private func sectionHeader(for section: SidebarSection) -> some View {
         switch section {
         case .folders:
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 Text(section.title)
                 Spacer()
                 Button {
@@ -54,10 +54,12 @@ struct SidebarView: View {
                     isCreatingFolder = true
                 } label: {
                     Image(systemName: "folder.badge.plus")
-                    .font(.title3)
+                        .font(.title3)
+                        .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
                 }
                 .buttonStyle(.plain)
                 .help("New Folder")
+                .padding(.trailing, 10)
             }
         case .trash:
             EmptyView()
