@@ -32,7 +32,7 @@ enum Typography {
     static let listTitle: Font     = .body
 
     /// Secondary subtitle in the list pane (username, last 4 digits, etc.).
-    static let listSubtitle: Font  = .caption
+    static let listSubtitle: Font  = .footnote
 
     /// Status banner text (e.g. "This item is in Trash.") — slightly larger than utility/caption.
     static let bannerText: Font    = .callout
