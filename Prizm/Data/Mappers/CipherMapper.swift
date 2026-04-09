@@ -136,7 +136,6 @@ nonisolated final class CipherMapper {
             content:      content,
             reprompt:     raw.reprompt ?? 0,
             attachments:  attachments,
-
             folderId:     raw.folderId
         )
         return (item: item, cipherKey: cipherKey)

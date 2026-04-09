@@ -1,7 +1,7 @@
 import Foundation
 
 /// A node in the folder tree, built by parsing `/`-delimited folder names.
-struct FolderTreeNode: Identifiable {
+nonisolated struct FolderTreeNode: Identifiable {
     let id: String
     let name: String
     let folder: Folder?

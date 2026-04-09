@@ -170,9 +170,9 @@ final class AppContainer: ObservableObject {
     }
 
     /// Creates an `ItemEditViewModel` in create mode for the given item type.
-    func makeItemCreateViewModel(for type: ItemType) -> ItemEditViewModel {
+    func makeItemCreateViewModel(for type: ItemType, folderId: String? = nil) -> ItemEditViewModel {
         let folders = (try? vaultStore.folders()) ?? []
-        return ItemEditViewModel(type: type, useCase: createVaultItemUseCase, folders: folders)
+        return ItemEditViewModel(type: type, useCase: createVaultItemUseCase, folders: folders, folderId: folderId)
     }
 
     // MARK: - AppKit panel defaults (App layer — Constitution §II)

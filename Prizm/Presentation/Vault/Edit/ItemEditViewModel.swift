@@ -85,8 +85,9 @@ final class ItemEditViewModel: ObservableObject {
     }
 
     /// Create mode: initialised with a blank draft for the given type.
-    init(type: ItemType, useCase: any CreateVaultItemUseCase, folders: [Folder] = []) {
-        let blank = DraftVaultItem.blank(type: type)
+    init(type: ItemType, useCase: any CreateVaultItemUseCase, folders: [Folder] = [], folderId: String? = nil) {
+        var blank = DraftVaultItem.blank(type: type)
+        blank.folderId = folderId
         self.draft    = blank
         self.original = blank
         self.editUseCase  = nil

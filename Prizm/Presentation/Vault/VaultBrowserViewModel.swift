@@ -44,6 +44,11 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published private(set) var displayedItems: [VaultItem] = []
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
     @Published private(set) var folders: [Folder] = []
+
+    var selectedFolderId: String? {
+        if case .folder(let id) = sidebarSelection { return id }
+        return nil
+    }
     @Published private(set) var lastSyncedAt: Date?
     @Published var syncErrorMessage: String? = nil
     /// Reflects whether the edit sheet is currently open. Used by `MenuBarViewModel`

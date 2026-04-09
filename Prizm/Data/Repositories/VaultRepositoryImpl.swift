@@ -288,7 +288,7 @@ final class VaultRepositoryImpl: VaultRepository {
         logger.info("Vault item attachments updated: cipher=\(cipherId, privacy: .public) count=\(attachments.count, privacy: .public)")
     }
 
-// MARK: - Folder CRUD
+    // MARK: - Folder CRUD
 
     func createFolder(name: String) async throws -> Folder {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)

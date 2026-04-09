@@ -13,7 +13,7 @@ struct VaultBrowserView: View {
     @ObservedObject var viewModel: VaultBrowserViewModel
     let faviconLoader: FaviconLoader
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
-    let makeCreateViewModel: (ItemType) -> ItemEditViewModel
+    let makeCreateViewModel: (ItemType, String?) -> ItemEditViewModel
     /// Factory for creating `AttachmentAddViewModel` — injected from AppContainer to
     /// keep the Presentation layer decoupled from the Data layer (Constitution §II).
     var makeAddAttachmentViewModel: ((String) -> AttachmentAddViewModel)? = nil
@@ -109,6 +109,7 @@ struct VaultBrowserView: View {
                 ItemDetailView(
                     item:                           viewModel.itemSelection,
                     faviconLoader:                  faviconLoader,
+                    folders:                        viewModel.folders,
                     onCopy:                         { viewModel.copy($0) },
                     makeEditViewModel:              makeEditViewModel,
                     makeAddAttachmentViewModel:     makeAddAttachmentViewModel,
@@ -237,7 +238,7 @@ struct VaultBrowserView: View {
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(
-                viewModel: makeCreateViewModel(type),
+                viewModel: makeCreateViewModel(type, viewModel.selectedFolderId),
                 isPresented: Binding(
                     get: { viewModel.createItemType != nil },
                     set: { if !$0 { viewModel.createItemType = nil } }

@@ -842,8 +842,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        let body: [String: Any?] = ["folderId": folderId, "favorite": favorite]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body.compactMapValues { $0 ?? NSNull() })
+        var body: [String: Any] = ["favorite": favorite]
+        body["folderId"] = folderId as Any
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         try await performEmpty(request: request)
     }
 
@@ -856,7 +857,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        let body: [String: Any] = ["ids": ids, "folderId": folderId as Any]
+        var body: [String: Any] = ["ids": ids]
+        if let folderId { body["folderId"] = folderId }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         try await performEmpty(request: request)
     }

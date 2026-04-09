@@ -109,7 +109,8 @@ struct SidebarView: View {
                     renameText: $renameText,
                     isRenameFocused: $isRenameFocused,
                     onDeleteFolder: { onDeleteFolder?($0) },
-                    onDropItems: { ids, fid in onDropItems?(ids, fid) }
+                    onDropItems: { ids, fid in onDropItems?(ids, fid) },
+                    onRenameFolder: { id, name in onRenameFolder?(id, name) }
                 )
             }
             if folders.isEmpty && !isCreatingFolder {
@@ -125,14 +126,6 @@ struct SidebarView: View {
         case .trash:
             SidebarRowView(title: "Trash", systemImage: "trash", selection: .trash, count: itemCounts[.trash] ?? 0)
         }
-    }
-
-    private func commitRename(_ folder: Folder) {
-        let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
-        renamingFolderId = nil
-        isRenameFocused = false
-        guard !trimmed.isEmpty, trimmed != folder.name else { return }
-        onRenameFolder?(folder.id, trimmed)
     }
 
     private func commitCreate() {
@@ -157,6 +150,7 @@ private struct FolderTreeRow: View {
     @FocusState.Binding var isRenameFocused: Bool
     var onDeleteFolder: (Folder) -> Void
     var onDropItems: ([String], String) -> Void
+    var onRenameFolder: ((String, String) -> Void)?
 
     var body: some View {
         if node.hasChildren {
@@ -176,7 +170,8 @@ private struct FolderTreeRow: View {
                         renameText: $renameText,
                         isRenameFocused: $isRenameFocused,
                         onDeleteFolder: onDeleteFolder,
-                        onDropItems: onDropItems
+                        onDropItems: onDropItems,
+                        onRenameFolder: onRenameFolder
                     )
                 }
             } label: {
@@ -194,8 +189,13 @@ private struct FolderTreeRow: View {
                 let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
                 renamingFolderId = nil
                 isRenameFocused = false
-                guard !trimmed.isEmpty, trimmed != folder.name else { return }
-                // Rename is handled by the parent SidebarView's onRenameFolder
+                guard !trimmed.isEmpty else { return }
+                let parts = folder.name.split(separator: "/").map(String.init)
+                let newName = parts.count > 1
+                    ? parts.dropLast().joined(separator: "/") + "/" + trimmed
+                    : trimmed
+                guard newName != folder.name else { return }
+                onRenameFolder?(folder.id, newName)
             })
             .focused($isRenameFocused)
             .tag(SidebarSelection.folder(folder.id))
@@ -211,7 +211,7 @@ private struct FolderTreeRow: View {
                 displayName: node.name,
                 count: itemCounts[.folder(folder.id)] ?? 0,
                 onRename: {
-                    renameText = folder.name
+                    renameText = node.name
                     renamingFolderId = folder.id
                     isRenameFocused = true
                 },
