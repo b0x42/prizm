@@ -57,7 +57,14 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 
 Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
 
-### Unsigned DMG (simplest)
+### Homebrew (recommended)
+
+```bash
+brew tap b0x42/prizm
+brew install --cask prizm
+```
+
+### Unsigned DMG
 
 A signed, notarized DMG requires an Apple Developer ID certificate ($99/year). This project is a solo open-source effort — that cost is not justified for early releases. Until that changes, the DMG is unsigned.
 
@@ -72,13 +79,6 @@ xattr -dr com.apple.quarantine /Applications/Prizm.app
 ```
 
 **[Download Prizm](https://github.com/b0x42/prizm/releases/latest)**
-
-### Homebrew
-
-```bash
-brew tap b0x42/prizm
-brew install --cask prizm
-```
 
 ### Build from source
 
