@@ -57,21 +57,24 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 
 Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
 
-### Unsigned DMG (simplest)
+### Homebrew (recommended)
 
-A signed, notarized DMG requires an Apple Developer ID certificate ($99/year). This project is a solo open-source effort — that cost is not justified for early releases. Until that changes, the DMG is unsigned.
+```bash
+brew tap b0x42/prizm
+brew install --cask prizm
+```
 
-**How to open an unsigned app on macOS:**
+### Direct Download
 
-After downloading, right-click (Control-click) the `.app` and choose **Open**, then confirm. You only need to do this once. After that, you can open it normally.
+**[Download Prizm](https://github.com/b0x42/prizm/releases/latest)**
+
+The app is not notarized. After downloading, right-click (Control-click) the `.app` and choose **Open**, then confirm. You only need to do this once. After that, you can open it normally.
 
 Alternatively, from Terminal:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Prizm.app
 ```
-
-**[Download Prizm](https://github.com/b0x42/prizm/releases/latest)**
 
 ### Build from source
 
@@ -128,6 +131,7 @@ Want to shift something up the list? [Open an issue](https://github.com/b0x42/pr
 
 ## Known Limitations
 
+- **Not notarized** — The app is not signed with an Apple Developer ID. On first launch, right-click and choose Open to bypass Gatekeeper.
 - **Personal vault only** — Organisation ciphers are skipped during sync.
 - **No browser auto-fill** — There is no browser extension. Copy-paste is the current workflow.
 - **No biometric unlock** — Touch ID / Face ID unlock is not yet implemented.

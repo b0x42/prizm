@@ -59,3 +59,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.DMG_PATH }}
+
+      - name: Update Homebrew cask
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          SHA=$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/b0x42/homebrew-prizm.git" tap
+          cd tap
+
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/prizm.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/prizm.rb
+
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "Update prizm to ${VERSION}"
+          git push
