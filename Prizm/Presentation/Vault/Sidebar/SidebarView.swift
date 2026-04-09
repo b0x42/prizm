@@ -28,6 +28,13 @@ struct SidebarView: View {
     @State private var newFolderName: String = "New Folder"
     @FocusState private var isNewFolderFocused: Bool
 
+    // Tree collapse state (per-session)
+    @State private var expandedFolderIds: Set<String> = []
+
+    private var folderTree: [FolderTreeNode] {
+        FolderTreeNode.buildTree(from: folders)
+    }
+
     var body: some View {
         List(selection: $selection) {
             ForEach(sidebarSections, id: \.self) { section in
@@ -93,8 +100,17 @@ struct SidebarView: View {
                     selection = nil
                 }
             }
-            ForEach(folders) { folder in
-                folderRow(folder)
+            ForEach(folderTree) { node in
+                FolderTreeRow(
+                    node: node,
+                    itemCounts: itemCounts,
+                    expandedIds: $expandedFolderIds,
+                    renamingFolderId: $renamingFolderId,
+                    renameText: $renameText,
+                    isRenameFocused: $isRenameFocused,
+                    onDeleteFolder: { onDeleteFolder?($0) },
+                    onDropItems: { ids, fid in onDropItems?(ids, fid) }
+                )
             }
             if folders.isEmpty && !isCreatingFolder {
                 Text("No folders")
@@ -108,36 +124,6 @@ struct SidebarView: View {
             }
         case .trash:
             SidebarRowView(title: "Trash", systemImage: "trash", selection: .trash, count: itemCounts[.trash] ?? 0)
-        }
-    }
-
-    // MARK: - Folder Row
-
-    @ViewBuilder
-    private func folderRow(_ folder: Folder) -> some View {
-        if renamingFolderId == folder.id {
-            TextField("Name or Parent/Name", text: $renameText, onCommit: {
-                commitRename(folder)
-            })
-            .focused($isRenameFocused)
-            .tag(SidebarSelection.folder(folder.id))
-            .help("Nest a folder by adding the parent folder's name followed by a /. Example: Social/Forums")
-            .onExitCommand {
-                renamingFolderId = nil
-                isRenameFocused = false
-            }
-        } else {
-            FolderRowLabel(
-                folder: folder,
-                count: itemCounts[.folder(folder.id)] ?? 0,
-                onRename: {
-                    renameText = folder.name
-                    renamingFolderId = folder.id
-                    isRenameFocused = true
-                },
-                onDelete: { onDeleteFolder?(folder) },
-                onDrop: { ids in onDropItems?(ids, folder.id) }
-            )
         }
     }
 
@@ -158,12 +144,95 @@ struct SidebarView: View {
     }
 }
 
+// MARK: - FolderTreeRow
+
+/// Recursive tree row: renders a DisclosureGroup for nodes with children,
+/// or a plain folder row for leaf nodes.
+private struct FolderTreeRow: View {
+    let node: FolderTreeNode
+    let itemCounts: [SidebarSelection: Int]
+    @Binding var expandedIds: Set<String>
+    @Binding var renamingFolderId: String?
+    @Binding var renameText: String
+    @FocusState.Binding var isRenameFocused: Bool
+    var onDeleteFolder: (Folder) -> Void
+    var onDropItems: ([String], String) -> Void
+
+    var body: some View {
+        if node.hasChildren {
+            DisclosureGroup(isExpanded: Binding(
+                get: { expandedIds.contains(node.id) },
+                set: { expanded in
+                    if expanded { expandedIds.insert(node.id) }
+                    else { expandedIds.remove(node.id) }
+                }
+            )) {
+                ForEach(node.children) { child in
+                    FolderTreeRow(
+                        node: child,
+                        itemCounts: itemCounts,
+                        expandedIds: $expandedIds,
+                        renamingFolderId: $renamingFolderId,
+                        renameText: $renameText,
+                        isRenameFocused: $isRenameFocused,
+                        onDeleteFolder: onDeleteFolder,
+                        onDropItems: onDropItems
+                    )
+                }
+            } label: {
+                nodeLabel
+            }
+        } else {
+            nodeLabel
+        }
+    }
+
+    @ViewBuilder
+    private var nodeLabel: some View {
+        if let folder = node.folder, renamingFolderId == folder.id {
+            TextField("Name or Parent/Name", text: $renameText, onCommit: {
+                let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                renamingFolderId = nil
+                isRenameFocused = false
+                guard !trimmed.isEmpty, trimmed != folder.name else { return }
+                // Rename is handled by the parent SidebarView's onRenameFolder
+            })
+            .focused($isRenameFocused)
+            .tag(SidebarSelection.folder(folder.id))
+            .help("Nest a folder by adding the parent folder's name followed by a /. Example: Social/Forums")
+            .onExitCommand {
+                renamingFolderId = nil
+                isRenameFocused = false
+            }
+        } else if let folder = node.folder {
+            // Real folder — selectable, droppable
+            FolderRowLabel(
+                folder: folder,
+                displayName: node.name,
+                count: itemCounts[.folder(folder.id)] ?? 0,
+                onRename: {
+                    renameText = folder.name
+                    renamingFolderId = folder.id
+                    isRenameFocused = true
+                },
+                onDelete: { onDeleteFolder(folder) },
+                onDrop: { ids in onDropItems(ids, folder.id) }
+            )
+        } else {
+            // Virtual parent — not selectable, no drop, no context menu
+            Label(node.name, systemImage: "folder")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 // MARK: - FolderRowLabel
 
 /// Folder row with drop-target highlight and context menu.
 /// Extracted to a struct so `@State var isDropTargeted` is per-row.
 private struct FolderRowLabel: View {
     let folder: Folder
+    var displayName: String? = nil
     let count: Int
     var onRename: () -> Void
     var onDelete: () -> Void
@@ -172,7 +241,8 @@ private struct FolderRowLabel: View {
     @State private var isDropTargeted = false
 
     var body: some View {
-        Label(folder.name, systemImage: "folder")
+        Label(displayName ?? folder.name, systemImage: "folder")
+            .font(Typography.sidebarChildRow)
             .badge(count)
             .tag(SidebarSelection.folder(folder.id))
             .listRowBackground(isDropTargeted ? Color.accentColor.opacity(0.2) : Color.clear)
@@ -208,6 +278,7 @@ private struct SidebarRowView: View {
 
     var body: some View {
         Label(title, systemImage: systemImage)
+            .font(Typography.sidebarRow)
             .badge(count)
             .tag(selection)
     }
