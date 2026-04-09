@@ -21,6 +21,7 @@ struct SidebarView: View {
     // Inline rename state
     @State private var renamingFolderId: String?
     @State private var renameText: String = ""
+    @FocusState private var isRenameFocused: Bool
 
     // Inline create state
     @State private var isCreatingFolder = false
@@ -81,11 +82,12 @@ struct SidebarView: View {
             SidebarRowView(title: "Favorites", systemImage: "star", selection: .favorites, count: itemCounts[.favorites] ?? 0)
         case .folders:
             if isCreatingFolder {
-                TextField("Folder name", text: $newFolderName, onCommit: {
+                TextField("Name or Parent/Name", text: $newFolderName, onCommit: {
                     commitCreate()
                 })
                 .focused($isNewFolderFocused)
                 .tag(SidebarSelection.newFolder)
+                .help("Nest a folder by adding the parent folder's name followed by a /. Example: Social/Forums")
                 .onExitCommand {
                     isCreatingFolder = false
                     selection = nil
@@ -114,38 +116,35 @@ struct SidebarView: View {
     @ViewBuilder
     private func folderRow(_ folder: Folder) -> some View {
         if renamingFolderId == folder.id {
-            TextField("Folder name", text: $renameText, onCommit: {
+            TextField("Name or Parent/Name", text: $renameText, onCommit: {
                 commitRename(folder)
             })
+            .focused($isRenameFocused)
+            .tag(SidebarSelection.folder(folder.id))
+            .help("Nest a folder by adding the parent folder's name followed by a /. Example: Social/Forums")
             .onExitCommand {
                 renamingFolderId = nil
+                isRenameFocused = false
             }
-            .tag(SidebarSelection.folder(folder.id))
         } else {
-            Label(folder.name, systemImage: "folder")
-                .badge(itemCounts[.folder(folder.id)] ?? 0)
-                .tag(SidebarSelection.folder(folder.id))
-                .contextMenu {
-                    Button("Rename") {
-                        renameText = folder.name
-                        renamingFolderId = folder.id
-                    }
-                    Divider()
-                    Button("Delete Folder", role: .destructive) {
-                        onDeleteFolder?(folder)
-                    }
-                }
-                .dropDestination(for: String.self) { itemIds, _ in
-                    guard !itemIds.isEmpty else { return false }
-                    onDropItems?(itemIds, folder.id)
-                    return true
-                }
+            FolderRowLabel(
+                folder: folder,
+                count: itemCounts[.folder(folder.id)] ?? 0,
+                onRename: {
+                    renameText = folder.name
+                    renamingFolderId = folder.id
+                    isRenameFocused = true
+                },
+                onDelete: { onDeleteFolder?(folder) },
+                onDrop: { ids in onDropItems?(ids, folder.id) }
+            )
         }
     }
 
     private func commitRename(_ folder: Folder) {
         let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         renamingFolderId = nil
+        isRenameFocused = false
         guard !trimmed.isEmpty, trimmed != folder.name else { return }
         onRenameFolder?(folder.id, trimmed)
     }
@@ -156,6 +155,39 @@ struct SidebarView: View {
         selection = nil
         guard !trimmed.isEmpty else { return }
         onCreateFolder?(trimmed)
+    }
+}
+
+// MARK: - FolderRowLabel
+
+/// Folder row with drop-target highlight and context menu.
+/// Extracted to a struct so `@State var isDropTargeted` is per-row.
+private struct FolderRowLabel: View {
+    let folder: Folder
+    let count: Int
+    var onRename: () -> Void
+    var onDelete: () -> Void
+    var onDrop: ([String]) -> Void
+
+    @State private var isDropTargeted = false
+
+    var body: some View {
+        Label(folder.name, systemImage: "folder")
+            .badge(count)
+            .tag(SidebarSelection.folder(folder.id))
+            .listRowBackground(isDropTargeted ? Color.accentColor.opacity(0.2) : Color.clear)
+            .contextMenu {
+                Button("Rename") { onRename() }
+                Divider()
+                Button("Delete Folder", role: .destructive) { onDelete() }
+            }
+            .dropDestination(for: String.self) { itemIds, _ in
+                guard !itemIds.isEmpty else { return false }
+                onDrop(itemIds)
+                return true
+            } isTargeted: { targeted in
+                isDropTargeted = targeted
+            }
     }
 }
 
