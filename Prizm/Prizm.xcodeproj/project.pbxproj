@@ -559,14 +559,6 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
-		4347F2E12F87F99C006C2047 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
 		434D9EB12F670B9C00052BCB = {
 			isa = PBXGroup;
 			children = (
@@ -578,7 +570,7 @@
 				434D9EBC2F670B9C00052BCB /* Prizm */,
 				4309FD0E2F68121F0031C9F4 /* PrizmTests */,
 				434D9EBB2F670B9C00052BCB /* Products */,
-				4347F2E12F87F99C006C2047 /* Recovered References */,
+				FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
