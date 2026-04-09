@@ -199,7 +199,7 @@ struct VaultBrowserView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Items in \"\(folderToDelete?.name ?? "")\" will not be deleted — they will become unfoldered.")
+            Text("Items in \"\(folderToDelete?.name ?? "")\" will not be deleted. They will become unfoldered.")
         }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in
