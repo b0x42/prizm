@@ -102,7 +102,7 @@ nonisolated final class CipherMapper {
                 cipherKey = try enc.decrypt(keys: keys)
             } catch {
                 Self.logger.fault("Per-item key decryption failed for cipher \(raw.id, privacy: .public)")
-                throw CipherMapperError.fieldDecryptionFailed(field: "key")
+                throw CipherMapperError.fieldDecryptionFailed("key")
             }
         } else {
             // No per-item key — use the vault-level key directly.
