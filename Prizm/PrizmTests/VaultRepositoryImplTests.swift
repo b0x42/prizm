@@ -90,7 +90,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     func testAllItems_excludesDeletedItems() throws {
         let active  = makeLogin(name: "Active")
         let deleted = makeLogin(name: "Deleted", isDeleted: true)
-        sut.populate(items: [active, deleted], syncedAt: Date())
+        sut.populate(items: [active, deleted], folders: [], syncedAt: Date())
 
         let result = try sut.allItems()
         XCTAssertEqual(result.count, 1)
@@ -103,7 +103,7 @@ final class VaultRepositoryImplTests: XCTestCase {
             makeLogin(name: "Apple"),
             makeLogin(name: "mango"),
         ]
-        sut.populate(items: items, syncedAt: Date())
+        sut.populate(items: items, folders: [], syncedAt: Date())
 
         let names = try sut.allItems().map(\.name)
         XCTAssertEqual(names, ["Apple", "mango", "zebra"])
@@ -113,7 +113,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testItemsForAllItems_matchesAllItems() throws {
         let items = [makeLogin(name: "A"), makeCard(name: "B")]
-        sut.populate(items: items, syncedAt: Date())
+        sut.populate(items: items, folders: [], syncedAt: Date())
 
         let all        = try sut.allItems()
         let forAllItems = try sut.items(for: .allItems)
@@ -123,7 +123,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     func testItemsForFavorites_onlyFavorites() throws {
         let fav    = makeLogin(name: "Fav", isFavorite: true)
         let notFav = makeLogin(name: "NotFav", isFavorite: false)
-        sut.populate(items: [fav, notFav], syncedAt: Date())
+        sut.populate(items: [fav, notFav], folders: [], syncedAt: Date())
 
         let result = try sut.items(for: .favorites)
         XCTAssertEqual(result.count, 1)
@@ -133,7 +133,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     func testItemsForTypeLogin_onlyLoginItems() throws {
         let login = makeLogin(name: "Login Item")
         let card  = makeCard(name: "Card Item")
-        sut.populate(items: [login, card], syncedAt: Date())
+        sut.populate(items: [login, card], folders: [], syncedAt: Date())
 
         let result = try sut.items(for: .type(.login))
         XCTAssertEqual(result.count, 1)
@@ -143,7 +143,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     func testItemsForTypeCard_onlyCardItems() throws {
         let login = makeLogin(name: "Login")
         let card  = makeCard(name: "Visa")
-        sut.populate(items: [login, card], syncedAt: Date())
+        sut.populate(items: [login, card], folders: [], syncedAt: Date())
 
         let result = try sut.items(for: .type(.card))
         XCTAssertEqual(result.count, 1)
@@ -153,7 +153,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     func testItemsForType_excludesDeletedItems() throws {
         let active  = makeLogin(name: "Active", isDeleted: false)
         let deleted = makeLogin(name: "Deleted", isDeleted: true)
-        sut.populate(items: [active, deleted], syncedAt: Date())
+        sut.populate(items: [active, deleted], folders: [], syncedAt: Date())
 
         let result = try sut.items(for: .type(.login))
         XCTAssertEqual(result.count, 1)
@@ -177,7 +177,7 @@ final class VaultRepositoryImplTests: XCTestCase {
             makeSecureNote(name: "N1"),
             makeLogin(name: "Deleted Login", isDeleted: true),
         ]
-        sut.populate(items: items, syncedAt: Date())
+        sut.populate(items: items, folders: [], syncedAt: Date())
 
         let counts = try sut.itemCounts()
         XCTAssertEqual(counts[.allItems],          4, "allItems excludes deleted")
@@ -193,7 +193,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testSearchItems_emptyQuery_returnsAll() throws {
         let items = [makeLogin(name: "Alpha"), makeLogin(name: "Beta")]
-        sut.populate(items: items, syncedAt: Date())
+        sut.populate(items: items, folders: [], syncedAt: Date())
 
         let result = try sut.searchItems(query: "", in: .allItems)
         XCTAssertEqual(result.count, 2)
@@ -201,7 +201,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testSearchItems_matchesName_caseInsensitive() throws {
         let items = [makeLogin(name: "MyBank"), makeLogin(name: "GitHub")]
-        sut.populate(items: items, syncedAt: Date())
+        sut.populate(items: items, folders: [], syncedAt: Date())
 
         let result = try sut.searchItems(query: "bank", in: .allItems)
         XCTAssertEqual(result.count, 1)
@@ -211,7 +211,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     func testSearchItems_scopedToSelection() throws {
         let login = makeLogin(name: "MyBank")
         let card  = makeCard(name: "MyCard")
-        sut.populate(items: [login, card], syncedAt: Date())
+        sut.populate(items: [login, card], folders: [], syncedAt: Date())
 
         let result = try sut.searchItems(query: "My", in: .type(.login))
         XCTAssertEqual(result.count, 1)
@@ -219,7 +219,7 @@ final class VaultRepositoryImplTests: XCTestCase {
     }
 
     func testSearchItems_noMatch_returnsEmpty() throws {
-        sut.populate(items: [makeLogin(name: "Alpha")], syncedAt: Date())
+        sut.populate(items: [makeLogin(name: "Alpha")], folders: [], syncedAt: Date())
 
         let result = try sut.searchItems(query: "zzz", in: .allItems)
         XCTAssertTrue(result.isEmpty)
@@ -229,12 +229,12 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testPopulate_updatesLastSyncedAt() {
         let date = Date(timeIntervalSince1970: 1_000_000)
-        sut.populate(items: [], syncedAt: date)
+        sut.populate(items: [], folders: [], syncedAt: date)
         XCTAssertEqual(sut.lastSyncedAt, date)
     }
 
     func testClearVault_removesItemsAndTimestamp() throws {
-        sut.populate(items: [makeLogin(name: "X")], syncedAt: Date())
+        sut.populate(items: [makeLogin(name: "X")], folders: [], syncedAt: Date())
         sut.clearVault()
 
         XCTAssertTrue(try sut.allItems().isEmpty)
@@ -245,7 +245,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testItemDetail_existingId_returnsItem() async throws {
         let item = makeLogin(id: "item-1", name: "Test")
-        sut.populate(items: [item], syncedAt: Date())
+        sut.populate(items: [item], folders: [], syncedAt: Date())
 
         let found = try await sut.itemDetail(id: "item-1")
         XCTAssertEqual(found.id, "item-1")
@@ -267,7 +267,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testUpdate_success_replacesItemInCacheAndReturnsUpdatedItem() async throws {
         let original = makeLogin(id: "item-1", name: "Original Name")
-        sut.populate(items: [original], syncedAt: Date())
+        sut.populate(items: [original], folders: [], syncedAt: Date())
 
         // Vault must be unlocked to provide keys to the mapper.
         await mockCrypto.unlockWith(keys: CryptoKeys(
@@ -288,7 +288,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testUpdate_vaultLocked_throwsVaultLocked() async throws {
         let original = makeLogin(id: "item-2", name: "Name")
-        sut.populate(items: [original], syncedAt: Date())
+        sut.populate(items: [original], folders: [], syncedAt: Date())
         // mockCrypto is locked by default (not unlocked)
 
         let draft = DraftVaultItem(original)
@@ -303,7 +303,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testUpdate_apiError_throws() async throws {
         let original = makeLogin(id: "item-3", name: "Name")
-        sut.populate(items: [original], syncedAt: Date())
+        sut.populate(items: [original], folders: [], syncedAt: Date())
 
         await mockCrypto.unlockWith(keys: CryptoKeys(
             encryptionKey: Data(repeating: 0xDE, count: 32),

@@ -14,7 +14,7 @@ final class KeychainServiceTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        sut = KeychainServiceImpl()
+        sut = KeychainServiceImpl(useDataProtectionKeychain: false)
         // Clean up any leftover test data
         try? sut.delete(key: testKey)
     }

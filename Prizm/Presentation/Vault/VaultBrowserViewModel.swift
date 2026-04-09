@@ -43,6 +43,12 @@ final class VaultBrowserViewModel: ObservableObject {
 
     @Published private(set) var displayedItems: [VaultItem] = []
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
+    @Published private(set) var folders: [Folder] = []
+
+    var selectedFolderId: String? {
+        if case .folder(let id) = sidebarSelection { return id }
+        return nil
+    }
     @Published private(set) var lastSyncedAt: Date?
     @Published var syncErrorMessage: String? = nil
     /// Reflects whether the edit sheet is currently open. Used by `MenuBarViewModel`
@@ -70,6 +76,10 @@ final class VaultBrowserViewModel: ObservableObject {
     private let deleteUseCase:          any DeleteVaultItemUseCase
     private let permanentDeleteUseCase: any PermanentDeleteVaultItemUseCase
     private let restoreUseCase:         any RestoreVaultItemUseCase
+    private let createFolderUseCase:    any CreateFolderUseCase
+    private let renameFolderUseCase:    any RenameFolderUseCase
+    private let deleteFolderUseCase:    any DeleteFolderUseCase
+    private let moveItemUseCase:        any MoveItemToFolderUseCase
     private var syncTimestamp:          any SyncTimestampRepository
     private var getLastSyncDate:        any GetLastSyncDateUseCase
     private let logger = Logger(subsystem: "com.prizm", category: "VaultBrowserViewModel")
@@ -112,6 +122,10 @@ final class VaultBrowserViewModel: ObservableObject {
         delete:          any DeleteVaultItemUseCase,
         permanentDelete: any PermanentDeleteVaultItemUseCase,
         restore:         any RestoreVaultItemUseCase,
+        createFolder:    any CreateFolderUseCase,
+        renameFolder:    any RenameFolderUseCase,
+        deleteFolder:    any DeleteFolderUseCase,
+        moveItem:        any MoveItemToFolderUseCase,
         syncTimestamp:   any SyncTimestampRepository,
         getLastSyncDate: any GetLastSyncDateUseCase
     ) {
@@ -120,10 +134,15 @@ final class VaultBrowserViewModel: ObservableObject {
         self.deleteUseCase          = delete
         self.permanentDeleteUseCase = permanentDelete
         self.restoreUseCase         = restore
+        self.createFolderUseCase    = createFolder
+        self.renameFolderUseCase    = renameFolder
+        self.deleteFolderUseCase    = deleteFolder
+        self.moveItemUseCase        = moveItem
         self.syncTimestamp          = syncTimestamp
         self.getLastSyncDate        = getLastSyncDate
         refreshItems()
         refreshCounts()
+        refreshFolders()
         // Load persisted timestamp first; fall back to in-memory value from the vault store
         // (populated on the current session's sync, but not persisted across restarts).
         lastSyncedAt   = getLastSyncDate.execute() ?? vault.lastSyncedAt
@@ -208,7 +227,13 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Refreshes `displayedItems` from the vault store based on current selection + search query.
     func refreshItems() {
         do {
-            let scope = isGlobalSearch ? .allItems : sidebarSelection
+            let scope: SidebarSelection
+            if isGlobalSearch {
+                if case .folder = sidebarSelection { scope = sidebarSelection }
+                else { scope = .allItems }
+            } else {
+                scope = sidebarSelection
+            }
             displayedItems = try search.execute(query: searchQuery, in: scope)
         } catch {
             logger.error("Failed to load vault items: \(error.localizedDescription, privacy: .public)")
@@ -269,6 +294,8 @@ final class VaultBrowserViewModel: ObservableObject {
         // attachments), and the detail pane would show "No attachments" even
         // after a sync that correctly mapped them.
         refreshItemSelection()
+
+        refreshFolders()
         syncErrorMessage = nil
     }
 
@@ -359,6 +386,80 @@ final class VaultBrowserViewModel: ObservableObject {
         } catch {
             logger.error("Permanent delete failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
             actionError = error.localizedDescription
+        }
+    }
+
+    // MARK: - Folder CRUD
+
+    func createFolder(name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            do {
+                _ = try await createFolderUseCase.execute(name: trimmed)
+                refreshFolders()
+                refreshCounts()
+            } catch {
+                logger.error("Create folder failed: \(error.localizedDescription, privacy: .public)")
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    func renameFolder(id: String, name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            do {
+                _ = try await renameFolderUseCase.execute(id: id, name: trimmed)
+                refreshFolders()
+            } catch {
+                logger.error("Rename folder failed: \(error.localizedDescription, privacy: .public)")
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    func deleteFolder(id: String) {
+        Task {
+            do {
+                let wasSelected = if case .folder(let fid) = sidebarSelection { fid == id } else { false }
+                try await deleteFolderUseCase.execute(id: id)
+                if wasSelected { sidebarSelection = .allItems }
+                refreshFolders()
+                refreshItems()
+                refreshCounts()
+            } catch {
+                logger.error("Delete folder failed: \(error.localizedDescription, privacy: .public)")
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    func moveItemsToFolder(itemIds: [String], folderId: String) {
+        Task {
+            do {
+                if itemIds.count == 1, let id = itemIds.first {
+                    try await moveItemUseCase.execute(itemId: id, folderId: folderId)
+                } else {
+                    try await moveItemUseCase.execute(itemIds: itemIds, folderId: folderId)
+                }
+                refreshItems()
+                refreshCounts()
+            } catch {
+                logger.error("Move to folder failed: \(error.localizedDescription, privacy: .public)")
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    // MARK: - Refresh
+
+    func refreshFolders() {
+        do {
+            folders = try vault.folders()
+        } catch {
+            logger.error("Failed to load folders: \(error.localizedDescription, privacy: .public)")
         }
     }
 

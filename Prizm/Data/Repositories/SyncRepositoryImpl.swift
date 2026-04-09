@@ -111,9 +111,16 @@ actor SyncRepositoryImpl: SyncRepository {
         await vaultKeyCache.populate(keys: cipherKeyMap)
         logger.info("VaultKeyCache populated with \(cipherKeyMap.count, privacy: .public) per-item key(s)")
 
+        // Phase 2b: Decrypt folder names.
+        let (folders, folderFailedCount) = try await crypto.decryptFolders(folders: syncResponse.folders)
+        logger.info("Decrypted \(folders.count, privacy: .public) folder(s); \(folderFailedCount, privacy: .public) failure(s)")
+        if folderFailedCount > 0 {
+            logger.error("decryptFolders: \(folderFailedCount, privacy: .public) folder(s) failed to decrypt")
+        }
+
         // Phase 3: Populate the in-memory vault store.
         let syncedAt = Date()
-        await vaultRepository.populate(items: items, syncedAt: syncedAt)
+        await vaultRepository.populate(items: items, folders: folders, syncedAt: syncedAt)
 
         return SyncResult(
             syncedAt:              syncedAt,

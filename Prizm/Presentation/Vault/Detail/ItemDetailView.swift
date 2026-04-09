@@ -7,6 +7,7 @@ struct ItemDetailView: View {
 
     let item:              VaultItem?
     let faviconLoader:     FaviconLoader
+    let folders:           [Folder]
     let onCopy:            (String) -> Void
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
     /// Factory that creates an `AttachmentAddViewModel` for the given cipher ID.
@@ -48,6 +49,7 @@ struct ItemDetailView: View {
                     itemHeader(for: item)
                     typeDetailView(for: item)
                     attachmentsSection(for: item)
+                    folderRow(for: item)
 
                     Spacer(minLength: 20)
                     metadataFooter(for: item)
@@ -105,6 +107,15 @@ struct ItemDetailView: View {
     }
 
     @ViewBuilder
+    private func folderRow(for item: VaultItem) -> some View {
+        if let folderId = item.folderId,
+           let folder = folders.first(where: { $0.id == folderId }) {
+            DetailSectionCard("Folder") {
+                FieldRowView(label: "", value: folder.name, itemId: item.id)
+            }
+        }
+    }
+
     private func metadataFooter(for item: VaultItem) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 0) {
