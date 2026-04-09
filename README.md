@@ -118,8 +118,8 @@ Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shor
 |---|---|---|
 | Reorder sidebar sections | Organisation vault support | Passkey support |
 | Face ID / Touch ID unlock | Multiple accounts | Browser auto-fill extension |
-| TOTP / 2FA copy | Watchtower / breach check | |
-| Background sync | Full support for KDBX 4 (KeePass) | |
+| TOTP / 2FA copy | Watchtower / breach check | Full support for KDBX 4 (KeePass) |
+| Background sync | | |
 
 **Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
 
@@ -133,6 +133,7 @@ Want to shift something up the list? [Open an issue](https://github.com/b0x42/pr
 - **macOS 26 required** — The app uses SwiftUI features only available in macOS 26.
 - **Passkeys not supported** — SSH key items are viewable but passkey-based login is not implemented.
 - **No offline vault creation** — Creating or editing items requires an active server connection.
+- **Attachment size limit** — Files larger than 500 MB are rejected. Bitwarden-hosted servers require a premium subscription for attachments; Vaultwarden is unaffected.
 
 ## Contributing
 
