@@ -68,7 +68,7 @@ This is a credential vault. Security is not a feature — it is the foundation.
 - Hand-rolled implementations of cryptographic algorithms (AES, HMAC, KDF, RSA) are
   PROHIBITED regardless of the source. Always use a vetted library.
 - All crypto operations MUST be wrapped entirely within the Data layer behind a
-  `PrizmCryptoService` protocol. Domain and Presentation layers MUST NOT import
+  `BitwardenCryptoService` protocol. Domain and Presentation layers MUST NOT import
   crypto modules directly; all types are translated to Domain entities at the boundary.
 - All vault-touching code paths require a mandatory security review before merge.
 - The app MUST support macOS App Sandbox and Hardened Runtime.
@@ -217,7 +217,7 @@ Client identifier registration with Bitwarden, Inc. is not required and does not
   This is the only approved exception to the Apple-frameworks-first rule for crypto.
 - **Implementation**: Thin Swift wrapper around the reference C implementation of Argon2
   (same code used in the official Argon2 reference library). No custom algorithm.
-- **Scope**: Used exclusively in `PrizmCryptoServiceImpl` for KDF only.
+- **Scope**: Used exclusively in `BitwardenCryptoServiceImpl` for KDF only.
   MUST NOT be used for any purpose other than Argon2id key derivation.
 - **Supply-chain note**: Pin the exact version and review on every bump.
 
@@ -287,4 +287,4 @@ Standards governing how features are built and shipped:
 
 ---
 
-**Version**: 1.4.3 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-09
+**Version**: 1.4.2 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-05

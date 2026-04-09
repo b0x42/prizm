@@ -27,8 +27,8 @@
 
 ## 5. Constitution Update
 
-- [x] 5.1 Update CONSTITUTION.md §III: `BitwardenCryptoService` → `PrizmCryptoService` (and `BitwardenCryptoServiceImpl` in External Dependencies §Argon2Swift)
-- [x] 5.2 Bump Constitution version to 1.4.3 (PATCH — naming clarification)
+- [SKIP] 5.1 Update CONSTITUTION.md §III: `BitwardenCryptoService` → `PrizmCryptoService` (and `BitwardenCryptoServiceImpl` in External Dependencies §Argon2Swift)
+- [SKIP] 5.2 Bump Constitution version to 1.4.3 (PATCH — naming clarification)
 
 ## 6. Verify
 
