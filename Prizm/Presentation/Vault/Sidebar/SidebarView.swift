@@ -242,7 +242,7 @@ private struct FolderRowLabel: View {
 
     var body: some View {
         Label(displayName ?? folder.name, systemImage: "folder")
-            .font(Typography.sidebarChildRow)
+            .font(Typography.sidebarRow)
             .badge(count)
             .tag(SidebarSelection.folder(folder.id))
             .listRowBackground(isDropTargeted ? Color.accentColor.opacity(0.2) : Color.clear)
