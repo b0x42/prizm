@@ -660,7 +660,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/v2")
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment/v2")
         var request = baseRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -673,7 +673,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/\(attachmentId)")
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
 
         // Multipart/form-data with a single `data` field containing the encrypted blob.
         let boundary = UUID().uuidString
@@ -713,7 +713,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/\(attachmentId)")
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
         var request = baseRequest(url: url)
         request.httpMethod = "GET"
         if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -724,7 +724,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func deleteAttachment(cipherId: String, attachmentId: String) async throws {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(cipherId)/attachment/\(attachmentId)")
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
         var request = baseRequest(url: url)
         request.httpMethod = "DELETE"
         if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }

@@ -50,7 +50,7 @@ password itself.
 | Algorithm | Purpose | Implementation |
 |-----------|---------|----------------|
 | AES-256-CBC + PKCS7 | Vault item encryption / decryption | CommonCrypto (`kCCAlgorithmAES128`, 256-bit key) |
-| AES-256-CBC (no PKCS7, Bitwarden binary blob) | File attachment blob encryption | CommonCrypto; blob format: IV(16) ‖ ciphertext ‖ HMAC(32) per Bitwarden Security Whitepaper §4 |
+| AES-256-CBC + PKCS7 (Bitwarden binary blob) | File attachment blob encryption | CommonCrypto; blob format: IV(16) ‖ ciphertext ‖ HMAC(32) per Bitwarden Security Whitepaper §4 |
 | HMAC-SHA256 | MAC verification (Encrypt-then-MAC) for both vault items and attachments | CryptoKit `HMAC<SHA256>` |
 | PBKDF2-SHA256 | Master key derivation (PBKDF2 accounts) | CommonCrypto `CCKeyDerivationPBKDF` |
 | Argon2id | Master key derivation (Argon2id accounts) | `Argon2Swift` — thin wrapper around the reference C implementation |

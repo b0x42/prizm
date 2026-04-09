@@ -101,8 +101,8 @@ nonisolated final class CipherMapper {
                 let enc = try EncString(string: encItemKey)
                 cipherKey = try enc.decrypt(keys: keys)
             } catch {
-                Self.logger.fault("Per-item key decryption failed for cipher \(raw.id, privacy: .public); falling back to vault key")
-                cipherKey = keys.encryptionKey + keys.macKey
+                Self.logger.fault("Per-item key decryption failed for cipher \(raw.id, privacy: .public)")
+                throw CipherMapperError.fieldDecryptionFailed(field: "key")
             }
         } else {
             // No per-item key — use the vault-level key directly.

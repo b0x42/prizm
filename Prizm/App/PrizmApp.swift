@@ -389,6 +389,8 @@ final class RootViewModel: ObservableObject {
             } catch {
                 logger.error("Sign-out error: \(error.localizedDescription, privacy: .public)")
             }
+            container.vaultRepo.clearVault()
+            await container.vaultKeyCache.clear()
             unlockVM = nil
             screen   = .login
             logger.info("Sign out completed")

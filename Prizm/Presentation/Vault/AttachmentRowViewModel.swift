@@ -85,11 +85,12 @@ final class AttachmentRowViewModel {
         Task { [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.downloadUseCase.execute(
+                var data = try await self.downloadUseCase.execute(
                     cipherId:   self.cipherId,
                     attachment: self.attachment
                 )
                 let tmpURL = try self.writeTempFile(data: data)
+                data.resetBytes(in: 0..<data.count)
                 self.fileOpener(tmpURL)
                 self.tempFileManager.register(url: tmpURL)
 
