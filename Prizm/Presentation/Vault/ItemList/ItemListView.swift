@@ -50,6 +50,7 @@ struct ItemListView: View {
                             ForEach(section.items, id: \.id) { item in
                                 ItemRowView(item: item, faviconLoader: faviconLoader, searchQuery: searchQuery)
                                     .tag(item)
+                                    .draggable(item.id)
                                     .accessibilityIdentifier(AccessibilityID.ItemList.row(item.id))
                                     .contextMenu {
                                         if let onToggleFavorite {

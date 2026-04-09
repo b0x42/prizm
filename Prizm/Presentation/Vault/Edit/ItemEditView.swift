@@ -57,6 +57,18 @@ struct ItemEditView: View {
             }
             .padding(.bottom, Spacing.pageHeaderBottom)
 
+            // Folder picker — shown when folders exist.
+            if !viewModel.folders.isEmpty {
+                Picker("Folder", selection: $viewModel.draft.folderId) {
+                    Text("None").tag(String?.none)
+                    ForEach(viewModel.folders) { folder in
+                        Text(folder.name).tag(Optional(folder.id))
+                    }
+                }
+                .padding(.horizontal, Spacing.pageMargin)
+                .padding(.bottom, 8)
+            }
+
             Divider()
 
             // Per-type edit form.

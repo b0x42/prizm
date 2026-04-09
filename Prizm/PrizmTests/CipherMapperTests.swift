@@ -24,6 +24,7 @@ final class CipherMapperTests: XCTestCase {
     private func makeRawCipher(
         id:             String    = "uuid-test",
         organizationId: String?   = nil,
+        folderId:       String?   = nil,
         type:           Int,
         name:           String,
         notes:          String?   = nil,
@@ -38,6 +39,7 @@ final class CipherMapperTests: XCTestCase {
         RawCipher(
             id:             id,
             organizationId: organizationId,
+            folderId:       folderId,
             type:           type,
             name:           name,
             notes:          notes,
@@ -229,5 +231,53 @@ final class CipherMapperTests: XCTestCase {
 
         let (item, _) = try sut.map(raw: raw, keys: mockKeys)
         XCTAssertTrue(item.isDeleted)
+    }
+
+    // MARK: - folderId pass-through
+
+    func testMapCipher_folderIdPassedThrough() throws {
+        let raw = makeRawCipher(
+            id:       "uuid-folder",
+            folderId: "folder-abc-123",
+            type:     2,
+            name:     try enc("Note in folder"),
+            secureNote: RawSecureNoteData(type: 0)
+        )
+        let item = try sut.map(raw: raw, keys: mockKeys)
+        XCTAssertEqual(item.item.folderId, "folder-abc-123")
+    }
+
+    func testMapCipher_nilFolderIdPassedThrough() throws {
+        let raw = makeRawCipher(
+            id:   "uuid-no-folder",
+            type: 2,
+            name: try enc("Unfoldered note"),
+            secureNote: RawSecureNoteData(type: 0)
+        )
+        let item = try sut.map(raw: raw, keys: mockKeys)
+        XCTAssertNil(item.item.folderId)
+    }
+
+    func testToRawCipher_folderIdIncluded() throws {
+        let item = VaultItem(
+            id: "uuid-rev", name: "Test", isFavorite: false, isDeleted: false,
+            creationDate: Date(), revisionDate: Date(),
+            content: .secureNote(SecureNoteContent(notes: nil, customFields: [])),
+            folderId: "folder-xyz"
+        )
+        let draft = DraftVaultItem(item)
+        let raw = try sut.toRawCipher(draft, encryptedWith: mockKeys)
+        XCTAssertEqual(raw.folderId, "folder-xyz")
+    }
+
+    func testToRawCipher_nilFolderIdIncluded() throws {
+        let item = VaultItem(
+            id: "uuid-rev2", name: "Test", isFavorite: false, isDeleted: false,
+            creationDate: Date(), revisionDate: Date(),
+            content: .secureNote(SecureNoteContent(notes: nil, customFields: []))
+        )
+        let draft = DraftVaultItem(item)
+        let raw = try sut.toRawCipher(draft, encryptedWith: mockKeys)
+        XCTAssertNil(raw.folderId)
     }
 }

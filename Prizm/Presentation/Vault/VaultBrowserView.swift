@@ -24,6 +24,8 @@ struct VaultBrowserView: View {
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
+    @State private var showDeleteFolderAlert = false
+    @State private var folderToDelete: Folder?
     @State private var isSearchFieldFocused = false
 
     private let logger = Logger(subsystem: "com.prizm", category: "UI.VaultBrowser")
@@ -37,15 +39,19 @@ struct VaultBrowserView: View {
                             get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
                             set: { newValue in
                                 if let value = newValue {
-                                    // Defer the mutation out of SwiftUI's view-update pass.
-                                    // Setting @Published directly inside Binding.set fires
-                                    // objectWillChange during the current render, triggering
-                                    // the "Publishing changes from within view updates" warning.
                                     Task { @MainActor in viewModel.sidebarSelection = value }
                                 }
                             }
                         ),
-                        itemCounts: viewModel.itemCounts
+                        itemCounts: viewModel.itemCounts,
+                        folders: viewModel.folders,
+                        onCreateFolder: { name in viewModel.createFolder(name: name) },
+                        onRenameFolder: { id, name in viewModel.renameFolder(id: id, name: name) },
+                        onDeleteFolder: { folder in
+                            folderToDelete = folder
+                            showDeleteFolderAlert = true
+                        },
+                        onDropItems: { ids, folderId in viewModel.moveItemsToFolder(itemIds: ids, folderId: folderId) }
                     )
                     SyncStatusView(label: viewModel.syncStatusLabel)
                 }
@@ -195,6 +201,16 @@ struct VaultBrowserView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("\"\(viewModel.itemSelection?.name ?? "")\" will be permanently deleted and cannot be recovered.")
+        }
+        .alert("Delete Folder?", isPresented: $showDeleteFolderAlert) {
+            Button("Delete Folder", role: .destructive) {
+                if let folder = folderToDelete {
+                    viewModel.deleteFolder(id: folder.id)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Items in \"\(folderToDelete?.name ?? "")\" will not be deleted. They will become unfoldered.")
         }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in

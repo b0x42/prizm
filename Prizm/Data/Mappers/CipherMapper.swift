@@ -135,7 +135,9 @@ nonisolated final class CipherMapper {
             revisionDate: revisionDate,
             content:      content,
             reprompt:     raw.reprompt ?? 0,
-            attachments:  attachments
+            attachments:  attachments,
+
+            folderId:     raw.folderId
         )
         return (item: item, cipherKey: cipherKey)
     }
@@ -341,6 +343,7 @@ nonisolated final class CipherMapper {
         return RawCipher(
             id:             draft.id,
             organizationId: nil,
+            folderId:       draft.folderId,
             type:           type,
             name:           encName,
             notes:          encNotes,

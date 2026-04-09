@@ -45,6 +45,12 @@ enum Typography {
     /// Slightly heavier than `fieldLabel` to visually separate it from body content.
     static let fieldLabelProminent: Font = .callout.weight(.medium)
 
+    /// Top-level sidebar rows (All Items, Favorites, item types, Trash).
+    static let sidebarRow: Font = .title3
+
+    /// Child sidebar rows (user-created folders).
+    static let sidebarChildRow: Font = .body
+
     /// Large icon on the Login, TOTP, and Unlock screens (keyhole / app symbol).
     static let screenIcon: Font    = .system(size: 48)
 

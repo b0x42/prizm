@@ -24,6 +24,7 @@ actor MockPrizmCryptoService: PrizmCryptoService {
     )
     nonisolated(unsafe) var stubbedDecryptList:  [VaultItem] = []
     nonisolated(unsafe) var stubbedFailedCount:  Int = 0
+    nonisolated(unsafe) var stubbedFolders:      [Folder] = []
 
     // MARK: - PrizmCryptoService
 
@@ -45,6 +46,10 @@ actor MockPrizmCryptoService: PrizmCryptoService {
 
     func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int, cipherKeys: [String: Data]) {
         (items: stubbedDecryptList, failedCount: stubbedFailedCount, cipherKeys: [:])
+    }
+
+    func decryptFolders(folders: [RawFolder]) async throws -> (folders: [Folder], failedCount: Int) {
+        (folders: stubbedFolders, failedCount: 0)
     }
 
     func unlockWith(keys: CryptoKeys) async {

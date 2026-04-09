@@ -151,6 +151,26 @@ protocol PrizmAPIClientProtocol: Actor {
     /// and the shared session configuration (timeouts, etc.) is applied.
     func downloadBlob(from url: URL) async throws -> Data
 
+    // MARK: - Folder CRUD
+
+    /// POST `/api/folders` — creates a new folder with an encrypted name.
+    func createFolder(encryptedName: String) async throws -> RawFolder
+
+    /// PUT `/api/folders/{id}` — renames a folder with an encrypted name.
+    func updateFolder(id: String, encryptedName: String) async throws -> RawFolder
+
+    /// DELETE `/api/folders/{id}` — permanently deletes a folder.
+    /// Items in the folder are unfoldered, not deleted.
+    func deleteFolder(id: String) async throws
+
+    // MARK: - Cipher partial / move
+
+    /// PUT `/ciphers/{id}/partial` — updates folderId and favorite without re-encrypting.
+    func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws
+
+    /// PUT `/ciphers/move` — bulk-moves ciphers to a folder.
+    func moveCiphersToFolder(ids: [String], folderId: String?) async throws
+
 }
 
 // MARK: - Wire Models
@@ -553,7 +573,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
         let response: SyncResponse = try await perform(request: request)
         if DebugConfig.isEnabled {
-            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
+            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) folders=\(response.folders.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
         }
         return response
     }
@@ -770,6 +790,75 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
             logger.debug("[debug] createCipher ← id=\(created.id, privacy: .public)")
         }
         return created
+    }
+
+    // MARK: - Folder CRUD
+
+    func createFolder(encryptedName: String) async throws -> RawFolder {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/folders")
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(["name": encryptedName])
+        return try await perform(request: request)
+    }
+
+    func updateFolder(id: String, encryptedName: String) async throws -> RawFolder {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/folders/\(id)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(["name": encryptedName])
+        return try await perform(request: request)
+    }
+
+    func deleteFolder(id: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/folders/\(id)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "DELETE"
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        try await performEmpty(request: request)
+    }
+
+    // MARK: - Cipher partial / move
+
+    func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(id)/partial")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let body: [String: Any?] = ["folderId": folderId, "favorite": favorite]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body.compactMapValues { $0 ?? NSNull() })
+        try await performEmpty(request: request)
+    }
+
+    func moveCiphersToFolder(ids: [String], folderId: String?) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/move")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let body: [String: Any] = ["ids": ids, "folderId": folderId as Any]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        try await performEmpty(request: request)
     }
 
     func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?) {
