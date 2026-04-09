@@ -73,6 +73,13 @@ xattr -dr com.apple.quarantine /Applications/Prizm.app
 
 **[Download Prizm](https://github.com/b0x42/prizm/releases/latest)**
 
+### Homebrew
+
+```bash
+brew tap b0x42/prizm
+brew install --cask prizm
+```
+
 ### Build from source
 
 ```bash
