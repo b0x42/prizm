@@ -38,6 +38,10 @@ final class AppContainer: ObservableObject {
     let deleteVaultItemUseCase:          DeleteVaultItemUseCaseImpl
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
     let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
+    let createFolderUseCase:             CreateFolderUseCaseImpl
+    let renameFolderUseCase:             RenameFolderUseCaseImpl
+    let deleteFolderUseCase:             DeleteFolderUseCaseImpl
+    let moveItemToFolderUseCase:         MoveItemToFolderUseCaseImpl
     let syncTimestampRepository:         SyncTimestampRepositoryImpl
     let getLastSyncDateUseCase:          any GetLastSyncDateUseCase
 
@@ -104,6 +108,10 @@ final class AppContainer: ObservableObject {
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
         self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
         self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
+        self.createFolderUseCase             = CreateFolderUseCaseImpl(repository: vault)
+        self.renameFolderUseCase             = RenameFolderUseCaseImpl(repository: vault)
+        self.deleteFolderUseCase             = DeleteFolderUseCaseImpl(repository: vault)
+        self.moveItemToFolderUseCase         = MoveItemToFolderUseCaseImpl(repository: vault)
         self.syncTimestampRepository         = syncTimestamp
         self.getLastSyncDateUseCase          = GetLastSyncDateUseCaseImpl(repository: syncTimestamp)
         // Attachment use cases — Upload and Download inject VaultKeyService;
@@ -145,6 +153,10 @@ final class AppContainer: ObservableObject {
             delete:          deleteVaultItemUseCase,
             permanentDelete: permanentDeleteVaultItemUseCase,
             restore:         restoreVaultItemUseCase,
+            createFolder:    createFolderUseCase,
+            renameFolder:    renameFolderUseCase,
+            deleteFolder:    deleteFolderUseCase,
+            moveItem:        moveItemToFolderUseCase,
             syncTimestamp:   syncTimestampRepository,
             getLastSyncDate: getLastSyncDateUseCase
         )
@@ -153,12 +165,14 @@ final class AppContainer: ObservableObject {
     /// Creates an `ItemEditViewModel` for the given item, wired with the live edit use case.
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
     func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
-        ItemEditViewModel(item: item, useCase: editVaultItemUseCase)
+        let folders = (try? vaultStore.folders()) ?? []
+        return ItemEditViewModel(item: item, useCase: editVaultItemUseCase, folders: folders)
     }
 
     /// Creates an `ItemEditViewModel` in create mode for the given item type.
-    func makeItemCreateViewModel(for type: ItemType) -> ItemEditViewModel {
-        ItemEditViewModel(type: type, useCase: createVaultItemUseCase)
+    func makeItemCreateViewModel(for type: ItemType, folderId: String? = nil) -> ItemEditViewModel {
+        let folders = (try? vaultStore.folders()) ?? []
+        return ItemEditViewModel(type: type, useCase: createVaultItemUseCase, folders: folders, folderId: folderId)
     }
 
     // MARK: - AppKit panel defaults (App layer — Constitution §II)

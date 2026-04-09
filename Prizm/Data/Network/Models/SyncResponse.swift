@@ -8,9 +8,40 @@ import Foundation
 /// the vault) and the list of encrypted ciphers.
 ///
 /// Reference: Bitwarden Server API `/api/sync` response schema.
-nonisolated struct SyncResponse: Codable {
+nonisolated struct SyncResponse: Decodable {
     let profile: RawProfile
     let ciphers: [RawCipher]
+    /// Decoded with a default of `[]` so that Vaultwarden instances that omit the key
+    /// (or future API variants) don't cause the entire sync decode to throw.
+    let folders: [RawFolder]
+
+    init(profile: RawProfile, ciphers: [RawCipher], folders: [RawFolder] = []) {
+        self.profile = profile
+        self.ciphers = ciphers
+        self.folders = folders
+    }
+
+    init(from decoder: Decoder) throws {
+        // Vaultwarden API uses camelCase; some versions / the official Bitwarden server
+        // use PascalCase. Try camelCase first, fall back to PascalCase for each key.
+        let container = try decoder.container(keyedBy: FlexKeys.self)
+        profile = try (try? container.decode(RawProfile.self,  forKey: FlexKeys("profile")))
+               ?? container.decode(RawProfile.self,  forKey: FlexKeys("Profile"))
+        ciphers = try (try? container.decode([RawCipher].self, forKey: FlexKeys("ciphers")))
+               ?? container.decode([RawCipher].self, forKey: FlexKeys("Ciphers"))
+        folders = (try? container.decode([RawFolder].self, forKey: FlexKeys("folders")))
+               ?? (try? container.decode([RawFolder].self, forKey: FlexKeys("Folders")))
+               ?? []
+    }
+
+    /// Ad-hoc `CodingKey` that accepts any string key, used to try multiple casing variants.
+    private struct FlexKeys: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init(_ string: String) { stringValue = string }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { return nil }
+    }
 }
 
 // MARK: - RawProfile

@@ -32,7 +32,7 @@ enum Typography {
     static let listTitle: Font     = .body
 
     /// Secondary subtitle in the list pane (username, last 4 digits, etc.).
-    static let listSubtitle: Font  = .caption
+    static let listSubtitle: Font  = .footnote
 
     /// Status banner text (e.g. "This item is in Trash.") — slightly larger than utility/caption.
     static let bannerText: Font    = .callout
@@ -44,6 +44,12 @@ enum Typography {
     /// Inline field label shown above a form input (e.g. "Authentication code").
     /// Slightly heavier than `fieldLabel` to visually separate it from body content.
     static let fieldLabelProminent: Font = .callout.weight(.medium)
+
+    /// Top-level sidebar rows (All Items, Favorites, item types, Trash).
+    static let sidebarRow: Font = .system(size: 14, weight: .regular)
+
+    /// Child sidebar rows (user-created folders).
+    static let sidebarChildRow: Font = .body
 
     /// Large icon on the Login, TOTP, and Unlock screens (keyhole / app symbol).
     static let screenIcon: Font    = .system(size: 48)

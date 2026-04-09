@@ -97,6 +97,14 @@ protocol PrizmCryptoService: Actor {
     /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is not unlocked.
     func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int, cipherKeys: [String: Data])
 
+    /// Decrypts folder names from the sync response.
+    ///
+    /// Per-folder decryption failures are non-fatal: failed folders are excluded and counted.
+    /// - Parameter folders: Raw encrypted folders from the sync response.
+    /// - Returns: Tuple of successfully decrypted `Folder`s and a failure count.
+    /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is not unlocked.
+    func decryptFolders(folders: [RawFolder]) async throws -> (folders: [Folder], failedCount: Int)
+
     /// Loads `keys` into memory, marking the vault as unlocked.
     func unlockWith(keys: CryptoKeys) async
 
@@ -234,6 +242,31 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
         }
         logger.info("decryptList: completed — \(items.count) succeeded, \(failedCount) failed")
         return (items: items, failedCount: failedCount, cipherKeys: cipherKeyMap)
+    }
+
+    // MARK: - decryptFolders
+
+    func decryptFolders(folders rawFolders: [RawFolder]) async throws -> (folders: [Folder], failedCount: Int) {
+        guard let vaultKeys = keys else {
+            throw PrizmCryptoServiceError.vaultLocked
+        }
+        var folders: [Folder] = []
+        var failedCount = 0
+        for raw in rawFolders {
+            do {
+                let enc  = try EncString(string: raw.name)
+                let data = try enc.decrypt(keys: vaultKeys)
+                guard let name = String(data: data, encoding: .utf8) else {
+                    failedCount += 1
+                    continue
+                }
+                folders.append(Folder(id: raw.id, name: name))
+            } catch {
+                failedCount += 1
+                logger.error("decryptFolders: folder decryption failed for id \(raw.id, privacy: .public)")
+            }
+        }
+        return (folders: folders, failedCount: failedCount)
     }
 
     // MARK: - makeMasterKey

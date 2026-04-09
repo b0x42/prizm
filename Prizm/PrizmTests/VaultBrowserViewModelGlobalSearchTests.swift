@@ -21,7 +21,7 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         vault = MockVaultRepository()
-        vault.populate(items: [sampleLogin, sampleCard], syncedAt: .now)
+        vault.populate(items: [sampleLogin, sampleCard], folders: [], syncedAt: .now)
         let syncRepo = MockSyncTimestampRepository(storedDate: nil)
         sut = VaultBrowserViewModel(
             vault:           vault,
@@ -29,6 +29,10 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
             delete:          StubDeleteUseCase(),
             permanentDelete: StubPermanentDeleteUseCase(),
             restore:         StubRestoreUseCase(),
+            createFolder:    StubCreateFolder(),
+            renameFolder:    StubRenameFolder(),
+            deleteFolder:    StubDeleteFolder(),
+            moveItem:        StubMoveItem(),
             syncTimestamp:   syncRepo,
             getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
@@ -108,4 +112,18 @@ private final class StubPermanentDeleteUseCase: PermanentDeleteVaultItemUseCase 
 
 private final class StubRestoreUseCase: RestoreVaultItemUseCase {
     func execute(id: String) async throws {}
+}
+
+private struct StubCreateFolder: CreateFolderUseCase {
+    func execute(name: String) async throws -> Folder { Folder(id: "stub", name: name) }
+}
+private struct StubRenameFolder: RenameFolderUseCase {
+    func execute(id: String, name: String) async throws -> Folder { Folder(id: id, name: name) }
+}
+private struct StubDeleteFolder: DeleteFolderUseCase {
+    func execute(id: String) async throws {}
+}
+private struct StubMoveItem: MoveItemToFolderUseCase {
+    func execute(itemId: String, folderId: String?) async throws {}
+    func execute(itemIds: [String], folderId: String?) async throws {}
 }

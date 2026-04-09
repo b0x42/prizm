@@ -25,6 +25,10 @@ final class VaultBrowserViewModelSyncStatusTests: XCTestCase {
             delete:          StubVaultDeleteUseCase(),
             permanentDelete: StubVaultPermanentDeleteUseCase(),
             restore:         StubVaultRestoreUseCase(),
+            createFolder:    StubCreateFolder(),
+            renameFolder:    StubRenameFolder(),
+            deleteFolder:    StubDeleteFolder(),
+            moveItem:        StubMoveItem(),
             syncTimestamp:   repo,
             getLastSyncDate: useCase
         )
@@ -89,4 +93,17 @@ private final class StubVaultPermanentDeleteUseCase: PermanentDeleteVaultItemUse
 }
 private final class StubVaultRestoreUseCase: RestoreVaultItemUseCase {
     func execute(id: String) async throws {}
+}
+private struct StubCreateFolder: CreateFolderUseCase {
+    func execute(name: String) async throws -> Folder { Folder(id: "stub", name: name) }
+}
+private struct StubRenameFolder: RenameFolderUseCase {
+    func execute(id: String, name: String) async throws -> Folder { Folder(id: id, name: name) }
+}
+private struct StubDeleteFolder: DeleteFolderUseCase {
+    func execute(id: String) async throws {}
+}
+private struct StubMoveItem: MoveItemToFolderUseCase {
+    func execute(itemId: String, folderId: String?) async throws {}
+    func execute(itemIds: [String], folderId: String?) async throws {}
 }

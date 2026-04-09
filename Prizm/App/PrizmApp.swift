@@ -155,8 +155,8 @@ struct PrizmApp: App {
                     }
                     return vm
                 },
-                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type in
-                    let vm = container.makeItemCreateViewModel(for: type)
+                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type, folderId in
+                    let vm = container.makeItemCreateViewModel(for: type, folderId: folderId)
                     vm.onSaveSuccess = { [weak vaultBrowserVM] item in
                         vaultBrowserVM?.handleItemSaved(item)
                     }
