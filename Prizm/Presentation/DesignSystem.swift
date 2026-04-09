@@ -46,7 +46,7 @@ enum Typography {
     static let fieldLabelProminent: Font = .callout.weight(.medium)
 
     /// Top-level sidebar rows (All Items, Favorites, item types, Trash).
-    static let sidebarRow: Font = .body
+    static let sidebarRow: Font = .callout
 
     /// Child sidebar rows (user-created folders).
     static let sidebarChildRow: Font = .body
