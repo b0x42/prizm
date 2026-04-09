@@ -27,6 +27,8 @@ Prizm fills that gap: a fully native macOS client, built in SwiftUI, that connec
 
 If you self-host your passwords and care about software quality on your own machine, Prizm is for you.
 
+### Mission & Principles
+
 Prizm exists to give macOS users a native, auditable, trustworthy interface to their self-hosted password vault.
 
 **Native-first.** SwiftUI only. No Electron, no web views, no compromise on the Mac experience.
