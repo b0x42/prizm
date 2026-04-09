@@ -227,7 +227,13 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Refreshes `displayedItems` from the vault store based on current selection + search query.
     func refreshItems() {
         do {
-            let scope = isGlobalSearch ? .allItems : sidebarSelection
+            let scope: SidebarSelection
+            if isGlobalSearch {
+                if case .folder = sidebarSelection { scope = sidebarSelection }
+                else { scope = .allItems }
+            } else {
+                scope = sidebarSelection
+            }
             displayedItems = try search.execute(query: searchQuery, in: scope)
         } catch {
             logger.error("Failed to load vault items: \(error.localizedDescription, privacy: .public)")
