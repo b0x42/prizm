@@ -15,7 +15,6 @@ The existing architecture follows a clean layered pattern: wire models (`RawCiph
 - Folder-scoped search when a folder is selected
 
 **Non-Goals:**
-- Nested folders (Parent/Child naming convention) — flat only
 - "No Folder" sidebar row — unfoldered items accessible via All Items / Types
 - Manual folder reordering — alphabetical sort only
 - Organisation folder support — personal vault only (consistent with existing org cipher exclusion)
@@ -88,6 +87,28 @@ The `PUT /ciphers/{id}/partial` response returns cipher details, but we only use
 ### Decision 11: Folder decryption goes through PrizmCryptoService
 
 `SyncRepositoryImpl` calls `crypto.decryptFolders(folders:)` — a new method on `PrizmCryptoService` that mirrors the existing `decryptList(ciphers:)` pattern. This keeps all crypto behind the service protocol boundary (Constitution §III). The method retrieves the current keys internally and decrypts each `RawFolder.name` EncString, returning `[Folder]`.
+
+### Decision 12: Nested folders via slash-delimited naming convention
+
+Bitwarden represents folder hierarchy through a naming convention: a folder named `"Work/Projects"` is treated as a child of `"Work"`. The server stores all folders as a flat list — there is no parent-child relationship in the API. Prizm parses the `/` delimiter at render time to build a tree for sidebar display.
+
+Parent nodes that have no corresponding flat folder entry (e.g. "Work" when only "Work/Projects" exists) are rendered as virtual parents — they have no `folderId` and cannot be selected or receive drops; they exist only as collapsible containers. Real parent folders (where "Work" also exists as its own folder) are selectable and receive drops.
+
+Collapse state is persisted per-session in a `@State` `Set<String>` keyed by folder ID (or virtual path). UserDefaults persistence is deferred.
+
+Selecting a folder in the sidebar shows only items directly assigned to that exact folder (matching `folderId` == folder.id). Items in child folders are NOT included — consistent with Bitwarden Web behavior.
+
+### Decision 13: Folder picker in edit sheet follows field-row visual style
+
+The default SwiftUI `Picker` renders as a bordered menu button that is visually inconsistent with the label-above-value field rows used throughout the edit sheet. The folder picker SHALL be replaced with a `Menu`-based or `Picker(.menu)` styled component wrapped in the same field row container used for other fields (label on top, value below, same horizontal padding and separator). This preserves the existing `Picker` binding semantics while matching the design system.
+
+### Decision 14: Cmd+F search preserves active sidebar selection
+
+The existing Cmd+F handler focuses the search field but implicitly searches All Items when a folder is selected. The correct behaviour is to scope the search to the currently selected sidebar item. Since `VaultBrowserViewModel` already scopes `searchItems` to the current selection, the fix is ensuring the `selection` binding is not reset when the search field is activated.
+
+### Decision 15: Folder shown in item detail view
+
+The detail pane displays field sections for the item's content (credentials, notes, etc.) but currently omits folder assignment. A "Folder" row SHALL be appended after the last content section when `item.folderId != nil`. The row shows the resolved folder name (looked up from the in-memory folder list). When `folderId` is nil the row is omitted entirely.
 
 ## Risks / Trade-offs
 
