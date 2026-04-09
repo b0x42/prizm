@@ -17,8 +17,7 @@ struct SSHKeyDetailView: View {
     let onCopy: (String) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
 
                 DetailSectionCard("Key") {
                     // Public key — visible
@@ -70,6 +69,5 @@ struct SSHKeyDetailView: View {
                     }
                 }
             }
-        }
     }
 }

@@ -95,7 +95,7 @@ protocol PrizmCryptoService: Actor {
     /// - Parameter ciphers: Raw encrypted ciphers from the sync response.
     /// - Returns: Tuple of successfully decrypted `VaultItem`s and a failure count.
     /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is not unlocked.
-    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int)
+    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int, cipherKeys: [String: Data])
 
     /// Loads `keys` into memory, marking the vault as unlocked.
     func unlockWith(keys: CryptoKeys) async
@@ -111,6 +111,34 @@ protocol PrizmCryptoService: Actor {
     ///
     /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is locked.
     func currentKeys() async throws -> CryptoKeys
+
+    // MARK: - Attachment crypto (vault-document-storage)
+    //
+    // Declared `nonisolated` so they can be called synchronously from any concurrency
+    // context — they access no actor-isolated state and can therefore be tested via
+    // `any PrizmCryptoService` without requiring `await`.
+
+    /// Generates a cryptographically random 64-byte per-attachment key.
+    ///
+    /// See `AttachmentCrypto.swift` for the full specification.
+    nonisolated func generateAttachmentKey() throws -> Data
+
+    /// Encrypts file data using AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC).
+    /// Binary layout: `IV (16) ‖ ciphertext ‖ HMAC-SHA256 (32)`.
+    nonisolated func encryptData(_ data: Data, attachmentKey: Data) throws -> Data
+
+    /// Decrypts a binary blob produced by `encryptData`.
+    /// Verifies HMAC before decrypting (Encrypt-then-MAC).
+    nonisolated func decryptData(_ data: Data, attachmentKey: Data) throws -> Data
+
+    /// Wraps the per-attachment key as a type-2 EncString using the cipher's `CryptoKeys`.
+    nonisolated func encryptAttachmentKey(_ key: Data, cipherKey: CryptoKeys) throws -> String
+
+    /// Unwraps a per-attachment key from its EncString representation.
+    nonisolated func decryptAttachmentKey(_ encString: String, cipherKey: CryptoKeys) throws -> Data
+
+    /// Encrypts a plaintext file name as a type-2 EncString for upload metadata.
+    nonisolated func encryptFileName(_ name: String, cipherKey: CryptoKeys) throws -> String
 }
 
 // MARK: - PrizmCryptoServiceImpl
@@ -167,16 +195,16 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
 
     // MARK: - decryptList
 
-    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int) {
+    func decryptList(ciphers: [RawCipher]) async throws -> (items: [VaultItem], failedCount: Int, cipherKeys: [String: Data]) {
         guard let vaultKeys = keys else {
             throw PrizmCryptoServiceError.vaultLocked
         }
         logger.info("decryptList: starting with \(ciphers.count) ciphers")
         let mapper = CipherMapper()
         var items: [VaultItem] = []
+        var cipherKeyMap: [String: Data] = [:]
         var failedCount = 0
         for (index, cipher) in ciphers.enumerated() {
-            // Organisation ciphers are not supported in v1.
             if cipher.organizationId != nil {
                 if DebugConfig.isEnabled {
                     logger.debug("[debug] cipher[\(index, privacy: .public)] skipped — organizationId present")
@@ -184,10 +212,17 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
                 continue
             }
             do {
-                let item = try mapper.map(raw: cipher, keys: vaultKeys)
+                let (item, cipherKey) = try mapper.map(raw: cipher, keys: vaultKeys)
                 items.append(item)
+                // Only cache per-item keys; vault-key-only ciphers are handled by
+                // VaultKeyServiceImpl fallback and excluded to avoid duplicate storage.
+                if cipher.key != nil {
+                    cipherKeyMap[cipher.id] = cipherKey
+                }
                 if DebugConfig.isEnabled {
-                    logger.debug("[debug] cipher[\(index, privacy: .public)] OK — type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private)")
+                    let rawAttachmentCount = cipher.attachments?.count ?? 0
+                    let mappedAttachmentCount = item.attachments.count
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] OK — type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private) rawAttachments=\(rawAttachmentCount, privacy: .public) mappedAttachments=\(mappedAttachmentCount, privacy: .public)")
                 }
             } catch {
                 failedCount += 1
@@ -198,7 +233,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
             }
         }
         logger.info("decryptList: completed — \(items.count) succeeded, \(failedCount) failed")
-        return (items: items, failedCount: failedCount)
+        return (items: items, failedCount: failedCount, cipherKeys: cipherKeyMap)
     }
 
     // MARK: - makeMasterKey

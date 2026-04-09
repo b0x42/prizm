@@ -6,6 +6,8 @@
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
 	<!-- Keychain access group: routes items to the data protection keychain.
 	     Access is controlled by this entitlement (stable across rebuilds) rather
 	     than per-binary code-signature ACLs, eliminating keychain prompts on every build.

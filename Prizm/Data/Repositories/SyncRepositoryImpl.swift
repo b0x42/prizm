@@ -27,6 +27,7 @@ actor SyncRepositoryImpl: SyncRepository {
     private let apiClient:       any PrizmAPIClientProtocol
     private let crypto:          any PrizmCryptoService
     private let vaultRepository: any VaultRepository
+    private let vaultKeyCache:   VaultKeyCache
 
     private let logger = Logger(subsystem: "com.prizm", category: "SyncRepository")
 
@@ -39,11 +40,13 @@ actor SyncRepositoryImpl: SyncRepository {
     init(
         apiClient:       any PrizmAPIClientProtocol,
         crypto:          any PrizmCryptoService,
-        vaultRepository: any VaultRepository
+        vaultRepository: any VaultRepository,
+        vaultKeyCache:   VaultKeyCache
     ) {
         self.apiClient       = apiClient
         self.crypto          = crypto
         self.vaultRepository = vaultRepository
+        self.vaultKeyCache   = vaultKeyCache
     }
 
     // MARK: - SyncRepository
@@ -96,11 +99,17 @@ actor SyncRepositoryImpl: SyncRepository {
         // Phase 2: Decrypt personal ciphers via the crypto service.
         progress("Decrypting \(totalCiphers) item(s)…")
 
-        let (items, failedCount) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
+        let (items, failedCount, cipherKeyMap) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
         logger.info("Decrypted \(items.count) cipher(s); \(failedCount) failure(s)")
         if DebugConfig.isEnabled && failedCount > 0 {
             logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check PrizmCryptoService logs for per-cipher errors")
         }
+
+        // Phase 2b: Populate the per-cipher key cache from keys collected during decryptList.
+        // Only ciphers with a per-item key are included; vault-key-only ciphers are handled
+        // by VaultKeyServiceImpl's fallback path.
+        await vaultKeyCache.populate(keys: cipherKeyMap)
+        logger.info("VaultKeyCache populated with \(cipherKeyMap.count, privacy: .public) per-item key(s)")
 
         // Phase 3: Populate the in-memory vault store.
         let syncedAt = Date()

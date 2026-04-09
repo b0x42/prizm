@@ -158,7 +158,9 @@ final class VaultRepositoryImpl: VaultRepository {
         let updatedRaw = try await apiClient.updateCipher(id: draft.id, cipher: rawCipher)
 
         // Step 4: Decode the server response into a domain item.
-        let updatedItem = try mapper.map(raw: updatedRaw, keys: keys)
+        // The cipherKey return value is discarded here — VaultKeyCache is populated at sync
+        // time; a single-item edit does not need to update the key cache.
+        let (updatedItem, _) = try mapper.map(raw: updatedRaw, keys: keys)
 
         // Step 5: Splice into the in-memory cache (no full re-sync needed).
         if let idx = items.firstIndex(where: { $0.id == updatedItem.id }) {
@@ -184,7 +186,9 @@ final class VaultRepositoryImpl: VaultRepository {
 
         let rawCipher = try mapper.toRawCipher(draft, encryptedWith: keys)
         let createdRaw = try await apiClient.createCipher(cipher: rawCipher)
-        let createdItem = try mapper.map(raw: createdRaw, keys: keys)
+        // Discard cipherKey — newly created items are picked up by the next sync which
+        // populates VaultKeyCache. A just-created cipher may have no per-item key yet.
+        let (createdItem, _) = try mapper.map(raw: createdRaw, keys: keys)
         items.append(createdItem)
         // Note: sidebar counts are refreshed by the caller (VaultBrowserViewModel.handleItemSaved)
         // via the onSaveSuccess callback — same pattern as update().
@@ -208,7 +212,7 @@ final class VaultRepositoryImpl: VaultRepository {
         items[idx] = VaultItem(
             id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
             creationDate: old.creationDate, revisionDate: old.revisionDate,
-            content: old.content, reprompt: old.reprompt
+            content: old.content, reprompt: old.reprompt, attachments: old.attachments
         )
         logger.info("Vault item soft-deleted: \(id, privacy: .public)")
     }
@@ -240,9 +244,35 @@ final class VaultRepositoryImpl: VaultRepository {
         items[idx] = VaultItem(
             id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: false,
             creationDate: old.creationDate, revisionDate: old.revisionDate,
-            content: old.content, reprompt: old.reprompt
+            content: old.content, reprompt: old.reprompt, attachments: old.attachments
         )
         logger.info("Vault item restored: \(id, privacy: .public)")
+    }
+
+    // MARK: - Attachment cache patch
+
+    /// Replaces the `attachments` array for the item identified by `cipherId` in the
+    /// in-memory store without triggering a full re-sync.
+    ///
+    /// `VaultItem` is a value type (struct), so updating the `attachments` field requires
+    /// constructing a new `VaultItem` with all original fields preserved and the updated
+    /// array, then splicing the new value back into the items array at the same index.
+    ///
+    /// This method is called by `AttachmentRepositoryImpl` from a background task context;
+    /// `@MainActor` is inherited from the class declaration, so the caller's `await` hop
+    /// ensures the store mutation happens on the main actor.
+    func updateAttachments(_ attachments: [Attachment], for cipherId: String) async {
+        guard let idx = items.firstIndex(where: { $0.id == cipherId }) else {
+            logger.error("updateAttachments: cipher not found in cache — id=\(cipherId, privacy: .public)")
+            return
+        }
+        let old = items[idx]
+        items[idx] = VaultItem(
+            id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: old.isDeleted,
+            creationDate: old.creationDate, revisionDate: old.revisionDate,
+            content: old.content, reprompt: old.reprompt, attachments: attachments
+        )
+        logger.info("Vault item attachments updated: cipher=\(cipherId, privacy: .public) count=\(attachments.count, privacy: .public)")
     }
 
     // MARK: - Private helpers

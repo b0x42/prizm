@@ -13,8 +13,7 @@ struct CardDetailView: View {
     let onCopy: (String) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
 
                 DetailSectionCard("Card Details") {
                     // Each Divider is guarded by whether any field above it is
@@ -63,6 +62,5 @@ struct CardDetailView: View {
                     }
                 }
             }
-        }
     }
 }

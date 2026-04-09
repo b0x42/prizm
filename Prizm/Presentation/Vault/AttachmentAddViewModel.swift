@@ -1,0 +1,187 @@
+import Foundation
+import Observation
+import os.log
+
+// MARK: - AttachmentAddViewModel
+
+/// ViewModel for the single-file attachment add flow (tasks 6.1–6.4b).
+///
+/// Lifecycle:
+/// 1. Created with `cipherId` when the user taps "Add Attachment" for a specific vault item.
+/// 2. `selectFile()` opens `NSOpenPanel` and reads file metadata (size only) for validation.
+/// 3. On confirmation, `confirm()` reads the file bytes, uploads, and zeroes the buffer.
+/// 4. `cancel()` zeroes any buffered bytes and signals dismissal.
+///
+/// - Security goal: raw file bytes are held in memory only between `confirm()` call and
+///   upload completion (success or failure). Both paths zero the buffer immediately after
+///   the upload call returns (Constitution §III).
+///
+/// - File bytes are NOT read at selection time — they are read at the moment the user
+///   presses Confirm, minimising how long sensitive data is resident in memory.
+///
+/// - Testability: The `filePicker` closure is injectable so unit tests can bypass
+///   `NSOpenPanel` (which requires an interactive session and cannot run in XCTest).
+///   The default `NSOpenPanel` implementation lives in the App layer (`AppContainer`)
+///   to keep AppKit out of the Presentation layer (Constitution §II).
+@Observable
+@MainActor
+final class AttachmentAddViewModel: Identifiable {
+
+    let id = UUID()
+
+    // MARK: - Injected
+
+    private let cipherId: String
+    private let uploadUseCase: any UploadAttachmentUseCase
+    /// Injectable file-picker closure.
+    /// Returns all selected `(url, bytes)` pairs; empty array means the user cancelled.
+    /// Multiple results trigger the batch sheet; a single result triggers the confirm sheet.
+    /// `@MainActor` — AppKit panel classes require main-actor isolation on macOS 26.
+    private let filePicker: @MainActor () -> [(url: URL, bytes: Int)]
+
+    private let logger = Logger(subsystem: "com.prizm", category: "attachments")
+
+    // MARK: - State (observable)
+
+    /// URL of the file selected via `NSOpenPanel`. Non-nil once the user picks a file.
+    private(set) var selectedFileURL: URL?
+
+    /// Display name for the selected file (derived from `selectedFileURL`).
+    private(set) var fileName: String = ""
+
+    /// Byte count of the selected file (read at selection time for size validation only —
+    /// bytes are NOT loaded into memory until Confirm).
+    private(set) var fileSizeBytes: Int = 0
+
+    /// `true` while `NSOpenPanel.runModal()` is blocking the main thread.
+    /// Used by `AttachmentsSectionView` to disable the "Add Attachment" button and
+    /// show a spinner so the UI does not appear unresponsive during the modal call.
+    private(set) var isPickingFile: Bool = false
+
+    /// `true` while the Confirm sheet is presented.
+    private(set) var isConfirming: Bool = false
+
+    /// `true` while an upload is in-flight.
+    private(set) var isUploading: Bool = false
+
+    /// Non-nil when the file exceeds 500 MB (shown inline before confirmation).
+    private(set) var sizeError: String? = nil
+
+    /// Non-nil when the upload fails (shown in the confirmation sheet).
+    private(set) var uploadError: String? = nil
+
+    /// `true` when the sheet should be dismissed (set by `cancel()` or upload success).
+    private(set) var isDismissed: Bool = false
+
+    /// Non-empty when the user selected multiple files — the caller should route to the
+    /// batch sheet instead of the single-file confirm sheet.
+    private(set) var pickedURLs: [URL] = []
+
+    /// Advisory message shown when file is ≥50 MB but ≤500 MB.
+    private(set) var sizeAdvisory: String? = nil
+
+    // MARK: - Private
+
+    /// Holds the in-flight upload task so `cancel()` can cancel it.
+    private var uploadTask: Task<Void, Never>? = nil
+
+    // MARK: - Init
+
+    init(
+        cipherId: String,
+        uploadUseCase: any UploadAttachmentUseCase,
+        filePicker: @escaping @MainActor () -> [(url: URL, bytes: Int)]
+    ) {
+        self.cipherId      = cipherId
+        self.uploadUseCase = uploadUseCase
+        self.filePicker    = filePicker
+    }
+
+    // MARK: - File selection (task 6.2)
+
+    /// Invokes `filePicker` and validates the chosen file.
+    func selectFile() async {
+        isPickingFile = true
+        await Task.yield()
+        defer { isPickingFile = false }
+        let results = filePicker()
+        guard !results.isEmpty else { return }
+
+        if results.count > 1 {
+            pickedURLs = results.map(\.url)
+            return
+        }
+
+        let (url, bytes) = results[0]
+
+        let maxBytes = 500 * 1024 * 1024
+        if bytes > maxBytes {
+            sizeError = "File exceeds the 500 MB limit (\(ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)))."
+            return
+        }
+
+        let advisoryThreshold = 50 * 1024 * 1024
+        sizeAdvisory = bytes >= advisoryThreshold
+            ? "Large files take longer to encrypt and upload."
+            : nil
+
+        selectedFileURL = url
+        fileName        = url.lastPathComponent
+        fileSizeBytes   = bytes
+        sizeError       = nil
+        isConfirming    = true
+    }
+
+    // MARK: - Confirm (task 6.4)
+
+    func confirm() {
+        guard let url = selectedFileURL, !isUploading else { return }
+        uploadError = nil
+        isUploading = true
+
+        uploadTask = Task { [weak self] in
+            guard let self else { return }
+
+            var fileData: Data
+            do {
+                fileData = try Data(contentsOf: url)
+            } catch {
+                self.uploadError = "Could not read file: \(error.localizedDescription)"
+                self.isUploading = false
+                self.uploadTask  = nil
+                return
+            }
+
+            do {
+                _ = try await self.uploadUseCase.execute(
+                    cipherId: self.cipherId,
+                    fileName: self.fileName,
+                    data:     fileData
+                )
+                fileData.resetBytes(in: 0..<fileData.count)
+                self.isDismissed = true
+            } catch AttachmentError.premiumRequired {
+                fileData.resetBytes(in: 0..<fileData.count)
+                self.uploadError = "Attachment storage requires a premium Bitwarden subscription."
+            } catch is CancellationError {
+                fileData.resetBytes(in: 0..<fileData.count)
+            } catch {
+                fileData.resetBytes(in: 0..<fileData.count)
+                self.uploadError = "Upload failed: \(error.localizedDescription)"
+                logger.error("upload failed: \(error.localizedDescription, privacy: .public)")
+            }
+
+            self.isUploading = false
+            self.uploadTask  = nil
+        }
+    }
+
+    // MARK: - Cancel (task 6.4b)
+
+    func cancel() {
+        uploadTask?.cancel()
+        uploadTask   = nil
+        isUploading  = false
+        isDismissed  = true
+    }
+}

@@ -14,8 +14,8 @@ final class AboutViewModelTests: XCTestCase {
     // Shared instance built with explicit values — no Bundle.main access needed.
     private var sut: AboutViewModel!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         sut = AboutViewModel(
             appName:  "Prizm",
             version:  "1.0",

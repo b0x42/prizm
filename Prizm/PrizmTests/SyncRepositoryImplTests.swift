@@ -20,7 +20,8 @@ final class SyncRepositoryImplTests: XCTestCase {
         sut = SyncRepositoryImpl(
             apiClient:       mockAPI,
             crypto:          mockCrypto,
-            vaultRepository: mockVault
+            vaultRepository: mockVault,
+            vaultKeyCache:   VaultKeyCache()
         )
     }
 
@@ -147,7 +148,9 @@ final class SyncRepositoryImplTests: XCTestCase {
                 identity:       nil,
                 secureNote:     nil,
                 sshKey:         nil,
-                fields:         []
+                fields:         [],
+                key:            nil,
+                attachments:    nil
             )
         }
         return SyncResponse(

@@ -102,6 +102,31 @@
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
 				B1335B23AD5F4D1CB28E3F19 /* AboutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */; };
 		77DF6B9FF920443AA5F94219 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABEC630F6934ED883504C9D /* AboutView.swift */; };
+		/* vault-document-storage: attachment build files */
+		BB1001000000000000000001 /* Attachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1001000000000000000001 /* Attachment.swift */; };
+		BB1002000000000000000002 /* AttachmentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1002000000000000000002 /* AttachmentRepository.swift */; };
+		BB1003000000000000000003 /* VaultKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1003000000000000000003 /* VaultKeyService.swift */; };
+		BB1004000000000000000004 /* UploadAttachmentUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1004000000000000000004 /* UploadAttachmentUseCase.swift */; };
+		BB1005000000000000000005 /* DownloadAttachmentUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1005000000000000000005 /* DownloadAttachmentUseCase.swift */; };
+		BB1006000000000000000006 /* DeleteAttachmentUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1006000000000000000006 /* DeleteAttachmentUseCase.swift */; };
+		BB1007000000000000000007 /* AttachmentCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1007000000000000000007 /* AttachmentCrypto.swift */; };
+		BB1008000000000000000008 /* AttachmentDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1008000000000000000008 /* AttachmentDTO.swift */; };
+		BB1009000000000000000009 /* AttachmentRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1009000000000000000009 /* AttachmentRepositoryImpl.swift */; };
+		BB100A00000000000000000A /* VaultKeyCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100A00000000000000000A /* VaultKeyCache.swift */; };
+		BB100B00000000000000000B /* VaultKeyServiceImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100B00000000000000000B /* VaultKeyServiceImpl.swift */; };
+		BB100C00000000000000000C /* AttachmentMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100C00000000000000000C /* AttachmentMapper.swift */; };
+		BB100D00000000000000000D /* UploadAttachmentUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100D00000000000000000D /* UploadAttachmentUseCaseImpl.swift */; };
+		BB100E00000000000000000E /* DownloadAttachmentUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100E00000000000000000E /* DownloadAttachmentUseCaseImpl.swift */; };
+		BB100F00000000000000000F /* DeleteAttachmentUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100F00000000000000000F /* DeleteAttachmentUseCaseImpl.swift */; };
+		BB1010000000000000000010 /* TempFileManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1010000000000000000010 /* TempFileManaging.swift */; };
+		BB1011000000000000000011 /* AttachmentAddViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1011000000000000000011 /* AttachmentAddViewModel.swift */; };
+		BB1012000000000000000012 /* AttachmentBatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1012000000000000000012 /* AttachmentBatchViewModel.swift */; };
+		BB1013000000000000000013 /* AttachmentRowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1013000000000000000013 /* AttachmentRowViewModel.swift */; };
+		BB1014000000000000000014 /* AttachmentConfirmSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1014000000000000000014 /* AttachmentConfirmSheet.swift */; };
+		BB1015000000000000000015 /* AttachmentBatchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1015000000000000000015 /* AttachmentBatchSheet.swift */; };
+		BB1016000000000000000016 /* AttachmentsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1016000000000000000016 /* AttachmentsSectionView.swift */; };
+		BB1017000000000000000017 /* AttachmentRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1017000000000000000017 /* AttachmentRowView.swift */; };
+		BB1018000000000000000018 /* AttachmentTempFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1018000000000000000018 /* AttachmentTempFileManager.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -214,6 +239,31 @@
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 				EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "About/AboutViewModel.swift"; sourceTree = "<group>"; };
 		4ABEC630F6934ED883504C9D /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "About/AboutView.swift"; sourceTree = "<group>"; };
+		/* vault-document-storage: attachment file references */
+		AA1001000000000000000001 /* Attachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attachment.swift; sourceTree = "<group>"; };
+		AA1002000000000000000002 /* AttachmentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentRepository.swift; sourceTree = "<group>"; };
+		AA1003000000000000000003 /* VaultKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultKeyService.swift; sourceTree = "<group>"; };
+		AA1004000000000000000004 /* UploadAttachmentUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadAttachmentUseCase.swift; sourceTree = "<group>"; };
+		AA1005000000000000000005 /* DownloadAttachmentUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadAttachmentUseCase.swift; sourceTree = "<group>"; };
+		AA1006000000000000000006 /* DeleteAttachmentUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAttachmentUseCase.swift; sourceTree = "<group>"; };
+		AA1007000000000000000007 /* AttachmentCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentCrypto.swift; sourceTree = "<group>"; };
+		AA1008000000000000000008 /* AttachmentDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentDTO.swift; sourceTree = "<group>"; };
+		AA1009000000000000000009 /* AttachmentRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentRepositoryImpl.swift; sourceTree = "<group>"; };
+		AA100A00000000000000000A /* VaultKeyCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultKeyCache.swift; sourceTree = "<group>"; };
+		AA100B00000000000000000B /* VaultKeyServiceImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultKeyServiceImpl.swift; sourceTree = "<group>"; };
+		AA100C00000000000000000C /* AttachmentMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentMapper.swift; sourceTree = "<group>"; };
+		AA100D00000000000000000D /* UploadAttachmentUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadAttachmentUseCaseImpl.swift; sourceTree = "<group>"; };
+		AA100E00000000000000000E /* DownloadAttachmentUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadAttachmentUseCaseImpl.swift; sourceTree = "<group>"; };
+		AA100F00000000000000000F /* DeleteAttachmentUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAttachmentUseCaseImpl.swift; sourceTree = "<group>"; };
+		AA1010000000000000000010 /* TempFileManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempFileManaging.swift; sourceTree = "<group>"; };
+		AA1011000000000000000011 /* AttachmentAddViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentAddViewModel.swift; sourceTree = "<group>"; };
+		AA1012000000000000000012 /* AttachmentBatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentBatchViewModel.swift; sourceTree = "<group>"; };
+		AA1013000000000000000013 /* AttachmentRowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentRowViewModel.swift; sourceTree = "<group>"; };
+		AA1014000000000000000014 /* AttachmentConfirmSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentConfirmSheet.swift; sourceTree = "<group>"; };
+		AA1015000000000000000015 /* AttachmentBatchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentBatchSheet.swift; sourceTree = "<group>"; };
+		AA1016000000000000000016 /* AttachmentsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentsSectionView.swift; sourceTree = "<group>"; };
+		AA1017000000000000000017 /* AttachmentRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentRowView.swift; sourceTree = "<group>"; };
+		AA1018000000000000000018 /* AttachmentTempFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentTempFileManager.swift; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -267,6 +317,7 @@
 				4309FCE12F6807970031C9F4 /* PrizmApp.swift */,
 				4309FCE72F6809A40031C9F4 /* AppContainer.swift */,
 				4309FCE92F6809C10031C9F4 /* Config.swift */,
+				AA1018000000000000000018 /* AttachmentTempFileManager.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -291,6 +342,7 @@
 				CAB323D45FF2440C95C0BA70 /* CustomField.swift */,
 				D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */,
 				B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */,
+				AA1001000000000000000001 /* Attachment.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -302,6 +354,8 @@
 				7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */,
 				3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */,
 				A1B2C4D5E6F74891A2B3C4D5 /* SyncTimestampRepository.swift */,
+				AA1002000000000000000002 /* AttachmentRepository.swift */,
+				AA1003000000000000000003 /* VaultKeyService.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -319,6 +373,9 @@
 				4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */,
 				6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */,
 				C2D3E4F5A6B74892C3D4E5F6 /* GetLastSyncDateUseCase.swift */,
+				AA1004000000000000000004 /* UploadAttachmentUseCase.swift */,
+				AA1005000000000000000005 /* DownloadAttachmentUseCase.swift */,
+				AA1006000000000000000006 /* DeleteAttachmentUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -343,6 +400,7 @@
 				AA0002040000000400000004 /* CryptographicRandomnessProvider.swift */,
 				3FBB82A6241244DD890E615C /* EncString.swift */,
 				D8D710BEABBB4ADD9ADFCD1F /* PrizmCryptoService.swift */,
+				AA1007000000000000000007 /* AttachmentCrypto.swift */,
 			);
 			path = Crypto;
 			sourceTree = "<group>";
@@ -362,6 +420,7 @@
 			children = (
 				95E5FF4D219144A18C2BC5AA /* RawCipher.swift */,
 				15F3A553820942CF9B3935FD /* SyncResponse.swift */,
+				AA1008000000000000000008 /* AttachmentDTO.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -378,6 +437,7 @@
 			isa = PBXGroup;
 			children = (
 				F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */,
+				AA100C00000000000000000C /* AttachmentMapper.swift */,
 			);
 			path = Mappers;
 			sourceTree = "<group>";
@@ -389,6 +449,9 @@
 				4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */,
 				9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */,
 				E4F5A6B7C8D94893E5F6A7B8 /* SyncTimestampRepositoryImpl.swift */,
+				AA1009000000000000000009 /* AttachmentRepositoryImpl.swift */,
+				AA100A00000000000000000A /* VaultKeyCache.swift */,
+				AA100B00000000000000000B /* VaultKeyServiceImpl.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -400,6 +463,7 @@
 				FF00112233445566778899AA /* DesignSystem.swift */,
 				EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */,
 				4ABEC630F6934ED883504C9D /* AboutView.swift */,
+				AA1010000000000000000010 /* TempFileManaging.swift */,
 				CE7CA2E3F69D4D26BA2E50F2 /* Unlock */,
 				498456596EC249F78737016A /* Sync */,
 				7D6DFC79E63B457284977CA8 /* Login */,
@@ -415,6 +479,11 @@
 				F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */,
 				E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */,
 				F1A2B3C4D5E64896F2A3B4C5 /* SyncLabelFormatter.swift */,
+				AA1011000000000000000011 /* AttachmentAddViewModel.swift */,
+				AA1012000000000000000012 /* AttachmentBatchViewModel.swift */,
+				AA1013000000000000000013 /* AttachmentRowViewModel.swift */,
+				AA1014000000000000000014 /* AttachmentConfirmSheet.swift */,
+				AA1015000000000000000015 /* AttachmentBatchSheet.swift */,
 				4309FCFB2F680CC60031C9F4 /* Detail */,
 				8A9B0C1D2E3F4050A1B2C3D4 /* Edit */,
 				4309FCFA2F680CBD0031C9F4 /* ItemList */,
@@ -452,6 +521,8 @@
 				0F78357C6C424765828B6185 /* SecureNoteDetailView.swift */,
 				E312819D0F20492CADB986E4 /* SSHKeyDetailView.swift */,
 				F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */,
+				AA1016000000000000000016 /* AttachmentsSectionView.swift */,
+				AA1017000000000000000017 /* AttachmentRowView.swift */,
 			);
 			path = Detail;
 			sourceTree = "<group>";
@@ -660,6 +731,9 @@
 				75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */,
 				8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */,
 				A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */,
+				AA100D00000000000000000D /* UploadAttachmentUseCaseImpl.swift */,
+				AA100E00000000000000000E /* DownloadAttachmentUseCaseImpl.swift */,
+				AA100F00000000000000000F /* DeleteAttachmentUseCaseImpl.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -878,6 +952,31 @@
 				AA0001040000000400000004 /* CryptographicRandomnessProvider.swift in Sources */,
 				AA0001050000000500000005 /* PasswordGeneratorViewModel.swift in Sources */,
 				AA0001060000000600000006 /* PasswordGeneratorView.swift in Sources */,
+				/* vault-document-storage: attachment sources */
+				BB1001000000000000000001 /* Attachment.swift in Sources */,
+				BB1002000000000000000002 /* AttachmentRepository.swift in Sources */,
+				BB1003000000000000000003 /* VaultKeyService.swift in Sources */,
+				BB1004000000000000000004 /* UploadAttachmentUseCase.swift in Sources */,
+				BB1005000000000000000005 /* DownloadAttachmentUseCase.swift in Sources */,
+				BB1006000000000000000006 /* DeleteAttachmentUseCase.swift in Sources */,
+				BB1007000000000000000007 /* AttachmentCrypto.swift in Sources */,
+				BB1008000000000000000008 /* AttachmentDTO.swift in Sources */,
+				BB1009000000000000000009 /* AttachmentRepositoryImpl.swift in Sources */,
+				BB100A00000000000000000A /* VaultKeyCache.swift in Sources */,
+				BB100B00000000000000000B /* VaultKeyServiceImpl.swift in Sources */,
+				BB100C00000000000000000C /* AttachmentMapper.swift in Sources */,
+				BB100D00000000000000000D /* UploadAttachmentUseCaseImpl.swift in Sources */,
+				BB100E00000000000000000E /* DownloadAttachmentUseCaseImpl.swift in Sources */,
+				BB100F00000000000000000F /* DeleteAttachmentUseCaseImpl.swift in Sources */,
+				BB1010000000000000000010 /* TempFileManaging.swift in Sources */,
+				BB1011000000000000000011 /* AttachmentAddViewModel.swift in Sources */,
+				BB1012000000000000000012 /* AttachmentBatchViewModel.swift in Sources */,
+				BB1013000000000000000013 /* AttachmentRowViewModel.swift in Sources */,
+				BB1014000000000000000014 /* AttachmentConfirmSheet.swift in Sources */,
+				BB1015000000000000000015 /* AttachmentBatchSheet.swift in Sources */,
+				BB1016000000000000000016 /* AttachmentsSectionView.swift in Sources */,
+				BB1017000000000000000017 /* AttachmentRowView.swift in Sources */,
+				BB1018000000000000000018 /* AttachmentTempFileManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

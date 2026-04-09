@@ -78,6 +78,18 @@ protocol VaultRepository: AnyObject, Sendable {
     /// into the in-memory cache, and returns it.
     func create(_ draft: DraftVaultItem) async throws -> VaultItem
 
+    /// Replaces the `attachments` array for the vault item identified by `cipherId`,
+    /// patching the in-memory cache without a full re-sync.
+    ///
+    /// Called by `AttachmentRepositoryImpl` after a successful upload or delete so the
+    /// detail pane reflects the change immediately. `async` is required because
+    /// `VaultRepositoryImpl` is `@MainActor` and callers run on background tasks.
+    ///
+    /// - Parameters:
+    ///   - attachments: The new complete list of attachments for the cipher.
+    ///   - cipherId:    The cipher whose attachment list should be replaced.
+    func updateAttachments(_ attachments: [Attachment], for cipherId: String) async
+
 }
 
 // MARK: - Errors
