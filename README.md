@@ -118,10 +118,9 @@ Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shor
 
 | Now | Next | Later |
 |---|---|---|
-| Reorder sidebar sections | Organisation vault support | Passkey support |
-| Face ID / Touch ID unlock | Multiple accounts | Browser auto-fill extension |
-| TOTP / 2FA copy | Watchtower / breach check | Full support for KDBX 4 (KeePass) |
-| Background sync | | |
+| Face ID / Touch ID unlock | Organisation vault support | Passkey support |
+| TOTP / 2FA copy | Multiple accounts | Browser auto-fill extension |
+| Background sync | Watchtower / breach check | Full support for KDBX 4 (KeePass) |
 
 **Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
 
