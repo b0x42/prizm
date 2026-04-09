@@ -47,6 +47,7 @@ See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specificatio
 
 - **Full vault management** — browse, create, edit, delete, and restore all item types (logins, cards, identities, secure notes, SSH keys) with Trash and favourites support
 - **Built for power users** — ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / website, Option to reveal masked fields. [Full shortcut list](#shortcuts)
+- **File attachments** — upload, download, open, and delete encrypted file attachments on any vault item; drag-and-drop batch upload; two-layer AES-256-CBC + HMAC-SHA256 encryption with per-attachment keys
 - **Password & passphrase generator** — configurable length, character sets, and word separators
 - **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
 
@@ -108,10 +109,9 @@ Tested against Vaultwarden 1.35.4. Older versions may work but are not validated
 
 | Now | Next | Later |
 |---|---|---|
-| Attachments | Organisation vault support | Passkey support |
-| Reorder sidebar sections | Multiple accounts | Browser auto-fill extension |
-| Face ID / Touch ID unlock | Watchtower / breach check | |
-| TOTP / 2FA copy | Full support for KDBX 4 (KeePass) | |
+| Reorder sidebar sections | Organisation vault support | Passkey support |
+| Face ID / Touch ID unlock | Multiple accounts | Browser auto-fill extension |
+| TOTP / 2FA copy | Watchtower / breach check | Full support for KDBX 4 (KeePass) |
 | Background sync | | |
 
 **Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
@@ -126,6 +126,7 @@ Want to shift something up the list? [Open an issue](https://github.com/b0x42/pr
 - **macOS 26 required** — The app uses SwiftUI features only available in macOS 26.
 - **Passkeys not supported** — SSH key items are viewable but passkey-based login is not implemented.
 - **No offline vault creation** — Creating or editing items requires an active server connection.
+- **Attachment size limit** — Files larger than 500 MB are rejected. Bitwarden-hosted servers require a premium subscription for attachments; Vaultwarden is unaffected.
 
 ## Contributing
 
