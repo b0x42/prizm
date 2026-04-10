@@ -21,6 +21,7 @@ struct UnlockView: View {
                 Image(systemName: "lock.fill")
                     .font(Typography.screenIcon)
                     .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
                 Text("Vault locked")
                     .font(Typography.screenHeading)
                     .accessibilityIdentifier(AccessibilityID.Unlock.headerTitle)

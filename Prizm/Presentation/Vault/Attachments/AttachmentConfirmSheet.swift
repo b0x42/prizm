@@ -48,6 +48,7 @@ struct AttachmentConfirmSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     Text(advisory)
                         .font(Typography.fieldLabel)
                         .foregroundStyle(.secondary)
@@ -61,6 +62,7 @@ struct AttachmentConfirmSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.yellow)
+                        .accessibilityHidden(true)
                     Text(error)
                         .font(Typography.fieldValue)
                 }

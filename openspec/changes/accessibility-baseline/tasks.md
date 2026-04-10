@@ -30,12 +30,12 @@
 
 ## 5. Decorative Images — Hidden from Accessibility Tree
 
-- [ ] 5.1 Add `.accessibilityHidden(true)` to the favicon `Image` in `FaviconView`
-- [ ] 5.2 Add `.accessibilityHidden(true)` to the large lock icon in `LoginView`
-- [ ] 5.3 Add `.accessibilityHidden(true)` to the large lock icon in `UnlockView`
-- [ ] 5.4 Add `.accessibilityHidden(true)` to the large icon in `TOTPPromptView`
-- [ ] 5.5 Add `.accessibilityHidden(true)` to the large biometry icon in `BiometricEnrollmentPromptView`
-- [ ] 5.6 Add `.accessibilityHidden(true)` to status indicator icons (checkmark, xmark, warning triangle, info circle) in `AttachmentBatchSheet` and `AttachmentConfirmSheet`
+- [x] 5.1 Add `.accessibilityHidden(true)` to the favicon `Image` in `FaviconView`
+- [x] 5.2 Add `.accessibilityHidden(true)` to the large lock icon in `LoginView`
+- [x] 5.3 Add `.accessibilityHidden(true)` to the large lock icon in `UnlockView`
+- [x] 5.4 Add `.accessibilityHidden(true)` to the large icon in `TOTPPromptView`
+- [x] 5.5 Add `.accessibilityHidden(true)` to the large biometry icon in `BiometricEnrollmentPromptView`
+- [x] 5.6 Add `.accessibilityHidden(true)` to status indicator icons (checkmark, xmark, warning triangle, info circle) in `AttachmentBatchSheet` and `AttachmentConfirmSheet`
 
 ## 6. Section Header Traits
 

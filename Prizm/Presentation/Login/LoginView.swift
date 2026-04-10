@@ -24,6 +24,7 @@ struct LoginView: View {
                 Image(systemName: "lock.shield.fill")
                     .font(Typography.screenIcon)
                     .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
                 Text("Prizm")
                     .font(Typography.screenHeading)
                 Text("Self-hosted vault")
