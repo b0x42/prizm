@@ -88,6 +88,7 @@ struct MaskedFieldView: View {
             }
             .buttonStyle(.plain)
             .help(state.isRevealed ? "Hide" : "Reveal")
+            .accessibilityLabel(state.isRevealed ? "Hide \(label)" : "Reveal \(label)")
             .accessibilityIdentifier(AccessibilityID.Masked.toggle(label))
         }
         // Reset to masked whenever the parent item changes (FR-027).

@@ -104,6 +104,7 @@ struct AttachmentsSectionView: View {
         .disabled(isPicking)
         .padding(.vertical, Spacing.rowVertical)
         .padding(.horizontal, Spacing.rowHorizontal)
+        .accessibilityLabel("Add Attachment")
         .accessibilityIdentifier(AccessibilityID.Attachment.addButton)
     }
 

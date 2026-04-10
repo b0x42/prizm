@@ -126,6 +126,7 @@ struct PasswordGeneratorView: View {
             }
             .buttonStyle(.plain)
             .help("Generate new")
+            .accessibilityLabel("Generate new password")
             .accessibilityIdentifier(AccessibilityID.Generator.refreshButton)
         }
         .frame(minHeight: 40)
@@ -140,6 +141,7 @@ struct PasswordGeneratorView: View {
                 viewModel.copyToClipboard()
             }
             .disabled(viewModel.errorMessage != nil)
+            .accessibilityHint("Copies to clipboard")
             .accessibilityIdentifier(AccessibilityID.Generator.copyButton)
 
             Spacer()

@@ -69,6 +69,7 @@ struct AttachmentRowView: View {
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Open")
             .accessibilityIdentifier(AccessibilityID.Attachment.openButton(attachment.id))
 
             Button { onSaveToDisk() } label: {
@@ -78,6 +79,8 @@ struct AttachmentRowView: View {
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Save to Disk")
+            .accessibilityHint("Saves file to your chosen location")
             .accessibilityIdentifier(AccessibilityID.Attachment.saveButton(attachment.id))
 
             Button { onDelete() } label: {
@@ -86,6 +89,7 @@ struct AttachmentRowView: View {
                     .foregroundStyle(Color.red)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Delete")
             .accessibilityIdentifier(AccessibilityID.Attachment.deleteButton(attachment.id))
         }
         .transition(.opacity)

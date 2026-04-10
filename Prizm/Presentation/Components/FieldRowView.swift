@@ -71,6 +71,7 @@ struct FieldRowView: View {
                 isHovered = hovering
             }
         }
+        .accessibilityHint(value != nil && !(value?.isEmpty ?? true) ? "Copies \(label) to clipboard" : "")
         .accessibilityIdentifier(AccessibilityID.Field.row(label))
     }
 
@@ -109,6 +110,8 @@ struct FieldRowView: View {
             }
             .buttonStyle(.plain)
             .help("Open in browser")
+            .accessibilityLabel("Open \(label)")
+            .accessibilityHint("Opens in browser")
             .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
         }
     }

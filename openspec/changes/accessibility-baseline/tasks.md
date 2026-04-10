@@ -9,24 +9,24 @@
 
 ## 2. Icon-Only Button Labels — Field & Masked Field Components
 
-- [ ] 2.1 Add `.accessibilityLabel("Copy \(label)")` and `.accessibilityHint("Copies to clipboard")` to the copy button in `FieldRowView`
-- [ ] 2.2 Add `.accessibilityLabel("Open \(label)")` and `.accessibilityHint("Opens in browser")` to the open-URL button in `FieldRowView`
-- [ ] 2.3 Add `.accessibilityLabel(isRevealed ? "Hide \(label)" : "Reveal \(label)")` to the reveal toggle in `MaskedFieldView`
+- [x] 2.1 Add `.accessibilityLabel("Copy \(label)")` and `.accessibilityHint("Copies to clipboard")` to the copy button in `FieldRowView`
+- [x] 2.2 Add `.accessibilityLabel("Open \(label)")` and `.accessibilityHint("Opens in browser")` to the open-URL button in `FieldRowView`
+- [x] 2.3 Add `.accessibilityLabel(isRevealed ? "Hide \(label)" : "Reveal \(label)")` to the reveal toggle in `MaskedFieldView`
 
 ## 3. Icon-Only Button Labels — Attachments
 
-- [ ] 3.1 Add `.accessibilityLabel("Open")` to the open button in `AttachmentRowView`
-- [ ] 3.2 Add `.accessibilityLabel("Save to Disk")` and `.accessibilityHint("Saves file to your chosen location")` to the save button in `AttachmentRowView`
-- [ ] 3.3 Add `.accessibilityLabel("Delete")` to the delete button in `AttachmentRowView`
-- [ ] 3.4 Add `.accessibilityLabel("Add Attachment")` to the add button in `AttachmentsSectionView`
+- [x] 3.1 Add `.accessibilityLabel("Open")` to the open button in `AttachmentRowView`
+- [x] 3.2 Add `.accessibilityLabel("Save to Disk")` and `.accessibilityHint("Saves file to your chosen location")` to the save button in `AttachmentRowView`
+- [x] 3.3 Add `.accessibilityLabel("Delete")` to the delete button in `AttachmentRowView`
+- [x] 3.4 Add `.accessibilityLabel("Add Attachment")` to the add button in `AttachmentsSectionView`
 
 ## 4. Icon-Only Button Labels — Edit Forms, Password Generator & Sidebar
 
-- [ ] 4.1 Add `.accessibilityLabel("Generate Password")` to the gearshape button in `LoginEditForm`
-- [ ] 4.2 Add `.accessibilityLabel("Generate new password")` to the refresh button in `PasswordGeneratorView`
-- [ ] 4.3 Add `.accessibilityLabel("Copy password")` and `.accessibilityHint("Copies to clipboard")` to the copy button in `PasswordGeneratorView`
-- [ ] 4.4 Add `.accessibilityLabel("Remove")` to any xmark/minus icon buttons in `EditFieldRow` and `CustomFieldsEditSection`
-- [ ] 4.5 Add `.accessibilityLabel("New Folder")` to the `folder.badge.plus` button in `SidebarView`
+- [x] 4.1 Add `.accessibilityLabel("Generate Password")` to the gearshape button in `LoginEditForm`
+- [x] 4.2 Add `.accessibilityLabel("Generate new password")` to the refresh button in `PasswordGeneratorView`
+- [x] 4.3 Add `.accessibilityLabel("Copy password")` and `.accessibilityHint("Copies to clipboard")` to the copy button in `PasswordGeneratorView`
+- [x] 4.4 Add `.accessibilityLabel("Remove")` to any xmark/minus icon buttons in `EditFieldRow` and `CustomFieldsEditSection`
+- [x] 4.5 Add `.accessibilityLabel("New Folder")` to the `folder.badge.plus` button in `SidebarView`
 
 ## 5. Decorative Images — Hidden from Accessibility Tree
 

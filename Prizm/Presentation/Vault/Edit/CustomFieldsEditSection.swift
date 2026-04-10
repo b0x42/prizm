@@ -90,6 +90,7 @@ private struct CustomFieldEditRow: View {
                 }
                 .buttonStyle(.plain)
                 .help(isRevealed ? "Hide" : "Reveal")
+                .accessibilityLabel(isRevealed ? "Hide \(field.name)" : "Reveal \(field.name)")
             }
         }
         .padding(.vertical, Spacing.rowVertical)

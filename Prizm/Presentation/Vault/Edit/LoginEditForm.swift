@@ -93,6 +93,7 @@ private struct URIEditRow: View {
                                 .font(Typography.utility)
                         }
                         .buttonStyle(.borderless)
+                        .accessibilityLabel("Move up")
                         .disabled(!canMoveUp)
 
                         Button(action: onMoveDown) {
@@ -100,6 +101,7 @@ private struct URIEditRow: View {
                                 .font(Typography.utility)
                         }
                         .buttonStyle(.borderless)
+                        .accessibilityLabel("Move down")
                         .disabled(!canMoveDown)
                     }
                     .padding(.leading, Spacing.rowHorizontal)
@@ -116,12 +118,14 @@ private struct URIEditRow: View {
                         .foregroundStyle(showMatchType ? Color.accentColor : Color.secondary)
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel("Match type settings")
 
                 Button(action: onRemove) {
                     Image(systemName: "minus.circle.fill")
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel("Remove website")
                 .padding(.trailing, Spacing.rowHorizontal)
             }
             if showMatchType {
