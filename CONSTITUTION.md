@@ -1,27 +1,21 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.3.0 → 1.4.0
-Bump type: MINOR — §III materially revised (native crypto replaces sdk-swift mandate);
-           §VII added (Radical Transparency, new principle).
-Modified principles:
-  - §III Security-First / Zero-Trust: removed sdk-swift mandate (sdk-internal inaccessible,
-    sdk-swift iOS-only); replaced with native Apple framework crypto wrapped behind a
-    BitwardenCryptoService protocol. Direct CryptoKit prohibition replaced with
-    "no hand-rolled algorithms" rule.
-  - External Dependencies: BitwardenSdk section updated from REQUIRED to ARCHIVED status;
-    Argon2Swift added as the only approved external crypto dependency.
-Added sections:
-  - §VII Radical Transparency (new principle)
+Version change: 1.4.1 → 1.4.2
+Bump type: PATCH — Security Requirements §Keychain clarified; no new principles,
+           no behavioural change for existing code.
+Modified sections:
+  - Security Requirements / Keychain only: rule reframed from prescribing a specific
+    Keychain flag (kSecAttrAccessibleWhenUnlockedThisDeviceOnly) to specifying the
+    security *properties* that storage must satisfy. kSecAccessControl policies that are
+    strictly more restrictive (e.g. .biometryCurrentSet for biometric-gated secrets) are
+    now explicitly permitted with mandatory design documentation. The "No iCloud sync"
+    bullet is merged into the revised Keychain rule for clarity.
+Added sections: N/A
 Removed sections: N/A
-Templates requiring updates:
-  - specs/001-vault-browser-ui/plan.md        ✅ updated (§III constitution check)
-  - specs/001-vault-browser-ui/research.md    ✅ updated (OI-001 closed, native crypto)
-  - specs/001-vault-browser-ui/data-model.md  ✅ updated (crypto flow)
-  - specs/001-vault-browser-ui/tasks.md       ✅ updated (Phase 1 + Phase 3)
-  - CLAUDE.md                                 ⚠ pending — §III reference needs update
+Templates requiring updates: N/A — PATCH clarification only; no existing code is affected.
 Follow-up TODOs:
-  - Update CLAUDE.md §III reference to reflect native crypto approach.
+  - Update CLAUDE.md §III reference to reflect native crypto approach (carried from 1.4.0).
 -->
 
 # Prizm Constitution
@@ -74,7 +68,7 @@ This is a credential vault. Security is not a feature — it is the foundation.
 - Hand-rolled implementations of cryptographic algorithms (AES, HMAC, KDF, RSA) are
   PROHIBITED regardless of the source. Always use a vetted library.
 - All crypto operations MUST be wrapped entirely within the Data layer behind a
-  `BitwardenCryptoService` protocol. Domain and Presentation layers MUST NOT import
+  `PrizmCryptoService` protocol. Domain and Presentation layers MUST NOT import
   crypto modules directly; all types are translated to Domain entities at the boundary.
 - All vault-touching code paths require a mandatory security review before merge.
 - The app MUST support macOS App Sandbox and Hardened Runtime.
@@ -154,9 +148,16 @@ Every security-critical implementation decision MUST be documented for public au
 Mandatory security constraints binding all contributors:
 
 - **Keychain only**: Master key, session tokens, and derived secrets MUST be stored
-  exclusively in the macOS Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`.
-- **No iCloud sync of secrets**: Keychain items holding vault secrets MUST NOT use
-  `kSecAttrSynchronizable = true`.
+  exclusively in the macOS Keychain. All Keychain items containing secrets MUST satisfy
+  these security properties: (1) device-only — never backed up or synced
+  (`kSecAttrSynchronizable` MUST NOT be `true`); (2) accessible only when the device is
+  unlocked; (3) not accessible to other apps or processes outside the app's access group.
+  `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` satisfies all three properties and is
+  the default for standard secret storage. `kSecAccessControl` policies that are strictly
+  more restrictive (e.g. `.biometryCurrentSet` for biometric-gated vault key caching) are
+  permitted when a feature requires it; such policies MUST be explicitly documented in the
+  relevant design artifact with a justification confirming all three properties above are
+  preserved or exceeded.
 - **Autofill extension**: If implemented, MUST operate in a separate process with
   minimum entitlements; MUST NOT retain secrets beyond the autofill request lifecycle.
 - **Dependency vetting**: All third-party Swift packages MUST be reviewed for supply-
@@ -216,7 +217,7 @@ Client identifier registration with Bitwarden, Inc. is not required and does not
   This is the only approved exception to the Apple-frameworks-first rule for crypto.
 - **Implementation**: Thin Swift wrapper around the reference C implementation of Argon2
   (same code used in the official Argon2 reference library). No custom algorithm.
-- **Scope**: Used exclusively in `BitwardenCryptoServiceImpl` for KDF only.
+- **Scope**: Used exclusively in `PrizmCryptoServiceImpl` for KDF only.
   MUST NOT be used for any purpose other than Argon2id key derivation.
 - **Supply-chain note**: Pin the exact version and review on every bump.
 
@@ -241,7 +242,7 @@ Client identifier registration with Bitwarden, Inc. is not required and does not
   build scripts) is a private Bitwarden repository and is not accessible.
 - **Revisit**: If Bitwarden officially packages a macOS slice of `BitwardenFFI.xcframework`
   in a future release, migrating to `sdk-swift` SHOULD be evaluated. The
-  `BitwardenCryptoService` protocol boundary makes this swap straightforward.
+  `PrizmCryptoService` protocol boundary makes this swap straightforward.
 
 ---
 
@@ -286,4 +287,4 @@ Standards governing how features are built and shipped:
 
 ---
 
-**Version**: 1.4.1 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-30
+**Version**: 1.4.3 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-09

@@ -1,0 +1,85 @@
+## 1. Wire Models & Sync
+
+- [x] 1.1 Add `RawFolder` model (`id: String`, `name: String`, `revisionDate: String?`) to `Data/Network/Models/`
+- [x] 1.2 Add `folders: [RawFolder]` to `SyncResponse`
+- [x] 1.3 Add `folderId: String?` to `RawCipher`
+
+## 2. Domain Entities
+
+- [x] 2.1 Create `Folder` entity (`id: String`, `name: String`) in `Domain/Entities/`
+- [x] 2.2 Add `folderId: String?` to `VaultItem` (with default `nil` in init)
+- [x] 2.3 Add `var folderId: String?` to `DraftVaultItem` and `DraftVaultItem.blank(type:)`
+- [x] 2.4 Add `.folder(String)` case to `SidebarSelection` (update `Equatable`, `Hashable`, `displayName`)
+- [x] 2.5 Add `.folders` case to `SidebarSection`
+
+## 3. Mapper & Crypto
+
+- [x] 3.1 Pass through `folderId` in `CipherMapper.map(raw:keys:)` → `VaultItem`
+- [x] 3.2 Include `folderId` in `CipherMapper.toRawCipher(_:encryptedWith:)` output
+- [x] 3.3 Update `CipherMapperTests` to verify `folderId` pass-through (forward and reverse)
+- [x] 3.4 Add `decryptFolders(folders: [RawFolder]) async throws -> [Folder]` to `PrizmCryptoService` protocol and impl (mirrors `decryptList` pattern)
+- [x] 3.5 Add folder name encrypt helper in `VaultRepositoryImpl` using existing `EncString.encrypt(data:keys:)` path (called before API client methods)
+
+## 4. API Client
+
+- [x] 4.1 Add `createFolder(encryptedName: String) async throws -> RawFolder` to `PrizmAPIClientProtocol` and impl (`POST /api/folders`)
+- [x] 4.2 Add `updateFolder(id: String, encryptedName: String) async throws -> RawFolder` (`PUT /api/folders/{id}`)
+- [x] 4.3 Add `deleteFolder(id: String) async throws` (`DELETE /api/folders/{id}`)
+- [x] 4.4 Add `updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws` (`PUT /ciphers/{id}/partial`)
+- [x] 4.5 Add `moveCiphersToFolder(ids: [String], folderId: String?) async throws` (`PUT /ciphers/move`)
+- [x] 4.6 Update `MockPrizmAPIClient` with folder endpoint stubs
+
+## 5. Repository Layer
+
+- [x] 5.1 Add `folders: [Folder]` storage to `VaultRepositoryImpl`; update `populate` and `clearVault` to include folders
+- [x] 5.2 Add `folders() throws -> [Folder]` to `VaultRepository` protocol and impl (sorted alphabetically)
+- [x] 5.3 Update `VaultRepository.populate` to accept folders alongside items; update `MockVaultRepository` and all existing tests that call `populate`
+- [x] 5.4 Update `SyncRepositoryImpl.sync` to call `crypto.decryptFolders` and pass results to `vaultRepository.populate`
+- [x] 5.5 Update `VaultRepositoryImpl.items(for:)` to handle `.folder(id)` selection (filter by `folderId`)
+- [x] 5.6 Update `VaultRepositoryImpl.itemCounts()` to include per-folder counts
+- [x] 5.7 Update `VaultRepositoryImpl.searchItems(query:in:)` to support folder-scoped search
+- [x] 5.8 Add folder CRUD methods to `VaultRepository` protocol: `createFolder(name:)`, `renameFolder(id:name:)`, `deleteFolder(id:)` — `VaultRepositoryImpl` encrypts name internally, calls API, updates local cache; reject empty/whitespace-only names before API call
+- [x] 5.9 Add `moveItemToFolder(itemId:folderId:)` and `moveItemsToFolder(itemIds:folderId:)` to `VaultRepository` — `VaultRepositoryImpl` calls partial/move API, updates local folderId
+- [x] 5.10 Update `MockVaultRepository` with all new folder methods
+- [x] 5.11 Add `VaultRepositoryImplTests` for folder-scoped filtering, counts, and folder CRUD
+- [x] 5.12 Add tests for move-to-folder (single and bulk, local cache update)
+
+## 6. Domain Use Cases
+
+- [x] 6.1 Create `CreateFolderUseCase` protocol in Domain and `CreateFolderUseCaseImpl` in Data (delegates to `VaultRepository.createFolder`)
+- [x] 6.2 Create `RenameFolderUseCase` protocol in Domain and `RenameFolderUseCaseImpl` in Data (delegates to `VaultRepository.renameFolder`)
+- [x] 6.3 Create `DeleteFolderUseCase` protocol in Domain and `DeleteFolderUseCaseImpl` in Data (delegates to `VaultRepository.deleteFolder`)
+- [x] 6.4 Create `MoveItemToFolderUseCase` protocol in Domain and `MoveItemToFolderUseCaseImpl` in Data (delegates to `VaultRepository.moveItemToFolder` / `moveItemsToFolder`)
+- [x] 6.5 Add use case tests for folder create, rename, delete, and move-to-folder
+- [x] 6.6 Wire all folder use cases in `AppContainer`
+
+## 7. Sidebar UI
+
+- [x] 7.1 Add `.folders` section to `SidebarView` with dynamic folder rows sorted alphabetically
+- [x] 7.2 Add `folder.badge.plus` button on the Folders section header for folder creation
+- [x] 7.3 Add `.contextMenu` on folder rows with "Rename" and "Delete Folder" actions
+- [x] 7.4 Implement inline rename using SwiftUI `.renameAction` on folder rows
+- [x] 7.5 Add `.dropDestination` on folder rows to accept dragged item IDs
+- [x] 7.6 Always show the Folders section header (with create button); show folder rows only when folders exist
+
+## 8. Item List & Drag
+
+- [x] 8.1 Add `.draggable` support to item list rows (multi-select deferred to follow-up)
+- [x] 8.2 Wire single-item drag-and-drop from item list to folder sidebar rows
+- [x] 8.3 Add `.draggable` on item rows with item ID as `Transferable` payload
+- [x] 8.4 Wire drop handler on folder rows to call `MoveItemToFolderUseCase` and refresh counts
+
+## 9. Edit Sheet — Folder Picker
+
+- [x] 9.1 Add folder `Picker` to `ItemEditView` (all folders + "None", sorted alphabetically)
+- [x] 9.2 Bind picker selection to `DraftVaultItem.folderId`
+- [x] 9.3 Pass `[Folder]` to `ItemEditViewModel` at construction time via `AppContainer` factory methods (call `vaultStore.folders()`)
+
+## 10. ViewModel Integration
+
+- [x] 10.1 Expose `folders` from `VaultBrowserViewModel` (calls `vault.folders()`) for sidebar rendering
+- [x] 10.2 Add folder CRUD actions to `VaultBrowserViewModel` calling use cases (create, rename, delete); surface errors via `actionError` alert; validate empty/whitespace names client-side before calling use case
+- [x] 10.3 Add move-to-folder action to `VaultBrowserViewModel` calling `MoveItemToFolderUseCase` (single and bulk); surface errors via `actionError`; do not update local cache on failure
+- [x] 10.4 Update `refreshCounts` and `refreshItems` to include folder data
+- [x] 10.5 Handle folder deletion: if the deleted folder was selected, switch to All Items
+- [x] 10.6 Add delete folder confirmation alert to `VaultBrowserView`

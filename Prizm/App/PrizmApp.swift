@@ -155,12 +155,21 @@ struct PrizmApp: App {
                     }
                     return vm
                 },
-                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type in
-                    let vm = container.makeItemCreateViewModel(for: type)
+                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type, folderId in
+                    let vm = container.makeItemCreateViewModel(for: type, folderId: folderId)
                     vm.onSaveSuccess = { [weak vaultBrowserVM] item in
                         vaultBrowserVM?.handleItemSaved(item)
                     }
                     return vm
+                },
+                makeAddAttachmentViewModel: { cipherId in
+                    container.makeAddAttachmentViewModel(for: cipherId)
+                },
+                makeBatchAttachmentViewModel: { cipherId in
+                    container.makeBatchAttachmentViewModel(for: cipherId)
+                },
+                makeAttachmentRowViewModel: { cipherId, attachment in
+                    container.makeAttachmentRowViewModel(cipherId: cipherId, attachment: attachment)
                 }
             )
         }
@@ -174,6 +183,8 @@ struct PrizmApp: App {
 protocol RootViewModelDependencies: AnyObject {
     var authRepo: any AuthRepository { get }
     var vaultRepo: any VaultRepository { get }
+    /// The per-cipher attachment key cache. Cleared on vault lock alongside the vault store.
+    var vaultKeyCache: VaultKeyCache { get }
     func makeLoginViewModel() -> LoginViewModel
     func makeUnlockViewModel(account: Account) -> UnlockViewModel
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel
@@ -378,6 +389,8 @@ final class RootViewModel: ObservableObject {
             } catch {
                 logger.error("Sign-out error: \(error.localizedDescription, privacy: .public)")
             }
+            container.vaultRepo.clearVault()
+            await container.vaultKeyCache.clear()
             unlockVM = nil
             screen   = .login
             logger.info("Sign out completed")
@@ -393,6 +406,9 @@ final class RootViewModel: ObservableObject {
         Task {
             await container.authRepo.lockVault()
             container.vaultRepo.clearVault()
+            // Clear the attachment key cache in the same lock path as the vault store.
+            // Key material must not outlive the vault session (Constitution §III).
+            await container.vaultKeyCache.clear()
             if let account = container.authRepo.storedAccount() {
                 unlockVM = container.makeUnlockViewModel(account: account)
                 screen = .unlock

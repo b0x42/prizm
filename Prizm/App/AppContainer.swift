@@ -17,6 +17,10 @@ final class AppContainer: ObservableObject {
     let keychain:      KeychainServiceImpl
     let vaultStore:    VaultRepositoryImpl
     let faviconLoader: FaviconLoader
+    /// In-memory cache mapping cipher ID → 64-byte effective key.
+    /// Populated at sync time by `SyncRepositoryImpl`; cleared on vault lock alongside
+    /// `vaultStore` so key material does not outlive the vault session (Constitution §III).
+    let vaultKeyCache: VaultKeyCache
 
     // MARK: - Domain repositories (Data implementations)
 
@@ -34,16 +38,34 @@ final class AppContainer: ObservableObject {
     let deleteVaultItemUseCase:          DeleteVaultItemUseCaseImpl
     let permanentDeleteVaultItemUseCase: PermanentDeleteVaultItemUseCaseImpl
     let restoreVaultItemUseCase:         RestoreVaultItemUseCaseImpl
+    let createFolderUseCase:             CreateFolderUseCaseImpl
+    let renameFolderUseCase:             RenameFolderUseCaseImpl
+    let deleteFolderUseCase:             DeleteFolderUseCaseImpl
+    let moveItemToFolderUseCase:         MoveItemToFolderUseCaseImpl
     let syncTimestampRepository:         SyncTimestampRepositoryImpl
     let getLastSyncDateUseCase:          any GetLastSyncDateUseCase
+
+    // MARK: - Attachment use cases
+
+    let uploadAttachmentUseCase:   UploadAttachmentUseCaseImpl
+    let downloadAttachmentUseCase: DownloadAttachmentUseCaseImpl
+    let deleteAttachmentUseCase:   DeleteAttachmentUseCaseImpl
+
+    // MARK: - Temp file lifecycle
+
+    /// Singleton temp-file manager — injected into `AttachmentRowViewModel` via the
+    /// `TempFileManaging` protocol to keep Presentation decoupled from AppKit (Constitution §II).
+    let tempFileManager: AttachmentTempFileManager
 
     // MARK: - Init
 
     init() {
-        let api      = PrizmAPIClientImpl()
-        let crypto   = PrizmCryptoServiceImpl()
-        let keychain = KeychainServiceImpl()
-        let vault    = VaultRepositoryImpl(apiClient: api, crypto: crypto)
+        let api           = PrizmAPIClientImpl()
+        let crypto        = PrizmCryptoServiceImpl()
+        let keychain      = KeychainServiceImpl()
+        let vault         = VaultRepositoryImpl(apiClient: api, crypto: crypto)
+        let keyCache      = VaultKeyCache()
+        let vaultKeyService = VaultKeyServiceImpl(cache: keyCache, crypto: crypto)
 
         let auth = AuthRepositoryImpl(
             apiClient: api,
@@ -51,6 +73,13 @@ final class AppContainer: ObservableObject {
             keychain:  keychain
         )
         let sync = SyncRepositoryImpl(
+            apiClient:       api,
+            crypto:          crypto,
+            vaultRepository: vault,
+            vaultKeyCache:   keyCache
+        )
+
+        let attachmentRepo = AttachmentRepositoryImpl(
             apiClient:       api,
             crypto:          crypto,
             vaultRepository: vault
@@ -67,6 +96,7 @@ final class AppContainer: ObservableObject {
         self.keychain        = keychain
         self.vaultStore      = vault
         self.faviconLoader   = FaviconLoader()
+        self.vaultKeyCache   = keyCache
         self.authRepository  = auth
         self.syncRepository  = sync
         self.syncUseCase                     = SyncUseCaseImpl(sync: sync)
@@ -78,8 +108,18 @@ final class AppContainer: ObservableObject {
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
         self.permanentDeleteVaultItemUseCase = PermanentDeleteVaultItemUseCaseImpl(repository: vault)
         self.restoreVaultItemUseCase         = RestoreVaultItemUseCaseImpl(repository: vault)
+        self.createFolderUseCase             = CreateFolderUseCaseImpl(repository: vault)
+        self.renameFolderUseCase             = RenameFolderUseCaseImpl(repository: vault)
+        self.deleteFolderUseCase             = DeleteFolderUseCaseImpl(repository: vault)
+        self.moveItemToFolderUseCase         = MoveItemToFolderUseCaseImpl(repository: vault)
         self.syncTimestampRepository         = syncTimestamp
         self.getLastSyncDateUseCase          = GetLastSyncDateUseCaseImpl(repository: syncTimestamp)
+        // Attachment use cases — Upload and Download inject VaultKeyService;
+        // Delete does NOT (no key material required, Constitution §VI).
+        self.uploadAttachmentUseCase   = UploadAttachmentUseCaseImpl(repository: attachmentRepo, vaultKeyService: vaultKeyService)
+        self.downloadAttachmentUseCase = DownloadAttachmentUseCaseImpl(repository: attachmentRepo, vaultKeyService: vaultKeyService)
+        self.deleteAttachmentUseCase   = DeleteAttachmentUseCaseImpl(repository: attachmentRepo)
+        self.tempFileManager           = AttachmentTempFileManager()
     }
 
     // MARK: - Factories
@@ -113,6 +153,10 @@ final class AppContainer: ObservableObject {
             delete:          deleteVaultItemUseCase,
             permanentDelete: permanentDeleteVaultItemUseCase,
             restore:         restoreVaultItemUseCase,
+            createFolder:    createFolderUseCase,
+            renameFolder:    renameFolderUseCase,
+            deleteFolder:    deleteFolderUseCase,
+            moveItem:        moveItemToFolderUseCase,
             syncTimestamp:   syncTimestampRepository,
             getLastSyncDate: getLastSyncDateUseCase
         )
@@ -121,11 +165,92 @@ final class AppContainer: ObservableObject {
     /// Creates an `ItemEditViewModel` for the given item, wired with the live edit use case.
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
     func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
-        ItemEditViewModel(item: item, useCase: editVaultItemUseCase)
+        let folders = (try? vaultStore.folders()) ?? []
+        return ItemEditViewModel(item: item, useCase: editVaultItemUseCase, folders: folders)
     }
 
     /// Creates an `ItemEditViewModel` in create mode for the given item type.
-    func makeItemCreateViewModel(for type: ItemType) -> ItemEditViewModel {
-        ItemEditViewModel(type: type, useCase: createVaultItemUseCase)
+    func makeItemCreateViewModel(for type: ItemType, folderId: String? = nil) -> ItemEditViewModel {
+        let folders = (try? vaultStore.folders()) ?? []
+        return ItemEditViewModel(type: type, useCase: createVaultItemUseCase, folders: folders, folderId: folderId)
+    }
+
+    // MARK: - AppKit panel defaults (App layer — Constitution §II)
+    //
+    // These closures wrap AppKit classes (NSOpenPanel, NSSavePanel, NSWorkspace) and are
+    // injected into Presentation-layer ViewModels so the Presentation layer never imports
+    // AppKit directly.
+
+    /// Default multi-file picker using `NSOpenPanel`.
+    @MainActor
+    private static func defaultNSOpenPanel() -> [(url: URL, bytes: Int)] {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles          = true
+        panel.canChooseDirectories    = false
+        panel.allowsMultipleSelection = true
+        panel.message                 = "Choose files to attach"
+        guard panel.runModal() == .OK else { return [] }
+        return panel.urls.map { url in
+            let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+            return (url, bytes)
+        }
+    }
+
+    /// Default save panel using `NSSavePanel`.
+    @MainActor
+    private static func defaultSavePanel(suggestedName: String) -> URL? {
+        let panel                  = NSSavePanel()
+        panel.nameFieldStringValue = suggestedName
+        panel.message              = "Choose where to save the attachment"
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    /// Default single-file picker for retry using `NSOpenPanel`.
+    @MainActor
+    private static func defaultRetryOpenPanel() -> URL? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles          = true
+        panel.canChooseDirectories    = false
+        panel.allowsMultipleSelection = false
+        panel.message                 = "Select the file to re-upload"
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
+    /// Default file opener using `NSWorkspace`.
+    @MainActor
+    private static func defaultFileOpener(url: URL) {
+        NSWorkspace.shared.open(url)
+    }
+
+    /// Creates an `AttachmentAddViewModel` for the given cipher ID.
+    @MainActor
+    func makeAddAttachmentViewModel(for cipherId: String) -> AttachmentAddViewModel {
+        AttachmentAddViewModel(
+            cipherId:      cipherId,
+            uploadUseCase: uploadAttachmentUseCase,
+            filePicker:    Self.defaultNSOpenPanel
+        )
+    }
+
+    /// Creates an `AttachmentBatchViewModel` for the given cipher ID.
+    @MainActor
+    func makeBatchAttachmentViewModel(for cipherId: String) -> AttachmentBatchViewModel {
+        AttachmentBatchViewModel(cipherId: cipherId, uploadUseCase: uploadAttachmentUseCase)
+    }
+
+    /// Creates an `AttachmentRowViewModel` for the given cipher + attachment pair.
+    @MainActor
+    func makeAttachmentRowViewModel(cipherId: String, attachment: Attachment) -> AttachmentRowViewModel {
+        AttachmentRowViewModel(
+            cipherId:        cipherId,
+            attachment:      attachment,
+            downloadUseCase: downloadAttachmentUseCase,
+            deleteUseCase:   deleteAttachmentUseCase,
+            uploadUseCase:   uploadAttachmentUseCase,
+            tempFileManager: tempFileManager,
+            fileSaver:       Self.defaultSavePanel,
+            retryFilePicker: Self.defaultRetryOpenPanel,
+            fileOpener:      Self.defaultFileOpener
+        )
     }
 }

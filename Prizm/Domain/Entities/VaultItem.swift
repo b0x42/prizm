@@ -4,6 +4,7 @@ import Foundation
 /// Value type — safe to pass across layers without defensive copying.
 nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     let id: String
+    let folderId: String?
     let name: String
     let isFavorite: Bool
     let isDeleted: Bool
@@ -15,15 +16,21 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     /// Stored here so `CipherMapper.toRawCipher` can round-trip it unchanged on PUT,
     /// preventing silent loss of re-prompt protection during edits.
     let reprompt: Int
+    /// File attachments belonging to this vault item.
+    /// Empty (`[]`) when the server returns no attachments or an explicit `null`.
+    let attachments: [Attachment]
 
-    /// Custom memberwise init with `reprompt` defaulted to 0 so existing call sites
-    /// that pre-date this field do not need to be updated.
+    /// Custom memberwise init with `reprompt` defaulted to 0 and `attachments` defaulted
+    /// to `[]` so existing call sites that pre-date these fields do not need to be updated.
     init(
         id: String, name: String, isFavorite: Bool, isDeleted: Bool,
         creationDate: Date, revisionDate: Date, content: ItemContent,
-        reprompt: Int = 0
+        reprompt: Int = 0,
+        attachments: [Attachment] = [],
+        folderId: String? = nil
     ) {
         self.id = id
+        self.folderId = folderId
         self.name = name
         self.isFavorite = isFavorite
         self.isDeleted = isDeleted
@@ -31,6 +38,7 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
         self.revisionDate = revisionDate
         self.content = content
         self.reprompt = reprompt
+        self.attachments = attachments
     }
 }
 

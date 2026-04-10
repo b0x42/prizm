@@ -13,8 +13,7 @@ struct SecureNoteDetailView: View {
     let onCopy:     (String) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
 
                 if let notes = secureNote.notes, !notes.isEmpty {
                     DetailSectionCard("Note") {
@@ -32,6 +31,5 @@ struct SecureNoteDetailView: View {
                     }
                 }
             }
-        }
     }
 }

@@ -221,6 +221,7 @@ nonisolated enum DraftItemContent: Equatable {
 nonisolated struct DraftVaultItem: Equatable {
     /// Immutable — item identity cannot change during an edit.
     let id: String
+    var folderId: String?
     var name: String
     var isFavorite: Bool
     /// Deletion state is not editable in v1.
@@ -245,6 +246,7 @@ nonisolated struct DraftVaultItem: Equatable {
         }
         return DraftVaultItem(
             id: UUID().uuidString,
+            folderId: nil,
             name: "",
             isFavorite: false,
             isDeleted: false,
@@ -256,9 +258,10 @@ nonisolated struct DraftVaultItem: Equatable {
     }
 
     /// Memberwise initialiser for programmatic construction (blank drafts, tests).
-    init(id: String, name: String, isFavorite: Bool, isDeleted: Bool,
+    init(id: String, folderId: String? = nil, name: String, isFavorite: Bool, isDeleted: Bool,
          creationDate: Date, revisionDate: Date, content: DraftItemContent, reprompt: Int) {
         self.id = id
+        self.folderId = folderId
         self.name = name
         self.isFavorite = isFavorite
         self.isDeleted = isDeleted
@@ -271,6 +274,7 @@ nonisolated struct DraftVaultItem: Equatable {
     /// Converts an immutable `VaultItem` into a mutable draft ready for editing.
     init(_ item: VaultItem) {
         self.id = item.id
+        self.folderId = item.folderId
         self.name = item.name
         self.isFavorite = item.isFavorite
         self.isDeleted = item.isDeleted
@@ -299,12 +303,18 @@ extension VaultItem {
     /// post-save local patching if needed; normally the API response is used directly.
     init(_ draft: DraftVaultItem) {
         self.id = draft.id
+        self.folderId = draft.folderId
         self.name = draft.name
         self.isFavorite = draft.isFavorite
         self.isDeleted = draft.isDeleted
         self.creationDate = draft.creationDate
         self.revisionDate = draft.revisionDate
         self.reprompt = draft.reprompt
+        // Drafts do not carry attachment state — attachments are managed via
+        // AttachmentRepository and written back through the server response, not through
+        // the edit draft. Preserve an empty list here; the actual attachments come from
+        // the fresh VaultItem returned by PUT /ciphers/{id}.
+        self.attachments = []
         self.content = {
             switch draft.content {
             case .login(let c):

@@ -58,6 +58,16 @@ final class KeychainServiceImpl: KeychainService {
     private let service = "com.prizm"
     private let logger = Logger(subsystem: "com.prizm", category: "KeychainService")
 
+    /// When `true` (default, production), routes all queries through the modern data
+    /// protection keychain (`kSecUseDataProtectionKeychain`), which requires the
+    /// `keychain-access-groups` entitlement. Pass `false` in test targets that run
+    /// without code signing, where the entitlement is unavailable.
+    private let useDataProtectionKeychain: Bool
+
+    init(useDataProtectionKeychain: Bool = true) {
+        self.useDataProtectionKeychain = useDataProtectionKeychain
+    }
+
     /// Returns the base Keychain query dictionary for `key`.
     ///
     /// `kSecUseDataProtectionKeychain: true` routes all queries to the modern data
@@ -66,12 +76,15 @@ final class KeychainServiceImpl: KeychainService {
     /// entitlement (`$(AppIdentifierPrefix)com.prizm`). Setting it explicitly here
     /// would require embedding the resolved Team ID in source code.
     private func baseQuery(for key: String) -> [CFString: Any] {
-        [
-            kSecClass:                   kSecClassGenericPassword,
-            kSecAttrService:             service,
-            kSecAttrAccount:             key,
-            kSecUseDataProtectionKeychain: true,
+        var query: [CFString: Any] = [
+            kSecClass:       kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: key,
         ]
+        if useDataProtectionKeychain {
+            query[kSecUseDataProtectionKeychain] = true
+        }
+        return query
     }
 
     // MARK: Write

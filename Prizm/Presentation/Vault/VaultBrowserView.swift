@@ -13,10 +13,19 @@ struct VaultBrowserView: View {
     @ObservedObject var viewModel: VaultBrowserViewModel
     let faviconLoader: FaviconLoader
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
-    let makeCreateViewModel: (ItemType) -> ItemEditViewModel
+    let makeCreateViewModel: (ItemType, String?) -> ItemEditViewModel
+    /// Factory for creating `AttachmentAddViewModel` — injected from AppContainer to
+    /// keep the Presentation layer decoupled from the Data layer (Constitution §II).
+    var makeAddAttachmentViewModel: ((String) -> AttachmentAddViewModel)? = nil
+    /// Factory for creating `AttachmentBatchViewModel` — injected from AppContainer.
+    var makeBatchAttachmentViewModel: ((String) -> AttachmentBatchViewModel)? = nil
+    /// Factory for `AttachmentRowViewModel` — injected from AppContainer.
+    var makeAttachmentRowViewModel: ((String, Attachment) -> AttachmentRowViewModel)? = nil
 
     @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
+    @State private var showDeleteFolderAlert = false
+    @State private var folderToDelete: Folder?
     @State private var isSearchFieldFocused = false
 
     private let logger = Logger(subsystem: "com.prizm", category: "UI.VaultBrowser")
@@ -30,15 +39,19 @@ struct VaultBrowserView: View {
                             get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
                             set: { newValue in
                                 if let value = newValue {
-                                    // Defer the mutation out of SwiftUI's view-update pass.
-                                    // Setting @Published directly inside Binding.set fires
-                                    // objectWillChange during the current render, triggering
-                                    // the "Publishing changes from within view updates" warning.
                                     Task { @MainActor in viewModel.sidebarSelection = value }
                                 }
                             }
                         ),
-                        itemCounts: viewModel.itemCounts
+                        itemCounts: viewModel.itemCounts,
+                        folders: viewModel.folders,
+                        onCreateFolder: { name in viewModel.createFolder(name: name) },
+                        onRenameFolder: { id, name in viewModel.renameFolder(id: id, name: name) },
+                        onDeleteFolder: { folder in
+                            folderToDelete = folder
+                            showDeleteFolderAlert = true
+                        },
+                        onDropItems: { ids, folderId in viewModel.moveItemsToFolder(itemIds: ids, folderId: folderId) }
                     )
                     SyncStatusView(label: viewModel.syncStatusLabel)
                 }
@@ -94,16 +107,21 @@ struct VaultBrowserView: View {
             },
             detail: {
                 ItemDetailView(
-                    item:                viewModel.itemSelection,
-                    faviconLoader:       faviconLoader,
-                    onCopy:              { viewModel.copy($0) },
-                    makeEditViewModel:   makeEditViewModel,
-                    onEditSheetChanged: { viewModel.handleEditSheetState($0) },
-                    onSoftDelete:        { id in await viewModel.performSoftDelete(id: id) },
-                    onRestore:           { id in await viewModel.performRestore(id: id) },
-                    onPermanentDelete:   { id in await viewModel.performPermanentDelete(id: id) },
-                    editTrigger:         viewModel.editTrigger,
-                    saveTrigger:         viewModel.saveTrigger
+                    item:                           viewModel.itemSelection,
+                    faviconLoader:                  faviconLoader,
+                    folders:                        viewModel.folders,
+                    onCopy:                         { viewModel.copy($0) },
+                    makeEditViewModel:              makeEditViewModel,
+                    makeAddAttachmentViewModel:     makeAddAttachmentViewModel,
+                    makeBatchAttachmentViewModel:   makeBatchAttachmentViewModel,
+                    makeAttachmentRowViewModel:     makeAttachmentRowViewModel,
+                    onAttachmentsChanged:           { viewModel.refreshItemSelection() },
+                    onEditSheetChanged:             { viewModel.handleEditSheetState($0) },
+                    onSoftDelete:                   { id in await viewModel.performSoftDelete(id: id) },
+                    onRestore:                      { id in await viewModel.performRestore(id: id) },
+                    onPermanentDelete:              { id in await viewModel.performPermanentDelete(id: id) },
+                    editTrigger:                    viewModel.editTrigger,
+                    saveTrigger:                    viewModel.saveTrigger
                 )
                 .toolbar {
                     if let item = viewModel.itemSelection {
@@ -185,6 +203,16 @@ struct VaultBrowserView: View {
         } message: {
             Text("\"\(viewModel.itemSelection?.name ?? "")\" will be permanently deleted and cannot be recovered.")
         }
+        .alert("Delete Folder?", isPresented: $showDeleteFolderAlert) {
+            Button("Delete Folder", role: .destructive) {
+                if let folder = folderToDelete {
+                    viewModel.deleteFolder(id: folder.id)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Items in \"\(folderToDelete?.name ?? "")\" will not be deleted. They will become unfoldered.")
+        }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in
             if newValue == .trash {
@@ -210,7 +238,7 @@ struct VaultBrowserView: View {
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(
-                viewModel: makeCreateViewModel(type),
+                viewModel: makeCreateViewModel(type, viewModel.selectedFolderId),
                 isPresented: Binding(
                     get: { viewModel.createItemType != nil },
                     set: { if !$0 { viewModel.createItemType = nil } }

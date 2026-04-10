@@ -113,6 +113,64 @@ protocol PrizmAPIClientProtocol: Actor {
     /// On success the server returns the created cipher, decoded back into `RawCipher`.
     func createCipher(cipher: RawCipher) async throws -> RawCipher
 
+    // MARK: - Attachment endpoints
+
+    /// POST `/api/ciphers/{cipherId}/attachment/v2` — creates attachment metadata on the server.
+    ///
+    /// Returns the attachment ID, a signed upload URL (or Bitwarden-hosted URL for fileUploadType 0),
+    /// and the file upload type (0 = Bitwarden-hosted, 1 = Azure blob storage).
+    ///
+    /// Reference: Bitwarden Server API POST /api/ciphers/{id}/attachment/v2
+    func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse
+
+    /// POST `/api/ciphers/{cipherId}/attachment/{attachmentId}` — uploads a file blob via multipart.
+    ///
+    /// Used when `fileUploadType == 0` (Bitwarden-hosted storage).
+    /// The encrypted blob is sent as the `data` field of a multipart/form-data body.
+    func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws
+
+    /// PUT `<signedURL>` with `x-ms-blob-type: BlockBlob` — uploads to Azure Blob Storage.
+    ///
+    /// Used when `fileUploadType == 1` (Azure). The signed URL is provided by the v2 metadata response.
+    /// The request body is the raw encrypted blob with the Azure-required header.
+    func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws
+
+    /// GET `/api/ciphers/{cipherId}/attachment/{attachmentId}` — fetches a fresh signed download URL.
+    ///
+    /// Returns an `AttachmentDownloadResponse` containing the signed URL valid for a limited time.
+    /// Called when `Attachment.url` is nil or returns HTTP 403.
+    func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse
+
+    /// DELETE `/api/ciphers/{cipherId}/attachment/{attachmentId}` — deletes an attachment.
+    func deleteAttachment(cipherId: String, attachmentId: String) async throws
+
+    /// GET `<signedURL>` — downloads the raw encrypted blob from a signed URL.
+    ///
+    /// Used by `AttachmentRepositoryImpl` to fetch attachment blobs. Routed through the
+    /// API client (rather than `URLSession.shared`) so tests can mock the download path
+    /// and the shared session configuration (timeouts, etc.) is applied.
+    func downloadBlob(from url: URL) async throws -> Data
+
+    // MARK: - Folder CRUD
+
+    /// POST `/api/folders` — creates a new folder with an encrypted name.
+    func createFolder(encryptedName: String) async throws -> RawFolder
+
+    /// PUT `/api/folders/{id}` — renames a folder with an encrypted name.
+    func updateFolder(id: String, encryptedName: String) async throws -> RawFolder
+
+    /// DELETE `/api/folders/{id}` — permanently deletes a folder.
+    /// Items in the folder are unfoldered, not deleted.
+    func deleteFolder(id: String) async throws
+
+    // MARK: - Cipher partial / move
+
+    /// PUT `/ciphers/{id}/partial` — updates folderId and favorite without re-encrypting.
+    func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws
+
+    /// PUT `/ciphers/move` — bulk-moves ciphers to a folder.
+    func moveCiphersToFolder(ids: [String], folderId: String?) async throws
+
 }
 
 // MARK: - Wire Models
@@ -226,6 +284,41 @@ extension APIError: LocalizedError {
             return "No server URL is configured."
         }
     }
+}
+
+// MARK: - Attachment wire models
+
+/// Request body for POST `/api/ciphers/{id}/attachment/v2`.
+///
+/// `fileName` is an EncString (encrypted). `key` is the per-attachment key wrapped as
+/// an EncString. Both are produced by `AttachmentRepositoryImpl` before sending.
+///
+/// Reference: Bitwarden Server API POST /api/ciphers/{id}/attachment/v2
+nonisolated struct AttachmentMetadataRequest: Encodable {
+    let fileName:     String    // EncString
+    let key:          String    // EncString — per-attachment key wrapped with cipher key
+    let fileSize:     Int
+    let adminRequest: Bool      // always false for personal vault
+
+    // Server expects camelCase — synthesized Encodable matches.
+}
+
+/// Response from POST `/api/ciphers/{id}/attachment/v2`.
+///
+/// `fileUploadType`: 0 = Bitwarden-hosted (POST to API), 1 = Azure (PUT to signed URL).
+/// `url` is the signed upload destination (Azure) or the API upload endpoint (Bitwarden-hosted).
+/// `attachmentId` is the server-assigned ID for the new attachment.
+nonisolated struct AttachmentMetadataResponse: Decodable {
+    let attachmentId:   String
+    let url:            String
+    let fileUploadType: Int
+}
+
+/// Response from GET `/api/ciphers/{id}/attachment/{attachmentId}`.
+///
+/// Contains a fresh signed download URL for the encrypted blob.
+nonisolated struct AttachmentDownloadResponse: Decodable {
+    let url: String
 }
 
 // MARK: - Implementation
@@ -480,7 +573,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
         let response: SyncResponse = try await perform(request: request)
         if DebugConfig.isEnabled {
-            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
+            logger.debug("[debug] fetchSync ← ciphers=\(response.ciphers.count, privacy: .public) folders=\(response.folders.count, privacy: .public) profileEmail=\(response.profile.email, privacy: .private) hasPrivateKey=\(response.profile.privateKey != nil, privacy: .public)")
         }
         return response
     }
@@ -583,6 +676,95 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         }
     }
 
+    // MARK: - createAttachmentMetadata
+
+    func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment/v2")
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        request.httpBody = try JSONEncoder().encode(body)
+        return try await perform(request: request)
+    }
+
+    // MARK: - uploadAttachmentBitwardenHosted
+
+    func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
+
+        // Multipart/form-data with a single `data` field containing the encrypted blob.
+        let boundary = UUID().uuidString
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"data\"; filename=\"attachment\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+        body.append(encryptedBlob)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        request.httpBody = body
+        try await performEmpty(request: request)
+    }
+
+    // MARK: - uploadAttachmentAzure
+
+    func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws {
+        // Azure Blob Storage requires `x-ms-blob-type: BlockBlob` on PUT uploads.
+        // Reference: https://learn.microsoft.com/en-us/rest/api/storageservices/put-blob
+        var request = URLRequest(url: signedURL)
+        request.httpMethod = "PUT"
+        request.setValue("BlockBlob", forHTTPHeaderField: "x-ms-blob-type")
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        request.httpBody = encryptedBlob
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw APIError.httpError(statusCode: code, body: "Azure upload failed")
+        }
+    }
+
+    // MARK: - fetchAttachmentDownloadURL
+
+    func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
+        var request = baseRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        return try await perform(request: request)
+    }
+
+    // MARK: - deleteAttachment
+
+    func deleteAttachment(cipherId: String, attachmentId: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
+        var request = baseRequest(url: url)
+        request.httpMethod = "DELETE"
+        if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        try await performEmpty(request: request)
+    }
+
+
+    // MARK: - downloadBlob
+
+    func downloadBlob(from url: URL) async throws -> Data {
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.httpError(statusCode: 0, body: "Invalid response")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw APIError.httpError(statusCode: http.statusCode, body: "")
+        }
+        return data
+    }
+
     // MARK: - refreshAccessToken
 
     // MARK: - createCipher
@@ -608,6 +790,77 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
             logger.debug("[debug] createCipher ← id=\(created.id, privacy: .public)")
         }
         return created
+    }
+
+    // MARK: - Folder CRUD
+
+    func createFolder(encryptedName: String) async throws -> RawFolder {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/folders")
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(["name": encryptedName])
+        return try await perform(request: request)
+    }
+
+    func updateFolder(id: String, encryptedName: String) async throws -> RawFolder {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/folders/\(id)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(["name": encryptedName])
+        return try await perform(request: request)
+    }
+
+    func deleteFolder(id: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/folders/\(id)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "DELETE"
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        try await performEmpty(request: request)
+    }
+
+    // MARK: - Cipher partial / move
+
+    func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(id)/partial")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        var body: [String: Any] = ["favorite": favorite]
+        body["folderId"] = folderId as Any
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        try await performEmpty(request: request)
+    }
+
+    func moveCiphersToFolder(ids: [String], folderId: String?) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/move")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        var body: [String: Any] = ["ids": ids]
+        if let folderId { body["folderId"] = folderId }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        try await performEmpty(request: request)
     }
 
     func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?) {

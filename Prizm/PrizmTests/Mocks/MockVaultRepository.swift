@@ -11,6 +11,7 @@ final class MockVaultRepository: VaultRepository {
     // MARK: - State
 
     private(set) var populatedItems: [VaultItem] = []
+    private(set) var populatedFolders: [Folder] = []
     private(set) var lastSyncedAt:   Date?        = nil
     private(set) var clearVaultCalled: Bool       = false
 
@@ -23,20 +24,24 @@ final class MockVaultRepository: VaultRepository {
 
     // MARK: - VaultRepository (write side)
 
-    func populate(items: [VaultItem], syncedAt: Date) {
-        populatedItems = items
-        lastSyncedAt   = syncedAt
+    func populate(items: [VaultItem], folders: [Folder], syncedAt: Date) {
+        populatedItems  = items
+        populatedFolders = folders
+        lastSyncedAt    = syncedAt
     }
 
     func clearVault() {
-        populatedItems  = []
-        lastSyncedAt    = nil
+        populatedItems   = []
+        populatedFolders = []
+        lastSyncedAt     = nil
         clearVaultCalled = true
     }
 
-    // MARK: - VaultRepository (read side — not exercised in sync tests)
+    // MARK: - VaultRepository (read side)
 
     func allItems() throws -> [VaultItem] { populatedItems }
+
+    func folders() throws -> [Folder] { populatedFolders }
 
     func items(for selection: SidebarSelection) throws -> [VaultItem] {
         switch selection {
@@ -46,8 +51,12 @@ final class MockVaultRepository: VaultRepository {
             return populatedItems.filter(\.isFavorite)
         case .type(let itemType):
             return populatedItems.filter { $0.content.matchesType(itemType) }
+        case .folder(let folderId):
+            return populatedItems.filter { $0.folderId == folderId }
         case .trash:
             return populatedItems.filter(\.isDeleted)
+        case .newFolder:
+            return []
         }
     }
 
@@ -130,6 +139,63 @@ final class MockVaultRepository: VaultRepository {
         lastRestoredId = id
         if let error = stubbedRestoreError { throw error }
     }
+
+    // MARK: - updateAttachments stubbing
+
+    private(set) var updateAttachmentsCallCount: Int = 0
+    private(set) var lastUpdatedAttachments: [Attachment]?
+    private(set) var lastUpdateAttachmentsCipherId: String?
+
+    func updateAttachments(_ attachments: [Attachment], for cipherId: String) async {
+        updateAttachmentsCallCount += 1
+        lastUpdatedAttachments = attachments
+        lastUpdateAttachmentsCipherId = cipherId
+        // Patch in-memory state so allItems() reflects the update
+        if let idx = populatedItems.firstIndex(where: { $0.id == cipherId }) {
+            let old = populatedItems[idx]
+            populatedItems[idx] = VaultItem(
+                id:           old.id,
+                name:         old.name,
+                isFavorite:   old.isFavorite,
+                isDeleted:    old.isDeleted,
+                creationDate: old.creationDate,
+                revisionDate: old.revisionDate,
+                content:      old.content,
+                reprompt:     old.reprompt,
+                attachments:  attachments
+            )
+        }
+    }
+
+    // MARK: - Folder CRUD stubbing
+
+    var stubbedCreateFolderResult: Folder?
+    var stubbedCreateFolderError: Error?
+
+    func createFolder(name: String) async throws -> Folder {
+        if let error = stubbedCreateFolderError { throw error }
+        let folder = stubbedCreateFolderResult ?? Folder(id: UUID().uuidString, name: name)
+        populatedFolders.append(folder)
+        return folder
+    }
+
+    func renameFolder(id: String, name: String) async throws -> Folder {
+        let folder = Folder(id: id, name: name)
+        if let idx = populatedFolders.firstIndex(where: { $0.id == id }) {
+            populatedFolders[idx] = folder
+        }
+        return folder
+    }
+
+    var stubbedDeleteFolderError: Error?
+
+    func deleteFolder(id: String) async throws {
+        if let error = stubbedDeleteFolderError { throw error }
+        populatedFolders.removeAll { $0.id == id }
+    }
+
+    func moveItemToFolder(itemId: String, folderId: String?) async throws {}
+    func moveItemsToFolder(itemIds: [String], folderId: String?) async throws {}
 
 }
 

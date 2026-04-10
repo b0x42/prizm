@@ -140,6 +140,25 @@ nonisolated enum AccessibilityID {
         static func pickerRow(_ typeName: String) -> String { "typePicker.row.\(typeName)" }
     }
 
+    // MARK: - Attachments (vault-document-storage)
+
+    enum Attachment {
+        /// The Attachments section card in ItemDetailView.
+        static let sectionCard = "attachment.section"
+        /// The "Add Attachment" button in the Attachments section card.
+        static let addButton   = "attachment.button.add"
+        /// An attachment row; `id` is the server-assigned attachment ID.
+        static func row(_ id: String) -> String { "attachment.row.\(id)" }
+        /// The Open button on a specific attachment row.
+        static func openButton(_ id: String) -> String { "attachment.row.\(id).open" }
+        /// The Save to Disk button on a specific attachment row.
+        static func saveButton(_ id: String) -> String { "attachment.row.\(id).save" }
+        /// The Delete button on a specific attachment row.
+        static func deleteButton(_ id: String) -> String { "attachment.row.\(id).delete" }
+        /// The Retry Upload button shown when `isUploadIncomplete` is true.
+        static func retryButton(_ id: String) -> String { "attachment.row.\(id).retry" }
+    }
+
     // MARK: - Password Generator (password-generator)
 
     enum Generator {

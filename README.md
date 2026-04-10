@@ -27,46 +27,54 @@ Prizm fills that gap: a fully native macOS client, built in SwiftUI, that connec
 
 If you self-host your passwords and care about software quality on your own machine, Prizm is for you.
 
-## Privacy
+### Mission & Principles
 
-Prizm collects nothing. No telemetry, no analytics, no crash reporting, no usage data. There is no Prizm server — the app talks exclusively to your Vaultwarden or Bitwarden instance. Nothing leaves your server.
+Prizm exists to give macOS users a native, auditable, trustworthy interface to their self-hosted password vault.
 
-The app is open source. Verify this claim by reading the code.
+**Native-first.** SwiftUI only. No Electron, no web views, no compromise on the Mac experience.
 
-## Security
+**Security-first.** No hand-rolled crypto. Every algorithm is a vetted standard with a public specification. Every security decision is documented so you can verify it.
 
-All cryptography runs locally on your device:
+**Radical transparency.** This is security software. You should be able to read the code, understand the cryptography, and decide whether to trust it. That's why it's open source and why the security documentation is thorough.
 
-- **Argon2id key derivation** (RFC 9106, memory-hard) — makes offline brute-force attacks computationally infeasible
-- **AES-256-CBC + HMAC-SHA256** authenticated encryption — all vault data stays encrypted in memory and in transit
-- **macOS Keychain** storage (device-only, `WhenUnlockedThisDeviceOnly`) — session keys never touch iCloud
-
-See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specifications, and what the app does not protect against.
+**Simple and honest.** Build what's needed. Say what's not supported. No dark patterns, no growth hacks, no telemetry.
 
 ## Features
 
 - **Full vault management** — browse, create, edit, delete, and restore all item types (logins, cards, identities, secure notes, SSH keys) with Trash and favourites support
+- **Folder organization** — create, rename, and delete folders; nested subfolders via `/` naming convention with collapsible tree view; drag-and-drop items onto folders; folder-scoped search
 - **Built for power users** — ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / website, Option to reveal masked fields. [Full shortcut list](#shortcuts)
+- **File attachments** — upload, download, open, and delete encrypted file attachments on any vault item; drag-and-drop batch upload; two-layer AES-256-CBC + HMAC-SHA256 encryption with per-attachment keys
 - **Password & passphrase generator** — configurable length, character sets, and word separators
 - **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
 
 ## Install
 
-### Unsigned DMG (simplest)
+### Requirements
 
-A signed, notarized DMG requires an Apple Developer ID certificate ($99/year). This project is a solo open-source effort — that cost is not justified for early releases. Until that changes, the DMG is unsigned.
+- macOS 26 or later
+- A self-hosted [Vaultwarden](https://github.com/dani-garcia/vaultwarden) or [Bitwarden](https://bitwarden.com/) server
 
-**How to open an unsigned app on macOS:**
+Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
 
-After downloading, right-click (Control-click) the `.app` and choose **Open**, then confirm. You only need to do this once. After that, you can open it normally.
+### Homebrew (recommended)
+
+```bash
+brew tap b0x42/prizm
+brew install --cask prizm
+```
+
+### Direct Download
+
+**[Download Prizm](https://github.com/b0x42/prizm/releases/latest)**
+
+The app is not notarized. After downloading, right-click (Control-click) the `.app` and choose **Open**, then confirm. You only need to do this once. After that, you can open it normally.
 
 Alternatively, from Terminal:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Prizm.app
 ```
-
-**[Download Prizm v1.0.0](https://github.com/b0x42/prizm/releases/tag/v1.0.0)**
 
 ### Build from source
 
@@ -79,6 +87,18 @@ open "Prizm/Prizm.xcodeproj"
 ```
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup instructions, including how to get a free Team ID.
+
+## Privacy & Security
+
+Prizm collects nothing. No telemetry, no analytics, no crash reporting, no usage data. There is no Prizm server — the app talks exclusively to your Vaultwarden or Bitwarden instance. Nothing leaves your server.
+
+All cryptography runs locally on your device:
+
+- **Argon2id key derivation** (RFC 9106, memory-hard) — makes offline brute-force attacks computationally infeasible
+- **AES-256-CBC + HMAC-SHA256** authenticated encryption — all vault data stays encrypted in memory and in transit
+- **macOS Keychain** storage (device-only, `WhenUnlockedThisDeviceOnly`) — session keys never touch iCloud
+
+The app is open source. Verify these claims by reading the code. See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specifications, and what the app does not protect against.
 
 ## Shortcuts
 
@@ -97,22 +117,13 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup instructions, including how 
 
 Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts**. Add a rule for Prizm with the exact menu item name and your preferred key combination.
 
-## Requirements
-
-- macOS 26 or later
-- A self-hosted [Vaultwarden](https://github.com/dani-garcia/vaultwarden) or [Bitwarden](https://bitwarden.com/) server
-
-Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
-
 ## Roadmap
 
 | Now | Next | Later |
 |---|---|---|
-| Attachments | Organisation vault support | Passkey support |
-| Reorder sidebar sections | Multiple accounts | Browser auto-fill extension |
-| Face ID / Touch ID unlock | Watchtower / breach check | |
-| TOTP / 2FA copy | Full support for KDBX 4 (KeePass) | |
-| Background sync | | |
+| Face ID / Touch ID unlock | Organisation vault support | Passkey support |
+| TOTP / 2FA copy | Multiple accounts | Browser auto-fill extension |
+| Background sync | Watchtower / breach check | Full support for KDBX 4 (KeePass) |
 
 **Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
 
@@ -120,12 +131,14 @@ Want to shift something up the list? [Open an issue](https://github.com/b0x42/pr
 
 ## Known Limitations
 
+- **Not notarized** — The app is not signed with an Apple Developer ID. On first launch, right-click and choose Open to bypass Gatekeeper.
 - **Personal vault only** — Organisation ciphers are skipped during sync.
 - **No browser auto-fill** — There is no browser extension. Copy-paste is the current workflow.
 - **No biometric unlock** — Touch ID / Face ID unlock is not yet implemented.
 - **macOS 26 required** — The app uses SwiftUI features only available in macOS 26.
 - **Passkeys not supported** — SSH key items are viewable but passkey-based login is not implemented.
 - **No offline vault creation** — Creating or editing items requires an active server connection.
+- **Attachment size limit** — Files larger than 500 MB are rejected. Bitwarden-hosted servers require a premium subscription for attachments; Vaultwarden is unaffected.
 
 ## Contributing
 
@@ -134,18 +147,6 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for prerequisites, build instructions, and 
 Changes follow an **openspec** workflow: each feature lives in `openspec/changes/<name>/` with a proposal, design, and task list before any code is written. See `openspec/` for active and archived changes.
 
 Pull requests welcome. Please open an issue first for anything significant.
-
-## Mission & Principles
-
-Prizm exists to give macOS users a native, auditable, trustworthy interface to their self-hosted password vault.
-
-**Native-first.** SwiftUI only. No Electron, no web views, no compromise on the Mac experience.
-
-**Security-first.** No hand-rolled crypto. Every algorithm is a vetted standard with a public specification. Every security decision is documented so you can verify it.
-
-**Radical transparency.** This is security software. You should be able to read the code, understand the cryptography, and decide whether to trust it. That's why it's open source and why the security documentation is thorough.
-
-**Simple and honest.** Build what's needed. Say what's not supported. No dark patterns, no growth hacks, no telemetry.
 
 ---
 

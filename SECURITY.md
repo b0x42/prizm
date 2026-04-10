@@ -29,6 +29,7 @@ unlocked and only on this specific device, excluded from iCloud Keychain and bac
 | Data | How it is protected |
 |------|---------------------|
 | Vault items (passwords, card numbers, identities, notes, SSH keys, custom fields) | AES-256-CBC + HMAC-SHA256; decrypted in memory after unlock only, never written to disk |
+| File attachments | Two-layer AES-256-CBC + HMAC-SHA256; plaintext exists in memory only during upload/download; see "File Attachments" section |
 | Master password | Never stored anywhere; used transiently during KDF and then discarded |
 | Encrypted user key (`encUserKey`) | AES-256-CBC encrypted by the stretched master key; stored in Keychain |
 | Access and refresh tokens | Stored in Keychain under `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` |
@@ -49,7 +50,8 @@ password itself.
 | Algorithm | Purpose | Implementation |
 |-----------|---------|----------------|
 | AES-256-CBC + PKCS7 | Vault item encryption / decryption | CommonCrypto (`kCCAlgorithmAES128`, 256-bit key) |
-| HMAC-SHA256 | MAC verification (Encrypt-then-MAC) | CryptoKit `HMAC<SHA256>` |
+| AES-256-CBC + PKCS7 (Bitwarden binary blob) | File attachment blob encryption | CommonCrypto; blob format: IV(16) ‖ ciphertext ‖ HMAC(32) per Bitwarden Security Whitepaper §4 |
+| HMAC-SHA256 | MAC verification (Encrypt-then-MAC) for both vault items and attachments | CryptoKit `HMAC<SHA256>` |
 | PBKDF2-SHA256 | Master key derivation (PBKDF2 accounts) | CommonCrypto `CCKeyDerivationPBKDF` |
 | Argon2id | Master key derivation (Argon2id accounts) | `Argon2Swift` — thin wrapper around the reference C implementation |
 | HKDF-SHA256 | Key stretching | CryptoKit `HKDF<SHA256>` (RFC 5869) |
@@ -83,6 +85,66 @@ frameworks).
    the vault can be unlocked offline without re-authenticating to the server.
 3. **Sign out** — all in-memory key material is zeroed and all Keychain entries for
    the account are deleted. The app returns to a blank login screen.
+
+---
+
+## File Attachments
+
+Attachments use the Bitwarden two-layer client-side encryption scheme (Security Whitepaper §4).
+No plaintext file content is ever sent to the server.
+
+### Encryption scheme
+
+Three encrypted artifacts are produced per attachment:
+
+| Artifact | What it is | How it is encrypted |
+|---|---|---|
+| Encrypted file blob | The full file contents | AES-256-CBC + HMAC-SHA256 using the per-attachment key; binary layout: IV(16) ‖ ciphertext ‖ HMAC(32) |
+| Encrypted attachment key | 64-byte random per-attachment key | EncString type-2 (AES-256-CBC + HMAC-SHA256) using the cipher key |
+| Encrypted file name | The original file name | EncString type-2 (AES-256-CBC + HMAC-SHA256) using the cipher key |
+
+The **cipher key** is either the vault symmetric key or a per-item key (if the cipher has
+one). The **attachment key** is a freshly generated 64-byte random value for each upload.
+
+### Key locations
+
+| Key material | Storage | Lifetime |
+|---|---|---|
+| Per-attachment key (64 bytes) | In-memory only | Exists from the start of `upload()` until it returns; zeroed in `defer` |
+| Cipher key (64 bytes) | In-memory only | Passed in from the calling use case; never persisted by the repository |
+| Encrypted attachment key (EncString) | Bitwarden/Vaultwarden server | Stored as part of the cipher metadata; decrypted on demand during download |
+
+### Temp file lifecycle (Open action)
+
+When a user opens an attachment, the decrypted plaintext is written to a system temp
+directory file and opened with the default application. The temp file is:
+
+1. Overwritten with zeros then deleted after **30 seconds** (deadline-based cleanup).
+2. Cleaned up on every **foreground transition** (`NSApplication.didBecomeActiveNotification`).
+
+The 30-second window is a trade-off: long enough for the application to load the file,
+short enough to limit plaintext exposure if the user switches away without closing the file.
+
+### Upload-incomplete state
+
+If a network failure occurs after the server creates attachment metadata but before the
+encrypted blob is fully uploaded, the attachment is marked `isUploadIncomplete = true`.
+The server retains the empty metadata record. The client shows a "Retry" action which:
+1. Deletes the orphaned metadata record via `DELETE /api/ciphers/{id}/attachment/{attachmentId}`.
+2. Performs a fresh upload as a new attachment.
+
+### Threat model additions
+
+- **Server sees only ciphertext** — attachment keys and file contents are encrypted
+  before the first API call; the server never receives plaintext.
+- **Per-attachment key isolation** — each file is encrypted with an independent 64-byte
+  key; compromising one attachment key does not expose other attachments.
+- **Temp file exposure window** — the plaintext is on disk for at most 30 seconds after
+  opening. A disk image captured during this window could recover the file content.
+  Full-disk encryption (FileVault) is strongly recommended.
+- **Memory during upload/download** — raw file bytes are held in memory only for the
+  duration of the operation, then zeroed. A memory dump during an active upload/download
+  could reveal the plaintext.
 
 ---
 
@@ -135,7 +197,7 @@ The app is built with App Sandbox and Hardened Runtime enabled:
 
 ## Standards and References
 
-- [Bitwarden Security Whitepaper](https://bitwarden.com/help/bitwarden-security-white-paper/) — vault architecture, key derivation, encryption flow
+- [Bitwarden Security Whitepaper](https://bitwarden.com/help/bitwarden-security-white-paper/) — vault architecture, key derivation, encryption flow, attachment encryption (§4)
 - [RFC 5869](https://tools.ietf.org/html/rfc5869) — HKDF
 - [RFC 8018](https://tools.ietf.org/html/rfc8018) / [NIST SP 800-132](https://csrc.nist.gov/publications/detail/sp/800-132/final) — PBKDF2
 - [RFC 9106](https://tools.ietf.org/html/rfc9106) — Argon2id

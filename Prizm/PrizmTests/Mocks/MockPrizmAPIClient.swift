@@ -108,7 +108,8 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
                 id: "pid", email: "test@example.com", name: nil,
                 key: "2.k==", privateKey: nil
             ),
-            ciphers: []
+            ciphers: [],
+            folders: []
         )
     }
 
@@ -172,6 +173,121 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         restoreCallCount += 1
         lastRestoredId = id
         if let err = restoreShouldThrow { throw err }
+    }
+
+    // MARK: - Stubs: attachment endpoints
+
+    nonisolated(unsafe) var createAttachmentMetadataResponse: AttachmentMetadataResponse?
+    nonisolated(unsafe) var createAttachmentMetadataShouldThrow: Error?
+    nonisolated(unsafe) var createAttachmentMetadataCallCount: Int = 0
+    nonisolated(unsafe) var lastAttachmentMetadataRequest: AttachmentMetadataRequest?
+
+    func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse {
+        createAttachmentMetadataCallCount += 1
+        lastAttachmentMetadataRequest = body
+        if let err = createAttachmentMetadataShouldThrow { throw err }
+        return createAttachmentMetadataResponse ?? AttachmentMetadataResponse(
+            attachmentId: "att-123",
+            url: "https://cdn.example.com/upload-signed",
+            fileUploadType: 0
+        )
+    }
+
+    nonisolated(unsafe) var uploadBitwardenHostedShouldThrow: Error?
+    nonisolated(unsafe) var uploadBitwardenHostedCallCount: Int = 0
+    nonisolated(unsafe) var lastUploadedCipherId: String?
+    nonisolated(unsafe) var lastUploadedAttachmentId: String?
+
+    func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws {
+        uploadBitwardenHostedCallCount += 1
+        lastUploadedCipherId = cipherId
+        lastUploadedAttachmentId = attachmentId
+        if let err = uploadBitwardenHostedShouldThrow { throw err }
+    }
+
+    nonisolated(unsafe) var uploadAzureShouldThrow: Error?
+    nonisolated(unsafe) var uploadAzureCallCount: Int = 0
+    nonisolated(unsafe) var lastAzureSignedURL: URL?
+
+    func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws {
+        uploadAzureCallCount += 1
+        lastAzureSignedURL = signedURL
+        if let err = uploadAzureShouldThrow { throw err }
+    }
+
+    nonisolated(unsafe) var fetchAttachmentDownloadURLResponse: AttachmentDownloadResponse?
+    nonisolated(unsafe) var fetchAttachmentDownloadURLShouldThrow: Error?
+    nonisolated(unsafe) var fetchAttachmentDownloadURLCallCount: Int = 0
+
+    func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse {
+        fetchAttachmentDownloadURLCallCount += 1
+        if let err = fetchAttachmentDownloadURLShouldThrow { throw err }
+        return fetchAttachmentDownloadURLResponse ?? AttachmentDownloadResponse(url: "https://cdn.example.com/download-signed")
+    }
+
+    nonisolated(unsafe) var deleteAttachmentShouldThrow: Error?
+    nonisolated(unsafe) var deleteAttachmentCallCount: Int = 0
+    nonisolated(unsafe) var lastDeletedAttachmentId: String?
+
+    func deleteAttachment(cipherId: String, attachmentId: String) async throws {
+        deleteAttachmentCallCount += 1
+        lastDeletedAttachmentId = attachmentId
+        if let err = deleteAttachmentShouldThrow { throw err }
+    }
+
+    nonisolated(unsafe) var downloadBlobResult: Data = Data()
+    nonisolated(unsafe) var downloadBlobShouldThrow: Error?
+    nonisolated(unsafe) var downloadBlobCallCount: Int = 0
+    /// Sequential results keyed by call count (1-based). Falls back to `downloadBlobResult`.
+    nonisolated(unsafe) var downloadBlobSequence: [Int: Result<Data, Error>] = [:]
+
+    func downloadBlob(from url: URL) async throws -> Data {
+        downloadBlobCallCount += 1
+        if let seq = downloadBlobSequence[downloadBlobCallCount] {
+            return try seq.get()
+        }
+        if let err = downloadBlobShouldThrow { throw err }
+        return downloadBlobResult
+    }
+
+
+
+    // MARK: - Stubs: Folder CRUD
+
+    nonisolated(unsafe) var createFolderResponse: RawFolder?
+    nonisolated(unsafe) var createFolderShouldThrow: Error?
+
+    func createFolder(encryptedName: String) async throws -> RawFolder {
+        if let err = createFolderShouldThrow { throw err }
+        return createFolderResponse ?? RawFolder(id: UUID().uuidString, name: encryptedName, revisionDate: nil)
+    }
+
+    nonisolated(unsafe) var updateFolderResponse: RawFolder?
+    nonisolated(unsafe) var updateFolderShouldThrow: Error?
+
+    func updateFolder(id: String, encryptedName: String) async throws -> RawFolder {
+        if let err = updateFolderShouldThrow { throw err }
+        return updateFolderResponse ?? RawFolder(id: id, name: encryptedName, revisionDate: nil)
+    }
+
+    nonisolated(unsafe) var deleteFolderShouldThrow: Error?
+
+    func deleteFolder(id: String) async throws {
+        if let err = deleteFolderShouldThrow { throw err }
+    }
+
+    // MARK: - Stubs: Cipher partial / move
+
+    nonisolated(unsafe) var updateCipherPartialShouldThrow: Error?
+
+    func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws {
+        if let err = updateCipherPartialShouldThrow { throw err }
+    }
+
+    nonisolated(unsafe) var moveCiphersShouldThrow: Error?
+
+    func moveCiphersToFolder(ids: [String], folderId: String?) async throws {
+        if let err = moveCiphersShouldThrow { throw err }
     }
 
 }

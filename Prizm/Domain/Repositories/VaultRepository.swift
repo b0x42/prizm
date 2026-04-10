@@ -34,12 +34,15 @@ protocol VaultRepository: AnyObject, Sendable {
     /// Not cached — re-decrypts on every call (decrypt on demand, per spec).
     func itemDetail(id: String) async throws -> VaultItem
 
-    /// Replaces the in-memory vault store with `items` and records the sync timestamp.
+    /// Replaces the in-memory vault store with `items` and `folders`, and records the sync timestamp.
     /// Called by `SyncRepositoryImpl` after a successful sync.
-    func populate(items: [VaultItem], syncedAt: Date)
+    func populate(items: [VaultItem], folders: [Folder], syncedAt: Date)
 
-    /// Clears the in-memory vault store. Called on lock and sign-out.
+    /// Clears the in-memory vault store (items and folders). Called on lock and sign-out.
     func clearVault()
+
+    /// All folders, sorted alphabetically by name (case-insensitive).
+    func folders() throws -> [Folder]
 
     /// Re-encrypts `draft`, calls `PUT /ciphers/{id}`, updates the in-memory cache, and
     /// returns the server-confirmed `VaultItem` decoded from the API response.
@@ -77,6 +80,37 @@ protocol VaultRepository: AnyObject, Sendable {
     /// Encrypts a new `draft`, calls `POST /api/ciphers`, inserts the server-confirmed item
     /// into the in-memory cache, and returns it.
     func create(_ draft: DraftVaultItem) async throws -> VaultItem
+
+    /// Replaces the `attachments` array for the vault item identified by `cipherId`,
+    /// patching the in-memory cache without a full re-sync.
+    ///
+    /// Called by `AttachmentRepositoryImpl` after a successful upload or delete so the
+    /// detail pane reflects the change immediately. `async` is required because
+    /// `VaultRepositoryImpl` is `@MainActor` and callers run on background tasks.
+    ///
+    /// - Parameters:
+    ///   - attachments: The new complete list of attachments for the cipher.
+    ///   - cipherId:    The cipher whose attachment list should be replaced.
+    func updateAttachments(_ attachments: [Attachment], for cipherId: String) async
+
+    // MARK: - Folder CRUD
+
+    /// Creates a folder with the given plaintext name. Encryption handled internally.
+    func createFolder(name: String) async throws -> Folder
+
+    /// Renames a folder. Encryption handled internally.
+    func renameFolder(id: String, name: String) async throws -> Folder
+
+    /// Deletes a folder. Items in the folder become unfoldered.
+    func deleteFolder(id: String) async throws
+
+    // MARK: - Move to folder
+
+    /// Moves a single item to a folder (or removes from folder if nil).
+    func moveItemToFolder(itemId: String, folderId: String?) async throws
+
+    /// Moves multiple items to a folder in a single API call.
+    func moveItemsToFolder(itemIds: [String], folderId: String?) async throws
 
 }
 
