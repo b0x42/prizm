@@ -15,6 +15,7 @@ final class AppContainer: ObservableObject {
     let apiClient:     PrizmAPIClientImpl
     let crypto:        PrizmCryptoServiceImpl
     let keychain:      KeychainServiceImpl
+    let biometricKeychain: BiometricKeychainServiceImpl
     let vaultStore:    VaultRepositoryImpl
     let faviconLoader: FaviconLoader
     /// In-memory cache mapping cipher ID → 64-byte effective key.
@@ -63,6 +64,7 @@ final class AppContainer: ObservableObject {
         let api           = PrizmAPIClientImpl()
         let crypto        = PrizmCryptoServiceImpl()
         let keychain      = KeychainServiceImpl()
+        let biometricKeychain = BiometricKeychainServiceImpl()
         let vault         = VaultRepositoryImpl(apiClient: api, crypto: crypto)
         let keyCache      = VaultKeyCache()
         let vaultKeyService = VaultKeyServiceImpl(cache: keyCache, crypto: crypto)
@@ -70,7 +72,8 @@ final class AppContainer: ObservableObject {
         let auth = AuthRepositoryImpl(
             apiClient: api,
             crypto:    crypto,
-            keychain:  keychain
+            keychain:  keychain,
+            biometricKeychain: biometricKeychain
         )
         let sync = SyncRepositoryImpl(
             apiClient:       api,
@@ -94,6 +97,7 @@ final class AppContainer: ObservableObject {
         self.apiClient       = api
         self.crypto          = crypto
         self.keychain        = keychain
+        self.biometricKeychain = biometricKeychain
         self.vaultStore      = vault
         self.faviconLoader   = FaviconLoader()
         self.vaultKeyCache   = keyCache

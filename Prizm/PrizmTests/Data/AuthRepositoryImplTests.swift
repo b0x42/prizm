@@ -10,16 +10,19 @@ final class AuthRepositoryImplTests: XCTestCase {
     private var mockAPI: MockPrizmAPIClient!
     private var mockCrypto: MockPrizmCryptoService!
     private var mockKeychain: MockKeychainService!
+    private var mockBiometricKeychain: MockBiometricKeychainService!
 
     override func setUp() async throws {
         try await super.setUp()
         mockAPI      = MockPrizmAPIClient()
         mockCrypto   = MockPrizmCryptoService()
         mockKeychain = MockKeychainService()
+        mockBiometricKeychain = MockBiometricKeychainService()
         sut = AuthRepositoryImpl(
             apiClient:  mockAPI,
             crypto:     mockCrypto,
-            keychain:   mockKeychain
+            keychain:   mockKeychain,
+            biometricKeychain: mockBiometricKeychain
         )
     }
 

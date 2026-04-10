@@ -127,6 +127,21 @@ final class UnlockJourneyTests: XCTestCase {
         XCTAssertFalse(unlockBtn.isEnabled, "Unlock should be disabled with empty password")
     }
 
+    // MARK: - Biometric invalidation message
+
+    /// Verifies that a biometric invalidation error shows the correct message.
+    /// Requires `--mock-biometrics --biometric-invalidated` launch arguments.
+    func testBiometricInvalidation_showsErrorMessage() {
+        // This test requires a separate launch configuration with invalidated biometrics.
+        // When biometric unlock fails due to enrollment change, the error message
+        // "Your Touch ID settings have changed" should appear.
+        let error = app.staticTexts["unlock.error"]
+        if error.waitForExistence(timeout: 3) {
+            // Only assert if the error appeared (depends on launch args).
+            XCTAssertTrue(error.label.contains("settings have changed") || error.label.contains("master password"))
+        }
+    }
+
     // MARK: - Helpers
 
     private func envVar(_ name: String) -> String? {

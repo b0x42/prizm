@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 import os.log
 
 // MARK: - AuthRepositoryImpl
@@ -26,6 +27,7 @@ final class AuthRepositoryImpl: AuthRepository {
     private let apiClient:  any PrizmAPIClientProtocol
     private let crypto:     any PrizmCryptoService
     private let keychain:   any KeychainService
+    private let biometricKeychain: any BiometricKeychainService
 
     private let logger = Logger(subsystem: "com.prizm", category: "AuthRepository")
 
@@ -52,11 +54,13 @@ final class AuthRepositoryImpl: AuthRepository {
     init(
         apiClient: any PrizmAPIClientProtocol,
         crypto:    any PrizmCryptoService,
-        keychain:  any KeychainService
+        keychain:  any KeychainService,
+        biometricKeychain: any BiometricKeychainService
     ) {
         self.apiClient = apiClient
         self.crypto    = crypto
         self.keychain  = keychain
+        self.biometricKeychain = biometricKeychain
     }
 
     // MARK: - Server configuration
@@ -386,6 +390,9 @@ final class AuthRepositoryImpl: AuthRepository {
             userId = ""
         }
 
+        // Clear biometric Keychain item and preference before clearing other keys.
+        try? await disableBiometricUnlock()
+
         // Clear per-user keys first — best-effort, log failures.
         if !userId.isEmpty {
             for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
@@ -426,6 +433,116 @@ final class AuthRepositoryImpl: AuthRepository {
         await MainActor.run {
             NotificationCenter.default.post(name: .vaultDidLock, object: nil)
         }
+    }
+
+    // MARK: - Biometric unlock
+
+    var biometricUnlockAvailable: Bool {
+        // Fast synchronous check for UI binding (design Decision 5).
+        // Actual Keychain item existence is verified only inside unlockWithBiometrics().
+        UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
+            && LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+    }
+
+    func enableBiometricUnlock() async throws {
+        // Guard: vault must be unlocked — keys must be in memory (spec requirement).
+        guard await crypto.isUnlocked else {
+            throw AuthError.biometricUnavailable
+        }
+        let keys = try await crypto.currentKeys()
+        let data = keys.toData()
+        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
+            throw AuthError.biometricUnavailable
+        }
+        try biometricKeychain.writeBiometric(
+            data: data,
+            key: KeychainKey.biometricVaultKey(userId)
+        )
+        UserDefaults.standard.set(true, forKey: "biometricUnlockEnabled")
+        logger.info("Biometric unlock enabled")
+    }
+
+    func disableBiometricUnlock() async throws {
+        if let userId = try? readString(key: KeychainKey.activeUserId) {
+            try? biometricKeychain.deleteBiometric(key: KeychainKey.biometricVaultKey(userId))
+        }
+        UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
+        logger.info("Biometric unlock disabled")
+    }
+
+    func unlockWithBiometrics() async throws -> Account {
+        logger.info("Biometric unlock attempt")
+        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
+            throw AuthError.biometricUnavailable
+        }
+
+        let restoredAccount: Account
+        do {
+            restoredAccount = try account(for: userId)
+        } catch {
+            logger.error("Missing session data for biometric unlock: \(error.localizedDescription, privacy: .public)")
+            throw AuthError.biometricUnavailable
+        }
+
+        // Read the biometric Keychain item — triggers Touch ID / Face ID prompt.
+        let keyData: Data
+        do {
+            keyData = try biometricKeychain.readBiometric(
+                key: KeychainKey.biometricVaultKey(userId)
+            )
+        } catch let error as KeychainError where error == .itemNotFound {
+            // Keychain item deleted externally or invalidated by .biometryCurrentSet.
+            UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
+            UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
+            throw AuthError.biometricInvalidated
+        } catch {
+            // Map biometric-specific OSStatus errors.
+            // errSecAuthFailed (-25293) and errSecUserCanceled (-128) are the common ones.
+            let nsError = error as NSError
+            if nsError.domain == NSOSStatusErrorDomain {
+                let status = OSStatus(nsError.code)
+                if status == errSecUserCanceled || status == errSecAuthFailed {
+                    // User cancelled the biometric prompt — not an error, just fall back.
+                    throw error
+                }
+            }
+            // .biometryCurrentSet invalidation surfaces as errSecItemNotFound or
+            // errSecAuthFailed depending on the OS version. Clear state and re-throw.
+            UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
+            UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
+            throw AuthError.biometricInvalidated
+        }
+
+        // Deserialize CryptoKeys from the 64-byte blob (design Decision 1).
+        guard let vaultKeys = CryptoKeys(data: keyData) else {
+            logger.error("Biometric Keychain item has invalid format")
+            throw AuthError.biometricUnavailable
+        }
+
+        await crypto.unlockWith(keys: vaultKeys)
+
+        // Restore API client state — same as unlockWithPassword().
+        serverEnvironment = restoredAccount.serverEnvironment
+        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+
+        if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
+            await apiClient.setAccessToken(accessToken)
+
+            if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
+                do {
+                    let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
+                    try? writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                    if let newRefresh = tokens.refreshToken {
+                        try? writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                    }
+                } catch {
+                    logger.warning("Biometric unlock: token refresh failed — sync may fail: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+
+        logger.info("Biometric unlock succeeded")
+        return restoredAccount
     }
 
     // MARK: - Private helpers
@@ -624,5 +741,11 @@ enum KeychainKey {
 
     static func user(_ userId: String, _ name: String) -> String {
         "bw.macos:\(userId):\(name)"
+    }
+
+    /// Per-user biometric vault key — stored via `BiometricKeychainServiceImpl`
+    /// behind `.biometryCurrentSet` access control (design Decision 1).
+    static func biometricVaultKey(_ userId: String) -> String {
+        "bw.macos:\(userId):biometricVaultKey"
     }
 }

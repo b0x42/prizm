@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import LocalAuthentication
 import os.log
 
 // MARK: - UnlockFlowState
@@ -27,6 +28,8 @@ final class UnlockViewModel: ObservableObject {
     @Published var password:      String = ""
     @Published var errorMessage:  String?
     @Published private(set) var flowState: UnlockFlowState = .unlock
+    @Published var showEnrollmentPrompt: Bool = false
+    @Published private(set) var enrollmentReason: EnrollmentReason = .firstTime
 
     // MARK: - Dependencies
 
@@ -34,6 +37,10 @@ final class UnlockViewModel: ObservableObject {
     private let sync:    any SyncUseCase
     private let account: Account   // Pre-loaded from storedAccount()
     private let logger = Logger(subsystem: "com.prizm", category: "UnlockViewModel")
+
+    /// Tracks whether the last biometric attempt failed with invalidation,
+    /// so the enrollment prompt can show the re-enroll copy.
+    private var lastBiometricInvalidated = false
 
     // MARK: - Init
 
@@ -47,6 +54,9 @@ final class UnlockViewModel: ObservableObject {
 
     /// The stored email, shown read-only in the UI (FR-003).
     var email: String { account.email }
+
+    /// Whether biometric unlock is available for this device and session.
+    var biometricUnlockAvailable: Bool { auth.biometricUnlockAvailable }
 
     // MARK: - Actions
 
@@ -69,7 +79,7 @@ final class UnlockViewModel: ObservableObject {
                 // Clear the password field after a successful unlock so the plaintext
                 // does not linger in the published property.
                 password = ""
-                await performSync()
+                await checkEnrollmentOrSync()
             } catch let err as AuthError {
                 logger.error("Unlock failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
@@ -80,6 +90,58 @@ final class UnlockViewModel: ObservableObject {
                 flowState    = .unlock
             }
         }
+    }
+
+    /// Attempts biometric unlock. On success, proceeds to sync.
+    /// On cancellation, falls back silently to the password field.
+    /// On lockout, shows an error. On invalidation, shows the invalidation message.
+    func unlockWithBiometrics() {
+        Task {
+            do {
+                _ = try await auth.unlockWithBiometrics()
+                lastBiometricInvalidated = false
+                await checkEnrollmentOrSync()
+            } catch let err as AuthError where err == .biometricInvalidated {
+                lastBiometricInvalidated = true
+                errorMessage = err.errorDescription
+                flowState = .unlock
+            } catch let err as NSError
+                where err.domain == NSOSStatusErrorDomain && err.code == Int(errSecUserCanceled) {
+                // User cancelled — no error shown, password field stays focused.
+                flowState = .unlock
+            } catch {
+                // Lockout or other failure — show the error.
+                errorMessage = error.localizedDescription
+                flowState = .unlock
+            }
+        }
+    }
+
+    /// Triggers biometric unlock if available; no-op otherwise.
+    func triggerBiometricUnlockIfAvailable() {
+        guard biometricUnlockAvailable else { return }
+        unlockWithBiometrics()
+    }
+
+    /// Called when the user accepts the enrollment prompt.
+    func confirmEnrollBiometric() {
+        Task {
+            do {
+                try await auth.enableBiometricUnlock()
+            } catch {
+                logger.error("Enable biometric unlock failed: \(error.localizedDescription, privacy: .public)")
+            }
+            UserDefaults.standard.set(true, forKey: "biometricEnrollmentPromptShown")
+            showEnrollmentPrompt = false
+            await performSync()
+        }
+    }
+
+    /// Called when the user dismisses the enrollment prompt without enabling.
+    func dismissEnrollmentPrompt() {
+        UserDefaults.standard.set(true, forKey: "biometricEnrollmentPromptShown")
+        showEnrollmentPrompt = false
+        Task { await performSync() }
     }
 
     /// Clears session and returns to the login screen (FR-039).
@@ -96,6 +158,24 @@ final class UnlockViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    /// After a successful password unlock, checks whether to show the enrollment prompt
+    /// before proceeding to sync (design Decision 7).
+    private func checkEnrollmentOrSync() async {
+        let biometricsAvailable = LAContext().canEvaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics, error: nil
+        )
+        let alreadyEnabled = UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
+        let promptShown    = UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown")
+
+        if biometricsAvailable && !alreadyEnabled && !promptShown {
+            enrollmentReason = lastBiometricInvalidated ? .reEnrollAfterInvalidation : .firstTime
+            showEnrollmentPrompt = true
+            // performSync() will be called by confirmEnrollBiometric() or dismissEnrollmentPrompt().
+            return
+        }
+        await performSync()
+    }
 
     private func performSync() async {
         flowState = .syncing(message: "Preparing…")

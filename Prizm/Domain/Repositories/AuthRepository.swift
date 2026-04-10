@@ -71,6 +71,25 @@ protocol AuthRepository: AnyObject {
     /// Releases decrypted key material from `PrizmCryptoServiceImpl`.
     /// Does NOT clear Keychain tokens — session survives lock/unlock.
     func lockVault() async
+
+    // MARK: - Biometric unlock
+
+    /// Whether biometric unlock is available (enabled in preferences AND device supports biometrics).
+    /// Fast synchronous check suitable for UI binding — does NOT read the Keychain.
+    var biometricUnlockAvailable: Bool { get }
+
+    /// Stores the current vault symmetric key in a biometric-protected Keychain item.
+    /// Requires the vault to be unlocked (keys in memory).
+    /// - Throws: `AuthError.biometricUnavailable` if the vault is locked.
+    func enableBiometricUnlock() async throws
+
+    /// Deletes the biometric Keychain item and clears the preference.
+    func disableBiometricUnlock() async throws
+
+    /// Reads the vault key from the biometric Keychain item and unlocks the vault.
+    /// - Returns: The unlocked `Account`.
+    /// - Throws: `AuthError.biometricInvalidated` if biometric enrollment changed.
+    func unlockWithBiometrics() async throws -> Account
 }
 
 // MARK: - Supporting types
@@ -95,6 +114,10 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
     case unrecognizedServer
     case networkUnavailable
     case unsupported2FAMethod(String)
+    /// Biometric Keychain item was invalidated due to fingerprint enrollment change.
+    case biometricInvalidated
+    /// Biometric unlock cannot be enabled — vault is locked (keys not in memory).
+    case biometricUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -112,6 +135,10 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
             return "No internet connection."
         case .unsupported2FAMethod(let name):
             return "Two-factor method '\(name)' is not supported. Use an authenticator app."
+        case .biometricInvalidated:
+            return "Your Touch ID settings have changed. Please enter your master password to continue."
+        case .biometricUnavailable:
+            return "Biometric unlock is not available. Please unlock with your master password."
         }
     }
 }
