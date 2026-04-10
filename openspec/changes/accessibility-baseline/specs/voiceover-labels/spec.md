@@ -35,6 +35,10 @@ Every `Button` whose visible content is only an `Image(systemName:)` SHALL have 
 - **WHEN** VoiceOver focus lands on the refresh button in the password generator
 - **THEN** VoiceOver SHALL announce "Generate new password, button"
 
+#### Scenario: VoiceOver announces new folder button
+- **WHEN** VoiceOver focus lands on the folder.badge.plus button in the sidebar
+- **THEN** VoiceOver SHALL announce "New Folder, button"
+
 ---
 
 ### Requirement: Accessibility hints SHALL describe non-obvious actions
@@ -47,6 +51,10 @@ Interactive controls whose purpose is not fully conveyed by the label alone SHAL
 #### Scenario: Open URL button has hint
 - **WHEN** VoiceOver focus lands on an open-URL button in a field row
 - **THEN** VoiceOver SHALL announce the hint "Opens in browser" after a pause
+
+#### Scenario: Save to Disk button has hint
+- **WHEN** VoiceOver focus lands on a Save to Disk button on an attachment row
+- **THEN** VoiceOver SHALL announce the hint "Saves file to your chosen location" after a pause
 
 ---
 
@@ -87,6 +95,10 @@ Images that are purely decorative and do not convey information beyond what is a
 #### Scenario: Screen icons on auth screens are hidden
 - **WHEN** VoiceOver navigates the Login, Unlock, or TOTP screen
 - **THEN** the large decorative icon (keyhole, shield) SHALL NOT be announced
+
+#### Scenario: Status indicator icons in batch/confirm sheets are hidden
+- **WHEN** VoiceOver navigates an attachment batch upload sheet or confirm sheet
+- **THEN** status indicator icons (checkmark, xmark, warning triangle, info circle) SHALL NOT be announced separately; only the associated status text SHALL be announced
 
 ---
 

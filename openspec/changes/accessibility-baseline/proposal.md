@@ -6,7 +6,7 @@ Prizm has zero `accessibilityLabel`, `accessibilityHint`, or `accessibilityValue
 
 - **New**: `accessibilityLabel` on all icon-only buttons across every view (gear, star, copy, reveal, open, delete, plus, refresh, eye, xmark — ~34 instances across 20 files)
 - **New**: `accessibilityHint` on non-obvious actions (copy, reveal, open URL, drag-and-drop targets)
-- **New**: `accessibilityValue` on stateful controls (favorite toggle, biometric toggle, password generator mode picker)
+- **New**: `accessibilityValue` on stateful controls (favorite toggle star button)
 - **New**: `accessibilityAddTraits(.isHeader)` on section titles in detail view card headers
 - **New**: `accessibilityHidden(true)` on decorative images (favicons when item name is already announced, screen icons on login/unlock)
 - **New**: VoiceOver announcements for error banners and sync status changes via `AccessibilityNotification.Announcement`

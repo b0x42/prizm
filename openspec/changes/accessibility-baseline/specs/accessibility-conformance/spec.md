@@ -9,7 +9,7 @@ The project SHALL include an `ACCESSIBILITY.md` file at the repository root docu
 
 #### Scenario: Document follows VPAT 2.4 Rev format
 - **WHEN** a user reads `ACCESSIBILITY.md`
-- **THEN** the document SHALL contain a table mapping EN 301 549 / WCAG 2.1 AA criteria to conformance levels using the standard VPAT statuses: "Supports", "Partially Supports", "Does Not Support", "Not Applicable"
+- **THEN** the document SHALL contain a table mapping all WCAG 2.1 Level A and Level AA success criteria to conformance levels using the standard VPAT statuses: "Supports", "Partially Supports", "Does Not Support", "Not Applicable", with criteria not applicable to native software marked accordingly
 
 #### Scenario: Each criterion includes remarks
 - **WHEN** a criterion is listed in the conformance table
