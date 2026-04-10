@@ -56,6 +56,14 @@ struct VaultBrowserView: View {
                     SyncStatusView(label: viewModel.syncStatusLabel)
                 }
                 .navigationSplitViewColumnWidth(min: 180, ideal: 210)
+                .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        SettingsLink {
+                            Image(systemName: "gearshape")
+                        }
+                        .accessibilityIdentifier(AccessibilityID.Vault.settingsButton)
+                    }
+                }
             },
             content: {
                 VStack(spacing: 0) {
@@ -164,14 +172,6 @@ struct VaultBrowserView: View {
                                 .foregroundStyle(.red)
                             }
                         }
-                    }
-                }
-                .toolbar {
-                    ToolbarItem(placement: .automatic) {
-                        SettingsLink {
-                            Image(systemName: "gearshape")
-                        }
-                        .accessibilityIdentifier(AccessibilityID.Vault.settingsButton)
                     }
                 }
                 .searchable(

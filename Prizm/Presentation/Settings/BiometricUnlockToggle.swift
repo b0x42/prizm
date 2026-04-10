@@ -11,6 +11,7 @@ struct BiometricUnlockToggle: View {
 
     @State private var isEnabled: Bool = UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
     @State private var isProcessing = false
+    @State private var showVaultLockedHint = false
 
     private var biometryName: String {
         switch LAContext().biometryType {
@@ -23,12 +24,12 @@ struct BiometricUnlockToggle: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Toggle("\(biometryName) unlock", isOn: $isEnabled)
-                .disabled(isProcessing)
+                .disabled(isProcessing || showVaultLockedHint)
                 .onChange(of: isEnabled) { _, newValue in
                     Task { await toggleBiometric(enabled: newValue) }
                 }
 
-            if !authRepository.biometricUnlockAvailable && !isEnabled {
+            if showVaultLockedHint {
                 Text("Unlock your vault to change this setting")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -45,9 +46,12 @@ struct BiometricUnlockToggle: View {
             } else {
                 try await authRepository.disableBiometricUnlock()
             }
+            showVaultLockedHint = false
         } catch {
-            // Revert the toggle on failure.
             isEnabled = !enabled
+            if (error as? AuthError) == .biometricUnavailable {
+                showVaultLockedHint = true
+            }
         }
     }
 }
