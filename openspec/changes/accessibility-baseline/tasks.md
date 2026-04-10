@@ -55,5 +55,5 @@
 
 ## 9. Accessibility Verification Tests
 
-- [ ] 9.1 XCUITest: verify key icon-only buttons have non-empty `accessibilityLabel` (settings gear, new item, copy, favorite star)
-- [ ] 9.2 XCUITest: verify favorite star `accessibilityValue` changes between "Favorited" and "Not favorited" on toggle
+- [x] 9.1 XCUITest: verify key icon-only buttons have non-empty `accessibilityLabel` (settings gear, new item, copy, favorite star)
+- [x] 9.2 XCUITest: verify favorite star `accessibilityValue` changes between "Favorited" and "Not favorited" on toggle
