@@ -44,8 +44,8 @@
 
 ## 7. VoiceOver Announcements for Transient State
 
-- [ ] 7.1 Post `AccessibilityNotification.Announcement` when the sync error banner appears in `VaultBrowserView`
-- [ ] 7.2 Post `AccessibilityNotification.Announcement` when an action error is set on `VaultBrowserViewModel`
+- [x] 7.1 Post `AccessibilityNotification.Announcement` when the sync error banner appears in `VaultBrowserView`
+- [x] 7.2 Post `AccessibilityNotification.Announcement` when an action error is set on `VaultBrowserViewModel`
 
 ## 8. Accessibility Conformance Statement
 

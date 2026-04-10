@@ -239,6 +239,16 @@ struct VaultBrowserView: View {
         .onChange(of: viewModel.isGlobalSearch) { _, isActive in
             if !isActive { isSearchFieldFocused = false }
         }
+        .onChange(of: viewModel.syncErrorMessage) { _, newMessage in
+            if let message = newMessage {
+                AccessibilityNotification.Announcement(message).post()
+            }
+        }
+        .onChange(of: viewModel.actionError) { _, newError in
+            if let error = newError {
+                AccessibilityNotification.Announcement(error).post()
+            }
+        }
         .background {
             Button("") {
                 viewModel.activateGlobalSearch()
