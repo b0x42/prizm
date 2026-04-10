@@ -107,7 +107,8 @@ To explore or propose a change, use the `/opsx:` skills in Claude Code.
 2. For non-trivial changes, create an openspec change with proposal and design before writing code
 3. Implement with TDD — failing test first, then implementation
 4. All tests must pass; no regressions
-5. Open a pull request with a clear description
+5. All icon-only buttons must have an `accessibilityLabel`; see `ACCESSIBILITY.md` for conformance details
+6. Open a pull request with a clear description
 
 ## GitHub Secrets (Release Signing)
 

@@ -49,9 +49,9 @@
 
 ## 8. Accessibility Conformance Statement
 
-- [ ] 8.1 Create `ACCESSIBILITY.md` at repo root with EN 301 549 / WCAG 2.1 Level AA conformance table in VPAT 2.4 Rev format covering all Level AA success criteria; mark known gaps honestly (contrast not audited, drag-and-drop lacks keyboard alternative)
-- [ ] 8.2 Add link to `ACCESSIBILITY.md` in `README.md` (e.g. in the Privacy & Security section or as a new Accessibility section)
-- [ ] 8.3 Add note to `DEVELOPMENT.md` requiring `accessibilityLabel` on all new icon-only buttons
+- [x] 8.1 Create `ACCESSIBILITY.md` at repo root with EN 301 549 / WCAG 2.1 Level AA conformance table in VPAT 2.4 Rev format covering all Level AA success criteria; mark known gaps honestly (contrast not audited, drag-and-drop lacks keyboard alternative)
+- [x] 8.2 Add link to `ACCESSIBILITY.md` in `README.md` (e.g. in the Privacy & Security section or as a new Accessibility section)
+- [x] 8.3 Add note to `DEVELOPMENT.md` requiring `accessibilityLabel` on all new icon-only buttons
 
 ## 9. Accessibility Verification Tests
 
