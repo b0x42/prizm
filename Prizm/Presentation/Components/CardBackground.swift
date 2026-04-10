@@ -63,6 +63,7 @@ struct DetailSectionCard<Content: View>: View {
                 Text(title!)
                     .font(.headline)
                     .padding(.leading, 4)
+                    .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier(
                         AccessibilityID.Detail.cardHeader(title!)
                     )

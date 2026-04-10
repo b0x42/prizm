@@ -39,8 +39,8 @@
 
 ## 6. Section Header Traits
 
-- [ ] 6.1 Add `.accessibilityAddTraits(.isHeader)` to the section header label in `DetailSectionCard` / `CardBackground` or wherever section titles are rendered in the detail view
-- [ ] 6.2 Verify VoiceOver heading navigation (VO+Command+H) cycles through section headers
+- [x] 6.1 Add `.accessibilityAddTraits(.isHeader)` to the section header label in `DetailSectionCard` / `CardBackground` or wherever section titles are rendered in the detail view
+- [x] 6.2 Verify VoiceOver heading navigation (VO+Command+H) cycles through section headers
 
 ## 7. VoiceOver Announcements for Transient State
 
