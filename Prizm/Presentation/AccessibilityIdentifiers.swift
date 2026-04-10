@@ -43,6 +43,8 @@ nonisolated enum AccessibilityID {
         static let errorMessage      = "unlock.error"
         static let headerTitle       = "unlock.headerTitle"
         static let switchAccount     = "unlock.switchAccount"
+        static let biometricButton   = "unlock.biometric"
+        static let enrollmentPrompt  = "unlock.enrollmentPrompt"
     }
 
     // MARK: - Vault Browser (US3)
@@ -54,6 +56,7 @@ nonisolated enum AccessibilityID {
         static let syncStatusLabel   = "vault.syncStatus"
         static let syncErrorBanner   = "vault.syncErrorBanner"
         static let syncErrorDismiss  = "vault.syncErrorDismiss"
+        static let settingsButton    = "vault.settings"
     }
 
     // MARK: - Sidebar (US3)

@@ -120,6 +120,13 @@ struct PrizmApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
+
+        // Settings window — opened via ⌘, (macOS convention) or the gear toolbar button.
+        // The Settings scene does not inherit the WindowGroup environment, so we pass
+        // the container explicitly via .environmentObject().
+        Settings {
+            SettingsView(authRepository: container.authRepository)
+        }
     }
 
     @ViewBuilder

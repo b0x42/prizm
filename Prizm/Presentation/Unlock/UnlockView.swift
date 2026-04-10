@@ -1,3 +1,4 @@
+import LocalAuthentication
 import SwiftUI
 
 // MARK: - UnlockView
@@ -6,6 +7,7 @@ import SwiftUI
 ///
 /// Displays the stored email read-only and collects the master password locally.
 /// No network call is made — the vault key is re-derived from the password.
+/// If biometric unlock is enabled, auto-prompts Touch ID on appearance.
 struct UnlockView: View {
 
     @ObservedObject var viewModel: UnlockViewModel
@@ -80,6 +82,19 @@ struct UnlockView: View {
             .keyboardShortcut(.return, modifiers: [])
             .accessibilityIdentifier(AccessibilityID.Unlock.unlockButton)
 
+            // MARK: Biometric button
+            if viewModel.biometricUnlockAvailable {
+                Button {
+                    viewModel.unlockWithBiometrics()
+                } label: {
+                    Label(biometricButtonLabel, systemImage: biometricSystemImage)
+                }
+                .buttonStyle(.plain)
+                .font(Typography.screenBody)
+                .foregroundStyle(.tint)
+                .accessibilityIdentifier(AccessibilityID.Unlock.biometricButton)
+            }
+
             // MARK: Sign in with a different account — FR-039
             Button("Sign in with a different account") {
                 viewModel.signInWithDifferentAccount()
@@ -95,6 +110,15 @@ struct UnlockView: View {
         .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 400)
         .onAppear { passwordFocused = true }
+        .task { viewModel.triggerBiometricUnlockIfAvailable() }
+        .sheet(isPresented: $viewModel.showEnrollmentPrompt) {
+            BiometricEnrollmentPromptView(
+                reason: viewModel.enrollmentReason,
+                onEnable: { viewModel.confirmEnrollBiometric() },
+                onDismiss: { viewModel.dismissEnrollmentPrompt() }
+            )
+            .accessibilityIdentifier(AccessibilityID.Unlock.enrollmentPrompt)
+        }
     }
 
     // MARK: - Private
@@ -108,6 +132,22 @@ struct UnlockView: View {
         guard !isUnlockDisabled else { return }
         viewModel.unlock()
     }
-}
 
+    /// Label derived from the current biometric type (design Decision 6).
+    private var biometricButtonLabel: String {
+        switch LAContext().biometryType {
+        case .touchID: return "Unlock with Touch ID"
+        case .faceID:  return "Unlock with Face ID"
+        default:       return "Unlock with Biometrics"
+        }
+    }
+
+    private var biometricSystemImage: String {
+        switch LAContext().biometryType {
+        case .touchID: return "touchid"
+        case .faceID:  return "faceid"
+        default:       return "person.badge.key"
+        }
+    }
+}
 

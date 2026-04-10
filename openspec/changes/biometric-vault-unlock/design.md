@@ -67,6 +67,8 @@ All existing Keychain items use `kSecAttrAccessible`, which is incompatible with
 
 **Decision**: `UserDefaults.biometricUnlockEnabled` is used only as a UI hint (show/hide Touch ID button). The authoritative check before attempting biometric unlock is `BiometricKeychainService.readBiometric(key:)` — if the item is gone (invalidated or deleted), the attempt fails gracefully.
 
+`biometricUnlockAvailable` (the computed property on `AuthRepository`) checks `UserDefaults.biometricUnlockEnabled && LAContext().canEvaluatePolicy(...)` — both synchronous, safe to call on every UI render. It does NOT read the Keychain; that would be too expensive for a property observed by the UI. The Keychain read happens only inside `unlockWithBiometrics()` at the moment of actual unlock.
+
 **Rationale**: A UserDefaults flag alone can get out of sync with the Keychain (e.g. app reinstall, manual Keychain clear). Treating the Keychain as source of truth means the UI may show the Touch ID button but the attempt simply fails with an `.itemNotFound` error, which is handled by falling back to password and clearing the flag.
 
 **One-time enrollment prompt**: A second UserDefaults flag, `biometricEnrollmentPromptShown`, tracks whether the enrollment prompt has ever been shown. It is set to `true` after the prompt is presented — regardless of whether the user taps "Enable" or "Not now" — and is never reset under normal conditions. This means the prompt fires exactly once in the lifetime of the app install. After dismissal in either direction, the Settings toggle is the only way to enable biometric unlock. The prompt copy informs the user of this: *"You can also enable this in Settings at any time."*
@@ -80,6 +82,16 @@ All existing Keychain items use `kSecAttrAccessible`, which is incompatible with
 ### 6. Platform-agnostic naming, macOS UI label from `LAContext.biometryType`
 
 **Decision**: All code identifiers use `Biometric*` / `biometric*`. `UnlockView` reads `LAContext().biometryType` at render time to show "Touch ID" (`.touchID`), "Face ID" (`.faceID`), or a generic "Biometric unlock" fallback.
+
+---
+
+### 7. Enrollment prompt fires between password unlock and sync
+
+**Decision**: After a successful password unlock, `UnlockViewModel.unlock()` checks enrollment conditions before calling `performSync()`. If the enrollment prompt should be shown, the flow pauses on the unlock screen with the prompt sheet visible. `performSync()` is called only after the user accepts or dismisses the prompt. This ensures the user sees the prompt before the screen transitions to `.syncing` → `.vault`.
+
+**Rationale**: The existing unlock flow is `unlockWithPassword()` → `performSync()` → `.vault`. Without this pause, the enrollment prompt would either never be seen (the view transitions away) or would need to be shown on the vault browser (wrong context). Pausing before sync keeps the prompt on the unlock screen where it makes sense — the user just typed their password and is being offered a faster alternative.
+
+**Alternative rejected**: Show the prompt on the vault browser after sync completes. This would work but is contextually wrong — the user has already moved on. The unlock screen is the natural place for this offer.
 
 ## Risks / Trade-offs
 

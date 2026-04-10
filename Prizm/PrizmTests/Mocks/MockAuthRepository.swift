@@ -88,4 +88,33 @@ final class MockAuthRepository: AuthRepository {
     func lockVault() async {
         lockVaultCalledCount += 1
     }
+
+    // MARK: - Biometric unlock
+
+    var stubbedBiometricUnlockAvailable: Bool = false
+    private(set) var enableBiometricUnlockCalled: Bool = false
+    private(set) var disableBiometricUnlockCalled: Bool = false
+    private(set) var unlockWithBiometricsCalled: Bool = false
+    var enableBiometricUnlockError: Error?
+    var unlockWithBiometricsError: Error?
+
+    var biometricUnlockAvailable: Bool { stubbedBiometricUnlockAvailable }
+
+    func enableBiometricUnlock() async throws {
+        enableBiometricUnlockCalled = true
+        if let err = enableBiometricUnlockError { throw err }
+    }
+
+    func disableBiometricUnlock() async throws {
+        disableBiometricUnlockCalled = true
+    }
+
+    func unlockWithBiometrics() async throws -> Account {
+        unlockWithBiometricsCalled = true
+        if let err = unlockWithBiometricsError { throw err }
+        guard case .success(let account) = stubbedLoginResult else {
+            throw AuthError.biometricUnavailable
+        }
+        return account
+    }
 }

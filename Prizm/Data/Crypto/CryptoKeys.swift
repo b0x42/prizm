@@ -24,6 +24,22 @@ nonisolated struct CryptoKeys {
 
 nonisolated extension CryptoKeys {
 
+    /// Serialises the key pair as a 64-byte blob: `encryptionKey (32) || macKey (32)`.
+    /// Used for biometric Keychain storage (design Decision 1).
+    func toData() -> Data {
+        encryptionKey + macKey
+    }
+
+    /// Deserialises a 64-byte blob into a `CryptoKeys` pair.
+    /// Returns `nil` if `data` is not exactly 64 bytes.
+    init?(data: Data) {
+        guard data.count == 64 else { return nil }
+        self.init(
+            encryptionKey: data.prefix(32),
+            macKey: data.suffix(32)
+        )
+    }
+
     /// Computes HMAC-SHA256 of `data` under `key`.
     ///
     /// Uses CryptoKit `HMAC<SHA256>` which is constant-time, removing the need

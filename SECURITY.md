@@ -72,6 +72,7 @@ frameworks).
 | Stretched keys (enc + mac, 64 bytes) | In-memory only | Derived from master key; zeroed on lock |
 | Vault symmetric keys (enc + mac) | In-memory only | Decrypted from `encUserKey`; zeroed on lock |
 | Encrypted user key (`encUserKey`) | macOS Keychain | Persisted across sessions; deleted on sign-out |
+| Biometric vault key (64 bytes) | macOS Keychain (biometric-gated) | Created on user opt-in; deleted on sign-out, disable, or biometric invalidation |
 | Access token | macOS Keychain | Persisted across sessions; deleted on sign-out |
 | Refresh token | macOS Keychain | Persisted across sessions; deleted on sign-out |
 | KDF parameters | macOS Keychain | Persisted across sessions; deleted on sign-out |
@@ -85,6 +86,27 @@ frameworks).
    the vault can be unlocked offline without re-authenticating to the server.
 3. **Sign out** — all in-memory key material is zeroed and all Keychain entries for
    the account are deleted. The app returns to a blank login screen.
+
+### Biometric vault key (Touch ID / Face ID)
+
+When the user enables biometric unlock, the vault symmetric keys (`CryptoKeys`, 64
+bytes: 32-byte encryption key + 32-byte MAC key) are stored in a separate macOS
+Keychain item protected by `SecAccessControl` with `.biometryCurrentSet`.
+
+| Property | Value |
+|---|---|
+| What is stored | `CryptoKeys` — 64 bytes (encryptionKey ‖ macKey) |
+| Access control | `.biometryCurrentSet` — requires successful biometric evaluation; invalidated if fingerprints are added or removed |
+| Keychain class | `kSecClassGenericPassword` with `kSecUseDataProtectionKeychain: true` |
+| Synchronizable | `kSecAttrSynchronizable` is NOT set — device-only, never backed up or synced to iCloud |
+| Access group | Inferred from `keychain-access-groups` entitlement — not accessible to other apps |
+| Created when | User explicitly opts in (enrollment prompt or Settings toggle), vault must be unlocked |
+| Deleted when | Sign-out, user disables toggle, or biometric enrollment changes (`.biometryCurrentSet` invalidation) |
+
+The master password is **never** stored in the biometric Keychain item. Only the
+already-derived vault symmetric keys are cached. On biometric unlock, the keys are
+read directly and passed to `PrizmCryptoService.unlockWith(keys:)`, skipping the KDF
+entirely.
 
 ---
 

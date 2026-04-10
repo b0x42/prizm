@@ -166,6 +166,14 @@ struct VaultBrowserView: View {
                         }
                     }
                 }
+                .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        SettingsLink {
+                            Image(systemName: "gearshape")
+                        }
+                        .accessibilityIdentifier(AccessibilityID.Vault.settingsButton)
+                    }
+                }
                 .searchable(
                     text: $viewModel.searchQuery,
                     isPresented: $isSearchFieldFocused,

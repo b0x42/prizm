@@ -110,3 +110,14 @@ When the user signs out, the biometric-protected Keychain item SHALL be deleted 
 - **GIVEN** biometric unlock is enabled
 - **WHEN** the user taps "Sign in with a different account" and signs out
 - **THEN** the biometric Keychain item SHALL be deleted AND `biometricUnlockEnabled` SHALL be `false`
+
+---
+
+### Requirement: Biometric unlock degrades gracefully when Keychain item is deleted externally
+If the `biometricUnlockEnabled` UserDefaults flag is `true` but the biometric Keychain item no longer exists (e.g. deleted via Keychain Access.app, `security` CLI, or app reinstall with preserved UserDefaults), the system SHALL fall back to the password path and clear the stale flag.
+
+#### Scenario: Biometric unlock attempt with externally deleted Keychain item
+- **GIVEN** `biometricUnlockEnabled` is `true` AND the biometric Keychain item has been deleted outside the app
+- **WHEN** the vault locks and the biometric unlock is attempted
+- **THEN** the biometric unlock SHALL fail with an `.itemNotFound` error
+- **AND** the system SHALL set `biometricUnlockEnabled = false`, hide the Touch ID button, and fall back to the password path without showing an error message to the user

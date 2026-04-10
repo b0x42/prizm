@@ -136,6 +136,12 @@
 		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
 		FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */; };
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
+		A41CBC7194E542AB8B6AC13C /* BiometricKeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 882108627A8E4B1A8E608D25 /* BiometricKeychainService.swift */; };
+		6B61A3E712A64FCDBF4C3D96 /* BiometricKeychainServiceImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16229ED9EF5043E1AC7EC30D /* BiometricKeychainServiceImpl.swift */; };
+		839B201DD1B0447FABC35E38 /* EnrollmentReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A47FABF899471394B5F56B /* EnrollmentReason.swift */; };
+		E2AAA6708B2A46FA85BE5860 /* BiometricEnrollmentPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F53A563DEF9F47329635DE6F /* BiometricEnrollmentPromptView.swift */; };
+		2939BF1A524B44458BD40B01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644111ECFEEE4F96988BD8C7 /* SettingsView.swift */; };
+		60067C5087C547F4B96C3493 /* BiometricUnlockToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7BAEBAFBA84808BD80CA71 /* BiometricUnlockToggle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -280,6 +286,12 @@
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		882108627A8E4B1A8E608D25 /* BiometricKeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data/Keychain/BiometricKeychainService.swift"; sourceTree = "<group>"; };
+		16229ED9EF5043E1AC7EC30D /* BiometricKeychainServiceImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data/Keychain/BiometricKeychainServiceImpl.swift"; sourceTree = "<group>"; };
+		88A47FABF899471394B5F56B /* EnrollmentReason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Unlock/EnrollmentReason.swift"; sourceTree = "<group>"; };
+		F53A563DEF9F47329635DE6F /* BiometricEnrollmentPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Unlock/BiometricEnrollmentPromptView.swift"; sourceTree = "<group>"; };
+		644111ECFEEE4F96988BD8C7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Settings/SettingsView.swift"; sourceTree = "<group>"; };
+		3D7BAEBAFBA84808BD80CA71 /* BiometricUnlockToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Settings/BiometricUnlockToggle.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -938,7 +950,14 @@
 				BB1016000000000000000016 /* AttachmentsSectionView.swift in Sources */,
 				BB1017000000000000000017 /* AttachmentRowView.swift in Sources */,
 				BB1018000000000000000018 /* AttachmentTempFileManager.swift in Sources */,
-			);
+			
+				A41CBC7194E542AB8B6AC13C /* BiometricKeychainService.swift in Sources */,
+				6B61A3E712A64FCDBF4C3D96 /* BiometricKeychainServiceImpl.swift in Sources */,
+				839B201DD1B0447FABC35E38 /* EnrollmentReason.swift in Sources */,
+				E2AAA6708B2A46FA85BE5860 /* BiometricEnrollmentPromptView.swift in Sources */,
+				2939BF1A524B44458BD40B01 /* SettingsView.swift in Sources */,
+				60067C5087C547F4B96C3493 /* BiometricUnlockToggle.swift in Sources */,
+);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
