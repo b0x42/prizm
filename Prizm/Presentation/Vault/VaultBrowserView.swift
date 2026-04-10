@@ -61,6 +61,7 @@ struct VaultBrowserView: View {
                         SettingsLink {
                             Image(systemName: "gearshape")
                         }
+                        .accessibilityLabel("Settings")
                         .accessibilityIdentifier(AccessibilityID.Vault.settingsButton)
                     }
                 }
@@ -101,6 +102,7 @@ struct VaultBrowserView: View {
                             Image(systemName: "plus")
                         }
                         .help("New Item (⌘N)")
+                        .accessibilityLabel("New Item")
                         .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
                         .menuIndicator(.visible)
                         .background {
@@ -156,6 +158,8 @@ struct VaultBrowserView: View {
                                         .foregroundStyle(item.isFavorite ? .yellow : .secondary)
                                 }
                                 .help(item.isFavorite ? "Unfavorite" : "Favorite")
+                                .accessibilityLabel(item.isFavorite ? "Unfavorite" : "Favorite")
+                                .accessibilityValue(item.isFavorite ? "Favorited" : "Not favorited")
                             }
                             ToolbarItem(placement: .primaryAction) {
                                 Button("Edit") {
@@ -274,6 +278,7 @@ struct VaultBrowserView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Dismiss")
+                .accessibilityLabel("Dismiss")
                 .accessibilityIdentifier(AccessibilityID.Vault.syncErrorDismiss)
             }
             .padding(.horizontal, Spacing.bannerHorizontal)

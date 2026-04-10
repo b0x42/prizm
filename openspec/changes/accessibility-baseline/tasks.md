@@ -1,11 +1,11 @@
 ## 1. Icon-Only Button Labels — Vault Browser & Detail
 
-- [ ] 1.1 Add `.accessibilityLabel("Settings")` to the gear `SettingsLink` in `VaultBrowserView`
-- [ ] 1.2 Add `.accessibilityLabel("New Item")` to the plus `Menu` button in `VaultBrowserView`
-- [ ] 1.3 Add `.accessibilityLabel(item.isFavorite ? "Unfavorite" : "Favorite")` and `.accessibilityValue(item.isFavorite ? "Favorited" : "Not favorited")` to the star button in `VaultBrowserView`
-- [ ] 1.4 Add `.accessibilityLabel("Dismiss")` to the xmark sync error dismiss button in `VaultBrowserView`
-- [ ] 1.5 Verify VoiceOver announces "Edit, button" on the Edit toolbar button (text label — no code change expected)
-- [ ] 1.6 Verify VoiceOver announces "Restore, button" and "Delete Permanently, button" on trash toolbar buttons (text labels — no code change expected)
+- [x] 1.1 Add `.accessibilityLabel("Settings")` to the gear `SettingsLink` in `VaultBrowserView`
+- [x] 1.2 Add `.accessibilityLabel("New Item")` to the plus `Menu` button in `VaultBrowserView`
+- [x] 1.3 Add `.accessibilityLabel(item.isFavorite ? "Unfavorite" : "Favorite")` and `.accessibilityValue(item.isFavorite ? "Favorited" : "Not favorited")` to the star button in `VaultBrowserView`
+- [x] 1.4 Add `.accessibilityLabel("Dismiss")` to the xmark sync error dismiss button in `VaultBrowserView`
+- [x] 1.5 Verify VoiceOver announces "Edit, button" on the Edit toolbar button (text label — no code change expected)
+- [x] 1.6 Verify VoiceOver announces "Restore, button" and "Delete Permanently, button" on trash toolbar buttons (text labels — no code change expected)
 
 ## 2. Icon-Only Button Labels — Field & Masked Field Components
 
