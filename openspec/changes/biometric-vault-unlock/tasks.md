@@ -2,7 +2,7 @@
 
 - [ ] 1.1 Write failing tests for `BiometricKeychainServiceImpl` — `writeBiometric`, `readBiometric`, `deleteBiometric`; include `.itemNotFound` and biometric-unavailable error cases
 - [ ] 1.2 Define `BiometricKeychainService` protocol (`writeBiometric(data:key:) throws`, `readBiometric(key:) throws -> Data`, `deleteBiometric(key:) throws`)
-- [ ] 1.3 Implement `BiometricKeychainServiceImpl` using `kSecAccessControl` + `.biometryCurrentSet` + `kSecUseDataProtectionKeychain: true`; no `kSecAttrAccessible`
+- [ ] 1.3 Implement `BiometricKeychainServiceImpl` using `kSecAccessControl` + `.biometryCurrentSet` + `kSecUseDataProtectionKeychain: true`; no `kSecAttrAccessible`. Explicitly scope to the app's `keychain-access-groups` entitlement so the item is not accessible to other apps or processes (Constitution Security Requirement property 3)
 - [ ] 1.4 Add `bw.macos:<userId>:biometricVaultKey` key constant to `KeychainKey` enum in `AuthRepositoryImpl.swift`
 - [ ] 1.5 Register `BiometricKeychainService` / `BiometricKeychainServiceImpl` in `AppContainer`
 
