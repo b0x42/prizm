@@ -102,6 +102,14 @@ final class BiometricKeychainServiceImpl: BiometricKeychainService {
         query[kSecMatchLimit] = kSecMatchLimitOne
         query[kSecReturnData] = true
 
+        // Pass an unevaluated LAContext so SecItemCopyMatching authenticates in-process.
+        // Without this, macOS delegates to the security-agent subprocess which shows a
+        // blocking modal dialog. With it, Touch ID is presented inline (badge on sensor,
+        // no modal) — matching the behaviour of Passwords.app and 1Password.
+        let context = LAContext()
+        context.localizedReason = "unlock your Prizm vault"
+        query[kSecUseAuthenticationContext] = context
+
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
