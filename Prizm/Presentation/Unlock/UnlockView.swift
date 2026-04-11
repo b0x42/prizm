@@ -26,17 +26,15 @@ struct UnlockView: View {
                     .resizable()
                     .frame(width: 80, height: 80)
 
-                // Badge indicates which biometric method is available.
-                // Offset slightly outside the icon corner to match the
-                // Passwords app visual treatment.
+                // Inline Touch ID badge — LAAuthenticationView routes auth through
+                // the app's own view hierarchy so no system modal dialog appears.
+                // Re-armed via .id(biometricContextVersion) after each attempt.
                 if viewModel.biometricUnlockAvailable {
-                    Image(systemName: biometricSystemImage)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(5)
-                        .background(Color.red, in: Circle())
-                        .offset(x: 6, y: 6)
-                        .accessibilityIdentifier(AccessibilityID.Unlock.biometricBadge)
+                    EmbeddedTouchIDView(context: viewModel.biometricContext)
+                    .frame(width: 32, height: 32)
+                    .offset(x: 6, y: 6)
+                    .id(viewModel.biometricContextVersion)
+                    .accessibilityIdentifier(AccessibilityID.Unlock.biometricBadge)
                 }
             }
             .padding(.bottom, 16)
@@ -115,7 +113,12 @@ struct UnlockView: View {
         }
         .frame(minWidth: 480, minHeight: 400)
         .onAppear { passwordFocused = true }
-        .task { viewModel.triggerBiometricUnlockIfAvailable() }
+        // .task(id:) re-fires whenever biometricContextVersion changes (re-arm).
+        // By the time the task runs, SwiftUI has re-rendered EmbeddedTouchIDView
+        // with the new LAContext — so evaluatePolicy routes inline, not to a modal.
+        .task(id: viewModel.biometricContextVersion) {
+            viewModel.triggerEmbeddedBiometricIfAvailable()
+        }
     }
 
     // MARK: - Inline enrollment section (design Decision 3)

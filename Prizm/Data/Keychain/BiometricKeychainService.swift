@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 
 /// Provides biometric-gated read, write, and delete access to the macOS Keychain.
 ///
@@ -14,6 +15,15 @@ protocol BiometricKeychainService {
     /// Read and return the data stored for `key`, triggering biometric authentication.
     /// - Throws: `KeychainError.itemNotFound` if no item exists.
     func readBiometric(key: String) async throws -> Data
+
+    /// Read and return the data stored for `key`, evaluating the biometric policy on
+    /// the provided `context`. If `LAAuthenticationView` was paired with `context`
+    /// before this call, `evaluatePolicy` routes through that embedded view — no
+    /// system modal appears. On success the evaluated context is passed to
+    /// `SecItemCopyMatching` via `kSecUseAuthenticationContext`.
+    /// - Throws: `KeychainError.itemNotFound` if no item exists.
+    func readBiometric(key: String, context: LAContext) async throws -> Data
+
     /// Delete the item for `key`. No-ops silently when the item does not exist.
     func deleteBiometric(key: String) throws
 }

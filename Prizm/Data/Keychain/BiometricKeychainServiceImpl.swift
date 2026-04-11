@@ -139,6 +139,42 @@ final class BiometricKeychainServiceImpl: BiometricKeychainService {
         }
     }
 
+    func readBiometric(key: String, context: LAContext) async throws -> Data {
+        // Evaluate biometric policy on the provided context. If LAAuthenticationView
+        // was paired with this context before the call, the UI appears inline in the
+        // app window — no system modal dialog (see EmbeddedTouchIDView).
+        if useDataProtectionKeychain {
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+                context.evaluatePolicy(
+                    .deviceOwnerAuthenticationWithBiometrics,
+                    localizedReason: "unlock your Prizm vault"
+                ) { _, error in
+                    if let error = error { cont.resume(throwing: error) }
+                    else { cont.resume() }
+                }
+            }
+        }
+
+        var query = baseQuery(for: key)
+        query[kSecMatchLimit] = kSecMatchLimitOne
+        query[kSecReturnData] = true
+        query[kSecUseAuthenticationContext] = context
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        switch status {
+        case errSecSuccess:
+            guard let data = result as? Data else { throw KeychainError.invalidData }
+            return data
+        case errSecItemNotFound:
+            throw KeychainError.itemNotFound
+        default:
+            logger.error("Biometric keychain read (context) failed: status \(status)")
+            throw KeychainError.unexpectedStatus(status)
+        }
+    }
+
     // MARK: - Delete
 
     func deleteBiometric(key: String) throws {

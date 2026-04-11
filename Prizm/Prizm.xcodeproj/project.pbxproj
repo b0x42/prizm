@@ -141,6 +141,9 @@
 		839B201DD1B0447FABC35E38 /* EnrollmentReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A47FABF899471394B5F56B /* EnrollmentReason.swift */; };
 		2939BF1A524B44458BD40B01 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644111ECFEEE4F96988BD8C7 /* SettingsView.swift */; };
 		60067C5087C547F4B96C3493 /* BiometricUnlockToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7BAEBAFBA84808BD80CA71 /* BiometricUnlockToggle.swift */; };
+		DD1001000000000000000001 /* EmbeddedBiometricUnlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1001000000000000000001 /* EmbeddedBiometricUnlock.swift */; };
+		DD1002000000000000000002 /* EmbeddedTouchIDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1002000000000000000002 /* EmbeddedTouchIDView.swift */; };
+		DD1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -290,6 +293,9 @@
 		88A47FABF899471394B5F56B /* EnrollmentReason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Unlock/EnrollmentReason.swift"; sourceTree = "<group>"; };
 		644111ECFEEE4F96988BD8C7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Settings/SettingsView.swift"; sourceTree = "<group>"; };
 		3D7BAEBAFBA84808BD80CA71 /* BiometricUnlockToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Settings/BiometricUnlockToggle.swift"; sourceTree = "<group>"; };
+		CC1001000000000000000001 /* EmbeddedBiometricUnlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedBiometricUnlock.swift; sourceTree = "<group>"; };
+		CC1002000000000000000002 /* EmbeddedTouchIDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedTouchIDView.swift; sourceTree = "<group>"; };
+		CC1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LocalAuthenticationEmbeddedUI.framework; path = System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -331,6 +337,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				23BDC74E5D1F47618262BE0D /* Argon2Swift in Frameworks */,
+				DD1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -485,6 +492,7 @@
 				AA1009000000000000000009 /* AttachmentRepositoryImpl.swift */,
 				AA100A00000000000000000A /* VaultKeyCache.swift */,
 				AA100B00000000000000000B /* VaultKeyServiceImpl.swift */,
+				CC1001000000000000000001 /* EmbeddedBiometricUnlock.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -565,6 +573,7 @@
 				87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */,
 				D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */,
 				1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */,
+				CC1002000000000000000002 /* EmbeddedTouchIDView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -580,6 +589,7 @@
 				434D9EBC2F670B9C00052BCB /* Prizm */,
 				4309FD0E2F68121F0031C9F4 /* PrizmTests */,
 				434D9EBB2F670B9C00052BCB /* Products */,
+				EE1001000000000000000001 /* Frameworks */,
 				FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */,
 			);
 			sourceTree = "<group>";
@@ -591,6 +601,14 @@
 				4309FD0D2F68121F0031C9F4 /* PrizmTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		EE1001000000000000000001 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CC1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		498456596EC249F78737016A /* Sync */ = {
@@ -954,7 +972,9 @@
 				839B201DD1B0447FABC35E38 /* EnrollmentReason.swift in Sources */,
 				2939BF1A524B44458BD40B01 /* SettingsView.swift in Sources */,
 				60067C5087C547F4B96C3493 /* BiometricUnlockToggle.swift in Sources */,
-);
+				DD1001000000000000000001 /* EmbeddedBiometricUnlock.swift in Sources */,
+				DD1002000000000000000002 /* EmbeddedTouchIDView.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */

@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 @testable import Prizm
 
 final class MockBiometricKeychainService: BiometricKeychainService {
@@ -12,6 +13,12 @@ final class MockBiometricKeychainService: BiometricKeychainService {
     }
 
     func readBiometric(key: String) async throws -> Data {
+        if let err = readError { throw err }
+        guard let data = store[key] else { throw KeychainError.itemNotFound }
+        return data
+    }
+
+    func readBiometric(key: String, context: LAContext) async throws -> Data {
         if let err = readError { throw err }
         guard let data = store[key] else { throw KeychainError.itemNotFound }
         return data

@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import LocalAuthentication
 import os.log
 
 // MARK: - UnlockFlowState
@@ -33,21 +34,37 @@ final class UnlockViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let auth:    any AuthRepository
-    private let sync:    any SyncUseCase
-    private let account: Account   // Pre-loaded from storedAccount()
+    private let auth:             any AuthRepository
+    private let sync:             any SyncUseCase
+    private let account:          Account
+    private let embeddedBiometric: (any EmbeddedBiometricUnlock)?
     private let logger = Logger(subsystem: "com.prizm", category: "UnlockViewModel")
 
     /// Tracks whether the last biometric attempt failed with invalidation,
     /// so the enrollment prompt can show the re-enroll copy.
     private var lastBiometricInvalidated = false
 
+    // MARK: - Biometric context (LAAuthenticationView re-arming)
+
+    /// The current `LAContext` shared with the embedded `LAAuthenticationView`.
+    /// Replaced with a fresh instance on each re-arm so the view can re-authenticate.
+    @Published private(set) var biometricContext = LAContext()
+
+    /// Incremented on every re-arm so SwiftUI recreates `EmbeddedTouchIDView` via `.id()`.
+    @Published private(set) var biometricContextVersion = 0
+
     // MARK: - Init
 
-    init(auth: any AuthRepository, sync: any SyncUseCase, account: Account) {
-        self.auth    = auth
-        self.sync    = sync
-        self.account = account
+    init(
+        auth: any AuthRepository,
+        sync: any SyncUseCase,
+        account: Account,
+        embeddedBiometric: (any EmbeddedBiometricUnlock)? = nil
+    ) {
+        self.auth              = auth
+        self.sync              = sync
+        self.account           = account
+        self.embeddedBiometric = embeddedBiometric
     }
 
     // MARK: - Derived properties
@@ -120,10 +137,50 @@ final class UnlockViewModel: ObservableObject {
         }
     }
 
+    /// Triggers biometric unlock via the embedded `LAAuthenticationView` path.
+    /// Called from `.task(id: biometricContextVersion)` in `UnlockView` so the
+    /// `LAAuthenticationView` is guaranteed to be in the window before
+    /// `evaluatePolicy` is called — no system modal appears.
+    func triggerEmbeddedBiometricIfAvailable() {
+        guard biometricUnlockAvailable, let provider = embeddedBiometric else { return }
+        Task {
+            do {
+                _ = try await provider.unlockWithBiometrics(context: biometricContext)
+                lastBiometricInvalidated = false
+                await checkEnrollmentOrSync()
+            } catch let err as AuthError where err == .biometricInvalidated {
+                lastBiometricInvalidated = true
+                errorMessage = err.errorDescription
+                flowState    = .unlock
+            } catch let laError as LAError {
+                switch laError.code {
+                case .biometryLockout:
+                    // Locked out — show error, stop re-arming.
+                    errorMessage = laError.localizedDescription
+                    flowState    = .unlock
+                default:
+                    // Cancellation or transient failure — re-arm silently.
+                    rearmBiometrics()
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+                flowState    = .unlock
+            }
+        }
+    }
+
     /// Triggers biometric unlock if available; no-op otherwise.
+    /// Kept for use when `embeddedBiometric` is nil (test/legacy path).
     func triggerBiometricUnlockIfAvailable() {
         guard biometricUnlockAvailable else { return }
         unlockWithBiometrics()
+    }
+
+    /// Replaces `biometricContext` with a fresh `LAContext` and increments the version
+    /// counter so `UnlockView` recreates `EmbeddedTouchIDView` via `.id()`.
+    func rearmBiometrics() {
+        biometricContext        = LAContext()
+        biometricContextVersion += 1
     }
 
     /// Called when the user accepts the enrollment prompt.
