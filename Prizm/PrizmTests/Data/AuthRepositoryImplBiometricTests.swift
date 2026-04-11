@@ -61,7 +61,7 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
         // Verify the biometric keychain has a 64-byte item.
         let key = KeychainKey.biometricVaultKey(testUserId)
-        let data = try mockBiometricKeychain.readBiometric(key: key)
+        let data = try await mockBiometricKeychain.readBiometric(key: key)
         XCTAssertEqual(data.count, 64)
     }
 
@@ -77,7 +77,12 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
         // Keychain item should be gone.
         let key = KeychainKey.biometricVaultKey(testUserId)
-        XCTAssertThrowsError(try mockBiometricKeychain.readBiometric(key: key))
+        do {
+            _ = try await mockBiometricKeychain.readBiometric(key: key)
+            XCTFail("Expected itemNotFound")
+        } catch {
+            XCTAssertEqual(error as? KeychainError, .itemNotFound)
+        }
     }
 
     // MARK: - unlockWithBiometrics

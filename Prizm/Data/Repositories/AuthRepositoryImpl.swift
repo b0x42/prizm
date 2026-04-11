@@ -488,10 +488,11 @@ final class AuthRepositoryImpl: AuthRepository {
             throw AuthError.biometricUnavailable
         }
 
-        // Read the biometric Keychain item — triggers Touch ID / Face ID prompt.
+        // Read the biometric Keychain item — evaluatePolicy runs inside readBiometric,
+        // producing the inline Touch ID prompt (no security-agent modal).
         let keyData: Data
         do {
-            keyData = try biometricKeychain.readBiometric(
+            keyData = try await biometricKeychain.readBiometric(
                 key: KeychainKey.biometricVaultKey(userId)
             )
         } catch let error as KeychainError where error == .itemNotFound {
@@ -499,19 +500,25 @@ final class AuthRepositoryImpl: AuthRepository {
             UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
             UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
             throw AuthError.biometricInvalidated
+        } catch let laError as LAError {
+            switch laError.code {
+            case .userCancel, .systemCancel, .appCancel:
+                // User cancelled — rethrow as errSecUserCanceled so UnlockViewModel re-arms.
+                throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecUserCanceled))
+            default:
+                // Lockout or other LAError — surface error without clearing stored key.
+                throw laError
+            }
         } catch {
-            // Map biometric-specific OSStatus errors.
-            // errSecAuthFailed (-25293) and errSecUserCanceled (-128) are the common ones.
+            // Legacy OSStatus errors from SecItemCopyMatching (e.g. .biometryCurrentSet
+            // invalidation that surfaces as errSecAuthFailed on some OS versions).
             let nsError = error as NSError
             if nsError.domain == NSOSStatusErrorDomain {
                 let status = OSStatus(nsError.code)
                 if status == errSecUserCanceled || status == errSecAuthFailed {
-                    // User cancelled the biometric prompt — not an error, just fall back.
                     throw error
                 }
             }
-            // .biometryCurrentSet invalidation surfaces as errSecItemNotFound or
-            // errSecAuthFailed depending on the OS version. Clear state and re-throw.
             UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
             UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
             throw AuthError.biometricInvalidated

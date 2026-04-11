@@ -11,7 +11,7 @@ final class MockBiometricKeychainService: BiometricKeychainService {
         store[key] = data
     }
 
-    func readBiometric(key: String) throws -> Data {
+    func readBiometric(key: String) async throws -> Data {
         if let err = readError { throw err }
         guard let data = store[key] else { throw KeychainError.itemNotFound }
         return data
