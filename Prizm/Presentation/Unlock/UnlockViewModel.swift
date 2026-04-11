@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import LocalAuthentication
 import os.log
 
 // MARK: - UnlockFlowState
@@ -12,6 +11,9 @@ enum UnlockFlowState: Equatable {
     case vault
     /// Returned to login (triggered by "Sign in with a different account").
     case login
+    /// Enrollment offer shown inline on the unlock screen after first successful
+    /// password unlock (design Decision 3). Replaces the former `.sheet` approach.
+    case enrollmentPrompt(reason: EnrollmentReason)
 }
 
 // MARK: - UnlockViewModel
@@ -25,11 +27,9 @@ final class UnlockViewModel: ObservableObject {
 
     // MARK: - Published state
 
-    @Published var password:      String = ""
-    @Published var errorMessage:  String?
+    @Published var password:     String = ""
+    @Published var errorMessage: String?
     @Published private(set) var flowState: UnlockFlowState = .unlock
-    @Published var showEnrollmentPrompt: Bool = false
-    @Published private(set) var enrollmentReason: EnrollmentReason = .firstTime
 
     // MARK: - Dependencies
 
@@ -93,8 +93,8 @@ final class UnlockViewModel: ObservableObject {
     }
 
     /// Attempts biometric unlock. On success, proceeds to sync.
-    /// On cancellation, falls back silently to the password field.
-    /// On lockout, shows an error. On invalidation, shows the invalidation message.
+    /// On cancellation, re-arms the sensor immediately (always-armed behaviour —
+    /// design Decision 2). On lockout or invalidation, shows an error and stops.
     func unlockWithBiometrics() {
         Task {
             do {
@@ -105,12 +105,15 @@ final class UnlockViewModel: ObservableObject {
                 lastBiometricInvalidated = true
                 errorMessage = err.errorDescription
                 flowState = .unlock
+                // Intentionally NOT re-arming — invalidation requires password entry.
             } catch let err as NSError
                 where err.domain == NSOSStatusErrorDomain && err.code == Int(errSecUserCanceled) {
-                // User cancelled — no error shown, password field stays focused.
+                // User cancelled — re-arm immediately so the sensor is always ready.
+                // No error shown; password field stays available in parallel.
                 flowState = .unlock
+                triggerBiometricUnlockIfAvailable()
             } catch {
-                // Lockout or other failure — show the error.
+                // Lockout or other failure — show the error, stop re-arming.
                 errorMessage = error.localizedDescription
                 flowState = .unlock
             }
@@ -132,7 +135,7 @@ final class UnlockViewModel: ObservableObject {
                 logger.error("Enable biometric unlock failed: \(error.localizedDescription, privacy: .public)")
             }
             UserDefaults.standard.set(true, forKey: "biometricEnrollmentPromptShown")
-            showEnrollmentPrompt = false
+            flowState = .loading
             await performSync()
         }
     }
@@ -140,7 +143,7 @@ final class UnlockViewModel: ObservableObject {
     /// Called when the user dismisses the enrollment prompt without enabling.
     func dismissEnrollmentPrompt() {
         UserDefaults.standard.set(true, forKey: "biometricEnrollmentPromptShown")
-        showEnrollmentPrompt = false
+        flowState = .loading
         Task { await performSync() }
     }
 
@@ -159,19 +162,20 @@ final class UnlockViewModel: ObservableObject {
 
     // MARK: - Private
 
-    /// After a successful password unlock, checks whether to show the enrollment prompt
-    /// before proceeding to sync (design Decision 7).
+    /// After a successful unlock, checks whether to show the inline enrollment prompt
+    /// before proceeding to sync (design Decision 3).
+    ///
+    /// Uses `auth.deviceBiometricCapable` (not `biometricUnlockAvailable`) so the check
+    /// is mockable in tests and independent of the UserDefaults enabled flag.
     private func checkEnrollmentOrSync() async {
-        let biometricsAvailable = LAContext().canEvaluatePolicy(
-            .deviceOwnerAuthenticationWithBiometrics, error: nil
-        )
+        let capable     = auth.deviceBiometricCapable
         let alreadyEnabled = UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
         let promptShown    = UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown")
 
-        if biometricsAvailable && !alreadyEnabled && !promptShown {
-            enrollmentReason = lastBiometricInvalidated ? .reEnrollAfterInvalidation : .firstTime
-            showEnrollmentPrompt = true
-            // performSync() will be called by confirmEnrollBiometric() or dismissEnrollmentPrompt().
+        if capable && !alreadyEnabled && !promptShown {
+            let reason: EnrollmentReason = lastBiometricInvalidated ? .reEnrollAfterInvalidation : .firstTime
+            flowState = .enrollmentPrompt(reason: reason)
+            // performSync() is called by confirmEnrollBiometric() or dismissEnrollmentPrompt().
             return
         }
         await performSync()

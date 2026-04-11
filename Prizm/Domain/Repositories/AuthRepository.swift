@@ -74,6 +74,11 @@ protocol AuthRepository: AnyObject {
 
     // MARK: - Biometric unlock
 
+    /// Whether the device hardware supports biometric authentication, regardless of the
+    /// user preference. Used by enrollment-offer logic which must check capability
+    /// independently of whether the feature is enabled.
+    var deviceBiometricCapable: Bool { get }
+
     /// Whether biometric unlock is available (enabled in preferences AND device supports biometrics).
     /// Fast synchronous check suitable for UI binding — does NOT read the Keychain.
     var biometricUnlockAvailable: Bool { get }

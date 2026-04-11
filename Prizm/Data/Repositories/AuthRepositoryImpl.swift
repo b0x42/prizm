@@ -437,6 +437,10 @@ final class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Biometric unlock
 
+    var deviceBiometricCapable: Bool {
+        LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+    }
+
     var biometricUnlockAvailable: Bool {
         // Fast synchronous check for UI binding (design Decision 5).
         // Actual Keychain item existence is verified only inside unlockWithBiometrics().
