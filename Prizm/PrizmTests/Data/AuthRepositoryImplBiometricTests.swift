@@ -99,13 +99,14 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         XCTAssertEqual(account.email, testEmail)
     }
 
-    func testUnlockWithBiometrics_itemNotFound_throwsInvalidated() async {
-        // No biometric key in keychain.
+    func testUnlockWithBiometrics_itemNotFound_throwsBiometricItemNotFound() async {
+        // No biometric key in keychain — externally deleted or never written.
+        // Must throw .biometricItemNotFound (silent degradation), not .biometricInvalidated.
         do {
             _ = try await sut.unlockWithBiometrics()
-            XCTFail("Expected biometricInvalidated")
+            XCTFail("Expected biometricItemNotFound")
         } catch {
-            XCTAssertEqual(error as? AuthError, .biometricInvalidated)
+            XCTAssertEqual(error as? AuthError, .biometricItemNotFound)
             XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
             XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown"))
         }

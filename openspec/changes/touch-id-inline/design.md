@@ -68,41 +68,23 @@ The re-arm loop stops on:
 
 ---
 
-### 3. Inline enrollment via `UnlockFlowState.enrollmentPrompt(reason:)`
+### 3. Enrollment via modal sheet (`showEnrollmentPrompt: Bool`)
 
-**Decision**: Add a new case to `UnlockFlowState`:
-```swift
-case enrollmentPrompt(reason: EnrollmentReason)
-```
+**Decision**: Keep `@Published var showEnrollmentPrompt: Bool` and `@Published private(set) var enrollmentReason: EnrollmentReason` in `UnlockViewModel`. `UnlockFlowState` has no `.enrollmentPrompt` case. `UnlockView` presents `BiometricEnrollmentPromptView` via `.sheet(isPresented: $viewModel.showEnrollmentPrompt)`.
 
-In `checkEnrollmentOrSync()`, replace:
-```swift
-showEnrollmentPrompt = true
-```
-with:
-```swift
-flowState = .enrollmentPrompt(reason: ...)
-```
+**Rationale**: The inline enrollment approach (originally planned as Decision 3) was prototyped but reverted — the modal sheet is consistent with the pre-branch UX and macOS HIG conventions for first-time setup prompts. The sheet fires exactly once after the first successful password unlock and is dismissed by "Enable Touch ID" or "Not now". `UnlockFlowState` remains a lean five-case enum with no associated values added.
 
-`UnlockView` switches on `flowState` to render an inline enrollment view instead of the normal unlock form. `confirmEnrollBiometric()` and `dismissEnrollmentPrompt()` set `flowState = .loading` before proceeding to sync (same as today, just without the sheet dismiss).
+**`AccessibilityID.Unlock.enrollmentPrompt`**: Applied to the sheet's root `VStack` inside `BiometricEnrollmentPromptView`, enabling UI test lookup via `app.otherElements["unlock.enrollmentPrompt"]`.
 
-Remove `showEnrollmentPrompt` and `enrollmentReason` published properties from `UnlockViewModel`.
-
-**Rationale**: The sheet approach requires two separate pieces of state (`showEnrollmentPrompt` bool + `enrollmentReason` enum) that are always set together. `flowState` is already the authoritative state machine for this screen — enrollment is just another state in that machine. One source of truth, fewer published properties, easier to test.
-
-**Equatable conformance**: `EnrollmentReason` already conforms to `Equatable`. The new `flowState` case will synthesize `Equatable` automatically.
-
-**Alternative rejected**: Keep the `.sheet` but style it as a full-screen overlay. Still a modal; still breaks the "one screen" mental model.
+**Alternative rejected**: `UnlockFlowState.enrollmentPrompt(reason:)` inline case — adds an associated-value case to the state machine for a one-time UI surface; modal sheet is simpler and already tested.
 
 ---
 
-### 4. `BiometricEnrollmentPromptView` deleted, content inlined
+### 4. `BiometricEnrollmentPromptView` retained as standalone file
 
-**Decision**: Delete `BiometricEnrollmentPromptView.swift`. Its content (icon, heading, body, two buttons) is extracted into a private `enrollmentView` computed property or `@ViewBuilder` func inside `UnlockView`.
+**Decision**: `BiometricEnrollmentPromptView.swift` is kept in `Presentation/Unlock/`. It is presented as a `.sheet` from `UnlockView`.
 
-**Rationale**: The view is ~90 lines, has no reuse outside `UnlockView`, and only exists because the sheet pattern required a standalone `View` conformance. Inlining it removes a file with no loss of clarity.
-
-**`AccessibilityID.Unlock.enrollmentPrompt`**: Was used as the sheet's root identifier. Repurpose it as the identifier for the inline enrollment container `VStack`.
+**Rationale**: The view has a clear, single responsibility and its own accessibility identifier. Keeping it as a standalone file maintains separation of concerns and makes the sheet presentation site in `UnlockView` minimal.
 
 ---
 
