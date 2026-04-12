@@ -37,14 +37,14 @@
 ## 6. Verify Tests Green
 
 - [x] 6.1 Run `UnlockViewModelBiometricTests` — all 10 pass.
-- [ ] 6.2 Run `BiometricEnrollmentJourneyTests` — all pass; confirm `app.otherElements["unlock.enrollmentPrompt"]` resolves inside the sheet.
-- [ ] 6.3 Run `BiometricUnlockJourneyTests` — all pass; confirm no `unlock.biometric` button queries remain.
+- [x] 6.2 Run `BiometricEnrollmentJourneyTests` — all pass; confirm `app.otherElements["unlock.enrollmentPrompt"]` resolves inside the sheet.
+- [x] 6.3 Run `BiometricUnlockJourneyTests` — all pass; confirm no `unlock.biometric` button queries remain.
 
 ## 7. Smoke Test
 
-- [ ] 7.1 Build and run; lock vault; confirm Touch ID badge appears on icon and subtitle shows Touch ID copy; confirm auto-prompt fires on appear with no system modal.
-- [ ] 7.2 Cancel Touch ID prompt; confirm password field is focused, no error shown, badge still visible, sensor re-arms.
-- [ ] 7.3 Disable biometric unlock in Settings; confirm badge disappears and subtitle switches to password-only copy.
-- [ ] 7.4 Reset `biometricEnrollmentPromptShown` to `false`; unlock with password; confirm modal sheet appears.
-- [ ] 7.5 Accept enrollment; confirm flow proceeds to vault.
-- [ ] 7.6 Repeat 7.4; tap "Not now"; confirm flow proceeds to vault.
+- [x] 7.1 Build and run; lock vault; confirm Touch ID badge appears on icon and subtitle shows Touch ID copy; confirm auto-prompt fires on appear with no system modal.
+- [x] 7.2 Cancel Touch ID prompt; confirm password field is focused, no error shown, badge still visible, sensor re-arms.
+- [x] 7.3 Disable biometric unlock in Settings; confirm badge disappears and subtitle switches to password-only copy.
+- [x] 7.4 Reset `biometricEnrollmentPromptShown` to `false`; unlock with password; confirm modal sheet appears.
+- [x] 7.5 Accept enrollment; confirm flow proceeds to vault.
+- [x] 7.6 Repeat 7.4; tap "Not now"; confirm flow proceeds to vault.
