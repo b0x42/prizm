@@ -53,12 +53,8 @@ struct UnlockView: View {
                 .frame(maxWidth: 320)
                 .padding(.bottom, 20)
 
-            // MARK: Password field / loading / enrollment
-            // The .enrollmentPrompt flow state replaces the entire lower section inline
-            // (design Decision 3 — no sheet, no modal).
+            // MARK: Password field / loading
             switch viewModel.flowState {
-            case .enrollmentPrompt(let reason):
-                enrollmentSection(reason: reason)
             case .loading:
                 ProgressView()
                     .controlSize(.regular)
@@ -97,19 +93,14 @@ struct UnlockView: View {
             Spacer()
 
             // MARK: Sign in with a different account — FR-039
-            if case .enrollmentPrompt = viewModel.flowState {
-                // Hide account-switching during enrollment to keep the offer focused.
-                EmptyView()
-            } else {
-                Button("Sign in with a different account") {
-                    viewModel.signInWithDifferentAccount()
-                }
-                .buttonStyle(.plain)
-                .font(Typography.screenBody)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 24)
-                .accessibilityIdentifier(AccessibilityID.Unlock.switchAccount)
+            Button("Sign in with a different account") {
+                viewModel.signInWithDifferentAccount()
             }
+            .buttonStyle(.plain)
+            .font(Typography.screenBody)
+            .foregroundStyle(.secondary)
+            .padding(.bottom, 24)
+            .accessibilityIdentifier(AccessibilityID.Unlock.switchAccount)
         }
         .frame(minWidth: 480, minHeight: 400)
         .onAppear { passwordFocused = true }
@@ -119,38 +110,14 @@ struct UnlockView: View {
         .task(id: viewModel.biometricContextVersion) {
             viewModel.triggerEmbeddedBiometricIfAvailable()
         }
-    }
-
-    // MARK: - Inline enrollment section (design Decision 3)
-
-    @ViewBuilder
-    private func enrollmentSection(reason: EnrollmentReason) -> some View {
-        VStack(spacing: 16) {
-            Text(enrollmentHeading(reason: reason))
-                .font(Typography.screenHeading)
-                .multilineTextAlignment(.center)
-
-            Text(enrollmentBody(reason: reason))
-                .font(Typography.screenBody)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 300)
-
-            VStack(spacing: 8) {
-                Button(enrollmentEnableLabel(reason: reason)) {
-                    viewModel.confirmEnrollBiometric()
-                }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.return, modifiers: [])
-
-                Button("Not now") {
-                    viewModel.dismissEnrollmentPrompt()
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-            }
+        .sheet(isPresented: $viewModel.showEnrollmentPrompt) {
+            BiometricEnrollmentPromptView(
+                reason: viewModel.enrollmentReason,
+                onEnable: { viewModel.confirmEnrollBiometric() },
+                onDismiss: { viewModel.dismissEnrollmentPrompt() }
+            )
+            .accessibilityIdentifier(AccessibilityID.Unlock.enrollmentPrompt)
         }
-        .accessibilityIdentifier(AccessibilityID.Unlock.enrollmentPrompt)
     }
 
     // MARK: - Private
@@ -182,35 +149,5 @@ struct UnlockView: View {
         }
     }
 
-    private var biometricSystemImage: String {
-        switch LAContext().biometryType {
-        case .touchID: return "touchid"
-        case .faceID:  return "faceid"
-        default:       return "person.badge.key"
-        }
-    }
-
-    private func enrollmentHeading(reason: EnrollmentReason) -> String {
-        switch reason {
-        case .firstTime:                 return "Enable \(biometricMethodName) to unlock faster"
-        case .reEnrollAfterInvalidation: return "Re-enable \(biometricMethodName)"
-        }
-    }
-
-    private func enrollmentBody(reason: EnrollmentReason) -> String {
-        switch reason {
-        case .firstTime:
-            return "You can also enable this in Settings at any time."
-        case .reEnrollAfterInvalidation:
-            return "Your \(biometricMethodName) settings changed — a fingerprint was added or removed. For your security, Prizm disabled \(biometricMethodName) unlock. Would you like to re-enable it?"
-        }
-    }
-
-    private func enrollmentEnableLabel(reason: EnrollmentReason) -> String {
-        switch reason {
-        case .firstTime:                 return "Enable \(biometricMethodName)"
-        case .reEnrollAfterInvalidation: return "Re-enable \(biometricMethodName)"
-        }
-    }
 }
 

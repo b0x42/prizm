@@ -15,6 +15,7 @@
 		211E56C54900452E87AA072F /* DeleteFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */; };
 		21BA94E7B93240BAB0D49B1A /* SSHKeyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E312819D0F20492CADB986E4 /* SSHKeyDetailView.swift */; };
 		23BDC74E5D1F47618262BE0D /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 59F9054E12044EC582D79C90 /* Argon2Swift */; };
+		E2AAA6708B2A46FA85BE5860 /* BiometricEnrollmentPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F53A563DEF9F47329635DE6F /* BiometricEnrollmentPromptView.swift */; };
 		2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65E7D6288C347DCA88A20DF /* AuthRepository.swift */; };
 		29304050607080F1B2C3D4E5 /* ItemEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4050607080902CC3D4E5F6 /* ItemEditView.swift */; };
 		2939BF1A524B44458BD40B01 /* Presentation/Settings/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644111ECFEEE4F96988BD8C7 /* Presentation/Settings/SettingsView.swift */; };
@@ -296,6 +297,7 @@
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		F53A563DEF9F47329635DE6F /* BiometricEnrollmentPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Unlock/BiometricEnrollmentPromptView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -887,6 +889,7 @@
 				98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */,
 				A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */,
 				DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */,
+				E2AAA6708B2A46FA85BE5860 /* BiometricEnrollmentPromptView.swift in Sources */,
 				C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */,
 				FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */,
 				AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */,

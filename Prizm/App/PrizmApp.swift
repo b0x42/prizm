@@ -444,9 +444,6 @@ final class RootViewModel: ObservableObject {
             // "Sign in with a different account" — reset to login.
             unlockVM = nil
             screen   = .login
-        case .enrollmentPrompt:
-            // Inline enrollment prompt — no screen transition needed; UnlockView renders it.
-            break
         }
         logger.info("Screen transition → \(String(describing: state))")
     }
