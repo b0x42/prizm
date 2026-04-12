@@ -38,10 +38,10 @@ The system SHALL provide a biometric unlock path that re-opens the vault without
 ### Requirement: User is offered biometric unlock once after their first successful password unlock
 After a successful password unlock, if biometric authentication is available on the device and the enrollment prompt has never been shown before, the system SHALL present the prompt exactly once. The prompt SHALL inform the user that the setting is also accessible in Settings. After the prompt is shown — regardless of the user's choice — it SHALL never appear again. Biometric unlock can still be enabled at any time via the Settings toggle.
 
-#### Scenario: Enrollment prompt appears inline after first successful password unlock
+#### Scenario: Enrollment prompt appears after first successful password unlock
 - **GIVEN** biometrics are available on the device AND biometric unlock is not currently enabled AND the enrollment prompt has never been shown before (`biometricEnrollmentPromptShown` is `false`)
 - **WHEN** the user successfully unlocks the vault with their master password
-- **THEN** the system SHALL display an inline enrollment view on the unlock screen (not a modal sheet) with the heading "Enable Touch ID to unlock faster" and the body "You can also enable this in Settings at any time."
+- **THEN** the system SHALL display a modal sheet with the heading "Enable Touch ID to unlock faster" and the body "You can also enable this in Settings at any time."
 
 #### Scenario: Enrollment prompt is never shown a second time
 - **GIVEN** the enrollment prompt has previously been shown (regardless of the user's choice)
