@@ -61,7 +61,7 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
         // Verify the biometric keychain has a 64-byte item.
         let key = KeychainKey.biometricVaultKey(testUserId)
-        let data = try mockBiometricKeychain.readBiometric(key: key)
+        let data = try await mockBiometricKeychain.readBiometric(key: key)
         XCTAssertEqual(data.count, 64)
     }
 
@@ -77,7 +77,12 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
         // Keychain item should be gone.
         let key = KeychainKey.biometricVaultKey(testUserId)
-        XCTAssertThrowsError(try mockBiometricKeychain.readBiometric(key: key))
+        do {
+            _ = try await mockBiometricKeychain.readBiometric(key: key)
+            XCTFail("Expected itemNotFound")
+        } catch {
+            XCTAssertEqual(error as? KeychainError, .itemNotFound)
+        }
     }
 
     // MARK: - unlockWithBiometrics
@@ -94,13 +99,14 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         XCTAssertEqual(account.email, testEmail)
     }
 
-    func testUnlockWithBiometrics_itemNotFound_throwsInvalidated() async {
-        // No biometric key in keychain.
+    func testUnlockWithBiometrics_itemNotFound_throwsBiometricItemNotFound() async {
+        // No biometric key in keychain — externally deleted or never written.
+        // Must throw .biometricItemNotFound (silent degradation), not .biometricInvalidated.
         do {
             _ = try await sut.unlockWithBiometrics()
-            XCTFail("Expected biometricInvalidated")
+            XCTFail("Expected biometricItemNotFound")
         } catch {
-            XCTAssertEqual(error as? AuthError, .biometricInvalidated)
+            XCTAssertEqual(error as? AuthError, .biometricItemNotFound)
             XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
             XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown"))
         }

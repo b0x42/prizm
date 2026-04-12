@@ -97,10 +97,30 @@ final class BiometricKeychainServiceImpl: BiometricKeychainService {
 
     // MARK: - Read
 
-    func readBiometric(key: String) throws -> Data {
+    func readBiometric(key: String) async throws -> Data {
         var query = baseQuery(for: key)
         query[kSecMatchLimit] = kSecMatchLimitOne
         query[kSecReturnData] = true
+
+        if useDataProtectionKeychain {
+            // Evaluate biometric policy in-process before reading the Keychain item.
+            // Without this, SecItemCopyMatching delegates auth to the security-agent
+            // subprocess which shows a modal dialog. Calling evaluatePolicy() here
+            // triggers the inline Touch ID prompt (badge on sensor, no modal) — the
+            // same behaviour as Passwords.app. The evaluated context is then passed to
+            // SecItemCopyMatching so it does not re-authenticate.
+            let context = LAContext()
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+                context.evaluatePolicy(
+                    .deviceOwnerAuthenticationWithBiometrics,
+                    localizedReason: "unlock your Prizm vault"
+                ) { _, error in
+                    if let error = error { cont.resume(throwing: error) }
+                    else { cont.resume() }
+                }
+            }
+            query[kSecUseAuthenticationContext] = context
+        }
 
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -115,6 +135,42 @@ final class BiometricKeychainServiceImpl: BiometricKeychainService {
             throw KeychainError.itemNotFound
         default:
             logger.error("Biometric keychain read failed: status \(status)")
+            throw KeychainError.unexpectedStatus(status)
+        }
+    }
+
+    func readBiometric(key: String, context: LAContext) async throws -> Data {
+        // Evaluate biometric policy on the provided context. If LAAuthenticationView
+        // was paired with this context before the call, the UI appears inline in the
+        // app window — no system modal dialog (see EmbeddedTouchIDView).
+        if useDataProtectionKeychain {
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+                context.evaluatePolicy(
+                    .deviceOwnerAuthenticationWithBiometrics,
+                    localizedReason: "unlock your Prizm vault"
+                ) { _, error in
+                    if let error = error { cont.resume(throwing: error) }
+                    else { cont.resume() }
+                }
+            }
+        }
+
+        var query = baseQuery(for: key)
+        query[kSecMatchLimit] = kSecMatchLimitOne
+        query[kSecReturnData] = true
+        query[kSecUseAuthenticationContext] = context
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        switch status {
+        case errSecSuccess:
+            guard let data = result as? Data else { throw KeychainError.invalidData }
+            return data
+        case errSecItemNotFound:
+            throw KeychainError.itemNotFound
+        default:
+            logger.error("Biometric keychain read (context) failed: status \(status)")
             throw KeychainError.unexpectedStatus(status)
         }
     }

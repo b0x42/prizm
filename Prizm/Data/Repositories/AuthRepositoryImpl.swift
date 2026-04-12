@@ -20,7 +20,7 @@ import os.log
 /// Thread safety: all mutable state is read/written on the calling actor.
 /// `@MainActor` annotation ensures single-threaded access during tests and UI.
 @MainActor
-final class AuthRepositoryImpl: AuthRepository {
+final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
 
     // MARK: - Dependencies
 
@@ -437,6 +437,10 @@ final class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Biometric unlock
 
+    var deviceBiometricCapable: Bool {
+        LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+    }
+
     var biometricUnlockAvailable: Bool {
         // Fast synchronous check for UI binding (design Decision 5).
         // Actual Keychain item existence is verified only inside unlockWithBiometrics().
@@ -484,30 +488,40 @@ final class AuthRepositoryImpl: AuthRepository {
             throw AuthError.biometricUnavailable
         }
 
-        // Read the biometric Keychain item — triggers Touch ID / Face ID prompt.
+        // Read the biometric Keychain item — evaluatePolicy runs inside readBiometric,
+        // producing the inline Touch ID prompt (no security-agent modal).
         let keyData: Data
         do {
-            keyData = try biometricKeychain.readBiometric(
+            keyData = try await biometricKeychain.readBiometric(
                 key: KeychainKey.biometricVaultKey(userId)
             )
         } catch let error as KeychainError where error == .itemNotFound {
-            // Keychain item deleted externally or invalidated by .biometryCurrentSet.
+            // Keychain item deleted externally (Keychain Access, reinstall, etc.) —
+            // NOT a fingerprint-change. Degrade silently: clear the flag and reset
+            // the enrollment gate so re-enrollment is offered after next password unlock.
+            // UnlockViewModel must NOT show an error for this case (spec §degradation).
             UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
             UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
-            throw AuthError.biometricInvalidated
+            throw AuthError.biometricItemNotFound
+        } catch let laError as LAError {
+            switch laError.code {
+            case .userCancel, .systemCancel, .appCancel:
+                // User cancelled — rethrow as errSecUserCanceled so UnlockViewModel re-arms.
+                throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecUserCanceled))
+            default:
+                // Lockout or other LAError — surface error without clearing stored key.
+                throw laError
+            }
         } catch {
-            // Map biometric-specific OSStatus errors.
-            // errSecAuthFailed (-25293) and errSecUserCanceled (-128) are the common ones.
+            // Legacy OSStatus errors from SecItemCopyMatching (e.g. .biometryCurrentSet
+            // invalidation that surfaces as errSecAuthFailed on some OS versions).
             let nsError = error as NSError
             if nsError.domain == NSOSStatusErrorDomain {
                 let status = OSStatus(nsError.code)
                 if status == errSecUserCanceled || status == errSecAuthFailed {
-                    // User cancelled the biometric prompt — not an error, just fall back.
                     throw error
                 }
             }
-            // .biometryCurrentSet invalidation surfaces as errSecItemNotFound or
-            // errSecAuthFailed depending on the OS version. Clear state and re-throw.
             UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
             UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
             throw AuthError.biometricInvalidated
@@ -542,6 +556,71 @@ final class AuthRepositoryImpl: AuthRepository {
         }
 
         logger.info("Biometric unlock succeeded")
+        return restoredAccount
+    }
+
+    // MARK: - EmbeddedBiometricUnlock
+
+    /// Evaluates biometric policy on `context` then reads the vault key and unlocks.
+    /// If `LAAuthenticationView` was paired with `context` before this call (via
+    /// `EmbeddedTouchIDView`), `evaluatePolicy` routes inline — no modal appears.
+    func unlockWithBiometrics(context: LAContext) async throws -> Account {
+        logger.info("Embedded biometric unlock attempt")
+        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
+            throw AuthError.biometricUnavailable
+        }
+
+        let restoredAccount: Account
+        do {
+            restoredAccount = try account(for: userId)
+        } catch {
+            logger.error("Missing session data for embedded biometric unlock: \(error.localizedDescription, privacy: .public)")
+            throw AuthError.biometricUnavailable
+        }
+
+        // readBiometric(key:context:) calls evaluatePolicy on the provided context.
+        // Because LAAuthenticationView is paired with it, no modal appears.
+        let keyData: Data
+        do {
+            keyData = try await biometricKeychain.readBiometric(
+                key: KeychainKey.biometricVaultKey(userId),
+                context: context
+            )
+        } catch let error as KeychainError where error == .itemNotFound {
+            // Same silent-degradation path as the non-embedded overload above.
+            UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
+            UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
+            throw AuthError.biometricItemNotFound
+        } catch {
+            // Let LAError (cancel, lockout) propagate — caller handles re-arming.
+            throw error
+        }
+
+        guard let vaultKeys = CryptoKeys(data: keyData) else {
+            logger.error("Embedded biometric Keychain item has invalid format")
+            throw AuthError.biometricUnavailable
+        }
+
+        await crypto.unlockWith(keys: vaultKeys)
+        serverEnvironment = restoredAccount.serverEnvironment
+        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+
+        if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
+            await apiClient.setAccessToken(accessToken)
+            if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
+                do {
+                    let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
+                    try? writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                    if let newRefresh = tokens.refreshToken {
+                        try? writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                    }
+                } catch {
+                    logger.warning("Embedded biometric: token refresh failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+
+        logger.info("Embedded biometric unlock succeeded")
         return restoredAccount
     }
 

@@ -5,6 +5,9 @@ import XCTest
 /// Tests the biometric unlock flow including auto-prompt, successful unlock,
 /// cancellation fallback, and lockout message. Requires `--mock-biometrics`
 /// launch argument to simulate biometric availability.
+///
+/// Touch ID is indicated by a badge on the lock icon and subtitle copy —
+/// there is no separate Touch ID button (design Decision 2).
 final class BiometricUnlockJourneyTests: XCTestCase {
 
     private var app: XCUIApplication!
@@ -28,9 +31,13 @@ final class BiometricUnlockJourneyTests: XCTestCase {
     // MARK: - Auto-prompt
 
     func testBiometricAutoPrompt_firesOnUnlockScreen() throws {
-        // The biometric button should be visible on the unlock screen.
-        let biometricButton = app.buttons["unlock.biometric"]
-        XCTAssertTrue(biometricButton.waitForExistence(timeout: 5))
+        // When biometrics are enabled the subtitle mentions "Touch ID".
+        // The badge overlay carries the accessibility identifier "unlock.biometricBadge".
+        let badge = app.images["unlock.biometricBadge"]
+        XCTAssertTrue(badge.waitForExistence(timeout: 5))
+        // Subtitle copy confirms Touch ID is active.
+        let subtitle = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Touch ID'")).firstMatch
+        XCTAssertTrue(subtitle.exists)
     }
 
     // MARK: - Successful unlock
