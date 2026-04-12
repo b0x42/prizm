@@ -496,10 +496,13 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
                 key: KeychainKey.biometricVaultKey(userId)
             )
         } catch let error as KeychainError where error == .itemNotFound {
-            // Keychain item deleted externally or invalidated by .biometryCurrentSet.
+            // Keychain item deleted externally (Keychain Access, reinstall, etc.) —
+            // NOT a fingerprint-change. Degrade silently: clear the flag and reset
+            // the enrollment gate so re-enrollment is offered after next password unlock.
+            // UnlockViewModel must NOT show an error for this case (spec §degradation).
             UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
             UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
-            throw AuthError.biometricInvalidated
+            throw AuthError.biometricItemNotFound
         } catch let laError as LAError {
             switch laError.code {
             case .userCancel, .systemCancel, .appCancel:
@@ -584,9 +587,10 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
                 context: context
             )
         } catch let error as KeychainError where error == .itemNotFound {
+            // Same silent-degradation path as the non-embedded overload above.
             UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
             UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
-            throw AuthError.biometricInvalidated
+            throw AuthError.biometricItemNotFound
         } catch {
             // Let LAError (cancel, lockout) propagate — caller handles re-arming.
             throw error

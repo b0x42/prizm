@@ -123,6 +123,11 @@ final class UnlockViewModel: ObservableObject {
                 errorMessage = err.errorDescription
                 flowState = .unlock
                 // Intentionally NOT re-arming — invalidation requires password entry.
+            } catch let err as AuthError where err == .biometricItemNotFound {
+                // Keychain item deleted externally — degrade silently, no error shown.
+                // biometricUnlockAvailable will return false now (flag cleared in repo).
+                _ = err
+                flowState = .unlock
             } catch let err as NSError
                 where err.domain == NSOSStatusErrorDomain && err.code == Int(errSecUserCanceled) {
                 // User cancelled — re-arm immediately so the sensor is always ready.
@@ -152,6 +157,10 @@ final class UnlockViewModel: ObservableObject {
                 lastBiometricInvalidated = true
                 errorMessage = err.errorDescription
                 flowState    = .unlock
+            } catch let err as AuthError where err == .biometricItemNotFound {
+                // Keychain item deleted externally — degrade silently, no error shown.
+                _ = err
+                flowState = .unlock
             } catch let laError as LAError {
                 switch laError.code {
                 case .biometryLockout:
