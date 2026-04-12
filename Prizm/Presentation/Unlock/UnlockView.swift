@@ -168,9 +168,9 @@ struct UnlockView: View {
     /// Subtitle varies by whether biometric unlock is available.
     private var subtitleText: String {
         if viewModel.biometricUnlockAvailable {
-            return "\(biometricMethodName) or enter the password for the user \"\(viewModel.email)\" to unlock."
+            return "\(biometricMethodName) or enter the password for \(viewModel.email) to unlock."
         } else {
-            return "Enter the password for the user \"\(viewModel.email)\" to unlock."
+            return "Enter the password for \(viewModel.email) to unlock."
         }
     }
 

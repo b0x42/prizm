@@ -37,13 +37,13 @@ Current `UnlockViewModel` published state related to enrollment:
 
 ## Decisions
 
-### 1. Icon badge via `ZStack` overlay, not a composite asset
+### 1. Icon badge via `LAAuthenticationView` (`EmbeddedTouchIDView`), not an SF Symbol
 
-**Decision**: Render the app icon (`Image("AppIcon")` or the lock SF symbol) in a `ZStack` with a `touchid` SF Symbol badge offset to the bottom-trailing corner. Show the badge conditionally on `viewModel.biometricUnlockAvailable`.
+**Decision**: Render the app icon in a `ZStack` with an `EmbeddedTouchIDView` (an `NSViewRepresentable` wrapping `LAAuthenticationView`) offset to the bottom-trailing corner. Show it conditionally on `viewModel.biometricUnlockAvailable`. The `LAContext` passed to the view is the same one used for `evaluatePolicy`, routing the biometric prompt inline through the app's view hierarchy instead of the system security-agent modal.
 
-**Rationale**: Keeps the asset count at zero. SF Symbol `touchid` matches the system's own Touch ID iconography. The overlay approach mirrors how macOS Passwords renders its badge — a small circular glyph over the app icon.
+**Rationale**: Using `LAAuthenticationView` (from `LocalAuthenticationEmbeddedUI`) is what eliminates the system modal entirely — matching the Apple Passwords experience. A passive SF Symbol image was the original plan but would not have suppressed the modal; it would only have changed the visual. `EmbeddedTouchIDView` serves dual purpose: visual badge + inline auth routing.
 
-**Alternative rejected**: A single composite image asset per state. Requires Xcode asset work and doesn't adapt to tint changes.
+**Alternative rejected**: SF Symbol `touchid` image badge — purely cosmetic, does not suppress the system modal. Rejected once `LAAuthenticationEmbeddedUI` was confirmed to be the correct API.
 
 ---
 
