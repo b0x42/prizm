@@ -1,0 +1,79 @@
+## 1. Domain Entities
+
+- [ ] 1.1 Add `OrgRole` enum (`.owner`, `.admin`, `.manager`, `.user`, `.custom`) to Domain layer
+- [ ] 1.2 Add `Organization` struct (`id`, `name`, `role`, `canManageCollections`) to Domain layer
+- [ ] 1.3 Add `Collection` struct (`id`, `organizationId`, `name`) to Domain layer
+- [ ] 1.4 Extend `VaultItem` with `organizationId: String?` and `collectionIds: [String]` (defaulted in init)
+- [ ] 1.5 Extend `DraftVaultItem` with `organizationId: String?` and `collectionIds: [String]`
+- [ ] 1.6 Extend `SidebarSelection` with `.organization(String)` and `.collection(String)` cases; update `==`, `hash`, `displayName`
+- [ ] 1.7 Extend `VaultRepository` protocol with `organizations()`, `collections()`, `items(for collection: String)` methods
+- [ ] 1.8 Add `CreateCollectionUseCase`, `RenameCollectionUseCase`, `DeleteCollectionUseCase` protocols to Domain layer
+
+## 2. Wire Models & Sync Decoding
+
+- [ ] 2.1 Add `RawOrganization` Codable struct (`id`, `name`, `key`, `type`)
+- [ ] 2.2 Add `RawCollection` Codable struct (`id`, `organizationId`, `name`)
+- [ ] 2.3 Extend `SyncResponse` to decode `organizations: [RawOrganization]` and `collections: [RawCollection]` (default `[]`, support both camelCase and PascalCase keys)
+- [ ] 2.4 Write unit tests for `SyncResponse` decoding with and without org/collection keys
+
+## 3. Org Key Crypto (Phase 1 — the hard part)
+
+- [ ] 3.1 Add `OrgKeyCache` actor (`[orgId: CryptoKeys]`); clear in `lockVault()` alongside `VaultKeyCache`
+- [ ] 3.2 Extend `PrizmCryptoService` protocol with `decryptRSAPrivateKey(encPrivateKey:vaultKeys:) -> Data` and `unwrapOrgKey(encOrgKey:rsaPrivateKey:) -> CryptoKeys`
+- [ ] 3.3 Implement `decryptRSAPrivateKey` in `PrizmCryptoServiceImpl`: decrypt profile `privateKey` EncString with vault symmetric key; hold result in actor state
+- [ ] 3.4 Implement `unwrapOrgKey` in `PrizmCryptoServiceImpl`: use `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1`; import DER key via `SecKeyCreateWithData`
+- [ ] 3.5 Write unit tests for RSA org key unwrap using a known Bitwarden test vector
+- [ ] 3.6 Update `SyncRepositoryImpl.sync()` to: (a) decrypt RSA private key, (b) unwrap each org key into `OrgKeyCache`, (c) populate `VaultRepository` with organizations and collections
+- [ ] 3.7 Update `CipherMapper.map(raw:keys:)` to accept `orgKeyCache: OrgKeyCache`; select org `CryptoKeys` when `raw.organizationId != nil`; decrypt per-item key with org key when both present
+- [ ] 3.8 Update `CipherMapper.map` to set `organizationId` and `collectionIds` on the resulting `VaultItem`
+- [ ] 3.9 Update `CipherMapper.toRawCipher` to round-trip `organizationId` and `collectionIds` (remove hardcoded `nil`)
+- [ ] 3.10 Write unit tests for `CipherMapper` org cipher path (org key selection, per-item key with org key, missing org key → skip)
+
+## 4. Repository & Use Case Implementations
+
+- [ ] 4.1 Extend `VaultRepositoryImpl` to store and serve `[Organization]` and `[Collection]`; implement `organizations()`, `collections()`, `items(for collection:)`
+- [ ] 4.2 Update `VaultRepositoryImpl.items(for selection:)` to handle `.organization(id)` and `.collection(id)` cases; update `itemCounts()` to include org/collection counts
+- [ ] 4.3 Implement `CreateCollectionUseCaseImpl`: encrypt name with org key → `POST /organizations/{orgId}/collections`; insert into local cache
+- [ ] 4.4 Implement `RenameCollectionUseCaseImpl`: encrypt name with org key → `PUT /organizations/{orgId}/collections/{id}`; update local cache
+- [ ] 4.5 Implement `DeleteCollectionUseCaseImpl`: `DELETE /organizations/{orgId}/collections/{id}`; remove from local cache
+- [ ] 4.6 Update `VaultRepositoryImpl.create` to route to `POST /api/ciphers/create` when `draft.organizationId != nil`, including `collectionIds` in body
+- [ ] 4.7 Update `VaultRepositoryImpl.update` to include `organizationId` and `collectionIds` in `PUT /ciphers/{id}` body
+- [ ] 4.8 Wire new use cases into `AppContainer`
+- [ ] 4.9 Write unit tests for collection CRUD use cases
+- [ ] 4.10 Write unit tests for `VaultRepository` `.organization` and `.collection` selection filtering
+
+## 5. Sidebar — Organizations Section
+
+- [ ] 5.1 Update `SidebarView` to render an "Organizations" section below Folders (hidden when no orgs)
+- [ ] 5.2 Render each org as a `DisclosureGroup` with its name; child rows for each collection with item count badge
+- [ ] 5.3 Wire `.organization(id)` and `.collection(id)` selections to `VaultBrowserViewModel.selection`
+- [ ] 5.4 Add context-aware `+` button to org disclosure header: hidden when `canManageCollections == false`; triggers inline collection creation when visible
+- [ ] 5.5 Implement inline collection creation UX (matching existing inline folder creation pattern): Enter commits, Escape cancels, empty name cancels
+- [ ] 5.6 Add right-click context menu on collection rows: "Rename" and "Delete Collection" (role-gated)
+- [ ] 5.7 Implement inline collection rename (matching folder rename pattern)
+- [ ] 5.8 Implement collection delete with confirmation alert
+- [ ] 5.9 Update `+` button in collection context to open item create sheet pre-filled with that collection
+
+## 6. Item List & Detail
+
+- [ ] 6.1 Add org membership badge to item list rows (small secondary label showing org name) when `organizationId != nil`
+- [ ] 6.2 Update item detail pane to show "Organization" read-only field row when `organizationId != nil`
+- [ ] 6.3 Verify delete/restore/permanent-delete work for org items (endpoints are identical — confirm no mapper regressions)
+
+## 7. Item Create / Edit — Collection Picker
+
+- [ ] 7.1 Add `organizationId` and `collectionIds` to `ItemEditViewModel`
+- [ ] 7.2 In create sheet: when context is `.collection(id)`, pre-populate `organizationId` and `collectionIds` in the view model
+- [ ] 7.3 Add collection picker to item edit/create sheet (shown only for org items; hidden for personal items)
+- [ ] 7.4 Hide folder picker for org items (collection picker replaces it)
+- [ ] 7.5 Wire collection picker selection back to `DraftVaultItem.collectionIds`
+
+## 8. Tests
+
+- [ ] 8.1 XCTest: `OrgKeyCache` cleared on lock
+- [ ] 8.2 XCTest: `SyncRepositoryImpl` populates orgs and collections after sync
+- [ ] 8.3 XCTest: `VaultRepository` `.collection(id)` filtering returns only items with matching `collectionIds`
+- [ ] 8.4 XCTest: `VaultRepository` `.organization(id)` filtering returns items from all org collections
+- [ ] 8.5 XCTest: `CreateCollectionUseCase` encrypts name with org key (not vault key)
+- [ ] 8.6 XCTest: Personal item create still routes to `POST /api/ciphers`
+- [ ] 8.7 XCTest: Org item create routes to `POST /api/ciphers/create` with correct body
