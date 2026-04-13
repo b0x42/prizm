@@ -1,3 +1,4 @@
+import AppKit
 import LocalAuthentication
 import SwiftUI
 
@@ -5,9 +6,10 @@ import SwiftUI
 
 /// The vault unlock screen shown to returning users (User Story 2, FR-003, FR-039).
 ///
-/// Displays the stored email read-only and collects the master password locally.
-/// No network call is made — the vault key is re-derived from the password.
-/// If biometric unlock is enabled, auto-prompts Touch ID on appearance.
+/// Modelled after the macOS Passwords lock screen: app icon with biometric badge,
+/// title "Prizm Is Locked", email inline in the subtitle, and a single centered
+/// password field. Biometric unlock auto-triggers on appearance; the user can also
+/// type their password and press Return.
 struct UnlockView: View {
 
     @ObservedObject var viewModel: UnlockViewModel
@@ -15,45 +17,66 @@ struct UnlockView: View {
     @FocusState private var passwordFocused: Bool
 
     var body: some View {
-        VStack(spacing: 24) {
-            // MARK: Header
-            VStack(spacing: 4) {
-                Image(systemName: "lock.fill")
-                    .font(Typography.screenIcon)
-                    .foregroundStyle(.tint)
-                    .accessibilityHidden(true)
-                Text("Vault locked")
-                    .font(Typography.screenHeading)
-                    .accessibilityIdentifier(AccessibilityID.Unlock.headerTitle)
-                Text("Enter your master password to unlock.")
-                    .font(Typography.fieldLabel)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top, 24)
+        VStack(spacing: 0) {
+            Spacer()
 
-            // MARK: Form
-            VStack(spacing: 12) {
-                // Email — read-only (FR-003)
-                LabeledContent("Email") {
-                    Text(viewModel.email)
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(Spacing.readOnlyField)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
-                        .accessibilityIdentifier(AccessibilityID.Unlock.emailLabel)
-                }
+            // MARK: App icon + biometric badge
+            ZStack(alignment: .bottomTrailing) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 80, height: 80)
 
-                // Master password
-                LabeledContent("Master password") {
-                    SecureField("Enter master password", text: $viewModel.password)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($passwordFocused)
-                        .onSubmit { unlockIfReady() }
-                        .accessibilityIdentifier(AccessibilityID.Unlock.passwordField)
+                // Inline Touch ID badge — LAAuthenticationView routes auth through
+                // the app's own view hierarchy so no system modal dialog appears.
+                // Re-armed via .id(biometricContextVersion) after each attempt.
+                if viewModel.biometricUnlockAvailable {
+                    EmbeddedTouchIDView(context: viewModel.biometricContext)
+                    .frame(width: 32, height: 32)
+                    .offset(x: 6, y: 6)
+                    .id(viewModel.biometricContextVersion)
+                    .accessibilityIdentifier(AccessibilityID.Unlock.biometricBadge)
                 }
             }
-            .labeledContentStyle(.vertical)
-            .frame(maxWidth: 360)
+            .padding(.bottom, 16)
+
+            // MARK: Title
+            Text("Prizm Is Locked")
+                .font(Typography.screenHeading)
+                .accessibilityIdentifier(AccessibilityID.Unlock.headerTitle)
+                .padding(.bottom, 6)
+
+            // MARK: Subtitle — includes email so no separate field is needed (FR-003)
+            Text(subtitleText)
+                .font(Typography.screenBody)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
+                .padding(.bottom, 20)
+
+            // MARK: Password field / loading
+            switch viewModel.flowState {
+            case .loading:
+                ProgressView()
+                    .controlSize(.regular)
+                    .frame(width: 200)
+                    .accessibilityIdentifier(AccessibilityID.Unlock.unlockButton)
+            case .syncing(let message):
+                VStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(message)
+                        .font(Typography.screenBody)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(width: 200)
+            default:
+                SecureField("Enter password", text: $viewModel.password)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 200)
+                    .focused($passwordFocused)
+                    .onSubmit { unlockIfReady() }
+                    .accessibilityIdentifier(AccessibilityID.Unlock.passwordField)
+            }
 
             // MARK: Error message
             if let error = viewModel.errorMessage {
@@ -61,40 +84,13 @@ struct UnlockView: View {
                     .font(Typography.screenBody)
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: 360)
+                    .frame(maxWidth: 320)
                     .transition(.opacity)
+                    .padding(.top, 10)
                     .accessibilityIdentifier(AccessibilityID.Unlock.errorMessage)
             }
 
-            // MARK: Unlock button
-            Button(action: unlockIfReady) {
-                if case .loading = viewModel.flowState {
-                    ProgressView()
-                        .controlSize(.small)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    Text("Unlock")
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .frame(width: 360)
-            .disabled(isUnlockDisabled)
-            .keyboardShortcut(.return, modifiers: [])
-            .accessibilityIdentifier(AccessibilityID.Unlock.unlockButton)
-
-            // MARK: Biometric button
-            if viewModel.biometricUnlockAvailable {
-                Button {
-                    viewModel.unlockWithBiometrics()
-                } label: {
-                    Label(biometricButtonLabel, systemImage: biometricSystemImage)
-                }
-                .buttonStyle(.plain)
-                .font(Typography.screenBody)
-                .foregroundStyle(.tint)
-                .accessibilityIdentifier(AccessibilityID.Unlock.biometricButton)
-            }
+            Spacer()
 
             // MARK: Sign in with a different account — FR-039
             Button("Sign in with a different account") {
@@ -103,15 +99,17 @@ struct UnlockView: View {
             .buttonStyle(.plain)
             .font(Typography.screenBody)
             .foregroundStyle(.secondary)
+            .padding(.bottom, 24)
             .accessibilityIdentifier(AccessibilityID.Unlock.switchAccount)
-
-            Spacer()
         }
-        .padding(.horizontal, Spacing.screenHorizontal)
-        .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 400)
         .onAppear { passwordFocused = true }
-        .task { viewModel.triggerBiometricUnlockIfAvailable() }
+        // .task(id:) re-fires whenever biometricContextVersion changes (re-arm).
+        // By the time the task runs, SwiftUI has re-rendered EmbeddedTouchIDView
+        // with the new LAContext — so evaluatePolicy routes inline, not to a modal.
+        .task(id: viewModel.biometricContextVersion) {
+            viewModel.triggerEmbeddedBiometricIfAvailable()
+        }
         .sheet(isPresented: $viewModel.showEnrollmentPrompt) {
             BiometricEnrollmentPromptView(
                 reason: viewModel.enrollmentReason,
@@ -134,21 +132,22 @@ struct UnlockView: View {
         viewModel.unlock()
     }
 
-    /// Label derived from the current biometric type (design Decision 6).
-    private var biometricButtonLabel: String {
-        switch LAContext().biometryType {
-        case .touchID: return "Unlock with Touch ID"
-        case .faceID:  return "Unlock with Face ID"
-        default:       return "Unlock with Biometrics"
+    /// Subtitle varies by whether biometric unlock is available.
+    private var subtitleText: String {
+        if viewModel.biometricUnlockAvailable {
+            return "\(biometricMethodName) or enter the password for \(viewModel.email) to unlock."
+        } else {
+            return "Enter the password for \(viewModel.email) to unlock."
         }
     }
 
-    private var biometricSystemImage: String {
+    private var biometricMethodName: String {
         switch LAContext().biometryType {
-        case .touchID: return "touchid"
-        case .faceID:  return "faceid"
-        default:       return "person.badge.key"
+        case .touchID: return "Touch ID"
+        case .faceID:  return "Face ID"
+        default:       return "Biometrics"
         }
     }
+
 }
 

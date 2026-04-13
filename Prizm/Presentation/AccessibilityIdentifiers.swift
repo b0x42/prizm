@@ -43,7 +43,7 @@ nonisolated enum AccessibilityID {
         static let errorMessage      = "unlock.error"
         static let headerTitle       = "unlock.headerTitle"
         static let switchAccount     = "unlock.switchAccount"
-        static let biometricButton   = "unlock.biometric"
+        static let biometricBadge    = "unlock.biometricBadge"
         static let enrollmentPrompt  = "unlock.enrollmentPrompt"
     }
 
