@@ -69,5 +69,8 @@ The `+` button already resolves its action from the active `SidebarSelection`. E
 
 ## Open Questions
 
-- Should items belonging to an org show a visible badge (org name / icon) in the item list row, or just appear mixed with personal items? Decision needed before Presentation work. (Lean: yes, small badge — differentiates shared items visually.)
 - Bitwarden supports "hide passwords" per collection (admin-set). Ignore for v1 or surface as read-only flag? (Lean: ignore v1.)
+
+## Resolved Decisions
+
+- **Org item badge**: Items belonging to an org SHALL display a small secondary label showing the org name in the item list row. Decided: yes badge. Rationale: differentiates shared items from personal items visually; critical UX signal when All Items mixes both. Resolved in `vault-browser-ui` spec.

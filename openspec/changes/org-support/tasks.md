@@ -20,10 +20,12 @@
 
 - [ ] 3.1 Add `OrgKeyCache` actor (`[orgId: CryptoKeys]`); clear in `lockVault()` alongside `VaultKeyCache`
 - [ ] 3.2 Extend `PrizmCryptoService` protocol with `decryptRSAPrivateKey(encPrivateKey:vaultKeys:) -> Data` and `unwrapOrgKey(encOrgKey:rsaPrivateKey:) -> CryptoKeys`
-- [ ] 3.3 Implement `decryptRSAPrivateKey` in `PrizmCryptoServiceImpl`: decrypt profile `privateKey` EncString with vault symmetric key; hold result in actor state
-- [ ] 3.4 Implement `unwrapOrgKey` in `PrizmCryptoServiceImpl`: use `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1`; import DER key via `SecKeyCreateWithData`
-- [ ] 3.5 Write unit tests for RSA org key unwrap using a known Bitwarden test vector
-- [ ] 3.6 Update `SyncRepositoryImpl.sync()` to: (a) decrypt RSA private key, (b) unwrap each org key into `OrgKeyCache`, (c) populate `VaultRepository` with organizations and collections
+- [ ] 3.3 Implement `decryptRSAPrivateKey` in `PrizmCryptoServiceImpl`: decrypt profile `privateKey` EncString with vault symmetric key; hold result in actor state using a zeroing `Data` wrapper; zero on lock (Constitution §III)
+- [ ] 3.4 Implement `unwrapOrgKey` in `PrizmCryptoServiceImpl`: strip PKCS#8 wrapper from decrypted private key bytes to obtain raw RSA key; import via `SecKeyCreateWithData`; decrypt org key EncString via `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1`
+- [ ] 3.5 Write KAT for RSA org key unwrap using a known Bitwarden test vector (Constitution §IV)
+- [ ] 3.5a Write KAT for org cipher field decryption (org key → AES-CBC): decrypt a known org cipher fixture and assert plaintext (Constitution §IV)
+- [ ] 3.5b Write KAT for collection name encryption with org key: encrypt known plaintext, assert EncString round-trips correctly (Constitution §IV)
+- [ ] 3.6 Update `SyncRepositoryImpl.sync()` to: (a) decrypt RSA private key, (b) unwrap each org key into `OrgKeyCache`, (c) populate `VaultRepository` with organizations and collections; pass `OrgKeyCache` snapshot (not actor reference) into `CipherMapper` to keep `map()` synchronous
 - [ ] 3.7 Update `CipherMapper.map(raw:keys:)` to accept `orgKeyCache: OrgKeyCache`; select org `CryptoKeys` when `raw.organizationId != nil`; decrypt per-item key with org key when both present
 - [ ] 3.8 Update `CipherMapper.map` to set `organizationId` and `collectionIds` on the resulting `VaultItem`
 - [ ] 3.9 Update `CipherMapper.toRawCipher` to round-trip `organizationId` and `collectionIds` (remove hardcoded `nil`)
@@ -77,3 +79,9 @@
 - [ ] 8.5 XCTest: `CreateCollectionUseCase` encrypts name with org key (not vault key)
 - [ ] 8.6 XCTest: Personal item create still routes to `POST /api/ciphers`
 - [ ] 8.7 XCTest: Org item create routes to `POST /api/ciphers/create` with correct body
+
+## 9. Constitution Compliance
+
+- [ ] 9.1 Add doc comment block to every new Data/Crypto file (`OrgKeyCache`, RSA unwrap implementation): document purpose, algorithm (RSA-OAEP-SHA1), spec reference (Bitwarden Security Whitepaper §4), and known limitations (Constitution §VII)
+- [ ] 9.2 Add inline comments to `unwrapOrgKey`: explain PKCS#8 stripping, `kSecKeyAlgorithmRSAEncryptionOAEPSHA1` selection, and why SHA-1 is used here (Bitwarden protocol requirement, not a free choice) (Constitution §VII)
+- [ ] 9.3 Update `SECURITY.md`: document org symmetric key lifecycle (RSA-wrapped in sync response, unwrapped into `OrgKeyCache`, zeroed on lock), and RSA private key lifecycle (Constitution §VII)

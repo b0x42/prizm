@@ -1,15 +1,15 @@
 ## ADDED Requirements
 
 ### Requirement: RSA private key is decrypted at unlock time
-The system SHALL decrypt the user's RSA private key (`profile.privateKey` EncString) using the vault symmetric key immediately after vault unlock. The decrypted RSA private key SHALL be held in-memory by `PrizmCryptoService` alongside the vault symmetric key and cleared on vault lock. The private key bytes SHALL NOT be logged.
+The system SHALL decrypt the user's RSA private key (`profile.privateKey` EncString) using the vault symmetric key immediately after vault unlock. The decrypted RSA private key SHALL be held in-memory by `PrizmCryptoServiceImpl` alongside the vault symmetric key, zeroed and cleared on vault lock (Constitution §III). The private key bytes SHALL NOT be logged.
 
 #### Scenario: RSA private key available after unlock
 - **WHEN** the vault is unlocked with a valid master password or biometrics
 - **THEN** the decrypted RSA private key SHALL be available in-memory for org key unwrap operations
 
-#### Scenario: RSA private key cleared on lock
+#### Scenario: RSA private key zeroed and cleared on lock
 - **WHEN** the vault is locked
-- **THEN** the RSA private key SHALL be cleared from memory alongside the vault symmetric key
+- **THEN** the RSA private key bytes SHALL be zeroed and the reference cleared from memory alongside the vault symmetric key
 
 #### Scenario: Missing privateKey field handled gracefully
 - **GIVEN** the sync profile contains no `privateKey` field (Vaultwarden instance with no org membership)
@@ -19,7 +19,7 @@ The system SHALL decrypt the user's RSA private key (`profile.privateKey` EncStr
 ---
 
 ### Requirement: Organization symmetric keys are unwrapped at sync time
-For each organization returned in the sync response, the system SHALL unwrap the organization's symmetric key using RSA-OAEP-SHA1 and the user's in-memory RSA private key. Unwrapped org keys SHALL be stored in `OrgKeyCache` keyed by `organizationId`. Algorithm: `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1` (`Security.framework`). No new dependencies are introduced.
+For each organization returned in the sync response, the system SHALL unwrap the organization's symmetric key using RSA-OAEP-SHA1 and the user's in-memory RSA private key. Unwrapped org keys SHALL be stored in `OrgKeyCache` keyed by `organizationId`. Org key material SHALL be zeroed on removal from the cache (Constitution §III). Algorithm: `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1` (`Security.framework`). No new dependencies are introduced.
 
 #### Scenario: Org key unwrapped and cached at sync
 - **WHEN** a sync response containing one or more organizations is processed
