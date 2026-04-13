@@ -11,28 +11,41 @@
 
 ## 2. Wire Models & Sync Decoding
 
+- [ ] 2.0 Write failing unit tests for `SyncResponse` decoding: orgs + collections present; orgs + collections absent (default `[]`) — RED before any wire model code (Constitution §IV)
 - [ ] 2.1 Add `RawOrganization` Codable struct (`id`, `name`, `key`, `type`)
 - [ ] 2.2 Add `RawCollection` Codable struct (`id`, `organizationId`, `name`)
 - [ ] 2.3 Extend `SyncResponse` to decode `organizations: [RawOrganization]` and `collections: [RawCollection]` (default `[]`, support both camelCase and PascalCase keys)
-- [ ] 2.4 Write unit tests for `SyncResponse` decoding with and without org/collection keys
+- [ ] 2.4 Add `collectionIds: [String]` to `RawCipher` (Bitwarden sync returns `CollectionIds` array on each cipher; required to populate `VaultItem.collectionIds`)
+- [ ] 2.5 Verify tests from 2.0 are GREEN
 
 ## 3. Org Key Crypto (Phase 1 — the hard part)
 
-- [ ] 3.1 Add `OrgKeyCache` actor (`[orgId: CryptoKeys]`); clear in `lockVault()` alongside `VaultKeyCache`
+- [ ] 3.0 Write failing KATs BEFORE any crypto implementation (Constitution §IV — Red first):
+  - KAT: RSA org key unwrap using a known Bitwarden test vector
+  - KAT: org cipher field decryption (org key → AES-CBC): known fixture → assert plaintext
+  - KAT: collection name encryption with org key: known plaintext → EncString round-trip
+  - Unit test: `OrgKeyCache` cleared and key bytes zeroed on lock
+  - Unit test: `CipherMapper` org cipher path (org key selected, per-item key with org key, missing org key → skip)
+- [ ] 3.1 Add `OrgKeyCache` actor (`[orgId: CryptoKeys]`); on clear, zero each `CryptoKeys` entry's underlying `Data` bytes before removing (Constitution §III); clear in `lockVault()` alongside `VaultKeyCache`
 - [ ] 3.2 Extend `PrizmCryptoService` protocol with `decryptRSAPrivateKey(encPrivateKey:vaultKeys:) -> Data` and `unwrapOrgKey(encOrgKey:rsaPrivateKey:) -> CryptoKeys`
 - [ ] 3.3 Implement `decryptRSAPrivateKey` in `PrizmCryptoServiceImpl`: decrypt profile `privateKey` EncString with vault symmetric key; hold result in actor state using a zeroing `Data` wrapper; zero on lock (Constitution §III)
 - [ ] 3.4 Implement `unwrapOrgKey` in `PrizmCryptoServiceImpl`: strip PKCS#8 wrapper from decrypted private key bytes to obtain raw RSA key; import via `SecKeyCreateWithData`; decrypt org key EncString via `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1`
-- [ ] 3.5 Write KAT for RSA org key unwrap using a known Bitwarden test vector (Constitution §IV)
-- [ ] 3.5a Write KAT for org cipher field decryption (org key → AES-CBC): decrypt a known org cipher fixture and assert plaintext (Constitution §IV)
-- [ ] 3.5b Write KAT for collection name encryption with org key: encrypt known plaintext, assert EncString round-trips correctly (Constitution §IV)
+- [ ] 3.5 Verify KATs from 3.0 are GREEN
 - [ ] 3.6 Update `SyncRepositoryImpl.sync()` to: (a) decrypt RSA private key, (b) unwrap each org key into `OrgKeyCache`, (c) populate `VaultRepository` with organizations and collections; pass `OrgKeyCache` snapshot (not actor reference) into `CipherMapper` to keep `map()` synchronous
-- [ ] 3.7 Update `CipherMapper.map(raw:keys:)` to accept `orgKeyCache: OrgKeyCache`; select org `CryptoKeys` when `raw.organizationId != nil`; decrypt per-item key with org key when both present
-- [ ] 3.8 Update `CipherMapper.map` to set `organizationId` and `collectionIds` on the resulting `VaultItem`
-- [ ] 3.9 Update `CipherMapper.toRawCipher` to round-trip `organizationId` and `collectionIds` (remove hardcoded `nil`)
-- [ ] 3.10 Write unit tests for `CipherMapper` org cipher path (org key selection, per-item key with org key, missing org key → skip)
+- [ ] 3.7 Update `CipherMapper.map(raw:keys:)` to accept `orgKeys: [String: CryptoKeys]` snapshot; select org `CryptoKeys` when `raw.organizationId != nil`; decrypt per-item key with org key when both present
+- [ ] 3.8 Update `CipherMapper.map` to set `organizationId` and `collectionIds` (from `raw.collectionIds`) on the resulting `VaultItem`
+- [ ] 3.9 Update `CipherMapper.toRawCipher` to accept `keys: CryptoKeys` (caller responsibility to pass org key for org items, vault key for personal); round-trip `organizationId` and `collectionIds` (remove hardcoded `nil`)
+- [ ] 3.10 Update `VaultRepositoryImpl.update` and `VaultRepositoryImpl.create` to look up org key from `OrgKeyCache` when `draft.organizationId != nil` and pass it to `toRawCipher`; personal items continue to use vault key
 
 ## 4. Repository & Use Case Implementations
 
+- [ ] 4.0 Write failing unit tests BEFORE implementation (Constitution §IV — Red first):
+  - `VaultRepository` `.collection(id)` filtering returns only items with matching `collectionIds`
+  - `VaultRepository` `.organization(id)` filtering returns items from all org collections
+  - `CreateCollectionUseCase` encrypts name with org key (not vault key)
+  - `RenameCollectionUseCase` encrypts new name with org key
+  - `DeleteCollectionUseCase` removes collection from local cache
+  - Personal item create routes to `POST /api/ciphers`; org item routes to `POST /api/ciphers/create`
 - [ ] 4.1 Extend `VaultRepositoryImpl` to store and serve `[Organization]` and `[Collection]`; implement `organizations()`, `collections()`, `items(for collection:)`
 - [ ] 4.2 Update `VaultRepositoryImpl.items(for selection:)` to handle `.organization(id)` and `.collection(id)` cases; update `itemCounts()` to include org/collection counts
 - [ ] 4.3 Implement `CreateCollectionUseCaseImpl`: encrypt name with org key → `POST /organizations/{orgId}/collections`; insert into local cache
@@ -41,8 +54,7 @@
 - [ ] 4.6 Update `VaultRepositoryImpl.create` to route to `POST /api/ciphers/create` when `draft.organizationId != nil`, including `collectionIds` in body
 - [ ] 4.7 Update `VaultRepositoryImpl.update` to include `organizationId` and `collectionIds` in `PUT /ciphers/{id}` body
 - [ ] 4.8 Wire new use cases into `AppContainer`
-- [ ] 4.9 Write unit tests for collection CRUD use cases
-- [ ] 4.10 Write unit tests for `VaultRepository` `.organization` and `.collection` selection filtering
+- [ ] 4.9 Verify tests from 4.0 are GREEN
 
 ## 5. Sidebar — Organizations Section
 

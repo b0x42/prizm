@@ -17,6 +17,11 @@ The Domain layer SHALL define an `Organization` struct with fields: `id: String`
 - **WHEN** `canManageCollections` is read
 - **THEN** it SHALL return `true`
 
+#### Scenario: canManageCollections false for custom role
+- **GIVEN** an `Organization` with role `.custom`
+- **WHEN** `canManageCollections` is read
+- **THEN** it SHALL return `false` (Bitwarden custom-role collection permissions require server-side permission flags not available in the sync `type` integer; default to deny)
+
 ---
 
 ### Requirement: Organizations and collections are decoded from sync response
@@ -63,7 +68,7 @@ The sidebar SHALL display an "Organizations" section below the Folders section. 
 ---
 
 ### Requirement: User can create a collection (role-gated)
-The Organizations section header SHALL display a `+` button when the active sidebar selection is `.organization(id)` and the user's role in that org has `canManageCollections == true`. Clicking the button SHALL create an inline editable row for the collection name (matching the folder creation UX pattern). Committing a non-empty name SHALL encrypt it with the org key and call `POST /organizations/{orgId}/collections`. Pressing Escape or submitting an empty name SHALL cancel without an API call.
+Each org's disclosure header in the sidebar SHALL display a `+` button when `canManageCollections == true` for that org (always visible on the header, matching the Folders section pattern). Clicking the button SHALL create an inline editable row for the collection name (matching the folder creation UX pattern). Committing a non-empty name SHALL encrypt it with the org key and call `POST /organizations/{orgId}/collections`. Pressing Escape or submitting an empty name SHALL cancel without an API call. When `canManageCollections == false`, no `+` button SHALL appear on that org's header.
 
 #### Scenario: Create button visible for admin role
 - **GIVEN** the user has role Admin or Owner in the org
@@ -84,6 +89,11 @@ The Organizations section header SHALL display a `+` button when the active side
 #### Scenario: Escape cancels collection creation
 - **WHEN** the user presses Escape while editing a new collection name
 - **THEN** the row SHALL be removed with no API call
+
+#### Scenario: Server error during collection creation
+- **GIVEN** the user commits a valid collection name
+- **WHEN** the server returns an error
+- **THEN** the uncommitted collection row SHALL be removed and an error alert SHALL be shown
 
 ---
 
@@ -106,6 +116,11 @@ Right-clicking a collection row SHALL show a context menu with "Rename" (only if
 - **THEN** the name SHALL be encrypted and sent via `PUT /organizations/{orgId}/collections/{id}`
 - **AND** the collection SHALL re-sort alphabetically
 
+#### Scenario: Server error during collection rename
+- **GIVEN** the user commits a valid new collection name
+- **WHEN** the server returns an error
+- **THEN** the collection name SHALL revert to its previous value and an error alert SHALL be shown
+
 ---
 
 ### Requirement: User can delete a collection (role-gated)
@@ -124,3 +139,8 @@ Right-clicking a collection row SHALL show a context menu with "Delete Collectio
 - **GIVEN** the user confirms deletion
 - **WHEN** `DELETE /organizations/{orgId}/collections/{id}` succeeds
 - **THEN** the collection row SHALL be removed from the sidebar
+
+#### Scenario: Server error during collection deletion
+- **GIVEN** the user confirms deletion
+- **WHEN** the server returns an error
+- **THEN** the collection SHALL remain in the sidebar unchanged and an error alert SHALL be shown

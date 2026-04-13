@@ -83,6 +83,11 @@ Creating a new item assigned to an org SHALL call `POST /api/ciphers/create` (no
 ### Requirement: Edit org item round-trips organizationId and collectionIds
 Editing an org item SHALL call `PUT /ciphers/{id}` with `organizationId` and `collectionIds` preserved in the request body. The item editor SHALL allow changing the collection assignment within the same org. Moving an item between orgs is not supported (out of scope).
 
+#### Scenario: Edit org item encrypts fields with org key
+- **GIVEN** the user edits an org item belonging to org "org1"
+- **WHEN** `CipherMapper.toRawCipher` is called by `VaultRepositoryImpl.update`
+- **THEN** the caller SHALL look up "org1"'s `CryptoKeys` from `OrgKeyCache` and pass them to `toRawCipher` (not the personal vault key); all EncString fields SHALL be encrypted with the org key
+
 #### Scenario: Edit org item preserves organizationId
 - **GIVEN** the user edits an org item belonging to org "org1"
 - **WHEN** the user saves
