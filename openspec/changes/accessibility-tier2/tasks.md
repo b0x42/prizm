@@ -20,6 +20,7 @@
 - [ ] 3.4 Wrap hover `withAnimation` in `AttachmentRowView` with reduce motion check
 - [ ] 3.5 Wrap match type toggle `withAnimation` in `LoginEditForm` with reduce motion check
 - [ ] 3.6 Wrap drag border `.animation` in `AttachmentsSectionView` with reduce motion check
+- [ ] 3.7 Wrap `.animation(.easeInOut, value: message)` in `SyncProgressView` with reduce motion check
 
 ## 4. Error Suggestions
 
@@ -40,3 +41,9 @@
 
 - [ ] 6.1 Update `ACCESSIBILITY.md` — change 1.4.3, 1.4.11 to "Supports", 3.3.3 to "Supports", add Reduce Motion and Increase Contrast notes
 - [ ] 6.2 Update known gaps section — remove contrast and error suggestion gaps
+
+## 7. Tests
+
+- [ ] 7.1 Unit test `ContrastAwareOpacity` returns higher values when contrast is `.increased`
+- [ ] 7.2 Unit test `optionalAnimation` suppresses animation when reduce motion is true
+- [ ] 7.3 Update existing `AuthError` / `SyncError` tests if they assert on `errorDescription` strings

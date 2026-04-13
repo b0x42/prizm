@@ -4,7 +4,7 @@ The accessibility-baseline change added VoiceOver labels, hints, values, and a c
 
 ## What Changes
 
-- **Colour contrast fixes**: Audit and fix all custom `opacity()` values — `Color.yellow.opacity(0.15)` sync error banner background, `Color.primary.opacity(0.08)` card border, `Color.secondary.opacity(0.1)` trash banner, `Color.red.opacity(0.1)` error banner, `Color.accentColor.opacity(0.2)` drop target — to meet WCAG 4.5:1 (text) and 3:1 (non-text) thresholds in both light and dark mode
+- **Colour contrast fixes**: Audit and fix all custom `opacity()` values — `Color.yellow.opacity(0.15)` sync error banner background, `Color.primary.opacity(0.08)` card border, `Color.secondary.opacity(0.1)` trash banner, `Color.red.opacity(0.1)` error banner, `Color.accentColor.opacity(0.2)` drop target — to meet WCAG 3:1 non-text contrast thresholds in both light and dark mode
 - **Increase Contrast support**: When `accessibilityIncreaseContrast` is enabled, raise opacity values on backgrounds and borders to improve visibility
 - **Error suggestions**: Add corrective hints to error messages — `AuthError.invalidURL` ("Include https://"), `AuthError.serverUnreachable` ("Check the URL and your connection"), `AuthError.invalidCredentials` ("Check your email and master password"), `SyncError.unauthorized` ("Sign out and sign in again")
 - **Focus management verification**: Audit and fix focus after sheet dismiss, alert dismiss, and item delete so focus returns to a logical element
@@ -25,6 +25,6 @@ The accessibility-baseline change added VoiceOver labels, hints, values, and a c
 ## Impact
 
 - **Presentation layer**: Opacity values adjusted in 6 files, animations wrapped in 7 files
-- **Domain layer**: `errorDescription` strings updated in `AuthError`, `SyncError`, `AttachmentError`, `VaultError` (4 enums)
+- **Domain layer**: `errorDescription` strings updated in `AuthError` and `SyncError` (2 enums — `AttachmentError` and `VaultError` already include suggestions)
 - **No new dependencies**
 - **ACCESSIBILITY.md**: Updated to reflect improved conformance levels

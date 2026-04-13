@@ -10,11 +10,12 @@ Current custom opacity usage (6 instances across 6 files):
 - `Color.accentColor.opacity(0.2)` — folder drop target highlight
 
 Current animation usage (13 instances across 7 files):
-- `withAnimation(.easeInOut(duration: 0.15))` — hover state transitions (FieldRowView, AttachmentRowView, AttachmentsSectionView)
+- `withAnimation(.easeInOut(duration: 0.15))` — hover state transitions (FieldRowView, AttachmentRowView)
 - `withAnimation(.easeInOut(duration: 0.1))` — copy feedback (FieldRowView)
 - `withAnimation(.easeInOut(duration: 0.2))` — match type toggle (LoginEditForm)
 - `.animation(.easeInOut(duration: 0.15), value:)` — drag border (AttachmentsSectionView)
-- `.transition(.opacity)` — hover actions (FieldRowView, AttachmentRowView)
+- `.animation(.easeInOut, value:)` — sync progress message (SyncProgressView)
+- `.transition(.opacity)` — hover actions, error messages, biometric button (FieldRowView, AttachmentRowView, AttachmentsSectionView, LoginView, UnlockView, LoginEditForm) — these are driven by enclosing `withAnimation` and become instant when animation is suppressed
 
 ## Goals / Non-Goals
 
@@ -39,7 +40,7 @@ The custom opacity values are used for subtle background tints on banners and bo
 
 Measured values (approximate, using macOS Digital Color Meter):
 - `Color.yellow.opacity(0.15)` on white → ~#FFF9D9 → contrast with white window: ~1.05:1 (fails 3:1). Raise to `0.35`.
-- `Color.primary.opacity(0.08)` border → barely visible. Raise to `0.15` for Increase Contrast.
+- `Color.primary.opacity(0.08)` border → barely visible. Raise default to `0.12`; Increase Contrast to `0.2`.
 - `Color.secondary.opacity(0.1)` → ~#F5F5F5 on white → ~1.07:1 (fails). Raise to `0.25`.
 - `Color.red.opacity(0.1)` → ~#FFE5E5 → ~1.06:1 (fails). Raise to `0.25`.
 - `Color.accentColor.opacity(0.2)` → transient drop target, not persistent UI. Acceptable as-is but raise to `0.3` for Increase Contrast.
