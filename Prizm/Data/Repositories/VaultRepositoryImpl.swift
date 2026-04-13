@@ -17,41 +17,51 @@ final class VaultRepositoryImpl: VaultRepository {
 
     // MARK: - Dependencies (write path)
 
-    private let apiClient: any PrizmAPIClientProtocol
-    private let crypto:    any PrizmCryptoService
-    private let mapper:    CipherMapper
+    private let apiClient:   any PrizmAPIClientProtocol
+    private let crypto:      any PrizmCryptoService
+    private let mapper:      CipherMapper
+    private let orgKeyCache: OrgKeyCache
 
     // MARK: - State
 
     private var items: [VaultItem] = []
     private var folderStore: [Folder] = []
+    private var organizationStore: [Organization] = []
+    private var collectionStore: [OrgCollection] = []
     private(set) var lastSyncedAt: Date? = nil
 
     // MARK: - Init
 
     init(
-        apiClient: any PrizmAPIClientProtocol,
-        crypto:    any PrizmCryptoService,
-        mapper:    CipherMapper = CipherMapper()
+        apiClient:   any PrizmAPIClientProtocol,
+        crypto:      any PrizmCryptoService,
+        mapper:      CipherMapper = CipherMapper(),
+        orgKeyCache: OrgKeyCache = OrgKeyCache()
     ) {
-        self.apiClient = apiClient
-        self.crypto    = crypto
-        self.mapper    = mapper
+        self.apiClient   = apiClient
+        self.crypto      = crypto
+        self.mapper      = mapper
+        self.orgKeyCache = orgKeyCache
     }
 
     // MARK: - Write side (called by SyncRepositoryImpl)
 
-    func populate(items: [VaultItem], folders: [Folder], syncedAt: Date) {
-        self.items       = items
-        self.folderStore = folders
-        self.lastSyncedAt = syncedAt
-        logger.info("Vault populated: \(items.count) item(s), \(folders.count) folder(s)")
+    func populate(items: [VaultItem], folders: [Folder], organizations: [Organization],
+                  collections: [OrgCollection], syncedAt: Date) {
+        self.items             = items
+        self.folderStore       = folders
+        self.organizationStore = organizations
+        self.collectionStore   = collections
+        self.lastSyncedAt      = syncedAt
+        logger.info("Vault populated: \(items.count) item(s), \(folders.count) folder(s), \(organizations.count) org(s), \(collections.count) collection(s)")
     }
 
     func clearVault() {
-        items        = []
-        folderStore  = []
-        lastSyncedAt = nil
+        items             = []
+        folderStore       = []
+        organizationStore = []
+        collectionStore   = []
+        lastSyncedAt      = nil
         logger.info("Vault cleared")
     }
 
@@ -63,6 +73,18 @@ final class VaultRepositoryImpl: VaultRepository {
 
     func folders() throws -> [Folder] {
         folderStore.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    func organizations() throws -> [Organization] {
+        organizationStore.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    func collections() throws -> [OrgCollection] {
+        collectionStore.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    func items(for collection: String) throws -> [VaultItem] {
+        sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(collection) })
     }
 
     func items(for selection: SidebarSelection) throws -> [VaultItem] {
@@ -78,6 +100,14 @@ final class VaultRepositoryImpl: VaultRepository {
         case .folder(let folderId):
             return sorted(items.filter { !$0.isDeleted && $0.folderId == folderId })
         case .newFolder:
+            return []
+        case .organization(let orgId):
+            // All items across all collections in this org.
+            let orgCollectionIds = Set(collectionStore.filter { $0.organizationId == orgId }.map(\.id))
+            return sorted(items.filter { !$0.isDeleted && !$0.collectionIds.filter { orgCollectionIds.contains($0) }.isEmpty })
+        case .collection(let collectionId):
+            return sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(collectionId) })
+        case .newCollection:
             return []
         }
     }
@@ -101,6 +131,13 @@ final class VaultRepositoryImpl: VaultRepository {
         }
         for folder in folderStore {
             counts[.folder(folder.id)] = base.filter { $0.folderId == folder.id }.count
+        }
+        for collection in collectionStore {
+            counts[.collection(collection.id)] = base.filter { $0.collectionIds.contains(collection.id) }.count
+        }
+        for org in organizationStore {
+            let orgCollectionIds = Set(collectionStore.filter { $0.organizationId == org.id }.map(\.id))
+            counts[.organization(org.id)] = base.filter { !$0.collectionIds.filter { orgCollectionIds.contains($0) }.isEmpty }.count
         }
         return counts
     }
@@ -154,15 +191,24 @@ final class VaultRepositoryImpl: VaultRepository {
         // Translate PrizmCryptoServiceError.vaultLocked → VaultError.vaultLocked so
         // callers receive the Domain-layer error type promised by the VaultRepository protocol.
         // Other crypto errors (kdfFailed, invalidEncUserKey, etc.) propagate unchanged.
-        let keys: CryptoKeys
+        let vaultKeys: CryptoKeys
         do {
-            keys = try await crypto.currentKeys()
+            vaultKeys = try await crypto.currentKeys()
         } catch PrizmCryptoServiceError.vaultLocked {
             throw VaultError.vaultLocked
         }
 
+        // Select the encryption key: org key for org items, personal vault key for personal items.
+        let orgKeysSnapshot = await orgKeyCache.snapshot()
+        let encryptionKeys: CryptoKeys
+        if let orgId = draft.organizationId, let orgKey = orgKeysSnapshot[orgId] {
+            encryptionKeys = orgKey
+        } else {
+            encryptionKeys = vaultKeys
+        }
+
         // Step 2: Re-encrypt all sensitive fields via the reverse cipher mapper.
-        let rawCipher = try mapper.toRawCipher(draft, encryptedWith: keys)
+        let rawCipher = try mapper.toRawCipher(draft, encryptedWith: encryptionKeys)
 
         // Step 3: Send to the Bitwarden API (PUT /api/ciphers/{id}).
         // TODO: Queue the encrypted `rawCipher` for offline persistence so edits made
@@ -173,7 +219,7 @@ final class VaultRepositoryImpl: VaultRepository {
         // Step 4: Decode the server response into a domain item.
         // The cipherKey return value is discarded here — VaultKeyCache is populated at sync
         // time; a single-item edit does not need to update the key cache.
-        let (updatedItem, _) = try mapper.map(raw: updatedRaw, keys: keys)
+        let (updatedItem, _) = try mapper.map(raw: updatedRaw, vaultKeys: vaultKeys, orgKeys: orgKeysSnapshot)
 
         // Step 5: Splice into the in-memory cache (no full re-sync needed).
         if let idx = items.firstIndex(where: { $0.id == updatedItem.id }) {
@@ -190,18 +236,38 @@ final class VaultRepositoryImpl: VaultRepository {
     // MARK: - Create (write path)
 
     func create(_ draft: DraftVaultItem) async throws -> VaultItem {
-        let keys: CryptoKeys
+        let vaultKeys: CryptoKeys
         do {
-            keys = try await crypto.currentKeys()
+            vaultKeys = try await crypto.currentKeys()
         } catch PrizmCryptoServiceError.vaultLocked {
             throw VaultError.vaultLocked
         }
 
-        let rawCipher = try mapper.toRawCipher(draft, encryptedWith: keys)
-        let createdRaw = try await apiClient.createCipher(cipher: rawCipher)
+        // Select the encryption key: org key for org items, personal vault key for personal items.
+        let orgKeysSnapshot = await orgKeyCache.snapshot()
+        let encryptionKeys: CryptoKeys
+        if let orgId = draft.organizationId, let orgKey = orgKeysSnapshot[orgId] {
+            encryptionKeys = orgKey
+        } else {
+            encryptionKeys = vaultKeys
+        }
+
+        let rawCipher = try mapper.toRawCipher(draft, encryptedWith: encryptionKeys)
+
+        // Route to the correct endpoint based on org membership.
+        // Org items use POST /api/ciphers/create (which accepts collectionIds in the body).
+        // Personal items use POST /api/ciphers.
+        // Reference: Bitwarden Server API — org cipher creation requires the /create path.
+        let createdRaw: RawCipher
+        if draft.organizationId != nil {
+            createdRaw = try await apiClient.createOrgCipher(cipher: rawCipher)
+        } else {
+            createdRaw = try await apiClient.createCipher(cipher: rawCipher)
+        }
+
         // Discard cipherKey — newly created items are picked up by the next sync which
         // populates VaultKeyCache. A just-created cipher may have no per-item key yet.
-        let (createdItem, _) = try mapper.map(raw: createdRaw, keys: keys)
+        let (createdItem, _) = try mapper.map(raw: createdRaw, vaultKeys: vaultKeys, orgKeys: orgKeysSnapshot)
         items.append(createdItem)
         // Note: sidebar counts are refreshed by the caller (VaultBrowserViewModel.handleItemSaved)
         // via the onSaveSuccess callback — same pattern as update().
@@ -225,7 +291,8 @@ final class VaultRepositoryImpl: VaultRepository {
         items[idx] = VaultItem(
             id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: true,
             creationDate: old.creationDate, revisionDate: old.revisionDate,
-            content: old.content, reprompt: old.reprompt, attachments: old.attachments, folderId: old.folderId
+            content: old.content, reprompt: old.reprompt, attachments: old.attachments,
+            folderId: old.folderId, organizationId: old.organizationId, collectionIds: old.collectionIds
         )
         logger.info("Vault item soft-deleted: \(id, privacy: .public)")
     }
@@ -257,7 +324,8 @@ final class VaultRepositoryImpl: VaultRepository {
         items[idx] = VaultItem(
             id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: false,
             creationDate: old.creationDate, revisionDate: old.revisionDate,
-            content: old.content, reprompt: old.reprompt, attachments: old.attachments, folderId: old.folderId
+            content: old.content, reprompt: old.reprompt, attachments: old.attachments,
+            folderId: old.folderId, organizationId: old.organizationId, collectionIds: old.collectionIds
         )
         logger.info("Vault item restored: \(id, privacy: .public)")
     }
@@ -283,7 +351,8 @@ final class VaultRepositoryImpl: VaultRepository {
         items[idx] = VaultItem(
             id: old.id, name: old.name, isFavorite: old.isFavorite, isDeleted: old.isDeleted,
             creationDate: old.creationDate, revisionDate: old.revisionDate,
-            content: old.content, reprompt: old.reprompt, attachments: attachments, folderId: old.folderId
+            content: old.content, reprompt: old.reprompt, attachments: attachments,
+            folderId: old.folderId, organizationId: old.organizationId, collectionIds: old.collectionIds
         )
         logger.info("Vault item attachments updated: cipher=\(cipherId, privacy: .public) count=\(attachments.count, privacy: .public)")
     }
@@ -327,6 +396,66 @@ final class VaultRepositoryImpl: VaultRepository {
             )
         }
         logger.info("Folder deleted: \(id, privacy: .public)")
+    }
+
+    // MARK: - Collection CRUD
+
+    /// Creates a new collection within an organization.
+    ///
+    /// - Security goal: collection names are encrypted with the *org* symmetric key
+    ///   (not the vault key) so that all members of the organization can decrypt them.
+    ///   Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+    func createCollection(name: String, organizationId: String) async throws -> OrgCollection {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw VaultError.decryptionFailed("empty collection name") }
+        let encName = try await encryptCollectionName(trimmed, organizationId: organizationId)
+        let raw = try await apiClient.createCollection(organizationId: organizationId,
+                                                        encryptedName: encName)
+        let collection = OrgCollection(id: raw.id, organizationId: organizationId, name: trimmed)
+        collectionStore.append(collection)
+        logger.info("Collection created: \(raw.id, privacy: .public)")
+        return collection
+    }
+
+    /// Renames an existing collection. New name encrypted with the org key.
+    func renameCollection(id: String, organizationId: String, name: String) async throws -> OrgCollection {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw VaultError.decryptionFailed("empty collection name") }
+        let encName = try await encryptCollectionName(trimmed, organizationId: organizationId)
+        _ = try await apiClient.renameCollection(id: id, organizationId: organizationId,
+                                                  encryptedName: encName)
+        let collection = OrgCollection(id: id, organizationId: organizationId, name: trimmed)
+        if let idx = collectionStore.firstIndex(where: { $0.id == id }) {
+            collectionStore[idx] = collection
+        }
+        logger.info("Collection renamed: \(id, privacy: .public)")
+        return collection
+    }
+
+    /// Deletes a collection from an organization and removes it from the local cache.
+    ///
+    /// Items that were in the collection are NOT deleted — they remain in the vault
+    /// with stale `collectionIds` entries that no longer match a known collection.
+    func deleteCollection(id: String, organizationId: String) async throws {
+        try await apiClient.deleteCollection(id: id, organizationId: organizationId)
+        collectionStore.removeAll { $0.id == id }
+        logger.info("Collection deleted: \(id, privacy: .public)")
+    }
+
+    /// Encrypts a plaintext collection name using the organization's symmetric key.
+    ///
+    /// - Security goal: collection names are org-key-encrypted so any org member
+    ///   can read them. The vault key is NOT used — it is per-user, not per-org.
+    ///   Algorithm: EncString type-2 (AES-256-CBC + HMAC-SHA256).
+    private func encryptCollectionName(_ name: String, organizationId: String) async throws -> String {
+        let orgSnapshot = await orgKeyCache.snapshot()
+        guard let orgKey = orgSnapshot[organizationId] else {
+            throw VaultError.decryptionFailed("org key not found for org: \(organizationId)")
+        }
+        guard let data = name.data(using: .utf8) else {
+            throw VaultError.decryptionFailed("utf8-encode")
+        }
+        return try EncString.encrypt(data: data, keys: orgKey).toString()
     }
 
     // MARK: - Move to folder

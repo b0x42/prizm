@@ -19,15 +19,24 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     /// File attachments belonging to this vault item.
     /// Empty (`[]`) when the server returns no attachments or an explicit `null`.
     let attachments: [Attachment]
+    /// Non-nil when this item belongs to a Bitwarden organization.
+    /// Nil for personal vault items.
+    let organizationId: String?
+    /// The collections this item is assigned to within its organization.
+    /// Empty (`[]`) for personal items and org items not assigned to any collection.
+    let collectionIds: [String]
 
-    /// Custom memberwise init with `reprompt` defaulted to 0 and `attachments` defaulted
-    /// to `[]` so existing call sites that pre-date these fields do not need to be updated.
+    /// Custom memberwise init with `reprompt` defaulted to 0, `attachments` defaulted to `[]`,
+    /// `organizationId` defaulted to nil, and `collectionIds` defaulted to `[]` so existing
+    /// call sites that pre-date these fields do not need to be updated.
     init(
         id: String, name: String, isFavorite: Bool, isDeleted: Bool,
         creationDate: Date, revisionDate: Date, content: ItemContent,
         reprompt: Int = 0,
         attachments: [Attachment] = [],
-        folderId: String? = nil
+        folderId: String? = nil,
+        organizationId: String? = nil,
+        collectionIds: [String] = []
     ) {
         self.id = id
         self.folderId = folderId
@@ -39,6 +48,8 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
         self.content = content
         self.reprompt = reprompt
         self.attachments = attachments
+        self.organizationId = organizationId
+        self.collectionIds = collectionIds
     }
 }
 

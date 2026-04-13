@@ -46,13 +46,18 @@ struct VaultBrowserView: View {
                         ),
                         itemCounts: viewModel.itemCounts,
                         folders: viewModel.folders,
+                        organizations: viewModel.organizations,
+                        collections: viewModel.collections,
                         onCreateFolder: { name in viewModel.createFolder(name: name) },
                         onRenameFolder: { id, name in viewModel.renameFolder(id: id, name: name) },
                         onDeleteFolder: { folder in
                             folderToDelete = folder
                             showDeleteFolderAlert = true
                         },
-                        onDropItems: { ids, folderId in viewModel.moveItemsToFolder(itemIds: ids, folderId: folderId) }
+                        onDropItems: { ids, folderId in viewModel.moveItemsToFolder(itemIds: ids, folderId: folderId) },
+                        onCreateCollection: { name, orgId in viewModel.createCollection(name: name, organizationId: orgId) },
+                        onRenameCollection: { id, orgId, name in viewModel.renameCollection(id: id, organizationId: orgId, name: name) },
+                        onDeleteCollection: { id, orgId in viewModel.deleteCollection(id: id, organizationId: orgId) }
                     )
                     SyncStatusView(label: viewModel.syncStatusLabel)
                 }
@@ -80,11 +85,12 @@ struct VaultBrowserView: View {
                         )
                     } else {
                         ItemListView(
-                            items:         viewModel.displayedItems,
-                            selection:     $viewModel.itemSelection,
-                            faviconLoader: faviconLoader,
-                            searchQuery:   viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
-                            onDelete:      { id in await viewModel.performSoftDelete(id: id) },
+                            items:          viewModel.displayedItems,
+                            selection:      $viewModel.itemSelection,
+                            faviconLoader:  faviconLoader,
+                            searchQuery:    viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
+                            organizations:  viewModel.organizations,
+                            onDelete:       { id in await viewModel.performSoftDelete(id: id) },
                             onToggleFavorite: { viewModel.toggleFavorite(item: $0) }
                         )
                     }
@@ -121,6 +127,7 @@ struct VaultBrowserView: View {
                     item:                           viewModel.itemSelection,
                     faviconLoader:                  faviconLoader,
                     folders:                        viewModel.folders,
+                    organizations:                  viewModel.organizations,
                     onCopy:                         { viewModel.copy($0) },
                     makeEditViewModel:              makeEditViewModel,
                     makeAddAttachmentViewModel:     makeAddAttachmentViewModel,
@@ -261,7 +268,8 @@ struct VaultBrowserView: View {
         }
         .sheet(item: $viewModel.createItemType) { type in
             ItemEditView(
-                viewModel: makeCreateViewModel(type, viewModel.selectedFolderId),
+                viewModel: makeCreateViewModel(type,
+                    viewModel.selectedCollectionId ?? viewModel.selectedFolderId),
                 isPresented: Binding(
                     get: { viewModel.createItemType != nil },
                     set: { if !$0 { viewModel.createItemType = nil } }

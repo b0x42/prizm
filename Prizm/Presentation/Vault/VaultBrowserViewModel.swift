@@ -44,9 +44,18 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published private(set) var displayedItems: [VaultItem] = []
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
     @Published private(set) var folders: [Folder] = []
+    @Published private(set) var organizations: [Organization] = []
+    @Published private(set) var collections: [OrgCollection] = []
 
     var selectedFolderId: String? {
         if case .folder(let id) = sidebarSelection { return id }
+        return nil
+    }
+
+    /// Non-nil when the active sidebar selection is a specific collection.
+    /// Used to pre-fill the collection picker when creating items from a collection context (task 5.9).
+    var selectedCollectionId: String? {
+        if case .collection(let id) = sidebarSelection { return id }
         return nil
     }
     @Published private(set) var lastSyncedAt: Date?
@@ -76,10 +85,13 @@ final class VaultBrowserViewModel: ObservableObject {
     private let deleteUseCase:          any DeleteVaultItemUseCase
     private let permanentDeleteUseCase: any PermanentDeleteVaultItemUseCase
     private let restoreUseCase:         any RestoreVaultItemUseCase
-    private let createFolderUseCase:    any CreateFolderUseCase
-    private let renameFolderUseCase:    any RenameFolderUseCase
-    private let deleteFolderUseCase:    any DeleteFolderUseCase
-    private let moveItemUseCase:        any MoveItemToFolderUseCase
+    private let createFolderUseCase:      any CreateFolderUseCase
+    private let renameFolderUseCase:      any RenameFolderUseCase
+    private let deleteFolderUseCase:      any DeleteFolderUseCase
+    private let moveItemUseCase:          any MoveItemToFolderUseCase
+    private let createCollectionUseCase:  any CreateCollectionUseCase
+    private let renameCollectionUseCase:  any RenameCollectionUseCase
+    private let deleteCollectionUseCase:  any DeleteCollectionUseCase
     private var syncTimestamp:          any SyncTimestampRepository
     private var getLastSyncDate:        any GetLastSyncDateUseCase
     private let logger = Logger(subsystem: "com.prizm", category: "VaultBrowserViewModel")
@@ -117,17 +129,20 @@ final class VaultBrowserViewModel: ObservableObject {
     // MARK: - Init
 
     init(
-        vault:           any VaultRepository,
-        search:          any SearchVaultUseCase,
-        delete:          any DeleteVaultItemUseCase,
-        permanentDelete: any PermanentDeleteVaultItemUseCase,
-        restore:         any RestoreVaultItemUseCase,
-        createFolder:    any CreateFolderUseCase,
-        renameFolder:    any RenameFolderUseCase,
-        deleteFolder:    any DeleteFolderUseCase,
-        moveItem:        any MoveItemToFolderUseCase,
-        syncTimestamp:   any SyncTimestampRepository,
-        getLastSyncDate: any GetLastSyncDateUseCase
+        vault:             any VaultRepository,
+        search:            any SearchVaultUseCase,
+        delete:            any DeleteVaultItemUseCase,
+        permanentDelete:   any PermanentDeleteVaultItemUseCase,
+        restore:           any RestoreVaultItemUseCase,
+        createFolder:      any CreateFolderUseCase,
+        renameFolder:      any RenameFolderUseCase,
+        deleteFolder:      any DeleteFolderUseCase,
+        moveItem:          any MoveItemToFolderUseCase,
+        createCollection:  any CreateCollectionUseCase,
+        renameCollection:  any RenameCollectionUseCase,
+        deleteCollection:  any DeleteCollectionUseCase,
+        syncTimestamp:     any SyncTimestampRepository,
+        getLastSyncDate:   any GetLastSyncDateUseCase
     ) {
         self.vault                  = vault
         self.search                 = search
@@ -138,11 +153,15 @@ final class VaultBrowserViewModel: ObservableObject {
         self.renameFolderUseCase    = renameFolder
         self.deleteFolderUseCase    = deleteFolder
         self.moveItemUseCase        = moveItem
+        self.createCollectionUseCase = createCollection
+        self.renameCollectionUseCase = renameCollection
+        self.deleteCollectionUseCase = deleteCollection
         self.syncTimestamp          = syncTimestamp
         self.getLastSyncDate        = getLastSyncDate
         refreshItems()
         refreshCounts()
         refreshFolders()
+        refreshOrganizations()
         // Load persisted timestamp first; fall back to in-memory value from the vault store
         // (populated on the current session's sync, but not persisted across restarts).
         lastSyncedAt   = getLastSyncDate.execute() ?? vault.lastSyncedAt
@@ -288,14 +307,14 @@ final class VaultBrowserViewModel: ObservableObject {
         syncTimestamp.recordSuccessfulSync()
         refreshItems()
         refreshCounts()
+        refreshFolders()
+        refreshOrganizations()
         // Re-read the selected item from the vault store so its attachment list
         // reflects the latest sync data. Without this, itemSelection can be a
         // stale copy (e.g. from before a cipher-key fix that silently dropped
         // attachments), and the detail pane would show "No attachments" even
         // after a sync that correctly mapped them.
         refreshItemSelection()
-
-        refreshFolders()
         syncErrorMessage = nil
     }
 
@@ -471,6 +490,62 @@ final class VaultBrowserViewModel: ObservableObject {
             folders = try vault.folders()
         } catch {
             logger.error("Failed to load folders: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func refreshOrganizations() {
+        do {
+            organizations = try vault.organizations()
+            collections   = try vault.collections()
+        } catch {
+            logger.error("Failed to load organizations: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    // MARK: - Collection CRUD
+
+    func createCollection(name: String, organizationId: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            do {
+                _ = try await createCollectionUseCase.execute(name: trimmed, organizationId: organizationId)
+                refreshOrganizations()
+                refreshCounts()
+            } catch {
+                logger.error("Create collection failed: \(error.localizedDescription, privacy: .public)")
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    func renameCollection(id: String, organizationId: String, name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            do {
+                _ = try await renameCollectionUseCase.execute(collectionId: id, name: trimmed,
+                                                               organizationId: organizationId)
+                refreshOrganizations()
+            } catch {
+                logger.error("Rename collection failed: \(error.localizedDescription, privacy: .public)")
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    func deleteCollection(id: String, organizationId: String) {
+        Task {
+            do {
+                let wasSelected = if case .collection(let cid) = sidebarSelection { cid == id } else { false }
+                try await deleteCollectionUseCase.execute(collectionId: id, organizationId: organizationId)
+                if wasSelected { sidebarSelection = .allItems }
+                refreshOrganizations()
+                refreshCounts()
+            } catch {
+                logger.error("Delete collection failed: \(error.localizedDescription, privacy: .public)")
+                actionError = error.localizedDescription
+            }
         }
     }
 

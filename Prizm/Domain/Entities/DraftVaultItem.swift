@@ -233,6 +233,11 @@ nonisolated struct DraftVaultItem: Equatable {
     /// Re-prompt setting from `VaultItem.reprompt` — carried through unchanged so PUT
     /// round-trips it correctly. Not user-editable in v1.
     let reprompt: Int
+    /// Non-nil when this draft is being created/edited within a Bitwarden organization.
+    var organizationId: String?
+    /// The collections this item is assigned to within its organization.
+    /// Empty for personal items and org items not yet assigned to a collection.
+    var collectionIds: [String]
 
     /// Creates a blank draft for a new item of the given type.
     static func blank(type: ItemType) -> DraftVaultItem {
@@ -259,7 +264,8 @@ nonisolated struct DraftVaultItem: Equatable {
 
     /// Memberwise initialiser for programmatic construction (blank drafts, tests).
     init(id: String, folderId: String? = nil, name: String, isFavorite: Bool, isDeleted: Bool,
-         creationDate: Date, revisionDate: Date, content: DraftItemContent, reprompt: Int) {
+         creationDate: Date, revisionDate: Date, content: DraftItemContent, reprompt: Int,
+         organizationId: String? = nil, collectionIds: [String] = []) {
         self.id = id
         self.folderId = folderId
         self.name = name
@@ -269,6 +275,8 @@ nonisolated struct DraftVaultItem: Equatable {
         self.revisionDate = revisionDate
         self.content = content
         self.reprompt = reprompt
+        self.organizationId = organizationId
+        self.collectionIds = collectionIds
     }
 
     /// Converts an immutable `VaultItem` into a mutable draft ready for editing.
@@ -281,6 +289,8 @@ nonisolated struct DraftVaultItem: Equatable {
         self.creationDate = item.creationDate
         self.revisionDate = item.revisionDate
         self.reprompt = item.reprompt
+        self.organizationId = item.organizationId
+        self.collectionIds = item.collectionIds
         self.content = {
             switch item.content {
             case .login(let c):      return .login(DraftLoginContent(c))
@@ -310,6 +320,8 @@ extension VaultItem {
         self.creationDate = draft.creationDate
         self.revisionDate = draft.revisionDate
         self.reprompt = draft.reprompt
+        self.organizationId = draft.organizationId
+        self.collectionIds = draft.collectionIds
         // Drafts do not carry attachment state — attachments are managed via
         // AttachmentRepository and written back through the server response, not through
         // the edit draft. Preserve an empty list here; the actual attachments come from

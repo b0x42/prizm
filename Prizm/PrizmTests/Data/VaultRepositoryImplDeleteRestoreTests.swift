@@ -48,7 +48,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testDeleteItem_activeItem_marksDeletedInCache() async throws {
         let item = makeLogin(id: "id-1", name: "Active Item")
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.deleteItem(id: "id-1")
 
@@ -64,7 +64,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testDeleteItem_activeItem_callsAPIOnce() async throws {
         let item = makeLogin(id: "id-1", name: "Active")
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.deleteItem(id: "id-1")
 
@@ -74,7 +74,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testPermanentDeleteItem_trashedItem_removesFromCache() async throws {
         let item = makeLogin(id: "id-2", name: "Trashed Item", isDeleted: true)
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.permanentDeleteItem(id: "id-2")
 
@@ -85,7 +85,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testPermanentDeleteItem_callsAPIOnce() async throws {
         let item = makeLogin(id: "id-2", name: "Trashed Item", isDeleted: true)
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.permanentDeleteItem(id: "id-2")
 
@@ -95,7 +95,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testDeleteItem_apiError_doesNotUpdateCache() async throws {
         let item = makeLogin(id: "id-3", name: "Item")
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
         mockAPI.softDeleteShouldThrow = APIError.httpError(statusCode: 500, body: "fail")
 
         do {
@@ -112,7 +112,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testRestoreItem_trashedItem_marksActiveInCache() async throws {
         let item = makeLogin(id: "id-4", name: "Trashed", isDeleted: true)
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.restoreItem(id: "id-4")
 
@@ -126,7 +126,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testRestoreItem_callsAPIOnce() async throws {
         let item = makeLogin(id: "id-4", name: "Trashed", isDeleted: true)
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.restoreItem(id: "id-4")
 
@@ -136,7 +136,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
 
     func testRestoreItem_apiError_doesNotUpdateCache() async throws {
         let item = makeLogin(id: "id-5", name: "Trashed", isDeleted: true)
-        sut.populate(items: [item], folders: [], syncedAt: Date())
+        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
         mockAPI.restoreShouldThrow = APIError.httpError(statusCode: 503, body: "unavailable")
 
         do {
@@ -153,7 +153,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
     func testItemsForTrash_onlyReturnsTrashedItems() throws {
         let active  = makeLogin(name: "Active",  isDeleted: false)
         let trashed = makeLogin(name: "Trashed", isDeleted: true)
-        sut.populate(items: [active, trashed], folders: [], syncedAt: Date())
+        sut.populate(items: [active, trashed], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         let result = try sut.items(for: .trash)
         XCTAssertEqual(result.count, 1)
@@ -161,7 +161,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
     }
 
     func testItemsForTrash_empty_returnsEmpty() throws {
-        sut.populate(items: [makeLogin(name: "Active")], folders: [], syncedAt: Date())
+        sut.populate(items: [makeLogin(name: "Active")], folders: [], organizations: [], collections: [], syncedAt: Date())
         let result = try sut.items(for: .trash)
         XCTAssertTrue(result.isEmpty)
     }
@@ -174,7 +174,7 @@ final class VaultRepositoryImplDeleteRestoreTests: XCTestCase {
             makeLogin(name: "B", isDeleted: true),
             makeLogin(name: "C", isDeleted: true),
         ]
-        sut.populate(items: items, folders: [], syncedAt: Date())
+        sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
 
         let counts = try sut.itemCounts()
         XCTAssertEqual(counts[.trash], 2, "Trash count should reflect all isDeleted items")

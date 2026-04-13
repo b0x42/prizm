@@ -34,9 +34,19 @@ protocol VaultRepository: AnyObject, Sendable {
     /// Not cached — re-decrypts on every call (decrypt on demand, per spec).
     func itemDetail(id: String) async throws -> VaultItem
 
-    /// Replaces the in-memory vault store with `items` and `folders`, and records the sync timestamp.
-    /// Called by `SyncRepositoryImpl` after a successful sync.
-    func populate(items: [VaultItem], folders: [Folder], syncedAt: Date)
+    /// Replaces the in-memory vault store with `items`, `folders`, `organizations`, and `collections`,
+    /// and records the sync timestamp. Called by `SyncRepositoryImpl` after a successful sync.
+    func populate(items: [VaultItem], folders: [Folder], organizations: [Organization],
+                  collections: [OrgCollection], syncedAt: Date)
+
+    /// All organizations the user belongs to, sorted alphabetically by name.
+    func organizations() throws -> [Organization]
+
+    /// All collections across all organizations, sorted alphabetically by name.
+    func collections() throws -> [OrgCollection]
+
+    /// Items assigned to the given collection, sorted alphabetically by name.
+    func items(for collection: String) throws -> [VaultItem]
 
     /// Clears the in-memory vault store (items and folders). Called on lock and sign-out.
     func clearVault()
@@ -111,6 +121,21 @@ protocol VaultRepository: AnyObject, Sendable {
 
     /// Moves multiple items to a folder in a single API call.
     func moveItemsToFolder(itemIds: [String], folderId: String?) async throws
+
+    // MARK: - Collection CRUD
+
+    /// Creates a collection within an organization.
+    /// The name is encrypted with the org's symmetric key before being sent to the server.
+    func createCollection(name: String, organizationId: String) async throws -> OrgCollection
+
+    /// Renames an existing collection within an organization.
+    /// The new name is encrypted with the org's symmetric key before being sent to the server.
+    func renameCollection(id: String, organizationId: String, name: String) async throws -> OrgCollection
+
+    /// Deletes a collection from an organization.
+    /// Items that were in the collection remain in the vault — their `collectionIds` simply
+    /// no longer match a known collection.
+    func deleteCollection(id: String, organizationId: String) async throws
 
 }
 

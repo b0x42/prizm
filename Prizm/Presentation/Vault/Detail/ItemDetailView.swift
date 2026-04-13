@@ -8,6 +8,7 @@ struct ItemDetailView: View {
     let item:              VaultItem?
     let faviconLoader:     FaviconLoader
     let folders:           [Folder]
+    var organizations:     [Organization] = []
     let onCopy:            (String) -> Void
     let makeEditViewModel: (VaultItem) -> ItemEditViewModel
     /// Factory that creates an `AttachmentAddViewModel` for the given cipher ID.
@@ -51,6 +52,7 @@ struct ItemDetailView: View {
                     itemHeader(for: item)
                     typeDetailView(for: item)
                     attachmentsSection(for: item)
+                    organizationRow(for: item)
                     folderRow(for: item)
 
                     Spacer(minLength: 20)
@@ -106,6 +108,16 @@ struct ItemDetailView: View {
         .padding(.top, Spacing.pageTop)
         .padding(.horizontal, Spacing.pageMargin)
         .padding(.bottom, Spacing.pageHeaderBottom)
+    }
+
+    @ViewBuilder
+    private func organizationRow(for item: VaultItem) -> some View {
+        if let orgId = item.organizationId,
+           let org = organizations.first(where: { $0.id == orgId }) {
+            DetailSectionCard("Organization") {
+                FieldRowView(label: "", value: org.name, itemId: item.id)
+            }
+        }
     }
 
     @ViewBuilder

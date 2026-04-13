@@ -58,8 +58,32 @@ struct ItemEditView: View {
             }
             .padding(.bottom, Spacing.pageHeaderBottom)
 
-            // Folder picker — shown when folders exist.
-            if !viewModel.folders.isEmpty {
+            // Collection picker — shown for org items (replaces folder picker).
+            // Folder picker — shown for personal items when folders exist.
+            if viewModel.draft.organizationId != nil {
+                // Org item: collection picker
+                let orgCollections = viewModel.collections.filter {
+                    $0.organizationId == viewModel.draft.organizationId
+                }
+                if !orgCollections.isEmpty {
+                    DetailSectionCard("Collection") {
+                        Picker(selection: Binding(
+                            get: { viewModel.draft.collectionIds.first },
+                            set: { newId in
+                                viewModel.draft.collectionIds = newId.map { [$0] } ?? []
+                            }
+                        )) {
+                            Text("None").tag(String?.none)
+                            ForEach(orgCollections) { col in
+                                Text(col.name).tag(Optional(col.id))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.menu)
+                        .padding(.vertical, Spacing.rowVertical)
+                        .padding(.horizontal, Spacing.rowHorizontal)
+                    }
+                }
+            } else if !viewModel.folders.isEmpty {
                 DetailSectionCard("Folder") {
                     Picker(selection: $viewModel.draft.folderId) {
                         Text("None").tag(String?.none)

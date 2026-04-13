@@ -14,11 +14,19 @@ nonisolated struct SyncResponse: Decodable {
     /// Decoded with a default of `[]` so that Vaultwarden instances that omit the key
     /// (or future API variants) don't cause the entire sync decode to throw.
     let folders: [RawFolder]
+    /// Organizations the user belongs to. Defaults to `[]` when absent (Vaultwarden
+    /// instances without org support do not include this key).
+    let organizations: [RawOrganization]
+    /// Collections across all organizations. Defaults to `[]` when absent.
+    let collections: [RawCollection]
 
-    init(profile: RawProfile, ciphers: [RawCipher], folders: [RawFolder] = []) {
+    init(profile: RawProfile, ciphers: [RawCipher], folders: [RawFolder] = [],
+         organizations: [RawOrganization] = [], collections: [RawCollection] = []) {
         self.profile = profile
         self.ciphers = ciphers
         self.folders = folders
+        self.organizations = organizations
+        self.collections = collections
     }
 
     init(from decoder: Decoder) throws {
@@ -32,6 +40,12 @@ nonisolated struct SyncResponse: Decodable {
         folders = (try? container.decode([RawFolder].self, forKey: FlexKeys("folders")))
                ?? (try? container.decode([RawFolder].self, forKey: FlexKeys("Folders")))
                ?? []
+        organizations = (try? container.decode([RawOrganization].self, forKey: FlexKeys("organizations")))
+               ?? (try? container.decode([RawOrganization].self, forKey: FlexKeys("Organizations")))
+               ?? []
+        collections = (try? container.decode([RawCollection].self, forKey: FlexKeys("collections")))
+               ?? (try? container.decode([RawCollection].self, forKey: FlexKeys("Collections")))
+               ?? []
     }
 
     /// Ad-hoc `CodingKey` that accepts any string key, used to try multiple casing variants.
@@ -42,6 +56,34 @@ nonisolated struct SyncResponse: Decodable {
         init?(stringValue: String) { self.stringValue = stringValue }
         init?(intValue: Int) { return nil }
     }
+}
+
+// MARK: - RawOrganization
+
+/// Wire-format model for a Bitwarden organization returned in the sync response.
+///
+/// `key` is the organization's symmetric key (64 bytes), RSA-OAEP-SHA1 encrypted with
+/// the user's RSA-2048 public key. Unwrapped at sync time into `OrgKeyCache`.
+/// Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+nonisolated struct RawOrganization: Codable, Equatable {
+    let id:   String
+    let name: String
+    /// RSA-encrypted organization symmetric key (EncString, Type-4).
+    let key:  String
+    /// Membership role integer: 0=Owner, 1=Admin, 2=Manager, 3=User, 4=Custom.
+    let type: Int
+}
+
+// MARK: - RawCollection
+
+/// Wire-format model for a Bitwarden collection returned in the sync response.
+///
+/// `name` is an EncString encrypted with the organization's symmetric key.
+/// Decrypted at sync time using the unwrapped org key from `OrgKeyCache`.
+nonisolated struct RawCollection: Codable, Equatable {
+    let id:             String
+    let organizationId: String
+    let name:           String  // EncString, encrypted with org key
 }
 
 // MARK: - RawProfile

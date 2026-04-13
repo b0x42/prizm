@@ -39,9 +39,42 @@ nonisolated struct RawCipher: Codable {
     /// the cipher's fields instead of the vault-level key. When nil, the vault-level key
     /// is used directly (Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping").
     let key:            String?         // EncString, optional
+    /// Collections this cipher is assigned to within its organization.
+    /// Defaults to `[]` when absent (personal items, or servers that omit the key).
+    let collectionIds:  [String]
     /// File attachments belonging to this cipher. Nil when the server returns no
     /// attachments or omits the field entirely; treated as `[]` by `CipherMapper`.
     let attachments:    [AttachmentDTO]?
+
+    /// Memberwise init with `collectionIds` defaulted to `[]` so existing call sites
+    /// that pre-date this field continue to compile without changes.
+    init(id: String, organizationId: String?, folderId: String?, type: Int, name: String,
+         notes: String?, favorite: Bool, reprompt: Int?, deletedDate: String?,
+         creationDate: String?, revisionDate: String?, login: RawLoginData?,
+         card: RawCardData?, identity: RawIdentityData?, secureNote: RawSecureNoteData?,
+         sshKey: RawSSHKeyData?, fields: [RawField]?, key: String?,
+         collectionIds: [String] = [], attachments: [AttachmentDTO]?) {
+        self.id             = id
+        self.organizationId = organizationId
+        self.folderId       = folderId
+        self.type           = type
+        self.name           = name
+        self.notes          = notes
+        self.favorite       = favorite
+        self.reprompt       = reprompt
+        self.deletedDate    = deletedDate
+        self.creationDate   = creationDate
+        self.revisionDate   = revisionDate
+        self.login          = login
+        self.card           = card
+        self.identity       = identity
+        self.secureNote     = secureNote
+        self.sshKey         = sshKey
+        self.fields         = fields
+        self.key            = key
+        self.collectionIds  = collectionIds
+        self.attachments    = attachments
+    }
 }
 
 // MARK: - Login

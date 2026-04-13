@@ -25,12 +25,15 @@ final class VaultBrowserViewModelSyncStatusTests: XCTestCase {
             delete:          StubVaultDeleteUseCase(),
             permanentDelete: StubVaultPermanentDeleteUseCase(),
             restore:         StubVaultRestoreUseCase(),
-            createFolder:    StubCreateFolder(),
-            renameFolder:    StubRenameFolder(),
-            deleteFolder:    StubDeleteFolder(),
-            moveItem:        StubMoveItem(),
-            syncTimestamp:   repo,
-            getLastSyncDate: useCase
+            createFolder:     StubCreateFolder(),
+            renameFolder:     StubRenameFolder(),
+            deleteFolder:     StubDeleteFolder(),
+            moveItem:         StubMoveItem(),
+            createCollection: StubCreateCollection(),
+            renameCollection: StubRenameCollection(),
+            deleteCollection: StubDeleteCollection(),
+            syncTimestamp:    repo,
+            getLastSyncDate:  useCase
         )
     }
 
@@ -106,4 +109,17 @@ private struct StubDeleteFolder: DeleteFolderUseCase {
 private struct StubMoveItem: MoveItemToFolderUseCase {
     func execute(itemId: String, folderId: String?) async throws {}
     func execute(itemIds: [String], folderId: String?) async throws {}
+}
+private struct StubCreateCollection: CreateCollectionUseCase {
+    func execute(name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: "stub", organizationId: organizationId, name: name)
+    }
+}
+private struct StubRenameCollection: RenameCollectionUseCase {
+    func execute(collectionId: String, name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: collectionId, organizationId: organizationId, name: name)
+    }
+}
+private struct StubDeleteCollection: DeleteCollectionUseCase {
+    func execute(collectionId: String, organizationId: String) async throws {}
 }

@@ -47,7 +47,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  []
         )
-        vaultRepo.populate(items: [item], folders: [], syncedAt: Date())
+        vaultRepo.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
     }
 
     // MARK: - Upload: fileUploadType 0 (Bitwarden-hosted)

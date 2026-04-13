@@ -151,12 +151,15 @@ private final class MockRootDependencies: RootViewModelDependencies {
             delete:          StubDeleteUseCase(),
             permanentDelete: StubPermanentDeleteUseCase(),
             restore:         StubRestoreUseCase(),
-            createFolder:    StubCreateFolder(),
-            renameFolder:    StubRenameFolder(),
-            deleteFolder:    StubDeleteFolder(),
-            moveItem:        StubMoveItem(),
-            syncTimestamp:   syncRepo,
-            getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
+            createFolder:     StubCreateFolder(),
+            renameFolder:     StubRenameFolder(),
+            deleteFolder:     StubDeleteFolder(),
+            moveItem:         StubMoveItem(),
+            createCollection: StubCreateCollection(),
+            renameCollection: StubRenameCollection(),
+            deleteCollection: StubDeleteCollection(),
+            syncTimestamp:    syncRepo,
+            getLastSyncDate:  GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
     }
 
@@ -191,4 +194,17 @@ private final class MockRootDependencies: RootViewModelDependencies {
 @MainActor private struct StubMoveItem: MoveItemToFolderUseCase {
     func execute(itemId: String, folderId: String?) async throws {}
     func execute(itemIds: [String], folderId: String?) async throws {}
+}
+@MainActor private struct StubCreateCollection: CreateCollectionUseCase {
+    func execute(name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: "stub", organizationId: organizationId, name: name)
+    }
+}
+@MainActor private struct StubRenameCollection: RenameCollectionUseCase {
+    func execute(collectionId: String, name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: collectionId, organizationId: organizationId, name: name)
+    }
+}
+@MainActor private struct StubDeleteCollection: DeleteCollectionUseCase {
+    func execute(collectionId: String, organizationId: String) async throws {}
 }

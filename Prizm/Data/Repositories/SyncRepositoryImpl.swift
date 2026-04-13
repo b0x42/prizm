@@ -28,6 +28,7 @@ actor SyncRepositoryImpl: SyncRepository {
     private let crypto:          any PrizmCryptoService
     private let vaultRepository: any VaultRepository
     private let vaultKeyCache:   VaultKeyCache
+    private let orgKeyCache:     OrgKeyCache
 
     private let logger = Logger(subsystem: "com.prizm", category: "SyncRepository")
 
@@ -41,12 +42,14 @@ actor SyncRepositoryImpl: SyncRepository {
         apiClient:       any PrizmAPIClientProtocol,
         crypto:          any PrizmCryptoService,
         vaultRepository: any VaultRepository,
-        vaultKeyCache:   VaultKeyCache
+        vaultKeyCache:   VaultKeyCache,
+        orgKeyCache:     OrgKeyCache = OrgKeyCache()
     ) {
         self.apiClient       = apiClient
         self.crypto          = crypto
         self.vaultRepository = vaultRepository
         self.vaultKeyCache   = vaultKeyCache
+        self.orgKeyCache     = orgKeyCache
     }
 
     // MARK: - SyncRepository
@@ -118,9 +121,93 @@ actor SyncRepositoryImpl: SyncRepository {
             logger.error("decryptFolders: \(folderFailedCount, privacy: .public) folder(s) failed to decrypt")
         }
 
+        // Phase 2c: Unwrap org keys and decrypt collection names.
+        //
+        // Only performed when the sync response contains organizations AND the profile
+        // has a privateKey field (i.e. the user has org membership). Vaultwarden instances
+        // without org support will have an empty `organizations` array and skip this block.
+        //
+        // Security: the decrypted RSA private key bytes are zeroed immediately after use.
+        // Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+        var organizations: [Organization] = []
+        var collections: [OrgCollection] = []
+
+        if !syncResponse.organizations.isEmpty,
+           let encPrivateKey = syncResponse.profile.privateKey {
+            do {
+                let vaultKeys = try await crypto.currentKeys()
+
+                // Decrypt the user's RSA private key (PKCS#8 DER) from the sync profile.
+                var rsaPrivateKeyBytes = try await crypto.decryptRSAPrivateKey(
+                    encPrivateKey: encPrivateKey,
+                    vaultKeys: vaultKeys
+                )
+                defer {
+                    // Zero the private key bytes immediately after use (Constitution §III).
+                    rsaPrivateKeyBytes.resetBytes(in: 0..<rsaPrivateKeyBytes.count)
+                }
+
+                // Unwrap each org key into OrgKeyCache.
+                // Failure for a single org is logged and skipped; other orgs proceed.
+                await orgKeyCache.clear()  // Fresh slate for this sync.
+                for rawOrg in syncResponse.organizations {
+                    do {
+                        let orgKeys = try await crypto.unwrapOrgKey(
+                            encOrgKey: rawOrg.key,
+                            rsaPrivateKey: rsaPrivateKeyBytes
+                        )
+                        await orgKeyCache.store(key: orgKeys, for: rawOrg.id)
+                    } catch {
+                        logger.fault("Failed to unwrap org key for org \(rawOrg.id.prefix(8), privacy: .public)… — org ciphers will be skipped: \(error, privacy: .public)")
+                    }
+                }
+
+                // Build domain Organization entities.
+                let orgKeysSnapshot = await orgKeyCache.snapshot()
+                organizations = syncResponse.organizations.compactMap { (raw: RawOrganization) in
+                    guard let role = OrgRole(rawValue: raw.type) else {
+                        logger.error("Unknown org role type \(raw.type, privacy: .public) for org \(raw.id.prefix(8), privacy: .public)")
+                        return nil
+                    }
+                    return Organization(id: raw.id, name: raw.name, role: role)
+                }
+
+                // Decrypt collection names using the respective org key.
+                collections = syncResponse.collections.compactMap { raw in
+                    guard let orgKey = orgKeysSnapshot[raw.organizationId] else {
+                        logger.error("No org key for collection \(raw.id.prefix(8), privacy: .public) (org \(raw.organizationId.prefix(8), privacy: .public))")
+                        return nil
+                    }
+                    do {
+                        let encName = try EncString(string: raw.name)
+                        let nameData = try encName.decrypt(keys: orgKey)
+                        guard let name = String(data: nameData, encoding: .utf8) else {
+                            logger.error("Collection name not valid UTF-8 for collection \(raw.id.prefix(8), privacy: .public)")
+                            return nil
+                        }
+                        return OrgCollection(id: raw.id, organizationId: raw.organizationId, name: name)
+                    } catch {
+                        logger.error("Failed to decrypt collection name for \(raw.id.prefix(8), privacy: .public): \(error, privacy: .public)")
+                        return nil
+                    }
+                }
+
+                logger.info("Org sync: \(organizations.count) org(s), \(collections.count) collection(s)")
+            } catch {
+                logger.error("Org key sync failed — org ciphers unavailable this session: \(error, privacy: .public)")
+                // Non-fatal: personal items still work without org support.
+            }
+        }
+
         // Phase 3: Populate the in-memory vault store.
         let syncedAt = Date()
-        await vaultRepository.populate(items: items, folders: folders, syncedAt: syncedAt)
+        await vaultRepository.populate(
+            items:         items,
+            folders:       folders,
+            organizations: organizations,
+            collections:   collections,
+            syncedAt:      syncedAt
+        )
 
         return SyncResult(
             syncedAt:              syncedAt,

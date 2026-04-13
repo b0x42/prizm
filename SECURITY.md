@@ -55,6 +55,7 @@ password itself.
 | PBKDF2-SHA256 | Master key derivation (PBKDF2 accounts) | CommonCrypto `CCKeyDerivationPBKDF` |
 | Argon2id | Master key derivation (Argon2id accounts) | `Argon2Swift` — thin wrapper around the reference C implementation |
 | HKDF-SHA256 | Key stretching | CryptoKit `HKDF<SHA256>` (RFC 5869) |
+| RSA-OAEP-SHA1 | Organisation key unwrapping | `Security.framework` `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1`; SHA-1 is a Bitwarden protocol requirement (Whitepaper §4), not a free choice |
 
 No hand-rolled cryptographic algorithms are used. All implementations are Apple system
 frameworks or the vendored `Argon2Swift` package (Argon2id is not provided by Apple
@@ -71,6 +72,8 @@ frameworks).
 | Master key (32 bytes) | In-memory only | Derived on login/unlock; zeroed on lock or sign-out |
 | Stretched keys (enc + mac, 64 bytes) | In-memory only | Derived from master key; zeroed on lock |
 | Vault symmetric keys (enc + mac) | In-memory only | Decrypted from `encUserKey`; zeroed on lock |
+| RSA private key (PKCS#8, variable) | In-memory only (`actor` state) | Decrypted from `profile.privateKey` EncString during sync; zeroed on lock |
+| Organisation symmetric keys (64 bytes each) | In-memory only (`OrgKeyCache` actor) | RSA-OAEP-SHA1 unwrapped from `RawOrganization.key` during sync; zeroed and cleared from `OrgKeyCache` on lock |
 | Encrypted user key (`encUserKey`) | macOS Keychain | Persisted across sessions; deleted on sign-out |
 | Biometric vault key (64 bytes) | macOS Keychain (biometric-gated) | Created on user opt-in; deleted on sign-out, disable, or biometric invalidation |
 | Access token | macOS Keychain | Persisted across sessions; deleted on sign-out |
@@ -82,9 +85,17 @@ frameworks).
 
 1. **Login** — master password + email → KDF (PBKDF2 or Argon2id) → master key →
    HKDF → stretched keys → decrypt `encUserKey` → vault symmetric keys. All in memory.
-2. **Lock** — all in-memory key material is zeroed. Keychain entries are retained so
-   the vault can be unlocked offline without re-authenticating to the server.
-3. **Sign out** — all in-memory key material is zeroed and all Keychain entries for
+2. **Sync (organisation keys)** — `SyncRepositoryImpl.sync()` performs additional key
+   setup when the account belongs to one or more organisations:
+   a. Decrypt `profile.privateKey` EncString with vault symmetric keys → raw RSA private key (PKCS#8); held in actor state.
+   b. For each `RawOrganization` in the sync response, strip the PKCS#8 wrapper, import the RSA private key via `SecKeyCreateWithData`, and decrypt `RawOrganization.key` (a Type-4 EncString) with `SecKeyCreateDecryptedData` / `kSecKeyAlgorithmRSAEncryptionOAEPSHA1` → 64-byte org symmetric key.
+   c. Store each org key in `OrgKeyCache` keyed by `organizationId`.
+   d. Org cipher fields are then decrypted using the org symmetric key rather than the personal vault key, with collection names decrypted via the same org key.
+3. **Lock** — all in-memory key material is zeroed. `OrgKeyCache` is cleared: each
+   `CryptoKeys` entry's underlying `Data` bytes are overwritten with zeros before the
+   dictionary entry is removed. Keychain entries are retained so the vault can be
+   unlocked offline without re-authenticating to the server.
+4. **Sign out** — all in-memory key material is zeroed and all Keychain entries for
    the account are deleted. The app returns to a blank login screen.
 
 ### Biometric vault key (Touch ID / Face ID)
@@ -201,8 +212,12 @@ The server retains the empty metadata record. The client shows a "Retry" action 
   unlocked state.
 - **TLS interception (MitM on server identity)** — Certificate pinning is not
   implemented. TLS validation relies on the system trust store.
-- **Organisation vaults** — Only personal vault ciphers are decrypted. Organisation
-  ciphers are skipped.
+- **Organisation vault access control** — Org keys are RSA-unwrapped client-side; the
+  server cannot selectively withhold an org key without breaking sync entirely.
+  Role enforcement (owner / admin / manager / user) is applied in the UI layer only
+  (e.g., collection management is hidden for non-admin roles). A determined attacker
+  with full memory access while the vault is unlocked could bypass these UI gates and
+  read or modify org ciphers they have a key for.
 
 ---
 

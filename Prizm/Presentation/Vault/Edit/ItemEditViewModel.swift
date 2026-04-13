@@ -69,30 +69,45 @@ final class ItemEditViewModel: ObservableObject {
     /// Available folders for the folder picker in the edit sheet.
     let folders: [Folder]
 
+    /// Available organizations — used to resolve collection org names.
+    let organizations: [Organization]
+
+    /// Collections available for the collection picker (all orgs).
+    let collections: [OrgCollection]
+
     /// Retain token for the vault-lock observer.
     private nonisolated(unsafe) var lockObserver: NSObjectProtocol?
 
     // MARK: - Init
 
     /// Edit mode: initialised with an existing item.
-    init(item: VaultItem, useCase: any EditVaultItemUseCase, folders: [Folder] = []) {
-        self.draft    = DraftVaultItem(item)
-        self.original = DraftVaultItem(item)
-        self.editUseCase  = useCase
+    init(item: VaultItem, useCase: any EditVaultItemUseCase, folders: [Folder] = [],
+         organizations: [Organization] = [], collections: [OrgCollection] = []) {
+        self.draft         = DraftVaultItem(item)
+        self.original      = DraftVaultItem(item)
+        self.editUseCase   = useCase
         self.createUseCase = nil
-        self.folders = folders
+        self.folders       = folders
+        self.organizations = organizations
+        self.collections   = collections
         subscribeToVaultLock()
     }
 
     /// Create mode: initialised with a blank draft for the given type.
-    init(type: ItemType, useCase: any CreateVaultItemUseCase, folders: [Folder] = [], folderId: String? = nil) {
+    init(type: ItemType, useCase: any CreateVaultItemUseCase, folders: [Folder] = [],
+         folderId: String? = nil, organizationId: String? = nil, collectionIds: [String] = [],
+         organizations: [Organization] = [], collections: [OrgCollection] = []) {
         var blank = DraftVaultItem.blank(type: type)
-        blank.folderId = folderId
-        self.draft    = blank
-        self.original = blank
-        self.editUseCase  = nil
+        blank.folderId       = folderId
+        blank.organizationId = organizationId
+        blank.collectionIds  = collectionIds
+        self.draft         = blank
+        self.original      = blank
+        self.editUseCase   = nil
         self.createUseCase = useCase
-        self.folders = folders
+        self.folders       = folders
+        self.organizations = organizations
+        self.collections   = collections
         subscribeToVaultLock()
     }
 
