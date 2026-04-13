@@ -1,6 +1,6 @@
 ## 1. Contrast-Aware Opacity Helper
 
-- [x] 1.1 Create `ContrastAwareOpacity` utility in `Prizm/Presentation/` that reads `@Environment(\.accessibilityContrast)` and returns a higher opacity when `.increased`
+- [x] 1.1 Create `ContrastAwareOpacity` utility in `Prizm/Presentation/` that reads `@Environment(\.colorSchemeContrast)` and returns a higher opacity when `.increased`
 - [x] 1.2 Define default and increased opacity constants for each usage: banner background, card border, trash banner, error banner, drop target
 
 ## 2. Colour Contrast Fixes

@@ -41,17 +41,17 @@ The custom opacity values are used for subtle background tints on banners and bo
 Measured values (approximate, using macOS Digital Color Meter):
 - `Color.yellow.opacity(0.15)` on white → ~#FFF9D9 → contrast with white window: ~1.05:1 (fails 3:1). Raise to `0.35`.
 - `Color.primary.opacity(0.08)` border → barely visible. Raise default to `0.12`; Increase Contrast to `0.2`.
-- `Color.secondary.opacity(0.1)` → ~#F5F5F5 on white → ~1.07:1 (fails). Raise to `0.25`.
-- `Color.red.opacity(0.1)` → ~#FFE5E5 → ~1.06:1 (fails). Raise to `0.25`.
-- `Color.accentColor.opacity(0.2)` → transient drop target, not persistent UI. Acceptable as-is but raise to `0.3` for Increase Contrast.
+- `Color.secondary.opacity(0.1)` → ~#F5F5F5 on white → ~1.07:1 (fails). Raise to `0.2`.
+- `Color.red.opacity(0.1)` → ~#FFE5E5 → ~1.06:1 (fails). Raise to `0.2`.
+- `Color.accentColor.opacity(0.2)` → transient drop target, not persistent UI. Acceptable as-is but raise to `0.25`; Increase Contrast to `0.4`.
 
-### Decision 2: Increase Contrast via `@Environment(\.accessibilityContrast)`
+### Decision 2: Increase Contrast via `@Environment(\.colorSchemeContrast)`
 
-SwiftUI exposes `\.accessibilityContrast` which returns `.increased` when the user enables "Increase contrast" in System Settings → Accessibility → Display. Use a small helper that returns a higher opacity when increased contrast is active. This avoids scattering `@Environment` reads across every view — a single `ContrastAwareOpacity` utility handles it.
+SwiftUI exposes `\.colorSchemeContrast` which returns `.increased` when the user enables "Increase contrast" in System Settings → Accessibility → Display. Use a small helper that returns a higher opacity when increased contrast is active. This avoids scattering `@Environment` reads across every view — a single `ContrastAwareOpacity` utility handles it.
 
-### Decision 3: Reduce Motion via `@Environment(\.accessibilityReduceMotion)`
+### Decision 3: Reduce Motion via `NSWorkspace.shared.accessibilityDisplayShouldReduceMotion`
 
-When `accessibilityReduceMotion` is true, replace `withAnimation` calls with immediate state changes (no animation). For `.transition(.opacity)`, keep the transition but remove the animation timing. A small helper `optionalAnimation(_:body:)` wraps the check.
+When Reduce Motion is enabled, replace `withAnimation` calls with immediate state changes (no animation). For `.animation` modifiers, pass `nil` to suppress animation. A free function `optionalAnimation(_:body:)` wraps the check using `NSWorkspace` (since free functions cannot access SwiftUI's `@Environment`).
 
 ### Decision 4: Error suggestions — append to existing `errorDescription`
 
