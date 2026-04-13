@@ -21,6 +21,7 @@ struct TOTPPromptView: View {
                 Image(systemName: "key.2.on.ring.fill")
                     .font(Typography.screenIcon)
                     .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
                 Text("Two-step login")
                     .font(Typography.screenHeading)
                     .accessibilityIdentifier(AccessibilityID.TOTP.headerTitle)

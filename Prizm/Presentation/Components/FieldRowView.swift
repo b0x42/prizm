@@ -67,20 +67,21 @@ struct FieldRowView: View {
         .contentShape(Rectangle())
         .onTapGesture { copyValue() }
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            optionalAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
         }
+        .accessibilityHint(value != nil && !(value?.isEmpty ?? true) ? "Copies \(label) to clipboard" : "")
         .accessibilityIdentifier(AccessibilityID.Field.row(label))
     }
 
     private func copyValue() {
         guard let copyValue = value, !copyValue.isEmpty else { return }
         onCopy?(copyValue)
-        withAnimation(.easeInOut(duration: 0.1)) { showCopied = true }
+        optionalAnimation(.easeInOut(duration: 0.1)) { showCopied = true }
         Task {
             try? await Task.sleep(for: .seconds(0.8))
-            withAnimation(.easeInOut(duration: 0.1)) { showCopied = false }
+            optionalAnimation(.easeInOut(duration: 0.1)) { showCopied = false }
         }
     }
 
@@ -109,6 +110,8 @@ struct FieldRowView: View {
             }
             .buttonStyle(.plain)
             .help("Open in browser")
+            .accessibilityLabel("Open \(label)")
+            .accessibilityHint("Opens in browser")
             .accessibilityIdentifier(AccessibilityID.Field.openButton(label))
         }
     }

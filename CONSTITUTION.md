@@ -1,21 +1,17 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.4.1 → 1.4.2
-Bump type: PATCH — Security Requirements §Keychain clarified; no new principles,
-           no behavioural change for existing code.
-Modified sections:
-  - Security Requirements / Keychain only: rule reframed from prescribing a specific
-    Keychain flag (kSecAttrAccessibleWhenUnlockedThisDeviceOnly) to specifying the
-    security *properties* that storage must satisfy. kSecAccessControl policies that are
-    strictly more restrictive (e.g. .biometryCurrentSet for biometric-gated secrets) are
-    now explicitly permitted with mandatory design documentation. The "No iCloud sync"
-    bullet is merged into the revised Keychain rule for clarity.
-Added sections: N/A
+Version change: 1.4.3 → 1.5.0
+Bump type: MINOR — New principle added (§VIII Accessibility).
+Modified sections: N/A
+Added sections:
+  - §VIII. Accessibility (NON-NEGOTIABLE): All interactive controls must be VoiceOver-
+    usable with accessibilityLabel. Decorative images hidden. Stateful controls expose
+    value. Section headers carry .isHeader trait. Transient errors announced. Project
+    must maintain ACCESSIBILITY.md conformance statement. PRs without labels are blocking.
 Removed sections: N/A
-Templates requiring updates: N/A — PATCH clarification only; no existing code is affected.
-Follow-up TODOs:
-  - Update CLAUDE.md §III reference to reflect native crypto approach (carried from 1.4.0).
+Templates requiring updates: N/A
+Follow-up TODOs: N/A
 -->
 
 # Prizm Constitution
@@ -140,6 +136,27 @@ Every security-critical implementation decision MUST be documented for public au
 - The goal: any developer — or technically literate user — MUST be able to read the
   source and independently verify that the implementation is correct and safe.
   **No black boxes. No "trust us".**
+
+### VIII. Accessibility (NON-NEGOTIABLE)
+
+A password manager that excludes users with disabilities excludes them from their own
+credentials. Accessibility is not optional polish — it is a functional requirement.
+
+- Every interactive control MUST be usable via VoiceOver with a meaningful spoken
+  description. Icon-only buttons MUST have an `accessibilityLabel`.
+- Decorative images MUST be hidden from the accessibility tree via
+  `accessibilityHidden(true)`.
+- Stateful controls (toggles, mode switches) MUST expose their current state via
+  `accessibilityValue`.
+- Section headers MUST carry the `.isHeader` accessibility trait so VoiceOver users
+  can navigate by heading.
+- Transient status changes (error banners, sync failures) MUST be announced to
+  assistive technology via `AccessibilityNotification.Announcement`.
+- The project MUST maintain an accessibility conformance statement
+  (`ACCESSIBILITY.md`) documenting current support against WCAG 2.1 Level AA /
+  EN 301 549 Chapter 11. Known gaps MUST be documented honestly.
+- PRs that add new interactive controls without accessibility labels are blocking
+  rejections — same as architecture or security violations.
 
 ---
 
@@ -287,4 +304,4 @@ Standards governing how features are built and shipped:
 
 ---
 
-**Version**: 1.4.3 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-09
+**Version**: 1.5.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-10

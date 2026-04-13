@@ -36,6 +36,7 @@ struct FaviconView: View {
             }
         }
         .frame(width: size, height: size)
+        .accessibilityHidden(true)
         .task(id: domain) {
             guard let domain else {
                 image = nil

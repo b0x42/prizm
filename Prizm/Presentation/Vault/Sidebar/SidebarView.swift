@@ -70,6 +70,7 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
                 .help("New Folder")
+                .accessibilityLabel("New Folder")
                 .padding(.trailing, 10)
             }
         case .trash:
@@ -238,6 +239,7 @@ private struct FolderRowLabel: View {
     var onDelete: () -> Void
     var onDrop: ([String]) -> Void
 
+    @Environment(\.colorSchemeContrast) private var contrast
     @State private var isDropTargeted = false
 
     var body: some View {
@@ -245,7 +247,7 @@ private struct FolderRowLabel: View {
             .font(Typography.sidebarRow)
             .badge(count)
             .tag(SidebarSelection.folder(folder.id))
-            .listRowBackground(isDropTargeted ? Color.accentColor.opacity(0.2) : Color.clear)
+            .listRowBackground(isDropTargeted ? Color.accentColor.opacity(Opacity.dropTarget(contrast)) : Color.clear)
             .contextMenu {
                 Button("Rename") { onRename() }
                 Divider()

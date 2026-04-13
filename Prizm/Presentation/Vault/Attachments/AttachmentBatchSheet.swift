@@ -74,6 +74,7 @@ struct AttachmentBatchSheet: View {
         HStack(spacing: 8) {
             Image(systemName: "doc")
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.fileName)
@@ -103,6 +104,7 @@ struct AttachmentBatchSheet: View {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
                     .imageScale(.small)
+                    .accessibilityHidden(true)
                 Text("Exceeds 500 MB limit")
                     .font(Typography.utility)
                     .foregroundStyle(.orange)
@@ -115,12 +117,14 @@ struct AttachmentBatchSheet: View {
         case .succeeded:
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.green)
+                .accessibilityHidden(true)
 
         case .failed(let message):
             HStack(spacing: 4) {
                 Image(systemName: "xmark.circle")
                     .foregroundStyle(.red)
                     .imageScale(.small)
+                    .accessibilityHidden(true)
                 Text(message)
                     .font(Typography.utility)
                     .foregroundStyle(.red)

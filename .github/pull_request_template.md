@@ -9,7 +9,7 @@
 ## Checklist
 
 - [ ] All tests pass (`⌘U` in Xcode)
-- [ ] No new `Macwarden` or `macwarden` references introduced
+- [ ] No new `Macwarden` or `macwarden` references introduced (legacy name — use `Prizm` / `prizm`)
 - [ ] Follows [CONSTITUTION.md](../CONSTITUTION.md) principles (Native-First, Clean Architecture, Security-First, TDD)
 - [ ] New crypto or security-critical code includes inline spec references and a security goal comment
 - [ ] No secrets or credentials committed

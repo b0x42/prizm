@@ -22,7 +22,7 @@ struct SyncProgressView: View {
             Text(message)
                 .font(Typography.progressLabel)
                 .foregroundStyle(.secondary)
-                .animation(.easeInOut, value: message)
+                .animation(AccessibilityInfo.prefersReducedMotion ? nil : .easeInOut, value: message)
                 .accessibilityIdentifier(AccessibilityID.Sync.progressMessage)
         }
         .frame(minWidth: 480, minHeight: 320)

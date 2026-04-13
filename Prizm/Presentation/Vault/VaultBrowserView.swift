@@ -27,6 +27,7 @@ struct VaultBrowserView: View {
     @State private var showDeleteFolderAlert = false
     @State private var folderToDelete: Folder?
     @State private var isSearchFieldFocused = false
+    @Environment(\.colorSchemeContrast) private var contrast
 
     private let logger = Logger(subsystem: "com.prizm", category: "UI.VaultBrowser")
 
@@ -61,6 +62,7 @@ struct VaultBrowserView: View {
                         SettingsLink {
                             Image(systemName: "gearshape")
                         }
+                        .accessibilityLabel("Settings")
                         .accessibilityIdentifier(AccessibilityID.Vault.settingsButton)
                     }
                 }
@@ -101,6 +103,7 @@ struct VaultBrowserView: View {
                             Image(systemName: "plus")
                         }
                         .help("New Item (⌘N)")
+                        .accessibilityLabel("New Item")
                         .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
                         .menuIndicator(.visible)
                         .background {
@@ -156,6 +159,8 @@ struct VaultBrowserView: View {
                                         .foregroundStyle(item.isFavorite ? .yellow : .secondary)
                                 }
                                 .help(item.isFavorite ? "Unfavorite" : "Favorite")
+                                .accessibilityLabel(item.isFavorite ? "Unfavorite" : "Favorite")
+                                .accessibilityValue(item.isFavorite ? "Favorited" : "Not favorited")
                             }
                             ToolbarItem(placement: .primaryAction) {
                                 Button("Edit") {
@@ -235,6 +240,16 @@ struct VaultBrowserView: View {
         .onChange(of: viewModel.isGlobalSearch) { _, isActive in
             if !isActive { isSearchFieldFocused = false }
         }
+        .onChange(of: viewModel.syncErrorMessage) { _, newMessage in
+            if let message = newMessage {
+                AccessibilityNotification.Announcement(message).post()
+            }
+        }
+        .onChange(of: viewModel.actionError) { _, newError in
+            if let error = newError {
+                AccessibilityNotification.Announcement(error).post()
+            }
+        }
         .background {
             Button("") {
                 viewModel.activateGlobalSearch()
@@ -274,11 +289,12 @@ struct VaultBrowserView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Dismiss")
+                .accessibilityLabel("Dismiss")
                 .accessibilityIdentifier(AccessibilityID.Vault.syncErrorDismiss)
             }
             .padding(.horizontal, Spacing.bannerHorizontal)
             .padding(.vertical, Spacing.bannerVertical)
-            .background(Color.yellow.opacity(0.15))
+            .background(Color.yellow.opacity(Opacity.bannerBackground(contrast)))
             .frame(maxHeight: 44)
             .accessibilityIdentifier(AccessibilityID.Vault.syncErrorBanner)
         }

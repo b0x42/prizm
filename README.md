@@ -51,6 +51,7 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 - **Password & passphrase generator** — configurable length, character sets, and word separators
 - **Touch ID / Face ID unlock** — unlock your vault with biometrics; auto-prompts on lock; graceful re-enrollment when fingerprints change
 - **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
+- **Accessible** — VoiceOver labels and hints on all controls, keyboard navigable, respects Reduce Motion and Increase Contrast; targets WCAG 2.1 AA. See [ACCESSIBILITY.md](ACCESSIBILITY.md)
 
 ## Install
 
@@ -102,7 +103,7 @@ All cryptography runs locally on your device:
 - **AES-256-CBC + HMAC-SHA256** authenticated encryption — all vault data stays encrypted in memory and in transit
 - **macOS Keychain** storage (device-only, `WhenUnlockedThisDeviceOnly`) — session keys never touch iCloud
 
-The app is open source. Verify these claims by reading the code. See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specifications, and what the app does not protect against.
+The app is open source. Verify these claims by reading the code. See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specifications, and what the app does not protect against. See [ACCESSIBILITY.md](ACCESSIBILITY.md) for the WCAG 2.1 conformance statement.
 
 ## Shortcuts
 

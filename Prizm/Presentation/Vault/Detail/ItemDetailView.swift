@@ -40,6 +40,8 @@ struct ItemDetailView: View {
 
     @State private var batchAttachmentViewModel: AttachmentBatchViewModel?
 
+    @Environment(\.colorSchemeContrast) private var contrast
+
     var body: some View {
         if let item {
             ScrollView {
@@ -146,7 +148,7 @@ struct ItemDetailView: View {
         }
         .padding(.horizontal, Spacing.pageMargin)
         .padding(.vertical, Spacing.headerGap)
-        .background(Color.secondary.opacity(0.1))
+        .background(Color.secondary.opacity(Opacity.trashBanner(contrast)))
         .accessibilityIdentifier(AccessibilityID.Trash.statusBanner)
     }
 

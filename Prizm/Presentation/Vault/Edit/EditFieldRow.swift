@@ -125,6 +125,7 @@ struct MaskedEditFieldRow: View {
                 }
                 .buttonStyle(.plain)
                 .help("Generate password")
+                .accessibilityLabel("Generate password")
                 .accessibilityIdentifier(AccessibilityID.Generator.triggerButton)
                 .popover(isPresented: $showGenerator) {
                     if let vm = generatorVM {
@@ -148,6 +149,7 @@ struct MaskedEditFieldRow: View {
             }
             .buttonStyle(.plain)
             .help(isRevealed ? "Hide" : "Reveal")
+            .accessibilityLabel(isRevealed ? "Hide \(label)" : "Reveal \(label)")
         }
         .padding(.vertical, Spacing.rowVertical)
         .padding(.horizontal, Spacing.rowHorizontal)

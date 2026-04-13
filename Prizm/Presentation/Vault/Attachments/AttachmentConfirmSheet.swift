@@ -14,6 +14,7 @@ struct AttachmentConfirmSheet: View {
     let viewModel: AttachmentAddViewModel
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -48,6 +49,7 @@ struct AttachmentConfirmSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     Text(advisory)
                         .font(Typography.fieldLabel)
                         .foregroundStyle(.secondary)
@@ -61,13 +63,14 @@ struct AttachmentConfirmSheet: View {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.yellow)
+                        .accessibilityHidden(true)
                     Text(error)
                         .font(Typography.fieldValue)
                 }
                 .padding(.horizontal, Spacing.pageMargin)
                 .padding(.vertical, Spacing.rowVertical)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.red.opacity(0.1))
+                .background(Color.red.opacity(Opacity.errorBanner(contrast)))
             }
 
             // Progress indicator during upload

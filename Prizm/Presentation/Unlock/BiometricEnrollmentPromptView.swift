@@ -25,6 +25,7 @@ struct BiometricEnrollmentPromptView: View {
             Image(systemName: biometrySystemImage)
                 .font(.system(size: 40))
                 .foregroundStyle(.tint)
+                .accessibilityHidden(true)
 
             Text(heading)
                 .font(.headline)

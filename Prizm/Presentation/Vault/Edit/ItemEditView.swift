@@ -21,6 +21,7 @@ struct ItemEditView: View {
 
     /// Whether the discard confirmation alert is currently showing.
     @State private var showingDiscardAlert = false
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,7 +35,7 @@ struct ItemEditView: View {
                     Spacer()
                 }
                 .padding(12)
-                .background(Color.red.opacity(0.1))
+                .background(Color.red.opacity(Opacity.errorBanner(contrast)))
                 .accessibilityIdentifier(AccessibilityID.Edit.errorBanner)
             }
 
