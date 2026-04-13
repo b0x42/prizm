@@ -1169,7 +1169,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V2;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Prizm/Prizm.entitlements;
@@ -1228,7 +1228,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Prizm_V2;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Prizm/Prizm.entitlements;

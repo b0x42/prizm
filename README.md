@@ -15,7 +15,10 @@ Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift.
 
 ---
 
-![Prizm screenshot](assets/screenshot.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot_dark.png">
+  <img alt="Prizm screenshot" src="assets/screenshot.png">
+</picture>
 
 ---
 
