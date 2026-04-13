@@ -48,6 +48,7 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 - **Password & passphrase generator** — configurable length, character sets, and word separators
 - **Touch ID / Face ID unlock** — unlock your vault with biometrics; auto-prompts on lock; graceful re-enrollment when fingerprints change
 - **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
+- **Accessible** — VoiceOver labels and hints on all controls, keyboard navigable, respects Reduce Motion and Increase Contrast; targets WCAG 2.1 AA. See [ACCESSIBILITY.md](ACCESSIBILITY.md)
 
 ## Install
 
