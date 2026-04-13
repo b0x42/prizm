@@ -27,6 +27,7 @@ struct VaultBrowserView: View {
     @State private var showDeleteFolderAlert = false
     @State private var folderToDelete: Folder?
     @State private var isSearchFieldFocused = false
+    @Environment(\.colorSchemeContrast) private var contrast
 
     private let logger = Logger(subsystem: "com.prizm", category: "UI.VaultBrowser")
 
@@ -293,7 +294,7 @@ struct VaultBrowserView: View {
             }
             .padding(.horizontal, Spacing.bannerHorizontal)
             .padding(.vertical, Spacing.bannerVertical)
-            .background(Color.yellow.opacity(0.15))
+            .background(Color.yellow.opacity(Opacity.bannerBackground(contrast)))
             .frame(maxHeight: 44)
             .accessibilityIdentifier(AccessibilityID.Vault.syncErrorBanner)
         }

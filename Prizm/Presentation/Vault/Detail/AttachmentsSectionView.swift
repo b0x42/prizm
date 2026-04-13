@@ -113,7 +113,7 @@ struct AttachmentsSectionView: View {
         RoundedRectangle(cornerRadius: 10)
             .stroke(Color.accentColor, lineWidth: 2)
             .opacity(isDragTargeted ? 1 : 0)
-            .animation(.easeInOut(duration: 0.15), value: isDragTargeted)
+            .animation(AccessibilityInfo.prefersReducedMotion ? nil : .easeInOut(duration: 0.15), value: isDragTargeted)
     }
 
     // MARK: - Row with ViewModel (wired)

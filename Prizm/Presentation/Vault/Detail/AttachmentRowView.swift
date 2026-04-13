@@ -50,7 +50,7 @@ struct AttachmentRowView: View {
         .padding(.horizontal, Spacing.rowHorizontal)
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            optionalAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
         }

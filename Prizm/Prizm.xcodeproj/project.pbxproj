@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		967254DE6EE74766B9E011A5 /* OptionalAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */; };
+		9B3412B1F4F648DEBC7BFC94 /* ContrastAwareOpacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505C5126B6264355A140762B /* ContrastAwareOpacity.swift */; };
 		018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */; };
 		01C52844A03B4BA8A309902D /* ItemListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8949A6D242488CBEC15CC0 /* ItemListView.swift */; };
 		0718293040506070F90A1B2C /* ItemEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18293040506070E0A1B2C3D4 /* ItemEditViewModel.swift */; };
@@ -155,6 +157,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionalAnimation.swift; sourceTree = "<group>"; };
+		505C5126B6264355A140762B /* ContrastAwareOpacity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrastAwareOpacity.swift; sourceTree = "<group>"; };
 		00802736F25046A0BD600128 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCase.swift; sourceTree = "<group>"; };
 		0AC78A983744489DB1F8BCFB /* Folder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Folder.swift; sourceTree = "<group>"; };
@@ -494,6 +498,8 @@
 		4309FCF62F680C950031C9F4 /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
+				505C5126B6264355A140762B /* ContrastAwareOpacity.swift */,
+				136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */,
 				BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */,
 				FF00112233445566778899AA /* DesignSystem.swift */,
 				EEBF74B2F57C4B2D9FAA790B /* About/AboutViewModel.swift */,
@@ -823,6 +829,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9B3412B1F4F648DEBC7BFC94 /* ContrastAwareOpacity.swift in Sources */,
+				967254DE6EE74766B9E011A5 /* OptionalAnimation.swift in Sources */,
 				6A563BC5058D474D9C84561E /* Account.swift in Sources */,
 				AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */,
 				D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */,

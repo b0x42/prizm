@@ -13,13 +13,15 @@ import SwiftUI
 /// so shifting the card background ensures the shadow remains effective in both
 /// appearances without requiring `@Environment(\.colorScheme)` logic here.
 struct CardBackground: ViewModifier {
+    @Environment(\.colorSchemeContrast) private var contrast
+
     func body(content: Content) -> some View {
         content
             .background(Color("CardBackground"))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                    .stroke(Color.primary.opacity(Opacity.cardBorder(contrast)), lineWidth: 0.5)
             )
     }
 }

@@ -345,8 +345,19 @@ final class VaultBrowserViewModel: ObservableObject {
         do {
             try await deleteUseCase.execute(id: id)
             logger.info("Item soft-deleted: \(id, privacy: .public)")
-            if itemSelection?.id == id { itemSelection = nil }
-            refreshItems()
+            if itemSelection?.id == id {
+                let idx = displayedItems.firstIndex(where: { $0.id == id })
+                refreshItems()
+                if let idx {
+                    itemSelection = displayedItems.indices.contains(idx) ? displayedItems[idx]
+                        : displayedItems.indices.contains(idx - 1) ? displayedItems[idx - 1]
+                        : nil
+                } else {
+                    itemSelection = nil
+                }
+            } else {
+                refreshItems()
+            }
             refreshCounts()
         } catch {
             logger.error("Soft-delete failed for \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")

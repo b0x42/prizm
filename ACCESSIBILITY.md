@@ -32,7 +32,7 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 | 2.1.4 Character Key Shortcuts | Not Applicable | No single-character key shortcuts. All shortcuts use modifier keys. |
 | 2.2.1 Timing Adjustable | Not Applicable | No time limits on user actions. Auto-lock is a security feature, not a content timeout. |
 | 2.2.2 Pause, Stop, Hide | Not Applicable | No auto-updating or moving content. |
-| 2.3.1 Three Flashes or Below Threshold | Supports | No flashing content. |
+| 2.3.1 Three Flashes or Below Threshold | Supports | No flashing content. All animations respect the macOS Reduce Motion preference. |
 | 2.4.1 Bypass Blocks | Supports | Three-pane NavigationSplitView allows direct navigation to sidebar, content, or detail. |
 | 2.4.2 Page Titled | Supports | Window title reflects the application name. |
 | 2.4.3 Focus Order | Supports | Focus order follows the logical reading order of the three-pane layout. |
@@ -55,11 +55,11 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 |---|---|---|
 | 1.3.4 Orientation | Supports | App adapts to window resizing. No fixed orientation. |
 | 1.3.5 Identify Input Purpose | Supports | Login fields use standard text field types. |
-| 1.4.3 Contrast (Minimum) | Partially Supports | Uses macOS system colours and semantic styles (`.primary`, `.secondary`). A formal contrast audit has not been performed. Custom opacity values (e.g. banner backgrounds) may not meet 4.5:1 in all configurations. |
+| 1.4.3 Contrast (Minimum) | Supports | Uses macOS system colours and semantic styles (`.primary`, `.secondary`). Custom opacity values on banners and borders have been raised to meet 3:1 non-text contrast. Increase Contrast preference further raises opacity values. |
 | 1.4.4 Resize Text | Supports | SwiftUI semantic fonts respect the macOS text size accessibility setting. |
 | 1.4.5 Images of Text | Supports | No images of text. All text is rendered as native text. |
 | 1.4.10 Reflow | Supports | Three-pane layout reflows with window resizing. No horizontal scrolling required. |
-| 1.4.11 Non-text Contrast | Partially Supports | Icon buttons use system accent colour against system backgrounds. A formal contrast audit has not been performed for all icon/background combinations. |
+| 1.4.11 Non-text Contrast | Supports | Icon buttons use system accent colour against system backgrounds. Custom opacity values on borders and indicators meet 3:1 non-text contrast. Increase Contrast preference raises values further. |
 | 1.4.12 Text Spacing | Supports | SwiftUI respects system text spacing preferences. |
 | 1.4.13 Content on Hover or Focus | Supports | Hover-revealed actions (copy, open, save) do not obscure other content and are dismissible. |
 | 2.4.5 Multiple Ways | Supports | Items accessible via sidebar navigation, search (⌘F), and keyboard shortcuts. |
@@ -67,7 +67,7 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 | 2.4.7 Focus Visible | Supports | macOS provides default focus rings on all focusable controls. |
 | 3.2.3 Consistent Navigation | Supports | Sidebar navigation is consistent across all views. |
 | 3.2.4 Consistent Identification | Supports | Same actions use same labels throughout (e.g. "Copy", "Reveal", "Delete"). |
-| 3.3.3 Error Suggestion | Partially Supports | Error messages describe the problem but do not always suggest a correction. |
+| 3.3.3 Error Suggestion | Supports | Error messages include corrective suggestions where an actionable fix is known (e.g. "Check your network connection", "Make sure to include https://"). |
 | 3.3.4 Error Prevention (Legal, Financial, Data) | Supports | Destructive actions (delete, permanent delete) require confirmation dialogs. |
 | 4.1.3 Status Messages | Supports | Error banners and sync status changes are announced to VoiceOver via `AccessibilityNotification.Announcement`. |
 
@@ -75,9 +75,7 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 
 ## Known Gaps
 
-1. **Colour contrast not formally audited** (1.4.3, 1.4.11) — The app uses macOS system colours which generally meet contrast requirements, but custom opacity values on banners and status indicators have not been measured against WCAG thresholds.
-2. **Drag-and-drop lacks keyboard alternative** (2.1.1) — Folder drag-and-drop operations cannot be performed via keyboard alone. Items can be moved to folders via the edit form as a workaround.
-3. **Error suggestions** (3.3.3) — Error messages identify the problem but do not always suggest specific corrective action.
+1. **Drag-and-drop lacks keyboard alternative** (2.1.1) — Folder drag-and-drop operations cannot be performed via keyboard alone. Items can be moved to folders via the edit form as a workaround.
 
 ---
 

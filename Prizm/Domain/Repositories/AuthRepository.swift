@@ -122,17 +122,17 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .invalidCredentials:
-            return "Invalid email or master password."
+            return "Invalid email or master password. Check your email and master password."
         case .invalidTwoFactorCode:
             return "Invalid two-factor code. Please try again."
         case .invalidURL:
-            return "Invalid server URL. Please enter a full URL including https://."
+            return "Invalid server URL. Make sure to include https://."
         case .serverUnreachable:
-            return "Cannot reach the server. Check the URL and your connection."
+            return "Cannot reach the server. Verify the URL and check your connection."
         case .unrecognizedServer:
             return "This server doesn't appear to be a Bitwarden instance."
         case .networkUnavailable:
-            return "No internet connection."
+            return "No internet connection. Check your network connection."
         case .unsupported2FAMethod(let name):
             return "Two-factor method '\(name)' is not supported. Use an authenticator app."
         case .biometricInvalidated:

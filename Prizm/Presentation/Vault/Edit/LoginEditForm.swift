@@ -110,7 +110,7 @@ private struct URIEditRow: View {
                 EditFieldRow(label: "Website", text: $uri.uri)
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    optionalAnimation(.easeInOut(duration: 0.2)) {
                         showMatchType.toggle()
                     }
                 } label: {
