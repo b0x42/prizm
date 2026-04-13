@@ -147,22 +147,18 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         XCTAssertTrue(mockAuth.unlockWithBiometricsCalled)
     }
 
-    // MARK: - Enrollment prompt (inline via flowState)
+    // MARK: - Enrollment prompt (modal sheet via showEnrollmentPrompt)
 
     func testDismissEnrollmentPrompt_transitionsToVault() async {
         // Drive enrollment state through the real unlock flow:
-        // biometrics capable + not enabled + prompt never shown → flowState becomes .enrollmentPrompt
+        // biometrics capable + not enabled + prompt never shown → showEnrollmentPrompt = true
         mockAuth.stubbedDeviceBiometricCapable = true
         UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
         UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
 
-        // Await enrollmentPrompt state after password unlock.
-        let enrollExp = expectation(description: "reaches enrollmentPrompt state")
-        sut.$flowState
-            .compactMap { state -> EnrollmentReason? in
-                if case .enrollmentPrompt(let reason) = state { return reason }
-                return nil
-            }
+        let enrollExp = expectation(description: "enrollment prompt shown")
+        sut.$showEnrollmentPrompt
+            .filter { $0 == true }
             .first()
             .sink { _ in enrollExp.fulfill() }
             .store(in: &cancellables)
@@ -171,7 +167,6 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         sut.unlock()
         await fulfillment(of: [enrollExp], timeout: 3.0)
 
-        // Now dismiss and confirm vault transition.
         let vaultExp = expectation(description: "transitions to vault after dismiss")
         sut.$flowState
             .filter { $0 == .vault }
@@ -182,10 +177,8 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         sut.dismissEnrollmentPrompt()
         await fulfillment(of: [vaultExp], timeout: 3.0)
 
+        XCTAssertFalse(sut.showEnrollmentPrompt)
         XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown"))
-        if case .enrollmentPrompt = sut.flowState {
-            XCTFail("flowState should not still be .enrollmentPrompt after dismiss")
-        }
     }
 
     func testConfirmEnrollBiometric_transitionsToVault() async {
@@ -193,12 +186,9 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
         UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
 
-        let enrollExp = expectation(description: "reaches enrollmentPrompt state")
-        sut.$flowState
-            .compactMap { state -> EnrollmentReason? in
-                if case .enrollmentPrompt(let reason) = state { return reason }
-                return nil
-            }
+        let enrollExp = expectation(description: "enrollment prompt shown")
+        sut.$showEnrollmentPrompt
+            .filter { $0 == true }
             .first()
             .sink { _ in enrollExp.fulfill() }
             .store(in: &cancellables)
@@ -217,6 +207,7 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         sut.confirmEnrollBiometric()
         await fulfillment(of: [vaultExp], timeout: 3.0)
 
+        XCTAssertFalse(sut.showEnrollmentPrompt)
         XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown"))
     }
 
@@ -225,21 +216,17 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
         UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
 
-        let exp = expectation(description: "reaches enrollmentPrompt with .firstTime reason")
-        sut.$flowState
-            .compactMap { state -> EnrollmentReason? in
-                if case .enrollmentPrompt(let reason) = state { return reason }
-                return nil
-            }
+        let exp = expectation(description: "enrollment prompt shown with .firstTime reason")
+        sut.$showEnrollmentPrompt
+            .filter { $0 == true }
             .first()
-            .sink { reason in
-                XCTAssertEqual(reason, .firstTime)
-                exp.fulfill()
-            }
+            .sink { _ in exp.fulfill() }
             .store(in: &cancellables)
 
         sut.password = "TestPassword1!"
         sut.unlock()
         await fulfillment(of: [exp], timeout: 3.0)
+
+        XCTAssertEqual(sut.enrollmentReason, .firstTime)
     }
 }
