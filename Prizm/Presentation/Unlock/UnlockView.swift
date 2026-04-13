@@ -182,14 +182,6 @@ struct UnlockView: View {
         }
     }
 
-    private var biometricSystemImage: String {
-        switch LAContext().biometryType {
-        case .touchID: return "touchid"
-        case .faceID:  return "faceid"
-        default:       return "person.badge.key"
-        }
-    }
-
     private func enrollmentHeading(reason: EnrollmentReason) -> String {
         switch reason {
         case .firstTime:                 return "Enable \(biometricMethodName) to unlock faster"

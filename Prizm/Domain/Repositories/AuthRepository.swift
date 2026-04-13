@@ -121,6 +121,9 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
     case unsupported2FAMethod(String)
     /// Biometric Keychain item was invalidated due to fingerprint enrollment change.
     case biometricInvalidated
+    /// Biometric Keychain item was deleted externally (Keychain Access, reinstall, etc.).
+    /// Distinct from `biometricInvalidated` — no error is shown; the app silently falls back.
+    case biometricItemNotFound
     /// Biometric unlock cannot be enabled — vault is locked (keys not in memory).
     case biometricUnavailable
 
@@ -142,6 +145,9 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
             return "Two-factor method '\(name)' is not supported. Use an authenticator app."
         case .biometricInvalidated:
             return "Your Touch ID settings have changed. Please enter your master password to continue."
+        case .biometricItemNotFound:
+            // Intentionally nil — this error is handled silently in UnlockViewModel.
+            return nil
         case .biometricUnavailable:
             return "Biometric unlock is not available. Please unlock with your master password."
         }

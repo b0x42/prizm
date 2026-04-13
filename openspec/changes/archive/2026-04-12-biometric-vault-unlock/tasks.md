@@ -68,5 +68,5 @@
 - [x] 10.1 Inject `BiometricKeychainService` into `AuthRepositoryImpl` via `AppContainer`
 - [x] 10.2 Remove any `TODO: biometric unlock` comments from existing code
 - [x] 10.3 Verify build compiles in Swift 6 strict concurrency mode with no warnings
-- [ ] 10.4 Manual smoke test: enable Touch ID, lock vault, confirm auto-prompt fires, confirm unlock succeeds
+- [x] 10.4 Manual smoke test: enable Touch ID, lock vault, confirm auto-prompt fires, confirm unlock succeeds
 - [x] 10.5 Update `SECURITY.md` — document biometric Keychain item: what is stored (`CryptoKeys`, 64 bytes), access control (`.biometryCurrentSet`, Secure Enclave-backed), conditions under which the item is created (user opt-in, vault unlocked) and deleted (sign-out, disable toggle, biometric invalidation), and that `kSecAttrSynchronizable` is not set (device-only, never backed up)
