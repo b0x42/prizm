@@ -71,9 +71,9 @@ final class AppContainer: ObservableObject {
         let crypto        = PrizmCryptoServiceImpl()
         let keychain      = KeychainServiceImpl()
         let biometricKeychain = BiometricKeychainServiceImpl()
-        let vault         = VaultRepositoryImpl(apiClient: api, crypto: crypto, orgKeyCache: orgKeyCache)
         let keyCache      = VaultKeyCache()
         let orgKeyCache   = OrgKeyCache()
+        let vault         = VaultRepositoryImpl(apiClient: api, crypto: crypto, orgKeyCache: orgKeyCache)
         let vaultKeyService = VaultKeyServiceImpl(cache: keyCache, crypto: crypto)
 
         let auth = AuthRepositoryImpl(

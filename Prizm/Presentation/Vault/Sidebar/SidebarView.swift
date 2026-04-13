@@ -80,7 +80,7 @@ struct SidebarView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { col in
-            Text(""\(col.name)" will be permanently deleted. Items in this collection will remain in the vault.")
+            Text("\u{201C}\(col.name)\u{201D} will be permanently deleted. Items in this collection will remain in the vault.")
         }
     }
 

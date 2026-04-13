@@ -200,6 +200,8 @@ protocol RootViewModelDependencies: AnyObject {
     var vaultRepo: any VaultRepository { get }
     /// The per-cipher attachment key cache. Cleared on vault lock alongside the vault store.
     var vaultKeyCache: VaultKeyCache { get }
+    /// The per-organisation symmetric key cache. Cleared on vault lock alongside the vault store.
+    var orgKeyCache: OrgKeyCache { get }
     func makeLoginViewModel() -> LoginViewModel
     func makeUnlockViewModel(account: Account) -> UnlockViewModel
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel

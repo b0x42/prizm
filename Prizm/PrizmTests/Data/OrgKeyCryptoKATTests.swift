@@ -83,7 +83,7 @@ final class OrgKeyCryptoKATTests: XCTestCase {
     func testDecryptRSAPrivateKey_roundTrip() async throws {
         // GIVEN: a known 64-byte vault key and a known RSA private key (PKCS#8 DER)
         let vaultKeyData = Data(repeating: 0x42, count: 64)
-        let vaultKeys = CryptoKeys(data: vaultKeyData)
+        let vaultKeys = try XCTUnwrap(CryptoKeys(data: vaultKeyData))
 
         // The RSA private key bytes we want to protect (simplified: 16 bytes for this structural test)
         let privateKeyPlaintext = Data(repeating: 0xAB, count: 64)

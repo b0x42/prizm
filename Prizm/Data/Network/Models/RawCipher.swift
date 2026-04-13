@@ -46,6 +46,34 @@ nonisolated struct RawCipher: Codable {
     /// attachments or omits the field entirely; treated as `[]` by `CipherMapper`.
     let attachments:    [AttachmentDTO]?
 
+    /// Custom decoder — all fields use standard decoding except `collectionIds`, which
+    /// defaults to `[]` when the key is absent so that personal-item ciphers (which the
+    /// server omits the key for) decode without error.
+    init(from decoder: Decoder) throws {
+        let c          = try decoder.container(keyedBy: CodingKeys.self)
+        id             = try c.decode(String.self,                forKey: .id)
+        organizationId = try c.decodeIfPresent(String.self,       forKey: .organizationId)
+        folderId       = try c.decodeIfPresent(String.self,       forKey: .folderId)
+        type           = try c.decode(Int.self,                   forKey: .type)
+        name           = try c.decode(String.self,                forKey: .name)
+        notes          = try c.decodeIfPresent(String.self,       forKey: .notes)
+        favorite       = try c.decode(Bool.self,                  forKey: .favorite)
+        reprompt       = try c.decodeIfPresent(Int.self,          forKey: .reprompt)
+        deletedDate    = try c.decodeIfPresent(String.self,       forKey: .deletedDate)
+        creationDate   = try c.decodeIfPresent(String.self,       forKey: .creationDate)
+        revisionDate   = try c.decodeIfPresent(String.self,       forKey: .revisionDate)
+        login          = try c.decodeIfPresent(RawLoginData.self,     forKey: .login)
+        card           = try c.decodeIfPresent(RawCardData.self,      forKey: .card)
+        identity       = try c.decodeIfPresent(RawIdentityData.self,  forKey: .identity)
+        secureNote     = try c.decodeIfPresent(RawSecureNoteData.self, forKey: .secureNote)
+        sshKey         = try c.decodeIfPresent(RawSSHKeyData.self,    forKey: .sshKey)
+        fields         = try c.decodeIfPresent([RawField].self,       forKey: .fields)
+        key            = try c.decodeIfPresent(String.self,           forKey: .key)
+        // `collectionIds` is absent for personal items; default to [] rather than throwing.
+        collectionIds  = (try? c.decode([String].self, forKey: .collectionIds)) ?? []
+        attachments    = try c.decodeIfPresent([AttachmentDTO].self,  forKey: .attachments)
+    }
+
     /// Memberwise init with `collectionIds` defaulted to `[]` so existing call sites
     /// that pre-date this field continue to compile without changes.
     init(id: String, organizationId: String?, folderId: String?, type: Int, name: String,

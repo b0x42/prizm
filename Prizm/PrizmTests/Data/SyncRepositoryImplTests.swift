@@ -139,6 +139,9 @@ final class SyncRepositoryImplTests: XCTestCase {
     /// - `populatedCollections` contains the collection from the sync response (name decrypted)
     func testSync_populatesOrganizationsAndCollections() async throws {
         let orgKey = "2.stubEncKey=="   // MockCrypto.unwrapOrgKey returns a stub key for any value
+        await mockCrypto.unlockWith(keys: CryptoKeys(
+            encryptionKey: Data(count: 32), macKey: Data(count: 32)
+        ))
         mockAPI.syncResponse = SyncResponse(
             profile: RawProfile(
                 id: "pid", email: "test@example.com", name: nil,

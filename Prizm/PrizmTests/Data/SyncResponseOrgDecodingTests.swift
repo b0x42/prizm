@@ -24,7 +24,7 @@ final class SyncResponseOrgDecodingTests: XCTestCase {
         },
         "Ciphers": [
             {
-                "Id": "cipher1",
+                "id": "cipher1",
                 "organizationId": "org1",
                 "type": 1,
                 "name": "2.enc|iv|mac",
@@ -123,7 +123,7 @@ final class SyncResponseOrgDecodingTests: XCTestCase {
         let json = """
         {
             "Profile": {"Id":"u","Email":"e","Name":"n","Key":"2.k|k|k"},
-            "Ciphers": [{"Id":"c1","Type":1,"Name":"2.n|n|n","Favorite":false,"RevisionDate":"2024-01-01T00:00:00Z"}],
+            "Ciphers": [{"id":"c1","type":1,"name":"2.n|n|n","favorite":false,"revisionDate":"2024-01-01T00:00:00Z"}],
             "Folders": []
         }
         """

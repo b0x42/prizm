@@ -120,9 +120,13 @@ final class CollectionUseCaseTests: XCTestCase {
             macKey:        Data(repeating: 0xBB, count: 32)
         ))
 
+        let now = Date()
         let draft = DraftVaultItem(
             id: UUID().uuidString, name: "Personal Item",
-            content: .secureNote(SecureNoteContent(notes: nil, customFields: []))
+            isFavorite: false, isDeleted: false,
+            creationDate: now, revisionDate: now,
+            content: .secureNote(DraftSecureNoteContent(SecureNoteContent(notes: nil, customFields: []))),
+            reprompt: 0
         )
         // organizationId is nil → personal item
 
@@ -149,9 +153,13 @@ final class CollectionUseCaseTests: XCTestCase {
             macKey:        Data(repeating: 0xBB, count: 32)
         ))
 
+        let now = Date()
         var draft = DraftVaultItem(
             id: UUID().uuidString, name: "Org Item",
-            content: .secureNote(SecureNoteContent(notes: nil, customFields: []))
+            isFavorite: false, isDeleted: false,
+            creationDate: now, revisionDate: now,
+            content: .secureNote(DraftSecureNoteContent(SecureNoteContent(notes: nil, customFields: []))),
+            reprompt: 0
         )
         draft.organizationId = "org-1"
         draft.collectionIds  = ["col-1"]

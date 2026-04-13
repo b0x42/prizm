@@ -102,8 +102,37 @@ nonisolated struct RawProfile: Codable {
     let key:                 String
     /// The user's RSA-2048 private key, encrypted under the vault symmetric key.
     /// EncString (Type-2 or Type-4).
-    /// Vaultwarden returns this as `"privateKey"` (camelCase) in the sync profile.
+    /// Vaultwarden returns this as `"privateKey"` (camelCase) in the sync profile;
+    /// the official Bitwarden server uses `"PrivateKey"` (PascalCase). Both are handled.
     let privateKey:          String?
     // Note: KDF params are NOT included in the Vaultwarden sync profile response.
     // They are obtained from the preLogin endpoint and stored in the Keychain at login time.
+
+    /// Custom decoding to handle both Bitwarden server (PascalCase) and Vaultwarden (camelCase)
+    /// field naming within the Profile object.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: FlexProfileKeys.self)
+        id         = try (try? c.decode(String.self,  forKey: .id))  ?? c.decode(String.self,  forKey: .idUpper)
+        email      = try (try? c.decode(String.self,  forKey: .email)) ?? c.decode(String.self, forKey: .emailUpper)
+        name       = try? (try? c.decode(String.self, forKey: .name)) ?? c.decode(String.self, forKey: .nameUpper)
+        key        = try (try? c.decode(String.self,  forKey: .key))  ?? c.decode(String.self,  forKey: .keyUpper)
+        privateKey = (try? c.decode(String.self, forKey: .privateKey))
+                  ?? (try? c.decode(String.self, forKey: .privateKeyUpper))
+    }
+
+    init(id: String, email: String, name: String?, key: String, privateKey: String?) {
+        self.id         = id
+        self.email      = email
+        self.name       = name
+        self.key        = key
+        self.privateKey = privateKey
+    }
+
+    private enum FlexProfileKeys: String, CodingKey {
+        case id = "id", idUpper = "Id"
+        case email = "email", emailUpper = "Email"
+        case name = "name", nameUpper = "Name"
+        case key = "key", keyUpper = "Key"
+        case privateKey = "privateKey", privateKeyUpper = "PrivateKey"
+    }
 }
