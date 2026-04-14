@@ -234,6 +234,7 @@ struct VaultBrowserView: View {
             Text("Items in \"\(folderToDelete?.name ?? "")\" will not be deleted. They will become unfoldered.")
         }
         .accessibilityIdentifier(AccessibilityID.Vault.navigationSplit)
+        .toolbarBackground(.hidden, for: .windowToolbar)
         .onChange(of: viewModel.sidebarSelection) { _, newValue in
             if newValue == .trash {
                 viewModel.searchQuery = ""
