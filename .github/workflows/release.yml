@@ -6,9 +6,51 @@ on:
       - "v*"
 
 jobs:
+  validate-tag:
+    name: Validate Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check semver format
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' is not valid semver (expected vMAJOR.MINOR.PATCH)"
+            exit 1
+          fi
+
+  test:
+    name: Test
+    runs-on: macos-26
+    needs: validate-tag
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
+
+      - name: Install xcpretty
+        run: gem install xcpretty --no-document
+
+      - name: Create signing config
+        run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
+
+      - name: Run tests
+        run: |
+          xcodebuild test \
+            -project "Prizm/Prizm.xcodeproj" \
+            -scheme "Prizm" \
+            -destination "platform=macOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty || exit ${PIPESTATUS[0]}
+
   build-dmg:
     name: Build & Package DMG
     runs-on: macos-26
+    needs: test
     permissions:
       contents: write
 
@@ -19,12 +61,15 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
 
+      - name: Install xcpretty
+        run: gem install xcpretty --no-document
+
       - name: Create signing config (unsigned release build)
         run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
 
       - name: Build Release (no signing)
         run: |
-          set -o pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
           xcodebuild \
             -project "Prizm/Prizm.xcodeproj" \
             -scheme "Prizm" \
@@ -33,7 +78,9 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            build | xcpretty
+            MARKETING_VERSION="${VERSION}" \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            build | xcpretty || exit ${PIPESTATUS[0]}
 
       - name: Create DMG
         run: |
@@ -55,15 +102,24 @@ jobs:
 
           echo "DMG_PATH=$DMG_NAME" >> "$GITHUB_ENV"
 
-      - name: Upload DMG to GitHub Release
+      - name: Upload DMG to GitHub Release (draft)
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.DMG_PATH }}
+          draft: true
+          generate_release_notes: true
 
       - name: Update Homebrew cask
         env:
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
+          if [[ -z "${TAP_GITHUB_TOKEN:-}" ]]; then
+            echo "::warning::TAP_GITHUB_TOKEN is not set — skipping Homebrew cask update"
+            exit 0
+          fi
+
           SHA=$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')
           VERSION="${GITHUB_REF_NAME#v}"
 
@@ -76,4 +132,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git commit -am "Update prizm to ${VERSION}"
-          git push
+          git push || {
+            echo "::error::Homebrew cask push failed for ${VERSION} — update b0x42/homebrew-prizm manually. SHA: ${SHA}"
+            exit 1
+          }
