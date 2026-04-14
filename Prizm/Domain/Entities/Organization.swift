@@ -3,7 +3,9 @@ import Foundation
 // MARK: - OrgRole
 
 /// The user's membership role within a Bitwarden organization.
-/// Derived from the `type` integer in `RawOrganization` (0=Owner, 1=Admin, 2=Manager, 3=User, 4=Custom).
+/// Derived from the `type` integer in `RawOrganization`.
+///
+/// Bitwarden API integers: 0=Owner, 1=Admin, 2=User, 3=Manager, 4=Custom.
 ///
 /// `canManageCollections` is a computed property on `Organization` that uses this role.
 /// Custom role is intentionally mapped to `false` because the server-side permission flags
@@ -11,8 +13,8 @@ import Foundation
 nonisolated enum OrgRole: Int, Equatable, Hashable {
     case owner   = 0
     case admin   = 1
-    case manager = 2
-    case user    = 3
+    case user    = 2
+    case manager = 3
     case custom  = 4
 }
 
