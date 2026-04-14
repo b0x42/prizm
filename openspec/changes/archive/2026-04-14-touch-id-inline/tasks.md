@@ -42,15 +42,15 @@
 
 ## 7. Verify Tests Green
 
-- [ ] 7.1 Run `UnlockViewModelBiometricTests` — all pass
-- [ ] 7.2 Run `BiometricEnrollmentJourneyTests` — all pass; confirm no `app.sheets` queries remain
-- [ ] 7.3 Run `BiometricUnlockJourneyTests` — all pass; confirm no `unlock.biometric` button queries remain
+- [x] 7.1 Run `UnlockViewModelBiometricTests` — all pass
+- [x] 7.2 Run `BiometricEnrollmentJourneyTests` — all pass; confirm no `app.sheets` queries remain
+- [x] 7.3 Run `BiometricUnlockJourneyTests` — all pass; confirm no `unlock.biometric` button queries remain
 
 ## 8. Smoke Test
 
-- [ ] 8.1 Build and run; lock vault; confirm Touch ID badge appears on icon and subtitle shows Touch ID copy; confirm auto-prompt fires on appear
-- [ ] 8.2 Cancel Touch ID prompt; confirm password field is focused, no error shown, badge still visible
-- [ ] 8.3 Disable biometric unlock in Settings; confirm badge disappears and subtitle switches to password-only copy
-- [ ] 8.4 Reset `biometricEnrollmentPromptShown` to `false`; unlock with password; confirm inline enrollment view appears (no sheet)
-- [ ] 8.5 Accept enrollment; confirm flow proceeds to vault without a sheet dismiss animation
-- [ ] 8.6 Repeat 8.4; tap "Not now"; confirm flow proceeds to vault without a sheet dismiss animation
+- [x] 8.1 Build and run; lock vault; confirm Touch ID badge appears on icon and subtitle shows Touch ID copy; confirm auto-prompt fires on appear
+- [x] 8.2 Cancel Touch ID prompt; confirm password field is focused, no error shown, badge still visible
+- [x] 8.3 Disable biometric unlock in Settings; confirm badge disappears and subtitle switches to password-only copy
+- [x] 8.4 Reset `biometricEnrollmentPromptShown` to `false`; unlock with password; confirm inline enrollment view appears (no sheet)
+- [x] 8.5 Accept enrollment; confirm flow proceeds to vault without a sheet dismiss animation
+- [x] 8.6 Repeat 8.4; tap "Not now"; confirm flow proceeds to vault without a sheet dismiss animation
