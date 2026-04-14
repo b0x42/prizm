@@ -418,6 +418,7 @@ private struct OrgDisclosureRow: View {
                 } label: {
                     Image(systemName: "tray.fill.badge.plus")
                         .font(.title3)
+                        .foregroundStyle(.secondary)
                         .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
                 }
                 .buttonStyle(.plain)
