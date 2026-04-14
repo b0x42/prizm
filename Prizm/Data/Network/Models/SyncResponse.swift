@@ -14,8 +14,9 @@ nonisolated struct SyncResponse: Decodable {
     /// Decoded with a default of `[]` so that Vaultwarden instances that omit the key
     /// (or future API variants) don't cause the entire sync decode to throw.
     let folders: [RawFolder]
-    /// Organizations the user belongs to. Defaults to `[]` when absent (Vaultwarden
-    /// instances without org support do not include this key).
+    /// Organizations the user belongs to, sourced from `profile.organizations`.
+    /// In both Vaultwarden and the official Bitwarden server, org membership is nested
+    /// inside the Profile object — not a separate top-level key.
     let organizations: [RawOrganization]
     /// Collections across all organizations. Defaults to `[]` when absent.
     let collections: [RawCollection]
@@ -40,9 +41,9 @@ nonisolated struct SyncResponse: Decodable {
         folders = (try? container.decode([RawFolder].self, forKey: FlexKeys("folders")))
                ?? (try? container.decode([RawFolder].self, forKey: FlexKeys("Folders")))
                ?? []
-        organizations = (try? container.decode([RawOrganization].self, forKey: FlexKeys("organizations")))
-               ?? (try? container.decode([RawOrganization].self, forKey: FlexKeys("Organizations")))
-               ?? []
+        // Organizations are nested inside the Profile object in both Vaultwarden and the
+        // official Bitwarden server — there is no top-level `organizations` key.
+        organizations = profile.organizations
         collections = (try? container.decode([RawCollection].self, forKey: FlexKeys("collections")))
                ?? (try? container.decode([RawCollection].self, forKey: FlexKeys("Collections")))
                ?? []
@@ -152,6 +153,12 @@ nonisolated struct RawProfile: Codable {
     /// Vaultwarden returns this as `"privateKey"` (camelCase) in the sync profile;
     /// the official Bitwarden server uses `"PrivateKey"` (PascalCase). Both are handled.
     let privateKey:          String?
+    /// Organizations the user belongs to.
+    ///
+    /// In both Vaultwarden and the official Bitwarden server the org membership list
+    /// is nested **inside** the Profile object — there is no separate top-level
+    /// `organizations` key in the sync response. Defaults to `[]` when absent.
+    let organizations:       [RawOrganization]
     // Note: KDF params are NOT included in the Vaultwarden sync profile response.
     // They are obtained from the preLogin endpoint and stored in the Keychain at login time.
 
@@ -165,14 +172,19 @@ nonisolated struct RawProfile: Codable {
         key        = try (try? c.decode(String.self,  forKey: .key))  ?? c.decode(String.self,  forKey: .keyUpper)
         privateKey = (try? c.decode(String.self, forKey: .privateKey))
                   ?? (try? c.decode(String.self, forKey: .privateKeyUpper))
+        organizations = (try? c.decode([RawOrganization].self, forKey: .organizations))
+                     ?? (try? c.decode([RawOrganization].self, forKey: .organizationsUpper))
+                     ?? []
     }
 
-    init(id: String, email: String, name: String?, key: String, privateKey: String?) {
-        self.id         = id
-        self.email      = email
-        self.name       = name
-        self.key        = key
-        self.privateKey = privateKey
+    init(id: String, email: String, name: String?, key: String, privateKey: String?,
+         organizations: [RawOrganization] = []) {
+        self.id            = id
+        self.email         = email
+        self.name          = name
+        self.key           = key
+        self.privateKey    = privateKey
+        self.organizations = organizations
     }
 
     private enum FlexProfileKeys: String, CodingKey {
@@ -181,5 +193,6 @@ nonisolated struct RawProfile: Codable {
         case name = "name", nameUpper = "Name"
         case key = "key", keyUpper = "Key"
         case privateKey = "privateKey", privateKeyUpper = "PrivateKey"
+        case organizations = "organizations", organizationsUpper = "Organizations"
     }
 }
