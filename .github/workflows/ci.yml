@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Build & Test
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
       - name: Checkout
@@ -17,6 +17,9 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
+
+      - name: Install xcpretty
+        run: gem install xcpretty --no-document
 
       - name: Create CI signing config
         run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
