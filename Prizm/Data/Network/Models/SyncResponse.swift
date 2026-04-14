@@ -65,13 +65,39 @@ nonisolated struct SyncResponse: Decodable {
 /// `key` is the organization's symmetric key (64 bytes), RSA-OAEP-SHA1 encrypted with
 /// the user's RSA-2048 public key. Unwrapped at sync time into `OrgKeyCache`.
 /// Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+///
+/// Custom decoding handles both camelCase (Bitwarden server / Vaultwarden) and PascalCase
+/// variants — the Bitwarden API uses ASP.NET camelCase serialisation, but some server
+/// forks or versions emit PascalCase for org objects.
 nonisolated struct RawOrganization: Codable, Equatable {
     let id:   String
     let name: String
     /// RSA-encrypted organization symmetric key (EncString, Type-4).
     let key:  String
-    /// Membership role integer: 0=Owner, 1=Admin, 2=Manager, 3=User, 4=Custom.
+    /// Membership role integer: 0=Owner, 1=Admin, 2=User, 3=Manager, 4=Custom.
     let type: Int
+
+    init(id: String, name: String, key: String, type: Int) {
+        self.id   = id
+        self.name = name
+        self.key  = key
+        self.type = type
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: FlexOrgKeys.self)
+        id   = try (try? c.decode(String.self, forKey: .id))   ?? c.decode(String.self, forKey: .idUpper)
+        name = try (try? c.decode(String.self, forKey: .name)) ?? c.decode(String.self, forKey: .nameUpper)
+        key  = try (try? c.decode(String.self, forKey: .key))  ?? c.decode(String.self, forKey: .keyUpper)
+        type = try (try? c.decode(Int.self,    forKey: .type)) ?? c.decode(Int.self,    forKey: .typeUpper)
+    }
+
+    private enum FlexOrgKeys: String, CodingKey {
+        case id = "id",   idUpper   = "Id"
+        case name = "name", nameUpper = "Name"
+        case key  = "key",  keyUpper  = "Key"
+        case type = "type", typeUpper = "Type"
+    }
 }
 
 // MARK: - RawCollection
@@ -80,10 +106,31 @@ nonisolated struct RawOrganization: Codable, Equatable {
 ///
 /// `name` is an EncString encrypted with the organization's symmetric key.
 /// Decrypted at sync time using the unwrapped org key from `OrgKeyCache`.
+///
+/// Custom decoding handles both camelCase and PascalCase field names.
 nonisolated struct RawCollection: Codable, Equatable {
     let id:             String
     let organizationId: String
     let name:           String  // EncString, encrypted with org key
+
+    init(id: String, organizationId: String, name: String) {
+        self.id             = id
+        self.organizationId = organizationId
+        self.name           = name
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: FlexCollKeys.self)
+        id             = try (try? c.decode(String.self, forKey: .id))             ?? c.decode(String.self, forKey: .idUpper)
+        organizationId = try (try? c.decode(String.self, forKey: .organizationId)) ?? c.decode(String.self, forKey: .organizationIdUpper)
+        name           = try (try? c.decode(String.self, forKey: .name))           ?? c.decode(String.self, forKey: .nameUpper)
+    }
+
+    private enum FlexCollKeys: String, CodingKey {
+        case id             = "id",             idUpper             = "Id"
+        case organizationId = "organizationId", organizationIdUpper = "OrganizationId"
+        case name           = "name",           nameUpper           = "Name"
+    }
 }
 
 // MARK: - RawProfile

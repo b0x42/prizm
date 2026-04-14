@@ -102,7 +102,7 @@ actor SyncRepositoryImpl: SyncRepository {
         // Phase 2: Decrypt personal ciphers via the crypto service.
         progress("Decrypting \(totalCiphers) item(s)…")
 
-        let (items, failedCount, cipherKeyMap) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
+        var (items, failedCount, cipherKeyMap) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
         logger.info("Decrypted \(items.count) cipher(s); \(failedCount) failure(s)")
         if DebugConfig.isEnabled && failedCount > 0 {
             logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check PrizmCryptoService logs for per-cipher errors")
@@ -192,7 +192,35 @@ actor SyncRepositoryImpl: SyncRepository {
                     }
                 }
 
-                logger.info("Org sync: \(organizations.count) org(s), \(collections.count) collection(s)")
+                // Decrypt org ciphers using the unwrapped org keys.
+                // Personal ciphers were already decrypted by `decryptList` above; org ciphers
+                // were skipped there because org keys were not yet available at that point.
+                // We do a second pass here, using the same CipherMapper with the org key snapshot.
+                let orgMapper = CipherMapper()
+                var orgCipherFailedCount = 0
+                for (index, cipher) in syncResponse.ciphers.enumerated() {
+                    guard cipher.organizationId != nil else { continue }
+                    do {
+                        let (item, cipherKey) = try orgMapper.map(
+                            raw: cipher, vaultKeys: vaultKeys, orgKeys: orgKeysSnapshot
+                        )
+                        items.append(item)
+                        if cipher.key != nil { cipherKeyMap[cipher.id] = cipherKey }
+                    } catch CipherMapperError.organisationCipherSkipped {
+                        // Org key not in snapshot — org key unwrap failed for this org.
+                        orgCipherFailedCount += 1
+                        if DebugConfig.isEnabled {
+                            logger.debug("[debug] org cipher[\(index, privacy: .public)] skipped — org key unavailable")
+                        }
+                    } catch {
+                        orgCipherFailedCount += 1
+                        logger.error("Org cipher decryption failed at index \(index, privacy: .public): \(error, privacy: .public)")
+                    }
+                }
+                // Refresh the VaultKeyCache to include per-item keys from org ciphers.
+                await vaultKeyCache.populate(keys: cipherKeyMap)
+
+                logger.info("Org sync: \(organizations.count) org(s), \(collections.count) collection(s), \(orgCipherFailedCount, privacy: .public) org cipher(s) skipped")
             } catch {
                 logger.error("Org key sync failed — org ciphers unavailable this session: \(error, privacy: .public)")
                 // Non-fatal: personal items still work without org support.
