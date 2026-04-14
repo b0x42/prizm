@@ -16,7 +16,7 @@
 - [x] 2.2 Add `RawCollection` Codable struct (`id`, `organizationId`, `name`)
 - [x] 2.3 Extend `SyncResponse` to decode `organizations: [RawOrganization]` and `collections: [RawCollection]` (default `[]`, support both camelCase and PascalCase keys)
 - [x] 2.4 Add `collectionIds: [String]` to `RawCipher` (Bitwarden sync returns `CollectionIds` array on each cipher; required to populate `VaultItem.collectionIds`)
-- [ ] 2.5 Verify tests from 2.0 are GREEN
+- [x] 2.5 Verify tests from 2.0 are GREEN
 
 ## 3. Org Key Crypto (Phase 1 — the hard part)
 
@@ -30,7 +30,7 @@
 - [x] 3.2 Extend `PrizmCryptoService` protocol with `decryptRSAPrivateKey(encPrivateKey:vaultKeys:) -> Data` and `unwrapOrgKey(encOrgKey:rsaPrivateKey:) -> CryptoKeys`
 - [x] 3.3 Implement `decryptRSAPrivateKey` in `PrizmCryptoServiceImpl`: decrypt profile `privateKey` EncString with vault symmetric key; hold result in actor state using a zeroing `Data` wrapper; zero on lock (Constitution §III)
 - [x] 3.4 Implement `unwrapOrgKey` in `PrizmCryptoServiceImpl`: strip PKCS#8 wrapper from decrypted private key bytes to obtain raw RSA key; import via `SecKeyCreateWithData`; decrypt org key EncString via `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1`
-- [ ] 3.5 Verify KATs from 3.0 are GREEN
+- [x] 3.5 Verify KATs from 3.0 are GREEN
 - [x] 3.6 Update `SyncRepositoryImpl.sync()` to: (a) decrypt RSA private key, (b) unwrap each org key into `OrgKeyCache`, (c) populate `VaultRepository` with organizations and collections; pass `OrgKeyCache` snapshot (not actor reference) into `CipherMapper` to keep `map()` synchronous
 - [x] 3.7 Update `CipherMapper.map(raw:keys:)` to accept `orgKeys: [String: CryptoKeys]` snapshot; select org `CryptoKeys` when `raw.organizationId != nil`; decrypt per-item key with org key when both present
 - [x] 3.8 Update `CipherMapper.map` to set `organizationId` and `collectionIds` (from `raw.collectionIds`) on the resulting `VaultItem`
@@ -54,7 +54,7 @@
 - [x] 4.6 Update `VaultRepositoryImpl.create` to route to `POST /api/ciphers/create` when `draft.organizationId != nil`, including `collectionIds` in body
 - [x] 4.7 Update `VaultRepositoryImpl.update` to include `organizationId` and `collectionIds` in `PUT /ciphers/{id}` body
 - [x] 4.8 Wire new use cases into `AppContainer`
-- [ ] 4.9 Verify tests from 4.0 are GREEN
+- [x] 4.9 Verify tests from 4.0 are GREEN
 
 ## 5. Sidebar — Organizations Section
 
