@@ -11,16 +11,24 @@ final class SyncResponseOrgDecodingTests: XCTestCase {
     private let decoder = JSONDecoder()
 
     /// Minimal valid SyncResponse JSON with organizations and collections.
-    /// Uses Vaultwarden camelCase field names for cipher/folder fields,
-    /// and PascalCase for the top-level array keys (Organizations, Collections)
-    /// — matching the FlexKeys approach used in SyncResponse.init(from:).
+    ///
+    /// Organizations are nested inside `Profile.Organizations` — this matches the actual
+    /// Bitwarden/Vaultwarden API shape. `Collections` is a separate top-level key.
     private let jsonWithOrgsAndCollections = """
     {
         "Profile": {
             "Id": "user1",
             "Email": "test@example.com",
             "Name": "Test User",
-            "Key": "2.abc|def|ghi"
+            "Key": "2.abc|def|ghi",
+            "Organizations": [
+                {
+                    "id": "org1",
+                    "name": "Acme Corp",
+                    "key": "4.rsa-enc-key",
+                    "type": 1
+                }
+            ]
         },
         "Ciphers": [
             {
@@ -34,14 +42,6 @@ final class SyncResponseOrgDecodingTests: XCTestCase {
             }
         ],
         "Folders": [],
-        "Organizations": [
-            {
-                "id": "org1",
-                "name": "Acme Corp",
-                "key": "4.rsa-enc-key",
-                "type": 1
-            }
-        ],
         "Collections": [
             {
                 "id": "col1",
