@@ -398,6 +398,7 @@ private struct OrgDisclosureRow: View {
         } label: {
             orgHeader
         }
+        .tag(SidebarSelection.organization(org.id))
     }
 
     @ViewBuilder
@@ -406,7 +407,6 @@ private struct OrgDisclosureRow: View {
             Label(org.name, systemImage: "building.2")
                 .font(Typography.sidebarRow)
                 .badge(itemCounts[.organization(org.id)] ?? 0)
-                .tag(SidebarSelection.organization(org.id))
             Spacer()
             // + button is only shown when role allows collection management.
             if org.canManageCollections {

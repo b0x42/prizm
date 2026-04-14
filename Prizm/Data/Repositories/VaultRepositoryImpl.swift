@@ -102,9 +102,14 @@ final class VaultRepositoryImpl: VaultRepository {
         case .newFolder:
             return []
         case .organization(let orgId):
-            // All items across all collections in this org.
+            // All items that belong to this org: either by organizationId directly,
+            // or by being in one of the org's collections.
             let orgCollectionIds = Set(collectionStore.filter { $0.organizationId == orgId }.map(\.id))
-            return sorted(items.filter { !$0.isDeleted && !$0.collectionIds.filter { orgCollectionIds.contains($0) }.isEmpty })
+            return sorted(items.filter { item in
+                guard !item.isDeleted else { return false }
+                return item.organizationId == orgId
+                    || !item.collectionIds.filter { orgCollectionIds.contains($0) }.isEmpty
+            })
         case .collection(let collectionId):
             return sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(collectionId) })
         case .newCollection:
