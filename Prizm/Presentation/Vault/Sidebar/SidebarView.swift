@@ -402,13 +402,13 @@ private struct OrgDisclosureRow: View {
                     isExpanded = true
                     isNewCollectionFocused = true
                 } label: {
-                    Image(systemName: "plus")
-                        .font(.caption)
+                    Image(systemName: "tray.fill.badge.plus")
+                        .font(.title3)
                         .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
                 }
                 .buttonStyle(.plain)
                 .help("New Collection")
-                .padding(.trailing, 4)
+                .padding(.trailing, 10)
             }
         }
     }
