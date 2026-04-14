@@ -98,7 +98,8 @@ final class VaultRepositoryImpl: VaultRepository {
         case .type(let itemType):
             return sorted(items.filter { !$0.isDeleted && $0.content.matchesItemType(itemType) })
         case .folder(let folderId):
-            return sorted(items.filter { !$0.isDeleted && $0.folderId == folderId })
+            // Org items are excluded: personal folders are not org collections.
+            return sorted(items.filter { !$0.isDeleted && $0.organizationId == nil && $0.folderId == folderId })
         case .newFolder:
             return []
         case .organization(let orgId):

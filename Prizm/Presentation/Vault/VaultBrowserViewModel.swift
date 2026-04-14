@@ -527,6 +527,7 @@ final class VaultBrowserViewModel: ObservableObject {
                 _ = try await renameCollectionUseCase.execute(collectionId: id, name: trimmed,
                                                                organizationId: organizationId)
                 refreshOrganizations()
+                refreshCounts()
             } catch {
                 logger.error("Rename collection failed: \(error.localizedDescription, privacy: .public)")
                 actionError = error.localizedDescription

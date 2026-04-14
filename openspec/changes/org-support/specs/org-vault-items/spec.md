@@ -101,7 +101,7 @@ Editing an org item SHALL call `PUT /ciphers/{id}` with `organizationId` and `co
 ---
 
 ### Requirement: Item editor shows org and collection pickers
-When the user opens the create sheet with `.collection(id)` sidebar context, the editor SHALL pre-select that collection. When editing an existing org item, the editor SHALL show the org name (read-only) and a collection picker populated with collections from that org. For new items created from All Items or type selections, an optional org picker SHALL allow assigning to an org + collection.
+When the user opens the create sheet with `.collection(id)` sidebar context, the editor SHALL pre-select that collection. When editing an existing org item, the editor SHALL show the org name (read-only) and a collection picker populated with collections from that org. New items created from All Items or type selections are always created as personal items; assigning a new item to an org is out of scope for this change (create from a collection context instead).
 
 #### Scenario: Pre-selected collection when creating from collection context
 - **GIVEN** the user clicks `+` while a collection is selected in the sidebar

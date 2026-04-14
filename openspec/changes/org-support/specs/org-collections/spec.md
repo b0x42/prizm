@@ -25,7 +25,7 @@ The Domain layer SHALL define an `Organization` struct with fields: `id: String`
 ---
 
 ### Requirement: Organizations and collections are decoded from sync response
-`SyncResponse` SHALL decode `organizations: [RawOrganization]` and `collections: [RawCollection]` arrays from the Bitwarden `/sync` endpoint. Both arrays SHALL default to `[]` when absent (for Vaultwarden instances without org support). `RawOrganization` SHALL include: `id`, `name`, `key` (RSA-encrypted EncString), `type` (Int: 0=Owner, 1=Admin, 2=Manager, 3=User, 4=Custom). `RawCollection` SHALL include: `id`, `organizationId`, `name` (EncString encrypted with org key).
+`SyncResponse` SHALL decode `organizations: [RawOrganization]` and `collections: [RawCollection]` arrays from the Bitwarden `/sync` endpoint. Both arrays SHALL default to `[]` when absent (for Vaultwarden instances without org support). `RawOrganization` SHALL include: `id`, `name`, `key` (RSA-encrypted EncString), `type` (Int: 0=Owner, 1=Admin, 2=User, 3=Manager, 4=Custom). `RawCollection` SHALL include: `id`, `organizationId`, `name` (EncString encrypted with org key).
 
 #### Scenario: Sync response with organizations decoded
 - **WHEN** the `/sync` endpoint returns an `Organizations` array
