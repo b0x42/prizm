@@ -74,6 +74,7 @@
 		A1B2C3D4E5F647A8B9C0D1E2 /* CryptoKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1307284FEED04829B5C4B587 /* CryptoKeys.swift */; };
 		2A776694FA53418CB2002486 /* OrgKeyCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE3CE5476C5402F9BC3FF76 /* OrgKeyCache.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F3 /* FolderTreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* FolderTreeNode.swift */; };
+		BB1122334455667788990011 /* CollectionTreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2233445566778899001122 /* CollectionTreeNode.swift */; };
 		A1C2D3E4F506172839A4B56C /* DraftVaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */; };
 		A2533B80CB7943ADA49084A4 /* IdentityDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40543834D81F44848D37A737 /* IdentityDetailView.swift */; };
 		A2B3C4D5E6F74718B9C0D1E2 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8F9A0B1C2D3E4F5A6B7C8D /* KeychainService.swift */; };
@@ -309,6 +310,7 @@
 		F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CipherMapper.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E64896F2A3B4C5 /* SyncLabelFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncLabelFormatter.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* FolderTreeNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderTreeNode.swift; sourceTree = "<group>"; };
+		CC2233445566778899001122 /* CollectionTreeNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionTreeNode.swift; sourceTree = "<group>"; };
 		F557D7298207448A9FBFC676 /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
 		F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBrowserViewModel.swift; sourceTree = "<group>"; };
 		F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyEditForm.swift; sourceTree = "<group>"; };
@@ -399,6 +401,7 @@
 				B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */,
 				0AC78A983744489DB1F8BCFB /* Folder.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* FolderTreeNode.swift */,
+				CC2233445566778899001122 /* CollectionTreeNode.swift */,
 				AA1001000000000000000001 /* Attachment.swift */,
 				CF2F621523214454973153CC /* Organization.swift */,
 				070C477B0E134C1EAFFA842D /* OrgCollection.swift */,
@@ -987,6 +990,7 @@
 				81E68A60DF0441BE9D6487BF /* RenameCollectionUseCase.swift in Sources */,
 				AC24869F5C544E82B60C54E0 /* DeleteCollectionUseCase.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* FolderTreeNode.swift in Sources */,
+				BB1122334455667788990011 /* CollectionTreeNode.swift in Sources */,
 				87146F7FF9C64EEA974FE521 /* CreateFolderUseCase.swift in Sources */,
 				C2ACEC2617F14F5A80A7FCED /* DeleteFolderUseCase.swift in Sources */,
 				3025343DFDDB4ACE97F1EC2A /* MoveItemToFolderUseCase.swift in Sources */,

@@ -356,6 +356,10 @@ private struct OrgDisclosureRow: View {
     var onRenameCollection: (String, String) -> Void   // (collectionId, newName)
     var onDeleteCollection: (OrgCollection) -> Void
 
+    private var collectionTree: [CollectionTreeNode] {
+        CollectionTreeNode.buildTree(from: collections)
+    }
+
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             // Inline new-collection TextField (matching folder create pattern)
@@ -371,8 +375,18 @@ private struct OrgDisclosureRow: View {
                 }
             }
 
-            ForEach(collections) { col in
-                collectionRow(for: col)
+            ForEach(collectionTree) { node in
+                CollectionTreeRow(
+                    node: node,
+                    org: org,
+                    itemCounts: itemCounts,
+                    renamingCollectionId: $renamingCollectionId,
+                    renamingCollectionOrgId: $renamingCollectionOrgId,
+                    collectionRenameText: $collectionRenameText,
+                    isCollectionRenameFocused: $isCollectionRenameFocused,
+                    onRenameCollection: onRenameCollection,
+                    onDeleteCollection: onDeleteCollection
+                )
             }
 
             if collections.isEmpty && creatingCollectionInOrg != org.id {
@@ -413,9 +427,60 @@ private struct OrgDisclosureRow: View {
         }
     }
 
+    private func commitCreate() {
+        let trimmed = newCollectionName.trimmingCharacters(in: .whitespacesAndNewlines)
+        creatingCollectionInOrg = nil
+        newCollectionName = ""
+        guard !trimmed.isEmpty else { return }
+        onCreateCollection(trimmed)
+    }
+}
+
+// MARK: - CollectionTreeRow
+
+/// Recursive tree row for collections: renders a DisclosureGroup for nodes with children,
+/// or a plain collection row for leaf nodes. Mirrors `FolderTreeRow`.
+private struct CollectionTreeRow: View {
+    let node: CollectionTreeNode
+    let org: Organization
+    let itemCounts: [SidebarSelection: Int]
+    @Binding var renamingCollectionId: String?
+    @Binding var renamingCollectionOrgId: String?
+    @Binding var collectionRenameText: String
+    @FocusState.Binding var isCollectionRenameFocused: Bool
+    var onRenameCollection: (String, String) -> Void   // (collectionId, newName)
+    var onDeleteCollection: (OrgCollection) -> Void
+
+    @State private var isExpanded = false
+
+    var body: some View {
+        if node.hasChildren {
+            DisclosureGroup(isExpanded: $isExpanded) {
+                ForEach(node.children) { child in
+                    CollectionTreeRow(
+                        node: child,
+                        org: org,
+                        itemCounts: itemCounts,
+                        renamingCollectionId: $renamingCollectionId,
+                        renamingCollectionOrgId: $renamingCollectionOrgId,
+                        collectionRenameText: $collectionRenameText,
+                        isCollectionRenameFocused: $isCollectionRenameFocused,
+                        onRenameCollection: onRenameCollection,
+                        onDeleteCollection: onDeleteCollection
+                    )
+                }
+            } label: {
+                nodeLabel
+            }
+        } else {
+            nodeLabel
+        }
+    }
+
     @ViewBuilder
-    private func collectionRow(for col: OrgCollection) -> some View {
-        if renamingCollectionId == col.id && renamingCollectionOrgId == col.organizationId {
+    private var nodeLabel: some View {
+        if let col = node.collection,
+           renamingCollectionId == col.id && renamingCollectionOrgId == col.organizationId {
             TextField("Collection name", text: $collectionRenameText, onCommit: {
                 let trimmed = collectionRenameText.trimmingCharacters(in: .whitespacesAndNewlines)
                 renamingCollectionId    = nil
@@ -431,8 +496,8 @@ private struct OrgDisclosureRow: View {
                 renamingCollectionOrgId = nil
                 isCollectionRenameFocused = false
             }
-        } else {
-            Label(col.name, systemImage: "tray.2")
+        } else if let col = node.collection {
+            Label(node.name, systemImage: "tray.2")
                 .font(Typography.sidebarRow)
                 .badge(itemCounts[.collection(col.id)] ?? 0)
                 .tag(SidebarSelection.collection(col.id))
@@ -450,15 +515,11 @@ private struct OrgDisclosureRow: View {
                         }
                     }
                 }
+        } else {
+            // Virtual parent node — not selectable, no context menu
+            Label(node.name, systemImage: "tray.2")
+                .foregroundStyle(.secondary)
         }
-    }
-
-    private func commitCreate() {
-        let trimmed = newCollectionName.trimmingCharacters(in: .whitespacesAndNewlines)
-        creatingCollectionInOrg = nil
-        newCollectionName = ""
-        guard !trimmed.isEmpty else { return }
-        onCreateCollection(trimmed)
     }
 }
 
