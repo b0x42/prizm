@@ -67,31 +67,37 @@ struct ItemEditView: View {
                 }
                 if !orgCollections.isEmpty {
                     DetailSectionCard("Collection") {
-                        Picker(selection: Binding(
-                            get: { viewModel.draft.collectionIds.first },
-                            set: { newId in
-                                viewModel.draft.collectionIds = newId.map { [$0] } ?? []
-                            }
-                        )) {
-                            Text("None").tag(String?.none)
-                            ForEach(orgCollections) { col in
-                                Text(col.name).tag(Optional(col.id))
-                            }
-                        } label: { EmptyView() }
-                        .pickerStyle(.menu)
+                        HStack {
+                            Picker(selection: Binding(
+                                get: { viewModel.draft.collectionIds.first },
+                                set: { newId in
+                                    viewModel.draft.collectionIds = newId.map { [$0] } ?? []
+                                }
+                            )) {
+                                Text("None").tag(String?.none)
+                                ForEach(orgCollections) { col in
+                                    Text(col.name).tag(Optional(col.id))
+                                }
+                            } label: { EmptyView() }
+                            .pickerStyle(.menu)
+                            Spacer()
+                        }
                         .padding(.vertical, Spacing.rowVertical)
                         .padding(.horizontal, Spacing.rowHorizontal)
                     }
                 }
             } else if !viewModel.folders.isEmpty {
                 DetailSectionCard("Folder") {
-                    Picker(selection: $viewModel.draft.folderId) {
-                        Text("None").tag(String?.none)
-                        ForEach(viewModel.folders) { folder in
-                            Text(folder.name).tag(Optional(folder.id))
-                        }
-                    } label: { EmptyView() }
-                    .pickerStyle(.menu)
+                    HStack {
+                        Picker(selection: $viewModel.draft.folderId) {
+                            Text("None").tag(String?.none)
+                            ForEach(viewModel.folders) { folder in
+                                Text(folder.name).tag(Optional(folder.id))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.menu)
+                        Spacer()
+                    }
                     .padding(.vertical, Spacing.rowVertical)
                     .padding(.horizontal, Spacing.rowHorizontal)
                 }
