@@ -127,8 +127,8 @@ Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shor
 
 | Now | Next | Later |
 |---|---|---|
-| Background sync | Multiple accounts | Passkey support |
-| | Watchtower / breach check | Browser auto-fill extension |
+| Background sync | Watchtower / breach check | Passkey support |
+| Multiple accounts | Bitwarden cloud login | Browser auto-fill extension |
 | | | Full support for KDBX 4 (KeePass) |
 
 **Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
