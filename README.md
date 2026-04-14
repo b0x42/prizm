@@ -45,6 +45,7 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 ## Features
 
 - **Full vault management** — browse, create, edit, delete, and restore all item types (logins, cards, identities, secure notes, SSH keys) with Trash and favourites support
+- **Organisation & collection support** — view and manage items across organisations; collections shown as a collapsible tree in the sidebar with item counts; create, rename, and delete collections (admin/manager role); org items encrypted with RSA-unwrapped organisation keys
 - **Folder organization** — create, rename, and delete folders; nested subfolders via `/` naming convention with collapsible tree view; drag-and-drop items onto folders; folder-scoped search
 - **Built for power users** — ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / website, Option to reveal masked fields. [Full shortcut list](#shortcuts)
 - **File attachments** — upload, download, open, and delete encrypted file attachments on any vault item; drag-and-drop batch upload; two-layer AES-256-CBC + HMAC-SHA256 encryption with per-attachment keys
@@ -126,9 +127,9 @@ Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shor
 
 | Now | Next | Later |
 |---|---|---|
-| TOTP / 2FA copy | Organisation vault support | Passkey support |
-| Background sync | Multiple accounts | Browser auto-fill extension |
-| | Watchtower / breach check | Full support for KDBX 4 (KeePass) |
+| Background sync | Multiple accounts | Passkey support |
+| | Watchtower / breach check | Browser auto-fill extension |
+| | | Full support for KDBX 4 (KeePass) |
 
 **Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
 
@@ -137,7 +138,6 @@ Want to shift something up the list? [Open an issue](https://github.com/b0x42/pr
 ## Known Limitations
 
 - **Not notarized** — The app is not signed with an Apple Developer ID. On first launch, right-click and choose Open to bypass Gatekeeper.
-- **Personal vault only** — Organisation ciphers are skipped during sync.
 - **No browser auto-fill** — There is no browser extension. Copy-paste is the current workflow.
 - **macOS 26 required** — The app uses SwiftUI features only available in macOS 26.
 - **Passkeys not supported** — SSH key items are viewable but passkey-based login is not implemented.
