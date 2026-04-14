@@ -12,6 +12,9 @@ enum UnlockFlowState: Equatable {
     case vault
     /// Returned to login (triggered by "Sign in with a different account").
     case login
+    /// Inline enrollment prompt — shown after first successful password unlock on a
+    /// biometric-capable device that has not yet enrolled (design Decision 7).
+    case enrollmentPrompt(reason: EnrollmentReason)
 }
 
 // MARK: - UnlockViewModel
@@ -28,8 +31,6 @@ final class UnlockViewModel: ObservableObject {
     @Published var password:        String = ""
     @Published var errorMessage:    String?
     @Published private(set) var flowState: UnlockFlowState = .unlock
-    @Published var showEnrollmentPrompt: Bool = false
-    @Published private(set) var enrollmentReason: EnrollmentReason = .firstTime
 
     // MARK: - Dependencies
 
@@ -200,7 +201,7 @@ final class UnlockViewModel: ObservableObject {
                 logger.error("Enable biometric unlock failed: \(error.localizedDescription, privacy: .public)")
             }
             UserDefaults.standard.set(true, forKey: "biometricEnrollmentPromptShown")
-            showEnrollmentPrompt = false
+            flowState = .loading
             await performSync()
         }
     }
@@ -208,7 +209,7 @@ final class UnlockViewModel: ObservableObject {
     /// Called when the user dismisses the enrollment prompt without enabling.
     func dismissEnrollmentPrompt() {
         UserDefaults.standard.set(true, forKey: "biometricEnrollmentPromptShown")
-        showEnrollmentPrompt = false
+        flowState = .loading
         Task { await performSync() }
     }
 
@@ -238,8 +239,8 @@ final class UnlockViewModel: ObservableObject {
         let promptShown    = UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown")
 
         if capable && !alreadyEnabled && !promptShown {
-            enrollmentReason    = lastBiometricInvalidated ? .reEnrollAfterInvalidation : .firstTime
-            showEnrollmentPrompt = true
+            let reason: EnrollmentReason = lastBiometricInvalidated ? .reEnrollAfterInvalidation : .firstTime
+            flowState = .enrollmentPrompt(reason: reason)
             // performSync() will be called by confirmEnrollBiometric() or dismissEnrollmentPrompt().
             return
         }

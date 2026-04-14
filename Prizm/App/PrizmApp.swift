@@ -451,6 +451,7 @@ final class RootViewModel: ObservableObject {
         case .loading:      screen = .unlock   // stay on unlock screen with spinner
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:        transitionToVault(caller: "handleUnlockFlow")
+        case .enrollmentPrompt: screen = .unlock  // inline — stay on unlock screen
         case .login:
             // "Sign in with a different account" — reset to login.
             unlockVM = nil
