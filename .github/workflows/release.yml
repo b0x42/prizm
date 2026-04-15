@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 jobs:
   validate-tag:
     name: Validate Tag
@@ -25,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
 
       - name: Select Xcode
         run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
@@ -56,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
 
       - name: Select Xcode
         run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
@@ -103,7 +106,7 @@ jobs:
           echo "DMG_PATH=$DMG_NAME" >> "$GITHUB_ENV"
 
       - name: Upload DMG to GitHub Release (draft)
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
         with:
           files: ${{ env.DMG_PATH }}
           draft: true

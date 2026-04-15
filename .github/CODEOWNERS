@@ -1,0 +1,10 @@
+# Default owner for everything
+* @b0x42
+
+# Crypto and keychain — security-critical, mandatory review
+Prizm/Data/Crypto/ @b0x42
+Prizm/Data/Keychain/ @b0x42
+
+# Architecture contracts
+CONSTITUTION.md @b0x42
+SECURITY.md @b0x42
