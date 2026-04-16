@@ -147,18 +147,18 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         XCTAssertTrue(mockAuth.unlockWithBiometricsCalled)
     }
 
-    // MARK: - Enrollment prompt (inline via flowState)
+    // MARK: - Enrollment prompt (modal sheet via showEnrollmentPrompt)
 
     func testDismissEnrollmentPrompt_transitionsToVault() async {
         // Drive enrollment state through the real unlock flow:
-        // biometrics capable + not enabled + prompt never shown → flowState = .enrollmentPrompt
+        // biometrics capable + not enabled + prompt never shown → showEnrollmentPrompt = true
         mockAuth.stubbedDeviceBiometricCapable = true
         UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
         UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
 
         let enrollExp = expectation(description: "enrollment prompt shown")
-        sut.$flowState
-            .filter { if case .enrollmentPrompt = $0 { return true }; return false }
+        sut.$showEnrollmentPrompt
+            .filter { $0 == true }
             .first()
             .sink { _ in enrollExp.fulfill() }
             .store(in: &cancellables)
@@ -177,6 +177,7 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         sut.dismissEnrollmentPrompt()
         await fulfillment(of: [vaultExp], timeout: 3.0)
 
+        XCTAssertFalse(sut.showEnrollmentPrompt)
         XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown"))
     }
 
@@ -186,8 +187,8 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
 
         let enrollExp = expectation(description: "enrollment prompt shown")
-        sut.$flowState
-            .filter { if case .enrollmentPrompt = $0 { return true }; return false }
+        sut.$showEnrollmentPrompt
+            .filter { $0 == true }
             .first()
             .sink { _ in enrollExp.fulfill() }
             .store(in: &cancellables)
@@ -206,6 +207,7 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         sut.confirmEnrollBiometric()
         await fulfillment(of: [vaultExp], timeout: 3.0)
 
+        XCTAssertFalse(sut.showEnrollmentPrompt)
         XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricEnrollmentPromptShown"))
     }
 
@@ -215,20 +217,16 @@ final class UnlockViewModelBiometricTests: XCTestCase {
         UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
 
         let exp = expectation(description: "enrollment prompt shown with .firstTime reason")
-        sut.$flowState
-            .compactMap { state -> EnrollmentReason? in
-                if case .enrollmentPrompt(let reason) = state { return reason }
-                return nil
-            }
+        sut.$showEnrollmentPrompt
+            .filter { $0 == true }
             .first()
-            .sink { reason in
-                XCTAssertEqual(reason, .firstTime)
-                exp.fulfill()
-            }
+            .sink { _ in exp.fulfill() }
             .store(in: &cancellables)
 
         sut.password = "TestPassword1!"
         sut.unlock()
         await fulfillment(of: [exp], timeout: 3.0)
+
+        XCTAssertEqual(sut.enrollmentReason, .firstTime)
     }
 }

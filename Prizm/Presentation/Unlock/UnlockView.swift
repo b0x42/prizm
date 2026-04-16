@@ -53,7 +53,7 @@ struct UnlockView: View {
                 .frame(maxWidth: 320)
                 .padding(.bottom, 20)
 
-            // MARK: Password field / loading / inline enrollment
+            // MARK: Password field / loading
             switch viewModel.flowState {
             case .loading:
                 ProgressView()
@@ -69,38 +69,6 @@ struct UnlockView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(width: 200)
-            case .enrollmentPrompt(let reason):
-                VStack(spacing: 20) {
-                    Image(systemName: biometrySystemImage)
-                        .font(.system(size: 40))
-                        .foregroundStyle(.tint)
-                        .accessibilityHidden(true)
-
-                    Text(enrollmentHeading(for: reason))
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-
-                    Text(enrollmentBody(for: reason))
-                        .font(Typography.screenBody)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 300)
-
-                    VStack(spacing: 10) {
-                        Button(enrollmentEnableLabel(for: reason)) {
-                            viewModel.confirmEnrollBiometric()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .keyboardShortcut(.return, modifiers: [])
-
-                        Button("Not now") {
-                            viewModel.dismissEnrollmentPrompt()
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                    }
-                }
-                .accessibilityIdentifier(AccessibilityID.Unlock.enrollmentPrompt)
             default:
                 SecureField("Enter password", text: $viewModel.password)
                     .textFieldStyle(.roundedBorder)
@@ -142,6 +110,14 @@ struct UnlockView: View {
         .task(id: viewModel.biometricContextVersion) {
             viewModel.triggerEmbeddedBiometricIfAvailable()
         }
+        .sheet(isPresented: $viewModel.showEnrollmentPrompt) {
+            BiometricEnrollmentPromptView(
+                reason: viewModel.enrollmentReason,
+                onEnable: { viewModel.confirmEnrollBiometric() },
+                onDismiss: { viewModel.dismissEnrollmentPrompt() }
+            )
+            .accessibilityIdentifier(AccessibilityID.Unlock.enrollmentPrompt)
+        }
     }
 
     // MARK: - Private
@@ -170,37 +146,6 @@ struct UnlockView: View {
         case .touchID: return "Touch ID"
         case .faceID:  return "Face ID"
         default:       return "Biometrics"
-        }
-    }
-
-    private var biometrySystemImage: String {
-        switch LAContext().biometryType {
-        case .touchID: return "touchid"
-        case .faceID:  return "faceid"
-        default:       return "person.badge.key"
-        }
-    }
-
-    private func enrollmentHeading(for reason: EnrollmentReason) -> String {
-        switch reason {
-        case .firstTime:                return "Enable \(biometricMethodName) to unlock faster"
-        case .reEnrollAfterInvalidation: return "Re-enable \(biometricMethodName)"
-        }
-    }
-
-    private func enrollmentBody(for reason: EnrollmentReason) -> String {
-        switch reason {
-        case .firstTime:
-            return "You can also enable this in Settings at any time."
-        case .reEnrollAfterInvalidation:
-            return "Your \(biometricMethodName) settings changed — a fingerprint was added or removed. For your security, Prizm disabled \(biometricMethodName) unlock. Would you like to re-enable it?"
-        }
-    }
-
-    private func enrollmentEnableLabel(for reason: EnrollmentReason) -> String {
-        switch reason {
-        case .firstTime:                return "Enable \(biometricMethodName)"
-        case .reEnrollAfterInvalidation: return "Re-enable \(biometricMethodName)"
         }
     }
 
