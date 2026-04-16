@@ -252,7 +252,21 @@ final class VaultRepositoryImpl: VaultRepository {
         // Step 4: Decode the server response into a domain item.
         // The cipherKey return value is discarded here — VaultKeyCache is populated at sync
         // time; a single-item edit does not need to update the key cache.
-        let (updatedItem, _) = try mapper.map(raw: updatedRaw, vaultKeys: vaultKeys, orgKeys: orgKeysSnapshot)
+        var (updatedItem, _) = try mapper.map(raw: updatedRaw, vaultKeys: vaultKeys, orgKeys: orgKeysSnapshot)
+
+        // Patch collectionIds for org items: PUT /api/ciphers/{id} returns the cipher with
+        // its pre-update collection state (before the collections endpoint fires), so the
+        // mapped item would otherwise show a stale collection in the UI until next sync.
+        if draft.organizationId != nil {
+            updatedItem = VaultItem(
+                id: updatedItem.id, name: updatedItem.name,
+                isFavorite: updatedItem.isFavorite, isDeleted: updatedItem.isDeleted,
+                creationDate: updatedItem.creationDate, revisionDate: updatedItem.revisionDate,
+                content: updatedItem.content, reprompt: updatedItem.reprompt,
+                attachments: updatedItem.attachments, folderId: updatedItem.folderId,
+                organizationId: updatedItem.organizationId, collectionIds: draft.collectionIds
+            )
+        }
 
         // Step 5: Splice into the in-memory cache (no full re-sync needed).
         if let idx = items.firstIndex(where: { $0.id == updatedItem.id }) {
