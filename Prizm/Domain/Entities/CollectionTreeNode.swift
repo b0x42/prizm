@@ -30,7 +30,14 @@ nonisolated struct CollectionTreeNode: Identifiable {
         let remaining = Array(parts.dropFirst())
         if let idx = nodes.firstIndex(where: { $0.name.caseInsensitiveCompare(first) == .orderedSame }) {
             if remaining.isEmpty {
-                nodes[idx] = CollectionTreeNode(id: collection.id, name: first, collection: collection, children: nodes[idx].children)
+                if nodes[idx].collection == nil {
+                    // Promote virtual placeholder to real collection, preserving any children.
+                    nodes[idx] = CollectionTreeNode(id: collection.id, name: first, collection: collection, children: nodes[idx].children)
+                } else {
+                    // A real collection with this name already exists — append as a separate
+                    // sibling so both are reachable. (Bitwarden allows duplicate names.)
+                    nodes.append(CollectionTreeNode(id: collection.id, name: first, collection: collection, children: []))
+                }
             } else {
                 insertNode(into: &nodes[idx].children, parts: remaining, collection: collection)
             }

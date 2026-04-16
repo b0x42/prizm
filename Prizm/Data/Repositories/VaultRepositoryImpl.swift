@@ -112,10 +112,24 @@ final class VaultRepositoryImpl: VaultRepository {
                     || item.collectionIds.contains(where: { orgCollectionIds.contains($0) })
             })
         case .collection(let collectionId):
-            return sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(collectionId) })
+            // Also include items from descendant collections (e.g. selecting "Engineering"
+            // shows items in "Engineering/Backend", "Engineering/Frontend", etc.).
+            let allIds = collectionIds(includingDescendantsOf: collectionId)
+            return sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(where: { allIds.contains($0) }) })
         case .newCollection:
             return []
         }
+    }
+
+    /// Returns the given collection ID plus the IDs of all descendant collections,
+    /// determined by the "/" name prefix convention.
+    private func collectionIds(includingDescendantsOf id: String) -> Set<String> {
+        guard let col = collectionStore.first(where: { $0.id == id }) else { return [id] }
+        let prefix = col.name + "/"
+        let descendantIds = collectionStore
+            .filter { $0.organizationId == col.organizationId && $0.name.hasPrefix(prefix) }
+            .map(\.id)
+        return Set([id] + descendantIds)
     }
 
     func searchItems(query: String, in selection: SidebarSelection) throws -> [VaultItem] {
@@ -139,11 +153,17 @@ final class VaultRepositoryImpl: VaultRepository {
             counts[.folder(folder.id)] = base.filter { $0.folderId == folder.id }.count
         }
         for collection in collectionStore {
-            counts[.collection(collection.id)] = base.filter { $0.collectionIds.contains(collection.id) }.count
+            let ids = collectionIds(includingDescendantsOf: collection.id)
+            counts[.collection(collection.id)] = base.filter { $0.collectionIds.contains(where: { ids.contains($0) }) }.count
         }
         for org in organizationStore {
             let orgCollectionIds = Set(collectionStore.filter { $0.organizationId == org.id }.map(\.id))
-            counts[.organization(org.id)] = base.filter { $0.collectionIds.contains(where: { orgCollectionIds.contains($0) }) }.count
+            // Include items assigned directly to the org (collectionIds is empty — "Default collection")
+            // as well as items in any of the org's named collections.
+            counts[.organization(org.id)] = base.filter {
+                $0.organizationId == org.id ||
+                $0.collectionIds.contains(where: { orgCollectionIds.contains($0) })
+            }.count
         }
         return counts
     }
@@ -221,6 +241,13 @@ final class VaultRepositoryImpl: VaultRepository {
         // without connectivity are synced when the network becomes available.
         // Deferred to a later phase — requires a durable encrypted write-ahead log.
         let updatedRaw = try await apiClient.updateCipher(id: draft.id, cipher: rawCipher)
+
+        // Step 3b: Update collection membership for org items.
+        // PUT /api/ciphers/{id} ignores collectionIds in its body — a separate call is
+        // required. Always send it for org items so removing/changing collection works.
+        if draft.organizationId != nil {
+            try await apiClient.updateCipherCollections(id: draft.id, collectionIds: draft.collectionIds)
+        }
 
         // Step 4: Decode the server response into a domain item.
         // The cipherKey return value is discarded here — VaultKeyCache is populated at sync

@@ -127,6 +127,16 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         return updateCipherResponse ?? cipher
     }
 
+    // MARK: - Stubs: updateCipherCollections
+
+    nonisolated(unsafe) var updateCipherCollectionsCallCount = 0
+    nonisolated(unsafe) var lastUpdatedCipherCollections: (id: String, collectionIds: [String])?
+
+    func updateCipherCollections(id: String, collectionIds: [String]) async throws {
+        updateCipherCollectionsCallCount += 1
+        lastUpdatedCipherCollections = (id, collectionIds)
+    }
+
     // MARK: - Stubs: createCipher
 
     nonisolated(unsafe) var createCipherResponse: RawCipher?

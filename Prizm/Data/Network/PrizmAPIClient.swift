@@ -79,6 +79,15 @@ protocol PrizmAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}
     func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher
 
+    /// PUT `/api/ciphers/{id}/collections` — updates the collection membership of an org cipher.
+    ///
+    /// `PUT /api/ciphers/{id}` does not change collection assignments — this endpoint must be
+    /// called separately whenever `collectionIds` changes. Passing an empty array moves the
+    /// item to the org's Default collection.
+    ///
+    /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/collections
+    func updateCipherCollections(id: String, collectionIds: [String]) async throws
+
     /// PUT `/api/ciphers/{id}/delete` — soft-deletes a cipher by moving it to Trash.
     ///
     /// Sets `deletedDate` on the server. The item remains in the user's vault data and
@@ -628,6 +637,22 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
             logger.debug("[debug] updateCipher ← id=\(updated.id, privacy: .public)")
         }
         return updated
+    }
+
+    // MARK: - updateCipherCollections
+
+    func updateCipherCollections(id: String, collectionIds: [String]) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(id)/collections")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let body = ["collectionIds": collectionIds]
+        request.httpBody = try JSONEncoder().encode(body)
+        try await performEmpty(request: request)
     }
 
     // MARK: - softDeleteCipher
