@@ -74,7 +74,7 @@ final class MockVaultRepository: VaultRepository {
             return []
         case .organization(let orgId):
             let orgColIds = Set(populatedCollections.filter { $0.organizationId == orgId }.map(\.id))
-            return populatedItems.filter { !$0.collectionIds.filter { orgColIds.contains($0) }.isEmpty }
+            return populatedItems.filter { $0.collectionIds.contains(where: { orgColIds.contains($0) }) }
         case .collection(let colId):
             return populatedItems.filter { $0.collectionIds.contains(colId) }
         case .newCollection:

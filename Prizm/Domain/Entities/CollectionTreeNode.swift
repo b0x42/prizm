@@ -18,7 +18,7 @@ nonisolated struct CollectionTreeNode: Identifiable {
         var root: [CollectionTreeNode] = []
         let sorted = collections.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         for col in sorted {
-            let parts = col.name.split(separator: "/").map(String.init)
+            let parts = col.name.split(separator: "/").map(String.init).filter { !$0.isEmpty }
             guard !parts.isEmpty else { continue }
             insertNode(into: &root, parts: parts, collection: col)
         }

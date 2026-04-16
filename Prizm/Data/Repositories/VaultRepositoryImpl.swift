@@ -109,7 +109,7 @@ final class VaultRepositoryImpl: VaultRepository {
             return sorted(items.filter { item in
                 guard !item.isDeleted else { return false }
                 return item.organizationId == orgId
-                    || !item.collectionIds.filter { orgCollectionIds.contains($0) }.isEmpty
+                    || item.collectionIds.contains(where: { orgCollectionIds.contains($0) })
             })
         case .collection(let collectionId):
             return sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(collectionId) })
@@ -143,7 +143,7 @@ final class VaultRepositoryImpl: VaultRepository {
         }
         for org in organizationStore {
             let orgCollectionIds = Set(collectionStore.filter { $0.organizationId == org.id }.map(\.id))
-            counts[.organization(org.id)] = base.filter { !$0.collectionIds.filter { orgCollectionIds.contains($0) }.isEmpty }.count
+            counts[.organization(org.id)] = base.filter { $0.collectionIds.contains(where: { orgCollectionIds.contains($0) }) }.count
         }
         return counts
     }

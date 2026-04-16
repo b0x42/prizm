@@ -818,6 +818,12 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - createOrgCipher
 
+    /// Wrapper body for `POST /api/ciphers/create` — Bitwarden expects `{ "cipher": ..., "collectionIds": [...] }`.
+    private struct OrgCipherCreateRequest: Encodable {
+        let cipher: RawCipher
+        let collectionIds: [String]
+    }
+
     func createOrgCipher(cipher: RawCipher) async throws -> RawCipher {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/ciphers/create")
@@ -832,7 +838,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        request.httpBody = try JSONEncoder().encode(cipher)
+        let body = OrgCipherCreateRequest(cipher: cipher, collectionIds: cipher.collectionIds)
+        request.httpBody = try JSONEncoder().encode(body)
 
         let created: RawCipher = try await perform(request: request)
         if DebugConfig.isEnabled {
@@ -882,6 +889,13 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - Collection CRUD
 
+    /// Bitwarden collection body for create/rename — `groups` and `users` default to empty.
+    private struct CollectionBody: Encodable {
+        let name: String
+        let groups: [String]
+        let users: [String]
+    }
+
     func createCollection(organizationId: String, encryptedName: String) async throws -> RawCollection {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/organizations/\(organizationId)/collections")
@@ -891,10 +905,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        // Bitwarden collection create body — `groups` and `users` are optional arrays;
-        // omitting them defaults to an empty list on the server side.
-        let body: [String: Any] = ["name": encryptedName, "groups": [], "users": []]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try JSONEncoder().encode(CollectionBody(name: encryptedName, groups: [], users: []))
         return try await perform(request: request)
     }
 
@@ -907,8 +918,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        let body: [String: Any] = ["name": encryptedName, "groups": [], "users": []]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try JSONEncoder().encode(CollectionBody(name: encryptedName, groups: [], users: []))
         return try await perform(request: request)
     }
 
