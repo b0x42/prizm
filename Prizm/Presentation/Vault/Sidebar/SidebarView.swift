@@ -403,32 +403,26 @@ private struct OrgDisclosureRow: View {
 
     @ViewBuilder
     private var orgHeader: some View {
-        if org.canManageCollections {
-            HStack(alignment: .firstTextBaseline) {
-                Label(org.name, systemImage: "building.2")
-                    .font(Typography.sidebarRow)
-                    .badge(itemCounts[.organization(org.id)] ?? 0)
-                Spacer()
-                Button {
-                    newCollectionName = ""
-                    creatingCollectionInOrg = org.id
-                    isExpanded = true
-                    isNewCollectionFocused = true
-                } label: {
-                    Image(systemName: "plus.rectangle.on.folder")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                        .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
+        Label(org.name, systemImage: "building.2")
+            .font(Typography.sidebarRow)
+            .badge(itemCounts[.organization(org.id)] ?? 0)
+            .overlay(alignment: .trailing) {
+                if org.canManageCollections {
+                    Button {
+                        newCollectionName = ""
+                        creatingCollectionInOrg = org.id
+                        isExpanded = true
+                        isNewCollectionFocused = true
+                    } label: {
+                        Image(systemName: "folder.badge.plus")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("New Collection")
+                    .offset(x: 28)
                 }
-                .buttonStyle(.plain)
-                .help("New Collection")
-                .padding(.trailing, 10)
             }
-        } else {
-            Label(org.name, systemImage: "building.2")
-                .font(Typography.sidebarRow)
-                .badge(itemCounts[.organization(org.id)] ?? 0)
-        }
     }
 
     private func commitCreate() {
