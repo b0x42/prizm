@@ -108,8 +108,10 @@ struct SidebarView: View {
                 .accessibilityLabel("New Folder")
                 .padding(.trailing, 10)
             }
-        case .trash, .organizations:
+        case .trash:
             EmptyView()
+        case .organizations:
+            Text(section.title)
         default:
             Text(section.title)
         }
@@ -403,26 +405,27 @@ private struct OrgDisclosureRow: View {
 
     @ViewBuilder
     private var orgHeader: some View {
-        Label(org.name, systemImage: "building.2")
-            .font(Typography.sidebarRow)
-            .badge(itemCounts[.organization(org.id)] ?? 0)
-            .overlay(alignment: .trailing) {
-                if org.canManageCollections {
-                    Button {
-                        newCollectionName = ""
-                        creatingCollectionInOrg = org.id
-                        isExpanded = true
-                        isNewCollectionFocused = true
-                    } label: {
-                        Image(systemName: "folder.badge.plus")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("New Collection")
-                    .offset(x: 28)
+        HStack(alignment: .firstTextBaseline) {
+            Label(org.name, systemImage: "building.2")
+                .font(Typography.sidebarRow)
+            Spacer()
+            if org.canManageCollections {
+                Button {
+                    newCollectionName = ""
+                    creatingCollectionInOrg = org.id
+                    isExpanded = true
+                    isNewCollectionFocused = true
+                } label: {
+                    Image(systemName: "folder.badge.plus")
+                        .font(.title3)
+                        .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
                 }
+                .buttonStyle(.plain)
+                .help("New Collection")
+                .accessibilityLabel("New Collection")
+                .padding(.trailing, 10)
             }
+        }
     }
 
     private func commitCreate() {
