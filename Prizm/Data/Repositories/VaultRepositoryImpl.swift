@@ -112,24 +112,10 @@ final class VaultRepositoryImpl: VaultRepository {
                     || item.collectionIds.contains(where: { orgCollectionIds.contains($0) })
             })
         case .collection(let collectionId):
-            // Also include items from descendant collections (e.g. selecting "Engineering"
-            // shows items in "Engineering/Backend", "Engineering/Frontend", etc.).
-            let allIds = collectionIds(includingDescendantsOf: collectionId)
-            return sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(where: { allIds.contains($0) }) })
+            return sorted(items.filter { !$0.isDeleted && $0.collectionIds.contains(collectionId) })
         case .newCollection:
             return []
         }
-    }
-
-    /// Returns the given collection ID plus the IDs of all descendant collections,
-    /// determined by the "/" name prefix convention.
-    private func collectionIds(includingDescendantsOf id: String) -> Set<String> {
-        guard let col = collectionStore.first(where: { $0.id == id }) else { return [id] }
-        let prefix = col.name + "/"
-        let descendantIds = collectionStore
-            .filter { $0.organizationId == col.organizationId && $0.name.hasPrefix(prefix) }
-            .map(\.id)
-        return Set([id] + descendantIds)
     }
 
     func searchItems(query: String, in selection: SidebarSelection) throws -> [VaultItem] {
@@ -153,8 +139,7 @@ final class VaultRepositoryImpl: VaultRepository {
             counts[.folder(folder.id)] = base.filter { $0.folderId == folder.id }.count
         }
         for collection in collectionStore {
-            let ids = collectionIds(includingDescendantsOf: collection.id)
-            counts[.collection(collection.id)] = base.filter { $0.collectionIds.contains(where: { ids.contains($0) }) }.count
+            counts[.collection(collection.id)] = base.filter { $0.collectionIds.contains(collection.id) }.count
         }
         for org in organizationStore {
             let orgCollectionIds = Set(collectionStore.filter { $0.organizationId == org.id }.map(\.id))
