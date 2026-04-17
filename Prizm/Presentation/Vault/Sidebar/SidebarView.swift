@@ -415,7 +415,7 @@ private struct OrgDisclosureRow: View {
                     isExpanded = true
                     isNewCollectionFocused = true
                 } label: {
-                    Image(systemName: "tray.badge.plus")
+                    Image(systemName: "plus.rectangle.on.folder")
                         .font(.title3)
                         .foregroundStyle(.secondary)
                         .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
