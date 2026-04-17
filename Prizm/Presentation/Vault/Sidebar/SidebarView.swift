@@ -106,7 +106,7 @@ struct SidebarView: View {
                 .buttonStyle(.plain)
                 .help("New Folder")
                 .accessibilityLabel("New Folder")
-                .padding(.trailing, 10)
+                .padding(.trailing, 8)
             }
         case .trash:
             EmptyView()
