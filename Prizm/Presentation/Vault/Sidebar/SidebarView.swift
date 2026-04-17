@@ -403,13 +403,12 @@ private struct OrgDisclosureRow: View {
 
     @ViewBuilder
     private var orgHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Label(org.name, systemImage: "building.2")
-                .font(Typography.sidebarRow)
-                .badge(itemCounts[.organization(org.id)] ?? 0)
-            Spacer()
-            // + button is only shown when role allows collection management.
-            if org.canManageCollections {
+        if org.canManageCollections {
+            HStack(alignment: .firstTextBaseline) {
+                Label(org.name, systemImage: "building.2")
+                    .font(Typography.sidebarRow)
+                    .badge(itemCounts[.organization(org.id)] ?? 0)
+                Spacer()
                 Button {
                     newCollectionName = ""
                     creatingCollectionInOrg = org.id
@@ -425,6 +424,10 @@ private struct OrgDisclosureRow: View {
                 .help("New Collection")
                 .padding(.trailing, 10)
             }
+        } else {
+            Label(org.name, systemImage: "building.2")
+                .font(Typography.sidebarRow)
+                .badge(itemCounts[.organization(org.id)] ?? 0)
         }
     }
 
