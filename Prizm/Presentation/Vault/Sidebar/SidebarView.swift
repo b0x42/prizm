@@ -106,7 +106,7 @@ struct SidebarView: View {
                 .buttonStyle(.plain)
                 .help("New Folder")
                 .accessibilityLabel("New Folder")
-                .padding(.trailing, 8)
+                .padding(.trailing, 12)
             }
         case .trash:
             EmptyView()
@@ -423,7 +423,7 @@ private struct OrgDisclosureRow: View {
                 .buttonStyle(.plain)
                 .help("New Collection")
                 .accessibilityLabel("New Collection")
-                .padding(.trailing, 2)
+                .padding(.trailing, 6)
             }
         }
     }
