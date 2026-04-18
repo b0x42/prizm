@@ -99,14 +99,17 @@ struct SidebarView: View {
                     selection = .newFolder
                     isNewFolderFocused = true
                 } label: {
-                    Image(systemName: "folder.badge.plus")
+                    Image(systemName: "plus.circle")
                         .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
+                        .offset(y: -4)
                         .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
                 }
                 .buttonStyle(.plain)
                 .help("New Folder")
                 .accessibilityLabel("New Folder")
-                .padding(.trailing, 10)
+                .padding(.trailing, 14)
             }
         case .trash:
             EmptyView()
@@ -416,14 +419,17 @@ private struct OrgDisclosureRow: View {
                     isExpanded = true
                     isNewCollectionFocused = true
                 } label: {
-                    Image(systemName: "folder.badge.plus")
+                    Image(systemName: "plus.circle")
                         .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
                         .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
                 }
                 .buttonStyle(.plain)
                 .help("New Collection")
                 .accessibilityLabel("New Collection")
-                .padding(.trailing, 6)
+                .padding(.trailing, 2)
+                .offset(y: -4)
             }
         }
     }
