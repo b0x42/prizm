@@ -1,20 +1,22 @@
 ## ADDED Requirements
 
-### Requirement: RSA private key is decrypted at unlock time
-The system SHALL decrypt the user's RSA private key (`profile.privateKey` EncString) using the vault symmetric key immediately after vault unlock. The decrypted RSA private key SHALL be held in-memory by `PrizmCryptoServiceImpl` alongside the vault symmetric key, zeroed and cleared on vault lock (Constitution §III). The private key bytes SHALL NOT be logged.
+### Requirement: RSA private key is decrypted at sync time
+The system SHALL decrypt the user's RSA private key (`profile.privateKey` EncString) using the vault symmetric key during `SyncRepositoryImpl.sync()`, when the sync response contains a non-empty `organizations` array and a non-nil `profile.privateKey`. The decrypted RSA private key is used immediately within the same sync call to unwrap org keys and is not retained beyond that scope. Zeroing and clearing on vault lock applies to `OrgKeyCache` (which holds the unwrapped org keys). The private key bytes SHALL NOT be logged.
 
-#### Scenario: RSA private key available after unlock
-- **WHEN** the vault is unlocked with a valid master password or biometrics
-- **THEN** the decrypted RSA private key SHALL be available in-memory for org key unwrap operations
+> **Implementation note:** The original spec said "at unlock time" but the implementation decrypts the RSA private key during sync (where the EncString is available in the sync profile). The key is used transiently within `sync()` — it is not stored as long-lived actor state.
 
-#### Scenario: RSA private key zeroed and cleared on lock
-- **WHEN** the vault is locked
-- **THEN** the RSA private key bytes SHALL be zeroed and the reference cleared from memory alongside the vault symmetric key
+#### Scenario: RSA private key decrypted during sync
+- **WHEN** sync completes and the profile contains a `privateKey` EncString and at least one organization
+- **THEN** the RSA private key SHALL be decrypted and used to unwrap org symmetric keys within that sync call
+
+#### Scenario: RSA private key not retained after sync
+- **WHEN** `sync()` returns
+- **THEN** the raw RSA private key bytes SHALL not be held in any long-lived actor state
 
 #### Scenario: Missing privateKey field handled gracefully
 - **GIVEN** the sync profile contains no `privateKey` field (Vaultwarden instance with no org membership)
-- **WHEN** the vault is unlocked
-- **THEN** no error is raised and org key unwrap simply has no key to work with
+- **WHEN** sync runs
+- **THEN** the org key unwrap block is skipped entirely with no error raised
 
 ---
 

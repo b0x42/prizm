@@ -1,7 +1,9 @@
 ## ADDED Requirements
 
 ### Requirement: Organization and Collection domain entities exist
-The Domain layer SHALL define an `Organization` struct with fields: `id: String`, `name: String`, `role: OrgRole`, and `canManageCollections: Bool` (derived from role). `OrgRole` SHALL be an enum: `.owner`, `.admin`, `.manager`, `.user`, `.custom`. The Domain layer SHALL define a `Collection` struct with fields: `id: String`, `organizationId: String`, `name: String`. Both are value types (`struct`). No crypto imports in the Domain layer.
+The Domain layer SHALL define an `Organization` struct with fields: `id: String`, `name: String`, `role: OrgRole`, and `canManageCollections: Bool` (derived from role). `OrgRole` SHALL be an enum: `.owner`, `.admin`, `.manager`, `.user`, `.custom`. The Domain layer SHALL define an `OrgCollection` struct with fields: `id: String`, `organizationId: String`, `name: String`. Both are value types (`struct`). No crypto imports in the Domain layer.
+
+> **Implementation note:** The entity was named `OrgCollection` (not `Collection`) to avoid a name collision with Swift's standard library `Collection` protocol.
 
 #### Scenario: Organization entity accessible from Domain layer
 - **WHEN** a use case or repository protocol references `Organization`

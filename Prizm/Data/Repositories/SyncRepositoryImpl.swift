@@ -5,16 +5,14 @@ import os.log
 
 /// Concrete implementation of `SyncRepository`.
 ///
-/// Fetches the encrypted vault from the Bitwarden server, decrypts personal ciphers
-/// via `PrizmCryptoServiceImpl.decryptList`, and populates the in-memory `VaultRepository`.
+/// Fetches the encrypted vault from the Bitwarden server, decrypts ciphers, folders,
+/// organizations, and collections, then populates the in-memory `VaultRepository`.
 ///
-/// Organisation ciphers (`organizationId != nil`) are skipped in v1. The encrypted
-/// private key needed to decrypt per-org symmetric keys is present in the token response
-/// (`PrivateKey` field) but RSA decryption is not yet implemented.
-// TODO: support organisation ciphers — requires RSA private-key decryption of the
-// per-org symmetric key wrapped in the account's RSA keypair.
-// Deferred: Security.framework RSA-OAEP + the user's private key (from tokenResponse.privateKey)
-// must be decrypted with the vault symmetric key before org ciphers can be read.
+/// **Org cipher support**: when the sync profile contains a `privateKey` EncString and at
+/// least one organization, the RSA private key is decrypted with the vault symmetric key,
+/// used to unwrap each org's symmetric key via RSA-OAEP-SHA1 (`Security.framework`), and
+/// the unwrapped keys are stored in `OrgKeyCache` for the duration of the session.
+/// Org ciphers are then decrypted using the org key rather than the personal vault key.
 ///
 /// Individual cipher decryption failures are non-fatal — they are counted and logged
 /// but the remaining ciphers are still stored.

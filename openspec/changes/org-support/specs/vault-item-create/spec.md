@@ -29,7 +29,7 @@ The system SHALL display a "Folder" picker in both the item edit sheet and the i
 ## ADDED Requirements
 
 ### Requirement: Create and edit sheets include an org collection picker for org items
-The system SHALL display an organization name (read-only) and a "Collection" picker in the item edit sheet when the item belongs to an organization. In the create sheet, when the sidebar context is `.collection(id)`, the org and collection SHALL be pre-selected. The collection picker SHALL list all collections in the item's organization, sorted alphabetically. The selected collection's id SHALL be included in `collectionIds[]` in the cipher payload when saving.
+The system SHALL display an organization name (read-only) and a "Collection" picker in the item edit sheet when the item belongs to an organization. In the create sheet, when the sidebar context is `.collection(id)`, the org and collection SHALL be pre-selected (passed via `selectedCollectionId` from `VaultBrowserViewModel`). The collection picker SHALL list all `OrgCollection` entries for the item's organization, sorted alphabetically. The selected collection's id SHALL be included in `collectionIds[]` in the cipher payload when saving.
 
 #### Scenario: Collection picker shown in edit sheet for org item
 - **WHEN** the user opens the edit sheet for an org item
