@@ -89,6 +89,8 @@ struct SidebarView: View {
     @ViewBuilder
     private func sectionHeader(for section: SidebarSection) -> some View {
         switch section {
+        case .menu:
+            EmptyView()
         case .folders:
             HStack(alignment: .firstTextBaseline) {
                 Text(section.title)
