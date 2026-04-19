@@ -2,67 +2,97 @@
 
 Prizm currently supports only self-hosted Vaultwarden instances. Users must manually configure URLs for API, Identity, and Icons endpoints (e.g., `https://vault.example.com/api/...`, `https://vault.example.com/identity/...`). While this works for self-hosted users, it is not a good experience for users of Bitwarden's hosted cloud service, who expect a simple "Log in to Bitwarden Cloud" flow similar to the official Bitwarden clients.
 
-More importantly, Bitwarden Cloud requires [hCaptcha](https://www.hcaptcha.com/) verification for login from unrecognized devices. Implementing hCaptcha support adds an additional web-based challenge to the login flow.
+Bitwarden Cloud operates two independent regions: the international US region (bitwarden.com) and the EU region (bitwarden.eu), each with its own set of service endpoints. Users must choose the correct region — selecting the wrong one will produce an authentication failure.
 
-The Prizm API client (`PrizmAPIClient`) currently constructs URLs by appending paths to a single base URL. Bitwarden Cloud uses separate domains for different services: `api.bitwarden.com`, `identity.bitwarden.com`, and `icons.bitwarden.net`. Supporting cloud requires refactoring URL construction to use separate base URLs per endpoint type.
+Bitwarden Cloud requires [hCaptcha](https://www.hcaptcha.com/) verification for login from unrecognized devices. This adds a web-based challenge to the login flow.
 
-Finally, Bitwarden Cloud requires a registered client identifier per their Device Registration ADR. This identifier must be included in API requests and must be obtained from Bitwarden, Inc. before any public release targeting bitwarden.com.
+The Prizm API client (`PrizmAPIClient`) currently constructs URLs by appending paths to a single `baseURL`. Both cloud regions and self-hosted instances use distinct domains per service type (api, identity, icons). Supporting all three options requires wiring per-service URLs through to all call sites.
+
+Bitwarden Cloud requires a registered client identifier per their Device Registration ADR. This identifier must be injected at build time and must never appear in the repository.
+
+### Existing infrastructure (post-merge baseline)
+
+The following is already in the codebase and must be extended rather than created:
+
+- **`ServerEnvironment`** (`Domain/Entities/Account.swift`) — struct with `base: URL`, optional `overrides: ServerURLOverrides?`, and computed properties `apiURL`, `identityURL`, `iconsURL`. Serialised to Keychain per account under `bw.macos:{userId}:serverEnvironment`. No cloud/region variant — only models self-hosted today.
+- **`AuthRepository.setServerEnvironment(_ env:)`** — declared and implemented; currently only calls `apiClient.setBaseURL(environment.base)`, ignoring `apiURL`/`identityURL`/`iconsURL`.
+- **`PrizmAPIClient.setBaseURL(_ url: URL)`** — actor method; all ~32 endpoint methods use `base.appendingPathComponent(...)`. Per-service URL properties on `ServerEnvironment` are never passed through.
+- **`LoginView` / `LoginViewModel`** — single `serverURL: String` field, static subtitle "Self-hosted vault".
+- **`bw.macos:{userId}:serverEnvironment`** — Keychain key already in use for self-hosted accounts.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Provide a polished "Bitwarden Cloud" option alongside "Self-hosted" in the login flow
-- Auto-fill standard cloud URLs (api.bitwarden.com, identity.bitwarden.com, icons.bitwarden.net) when cloud is selected
-- Refactor `PrizmAPIClient` to use separate URLs per endpoint type (API, Identity, Icons)
-- Support hCaptcha verification through an embedded `WKWebView`
-- Persist server environment configuration per account
-- Include registered client identifier in cloud API requests
+- Three-way server picker in `LoginView`: Bitwarden Cloud (US), Bitwarden Cloud (EU), Self-hosted
+- Wire `PrizmAPIClient` to route requests via `env.apiURL` / `env.identityURL` / `env.iconsURL`
+- Support hCaptcha via `WKWebView` for cloud password login
+- Handle hCaptcha challenges via `WKWebView` for cloud password login
+- Persist server environment per account in Keychain (data layer multi-account-ready)
+- Include registered client identifier in cloud API requests; identifier injected at build time, never in repo
 
 **Non-Goals:**
-- Automatic detection of server type from URL (user must explicitly choose cloud vs self-hosted)
+- Automatic server type detection from a URL
+- Multi-account UI — running multiple accounts simultaneously (deferred to a later release)
 - Multi-device cloud sync coordination (existing sync mechanisms are unchanged)
 
 ## Decisions
 
-### Decision: Explicit cloud/self-hosted toggle in `LoginView`
+### Decision: Three-way server picker in `LoginView`
 
-Users must explicitly choose between "Bitwarden Cloud" and "Self-hosted" via a picker or toggle. The selection determines whether URLs are auto-filled (cloud) or manually entered (self-hosted). This preserves the UX principle that the user should always be in control of where their data is stored.
+The login screen SHALL present a segmented picker (or equivalent) with three options:
 
-**Alternative considered**: Automatically detect cloud vs self-hosted from the input URL. Rejected because this would create ambiguity if a self-hosted instance uses a similar domain pattern or if cloud URLs change.
+1. **Bitwarden Cloud (US)** — no URL entry; cloud service URLs auto-configured
+2. **Bitwarden Cloud (EU)** — no URL entry; EU service URLs auto-configured
+3. **Self-hosted** — shows the existing server URL field
 
-### Decision: Separate URLs per endpoint type in `PrizmAPIClient`
+Showing US and EU as distinct top-level choices makes the region decision explicit and avoids any ambiguity about which data centre stores the user's vault. The static subtitle "Self-hosted vault" is replaced by the picker.
 
-`PrizmAPIClient` shall be refactored to accept separate base URLs for API, Identity, and Icons endpoints. This matches the Bitwarden Cloud architecture (separate domains) and preserves flexibility for future self-hosted installations that might also use separate domains.
+**Alternative considered**: Single "Bitwarden Cloud" option with a secondary region dropdown. Rejected — hides a decision that has real data-residency implications; users should see it upfront.
 
-### Decision: `ServerEnvironment` entity to encapsulate configuration
+**Alternative considered**: Auto-detect region from email domain. Rejected — not reliable; same email can be registered in either region.
 
-A new Domain entity `ServerEnvironment` shall encapsulate the server type (cloud vs self-hosted) and the three URLs. This keeps the configuration type-safe and makes it easy to persist and restore the environment per account.
+### Decision: `ServerType` flat enum with three cases
 
-**Alternative considered**: Store three separate URL values without a container. Rejected because this decouples the three URLs that logically belong to a single environment configuration.
+`ServerEnvironment` SHALL gain a `ServerType` enum with three cases: `cloudUS`, `cloudEU`, `selfHosted`. The computed `apiURL`/`identityURL`/`iconsURL` properties SHALL return the correct canonical URLs per case:
 
-### Decision: Use `WKWebView` to support hCaptcha challenges
+| Case | apiURL | identityURL | iconsURL |
+|---|---|---|---|
+| `cloudUS` | `https://api.bitwarden.com` | `https://identity.bitwarden.com` | `https://icons.bitwarden.net` |
+| `cloudEU` | `https://api.bitwarden.eu` | `https://identity.bitwarden.eu` | `https://icons.bitwarden.net` |
+| `selfHosted` | `{base}/api` (or override) | `{base}/identity` (or override) | `{base}/icons` (or override) |
 
-While this is more complex for initial implementation, it provides a maximally user-friendly experience. Using the system's built-in `WKWebView` does not deviate from the principles of native-first UI for this use case.
+The existing `overrides: ServerURLOverrides?` field is retained for self-hosted instances that split services across domains. Cloud cases ignore `overrides`.
 
-API key authentication via OAuth client credentials flow
+**Alternative considered**: `cloud(region: CloudRegion)` associated-value enum. Rejected — YAGNI; two named cases are clearer and simpler than an associated value with a nested type when there are only two regions.
 
-Support personal API key authentication (client_id/client_secret) using the OAuth client credentials grant type. This bypasses the hCaptcha requirement entirely and is simpler than implementing a web view or system browser redirect.
+**Alternative considered**: Separate type per case. Rejected — breaks existing Keychain serialisation format.
 
-**Alternative considered**: Support only API key auth initially, removing the need for hCaptcha entirely. Rejected as poor user experience.
+Existing Keychain records with no `serverType` key SHALL decode as `selfHosted` (backwards-compatible; no migration step needed).
 
-**Alternative considered**: System browser OAuth redirect. Rejected as sub-optimal user experience, having to leave the app and return to it.
+### Decision: `PrizmAPIClient` accepts `ServerEnvironment` directly
 
-### Decision: Server environment persists per account
+`PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. All ~32 endpoint methods SHALL route to `env.apiURL`, `env.identityURL`, or `env.iconsURL`. `AuthRepositoryImpl.setServerEnvironment(_:)` SHALL call `apiClient.setServerEnvironment(environment)` instead of `apiClient.setBaseURL(environment.base)`. The computed properties already return the right values — this is purely wiring.
 
-Server environment configuration shall be stored per account in secure `UserDefaults` (typically not a secret). When switching accounts, the correct environment for that account is restored. This ensures that multi-account users can have some accounts on cloud and others on self-hosted instances.
+### Decision: Email/password login only; registered `client_id` enables cloud auth
 
-**Alternative considered**: Global server environment setting. Rejected because this would not support mixed multi-account scenarios.
+All three server options use email + master password login. No API key login UI is needed.
 
-### Decision: Client identifier for cloud only
+The Bitwarden OAuth password grant already requires a `client_id` parameter identifying the client application — `PrizmAPIClient` sends it today as `ClientHeaders.clientId = "desktop"`. For cloud accounts this value is replaced with the registered identifier from Bitwarden, Inc., injected via xcconfig. This is transparent to the user; no extra UI is required.
 
-The registered client identifier shall be included only in requests to Bitwarden Cloud endpoints. Self-hosted Vaultwarden instances do not require this header. The client identifier shall be configurable (not hardcoded) to facilitate updates and avoid including unreleased identifiers in source code.
+If the cloud server returns an hCaptcha challenge, a `WKWebView` modal handles it before the token request is retried.
+
+**Alternative considered**: API key login (`client_credentials` grant) as a CAPTCHA bypass. Rejected — out of scope for this release; the hCaptcha `WKWebView` path covers the cloud login requirement without adding a second authentication mode.
+
+### Decision: Data layer multi-account-ready; UI single-account for this release
+
+`ServerEnvironment` is keyed by `userId` in Keychain. Adding a second account in a future release requires no data layer changes. This release manages one active account at a time. Multi-account UI is deferred.
+
+### Decision: Client identifier injected at build time via gitignored xcconfig
+
+The registered Bitwarden client identifier SHALL be set in a gitignored `LocalSecrets.xcconfig` file and surfaced in the app via an `Info.plist` key read by `Config.swift`. When the key is absent (e.g. a fresh clone), the value defaults to an empty string and cloud login fails with a clear error at runtime. CI/CD injects the value from a secret.
 
 ## Risks / Trade-offs
 
-- **Registered client identifier required for bitwarden.com release**: Per the Constitution line 220, a registered client identifier from Bitwarden, Inc. is required before any release targeting bitwarden.com. This must be obtained externally and configured at build or runtime. Mitigation: The design makes the client identifier configurable; placeholder value can be used for development.
-- **URL validation must be careful for self-hosted**: Users may enter invalid URLs. Mitigation: Validate URL schemes (require HTTPS) and basic reachability before attempting login; surface clear error messages.
+- **EU endpoint URLs must be verified against Bitwarden's official documentation** before release. The URLs in the `ServerType` table above are based on the known Bitwarden EU region setup; confirm `api.bitwarden.eu`, `identity.bitwarden.eu`, `icons.bitwarden.eu` are correct before shipping.
+- **Client identifier must never appear in the repo**: injected via gitignored xcconfig. CI injects from a secret. Development builds without the key will fail cloud login at runtime with a clear error.
+- **Self-hosted URL validation**: `AuthRepositoryImpl.validateServerURL()` already enforces HTTPS-only and strips trailing slashes. No new logic needed.
