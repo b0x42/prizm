@@ -112,6 +112,15 @@ enum Spacing {
     /// Inner padding for read-only display fields (e.g. the email chip on UnlockView).
     static let readOnlyField: CGFloat = 6
 
+    /// Horizontal inner padding for inline badge labels (e.g. org membership badge on item rows).
+    static let badgeHorizontal: CGFloat = 5
+
+    /// Vertical inner padding for inline badge labels.
+    static let badgeVertical: CGFloat = 1
+
+    /// Corner radius for inline badge labels.
+    static let badgeCornerRadius: CGFloat = 4
+
     /// Horizontal padding on full-screen auth/sync flows (Login, TOTP, Unlock, SyncProgress).
     static let screenHorizontal: CGFloat = 40
 }

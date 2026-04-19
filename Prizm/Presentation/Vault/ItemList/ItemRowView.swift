@@ -45,9 +45,9 @@ struct ItemRowView: View {
                         .font(Typography.listSubtitle)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                        .padding(.horizontal, Spacing.badgeHorizontal)
+                        .padding(.vertical, Spacing.badgeVertical)
+                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: Spacing.badgeCornerRadius))
                 }
             }
         }

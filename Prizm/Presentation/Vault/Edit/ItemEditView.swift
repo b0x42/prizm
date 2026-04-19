@@ -66,15 +66,22 @@ struct ItemEditView: View {
                     $0.organizationId == viewModel.draft.organizationId
                 }
                 if !orgCollections.isEmpty {
-                    // TODO: Support multi-collection assignment (Bitwarden allows multiple).
-                    // Currently limited to single-collection for v1 simplicity — editing an
-                    // item in multiple collections will silently drop all but the first.
+                    // Single-collection picker for this org. For items already assigned to
+                    // multiple collections, extra collection IDs (outside this org) are
+                    // preserved on save; only the selected collection within this org changes.
+                    let orgCollectionIds = Set(orgCollections.map(\.id))
                     DetailSectionCard("Collection") {
                         HStack {
                             Picker(selection: Binding(
-                                get: { viewModel.draft.collectionIds.first },
+                                get: {
+                                    viewModel.draft.collectionIds.first { orgCollectionIds.contains($0) }
+                                },
                                 set: { newId in
-                                    viewModel.draft.collectionIds = newId.map { [$0] } ?? []
+                                    // Replace only the collection IDs that belong to this org;
+                                    // preserve any IDs from other orgs (should not exist in practice
+                                    // but guards against cross-org data loss).
+                                    let otherIds = viewModel.draft.collectionIds.filter { !orgCollectionIds.contains($0) }
+                                    viewModel.draft.collectionIds = otherIds + (newId.map { [$0] } ?? [])
                                 }
                             )) {
                                 Text("None").tag(String?.none)

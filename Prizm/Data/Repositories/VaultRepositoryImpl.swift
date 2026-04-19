@@ -136,7 +136,9 @@ final class VaultRepositoryImpl: VaultRepository {
             counts[.type(type)]    = base.filter { $0.content.matchesItemType(type) }.count
         }
         for folder in folderStore {
-            counts[.folder(folder.id)] = base.filter { $0.folderId == folder.id }.count
+            // Exclude org items — they are excluded from folder list views too (organizationId == nil guard).
+            // Without this, an org item with a folderId would inflate the badge but not appear in the list.
+            counts[.folder(folder.id)] = base.filter { $0.organizationId == nil && $0.folderId == folder.id }.count
         }
         for collection in collectionStore {
             counts[.collection(collection.id)] = base.filter { $0.collectionIds.contains(collection.id) }.count
