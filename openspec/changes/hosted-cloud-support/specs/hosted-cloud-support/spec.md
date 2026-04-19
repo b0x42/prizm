@@ -159,6 +159,61 @@ All three server options use email + master password login. When a cloud account
 
 ---
 
+### Requirement: Accessibility
+
+All new interactive controls introduced by this change MUST be fully usable via VoiceOver (§VIII).
+
+- The server picker SHALL have an `accessibilityLabel` ("Server") and expose its current value via `accessibilityValue` (e.g. "Bitwarden Cloud (US)")
+- The server URL text field SHALL retain its existing `accessibilityIdentifier` and have a meaningful `accessibilityLabel` ("Server URL")
+- The hCaptcha `WKWebView` modal SHALL have an accessible dismiss path (a labelled close button); VoiceOver focus SHALL move into the modal on presentation and return to the login form on dismissal
+- Error messages (unreachable server, invalid credentials, missing client identifier) SHALL be announced via `AccessibilityNotification.Announcement` as soon as they appear
+
+#### Scenario: Picker exposes current selection to VoiceOver
+- **WHEN** the server picker has "Bitwarden Cloud (EU)" selected
+- **THEN** VoiceOver SHALL announce the control as "Server, Bitwarden Cloud (EU)"
+
+#### Scenario: Error announced to assistive technology
+- **WHEN** an error message appears in the login form
+- **THEN** an `AccessibilityNotification.Announcement` SHALL be posted with the error text
+
+---
+
+### Requirement: Observability
+
+All new code paths MUST produce structured `os.Logger` output (§V). Secrets MUST NOT appear in logs.
+
+- Server environment selection and restoration SHALL be logged at `.info` level, including the `serverType` value
+- Each identity token request SHALL log the target `identityURL` (not the password or hash) at `.info`
+- hCaptcha challenge receipt and completion SHALL be logged at `.info`
+- Client identifier misconfiguration SHALL be logged at `.error` before surfacing to the Presentation layer
+- URL validation failures (non-HTTPS, parse error) SHALL be logged at `.error`
+
+---
+
+### Requirement: Tests
+
+Per §IV, tests MUST be written before implementation. The following are required:
+
+**Unit tests (Domain):**
+- `ServerEnvironment` with `serverType == .cloudUS` returns correct US canonical URLs
+- `ServerEnvironment` with `serverType == .cloudEU` returns correct EU canonical URLs, and `iconsURL == https://icons.bitwarden.net`
+- `ServerEnvironment` with `serverType == .selfHosted` returns `base`-derived URLs unchanged
+- Decoding a legacy JSON record (no `serverType` key) yields `serverType == .selfHosted`
+
+**Unit tests (Data):**
+- `PrizmAPIClient.setServerEnvironment()` stores the environment and subsequent requests use `env.apiURL` / `env.identityURL` as appropriate (representative call sites: `preLogin`, `identityToken`, `fetchSync`)
+- `AuthRepositoryImpl.setServerEnvironment(_:)` calls `apiClient.setServerEnvironment(_:)` (not `setBaseURL`)
+- Cloud login attempt with empty client identifier throws before making a network request
+
+**Unit tests (Presentation):**
+- `LoginViewModel` server type selection is persisted and restored across instantiation
+- Selecting a cloud type clears `serverURL`; selecting self-hosted restores the last entered URL
+
+**Integration tests:**
+- Full login flow against a Vaultwarden stub (existing coverage) continues to pass after the `PrizmAPIClient` refactor
+
+---
+
 ### Requirement: Server environment errors surfaced clearly
 
 #### Scenario: Non-HTTPS self-hosted URL rejected
