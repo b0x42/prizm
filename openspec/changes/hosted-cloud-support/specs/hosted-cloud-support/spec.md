@@ -1,176 +1,178 @@
 ## Purpose
 
-Defines support for Bitwarden-hosted cloud services alongside self-hosted Vaultwarden instances, including endpoint environment configuration, cloud/self-hosted server selection in the login flow, and integration with the existing Bitwarden API client.
+Defines support for Bitwarden Cloud (US and EU regions) alongside self-hosted Vaultwarden instances. Scope: single active account; user chooses server at login. Data layer is designed for multi-account from day one; multi-account UI is deferred.
 
-## Requirements
+## Baseline (what already exists)
 
-### Requirement: Login UI provides cloud/self-hosted toggle
-The system SHALL display a picker or toggle in the `LoginView` that allows users to choose between "Bitwarden Cloud" and "Self-hosted" server environments. When "Bitwarden Cloud" is selected, the system SHALL auto-fill the standard URLs (api.bitwarden.com, identity.bitwarden.com, icons.bitwarden.net) and disable manual URL fields. When "Self-hosted" is selected, the system SHALL enable manual URL entry fields and use those user-provided URLs for all API communication. The selection SHALL be persisted across app launches.
-
-#### Scenario: Toggle visible on login screen
-- **WHEN** the `LoginView` is displayed
-- **THEN** a picker or toggle SHALL be visible offering "Bitwarden Cloud" and "Self-hosted" options
-
-#### Scenario: Cloud selection auto-fills standard URLs
-- **WHEN** the user selects "Bitwarden Cloud"
-- **THEN** the API URL field SHALL be pre-filled with "https://api.bitwarden.com"
-- **AND** the Identity URL field SHALL be pre-filled with "https://identity.bitwarden.com"
-- **AND** the Icons URL field SHALL be pre-filled with "https://icons.bitwarden.net"
-- **AND** the manual URL fields SHALL be disabled (non-editable)
-
-#### Scenario: Self-hosted selection enables manual URL entry
-- **WHEN** the user selects "Self-hosted"
-- **THEN** the manual URL fields SHALL become editable
-- **AND** the fields SHALL be empty or retain previously entered values
-- **AND** the user can enter custom URLs for API, Identity, and Icons endpoints
-
-#### Scenario: Selection is persisted across app launches
-- **GIVEN** the user selected "Bitwarden Cloud" on a previous launch
-- **WHEN** the app is relaunched and the `LoginView` appears
-- **THEN** the picker SHALL retain the "Bitwarden Cloud" selection
-- **AND** the standard cloud URLs SHALL be pre-filled and disabled
-
-#### Scenario: Self-hosted URLs are persisted
-- **GIVEN** the user selected "Self-hosted" and entered custom URLs
-- **WHEN** the app is relaunched and the `LoginView` appears
-- **THEN** the picker SHALL retain the "Self-hosted" selection
-- **AND** the previously entered custom URLs SHALL be pre-filled
+- `ServerEnvironment` (`Domain/Entities/Account.swift`) — `base: URL`, `overrides: ServerURLOverrides?`, computed `apiURL`/`identityURL`/`iconsURL`. No cloud/region discriminant.
+- `AuthRepository.setServerEnvironment(_ env:)` — declared and implemented; only calls `apiClient.setBaseURL(environment.base)`.
+- `PrizmAPIClient` actor — single `baseURL`; ~32 endpoint methods all use `base.appendingPathComponent(...)`.
+- `LoginView` / `LoginViewModel` — single `serverURL: String` field, static subtitle "Self-hosted vault".
+- `bw.macos:{userId}:serverEnvironment` — Keychain key in use for self-hosted accounts.
 
 ---
 
-### Requirement: API client uses `ServerEnvironment` URLs based on selection
-The system SHALL configure `PrizmAPIClient` with the appropriate URLs based on the user's server environment selection. All network requests to `api/...` paths SHALL use the configured API base URL, all requests to `identity/...` paths SHALL use the configured Identity base URL, and all icon requests SHALL use the configured Icons base URL. The system SHALL NOT append these paths dynamically to a single base URL; each endpoint type SHALL resolve to its configured environment URL.
+### Requirement: Login UI presents a three-way server picker
 
-#### Scenario: API requests use cloud URLs when cloud is selected
-- **GIVEN** the user has selected "Bitwarden Cloud"
+The `LoginView` SHALL replace the static subtitle "Self-hosted vault" and single server URL field with a three-option picker:
+
+1. **Bitwarden Cloud (US)** — hides the server URL field
+2. **Bitwarden Cloud (EU)** — hides the server URL field
+3. **Self-hosted** — shows the server URL field as it exists today
+
+When a cloud option is selected, no URL entry is required or shown. When "Self-hosted" is selected, the server URL field is shown and behaves as today. The last-used selection SHALL be remembered across app launches.
+
+#### Scenario: Picker is visible on the login screen
+- **WHEN** `LoginView` is displayed
+- **THEN** a picker offering "Bitwarden Cloud (US)", "Bitwarden Cloud (EU)", and "Self-hosted" SHALL be visible above the email field
+
+#### Scenario: Cloud selection hides the server URL field
+- **WHEN** the user selects "Bitwarden Cloud (US)" or "Bitwarden Cloud (EU)"
+- **THEN** the server URL field SHALL be hidden
+- **AND** the email and master password fields SHALL remain visible
+
+#### Scenario: Self-hosted selection shows the server URL field
+- **WHEN** the user selects "Self-hosted"
+- **THEN** the server URL field SHALL be visible and editable
+- **AND** any previously entered URL SHALL be restored
+
+#### Scenario: Last-used selection restored on relaunch
+- **GIVEN** the user last chose "Bitwarden Cloud (EU)" before quitting
+- **WHEN** `LoginView` appears on the next launch
+- **THEN** the picker SHALL default to "Bitwarden Cloud (EU)"
+
+---
+
+### Requirement: `ServerEnvironment` extended with three-case `ServerType`
+
+`ServerEnvironment` SHALL gain a `ServerType` enum with cases `cloudUS`, `cloudEU`, and `selfHosted`. The computed properties SHALL return the following canonical URLs per case:
+
+| `serverType` | `apiURL` | `identityURL` | `iconsURL` |
+|---|---|---|---|
+| `cloudUS` | `https://api.bitwarden.com` | `https://identity.bitwarden.com` | `https://icons.bitwarden.net` |
+| `cloudEU` | `https://api.bitwarden.eu` | `https://identity.bitwarden.eu` | `https://icons.bitwarden.net` |
+| `selfHosted` | `{base}/api` (or override) | `{base}/identity` (or override) | `{base}/icons` (or override) |
+
+Cloud cases SHALL ignore `overrides`. `selfHosted` behaviour is unchanged. Existing Keychain records without a `serverType` key SHALL decode as `selfHosted`.
+
+#### Scenario: cloudUS returns US canonical URLs
+- **GIVEN** a `ServerEnvironment` with `serverType == .cloudUS`
+- **THEN** `apiURL` SHALL equal `https://api.bitwarden.com`
+- **AND** `identityURL` SHALL equal `https://identity.bitwarden.com`
+- **AND** `iconsURL` SHALL equal `https://icons.bitwarden.net`
+
+#### Scenario: cloudEU returns EU canonical URLs
+- **GIVEN** a `ServerEnvironment` with `serverType == .cloudEU`
+- **THEN** `apiURL` SHALL equal `https://api.bitwarden.eu`
+- **AND** `identityURL` SHALL equal `https://identity.bitwarden.eu`
+- **AND** `iconsURL` SHALL equal `https://icons.bitwarden.net` (global CDN; no EU-specific icons endpoint exists)
+
+#### Scenario: selfHosted returns URL-derived values
+- **GIVEN** a `ServerEnvironment` with `serverType == .selfHosted` and `base = https://vault.example.com`
+- **THEN** `apiURL` SHALL equal `https://vault.example.com/api`
+- **AND** `identityURL` SHALL equal `https://vault.example.com/identity`
+
+#### Scenario: Legacy record decoded as selfHosted
+- **GIVEN** a stored JSON record with no `serverType` key
+- **WHEN** decoded from Keychain
+- **THEN** `serverType` SHALL be `selfHosted`
+
+---
+
+### Requirement: `PrizmAPIClient` routes requests via `ServerEnvironment`
+
+`PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. All ~32 endpoint methods SHALL use `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`. `AuthRepositoryImpl.setServerEnvironment(_:)` SHALL call `apiClient.setServerEnvironment(environment)`.
+
+#### Scenario: cloudUS routes api requests correctly
+- **GIVEN** the active account has `serverType == .cloudUS`
 - **WHEN** `PrizmAPIClient` makes a request to an `api/...` endpoint
 - **THEN** the request SHALL be sent to `https://api.bitwarden.com/api/...`
 
-#### Scenario: Identity requests use cloud URLs when cloud is selected
-- **GIVEN** the user has selected "Bitwarden Cloud"
+#### Scenario: cloudEU routes api requests correctly
+- **GIVEN** the active account has `serverType == .cloudEU`
+- **WHEN** `PrizmAPIClient` makes a request to an `api/...` endpoint
+- **THEN** the request SHALL be sent to `https://api.bitwarden.eu/api/...`
+
+#### Scenario: cloudEU routes identity requests correctly
+- **GIVEN** the active account has `serverType == .cloudEU`
 - **WHEN** `PrizmAPIClient` makes a request to an `identity/...` endpoint
-- **THEN** the request SHALL be sent to `https://identity.bitwarden.com/identity/...`
+- **THEN** the request SHALL be sent to `https://identity.bitwarden.eu/identity/...`
 
-#### Scenario: Icon requests use cloud URLs when cloud is selected
-- **GIVEN** the user has selected "Bitwarden Cloud"
-- **WHEN** `PrizmAPIClient` fetches a favicon or icon
-- **THEN** the request SHALL be sent to `https://icons.bitwarden.net`
-
-#### Scenario: API requests use self-hosted URLs when self-hosted is selected
-- **GIVEN** the user has selected "Self-hosted" and entered "https://vault.example.com" as the API URL
+#### Scenario: selfHosted routes to user-supplied URL
+- **GIVEN** the active account has `serverType == .selfHosted` and `base = https://vault.example.com`
 - **WHEN** `PrizmAPIClient` makes a request to an `api/...` endpoint
 - **THEN** the request SHALL be sent to `https://vault.example.com/api/...`
 
-#### Scenario: Identity requests use self-hosted URLs when self-hosted is selected
-- **GIVEN** the user has selected "Self-hosted" and entered "https://vault.example.com" as the Identity URL
-- **WHEN** `PrizmAPIClient` makes a request to an `identity/...` endpoint
-- **THEN** the request SHALL be sent to `https://vault.example.com/identity/...`
+---
 
-#### Scenario: Icons requests use self-hosted URLs when self-hosted is selected
-- **GIVEN** the user has selected "Self-hosted" and entered "https://vault.example.com" as the Icons URL
-- **WHEN** `PrizmAPIClient` fetches a favicon or icon
-- **THEN** the request SHALL be sent to `https://vault.example.com`
+### Requirement: Server environment persists per account in Keychain
+
+After successful login, the `ServerEnvironment` (including `serverType`) SHALL be written to Keychain under `bw.macos:{userId}:serverEnvironment`. On app launch the active account's environment SHALL be read from Keychain and used to configure `PrizmAPIClient`. The data layer is keyed by `userId` and is multi-account-ready.
+
+#### Scenario: Environment persisted after login
+- **GIVEN** the user logs in with "Bitwarden Cloud (EU)" selected
+- **WHEN** login succeeds
+- **THEN** a `ServerEnvironment` with `serverType == .cloudEU` SHALL be written to Keychain for that `userId`
+
+#### Scenario: Environment restored on app launch
+- **GIVEN** the active account was logged in as "Bitwarden Cloud (EU)"
+- **WHEN** the app launches and the vault is unlocked
+- **THEN** `PrizmAPIClient` SHALL use EU URLs for all requests
 
 ---
 
-### Requirement: `ServerEnvironment` configuration persists per account
-The system SHALL store the server environment selection (cloud or self-hosted) and associated URLs per account in a secure persistence layer. When the user switches accounts or after app restart, the system SHALL restore the correct server environment for each account. The active account's environment SHALL be used for all network requests.
+### Requirement: Registered client identifier used for cloud password login
 
-#### Scenario: Environment stored after successful login
-- **GIVEN** the user successfully logs in with a specific server environment
-- **WHEN** the login completes
-- **THEN** the server environment selection and URLs SHALL be persisted for that account
+The Bitwarden OAuth password grant (`grant_type=password`) requires a `client_id` parameter identifying the client application. `PrizmAPIClient` already sends this as `ClientHeaders.clientId`, currently hardcoded to `"desktop"`. For cloud accounts this value SHALL be replaced with the registered identifier obtained from Bitwarden, Inc., injected at build time via a gitignored `.xcconfig` file. Self-hosted login is unaffected — Vaultwarden does not enforce this identifier.
 
-#### Scenario: Environment restored on app launch for active account
-- **GIVEN** the user was logged into an account configured for "Bitwarden Cloud"
-- **WHEN** the app is relaunched and the vault is unlocked
-- **THEN** `PrizmAPIClient` SHALL be configured to use cloud URLs for that account
+The `client_id` is an app-level credential, not a per-user credential. No additional login UI is needed; it is transparent to the user.
 
-#### Scenario: Multiple accounts can have different environments
-- **GIVEN** Account A is configured for "Bitwarden Cloud"
-- **AND** Account B is configured for "Self-hosted" with custom URLs
-- **WHEN** the user switches from Account A to Account B
-- **THEN** `PrizmAPIClient` SHALL update to use Account B's self-hosted URLs
+#### Scenario: Registered identifier sent on cloud password login
+- **GIVEN** the active account has `serverType == .cloudUS` or `serverType == .cloudEU`
+- **WHEN** `PrizmAPIClient` posts the identity token request
+- **THEN** the `client_id` form parameter SHALL equal the registered identifier (not `"desktop"`)
 
----
+#### Scenario: Unconfigured identifier blocks cloud login
+- **GIVEN** the xcconfig value for the client identifier is empty
+- **WHEN** the user attempts to log in with a cloud option selected
+- **THEN** login SHALL fail with a clear error indicating the client identifier is not configured
 
-### Requirement: Registered client identifier is used for cloud requests
-The system SHALL include a registered client identifier in API requests when communicating with Bitwarden Cloud (`api.bitwarden.com`). The client identifier SHALL be obtained from Bitwarden, Inc. per their Device Registration requirements and shall be included in the appropriate headers per their API specification. Self-hosted Vaultwarden instances SHALL NOT require this header.
-
-#### Scenario: Client identifier present in cloud API requests
-- **GIVEN** the user has selected "Bitwarden Cloud"
-- **WHEN** `PrizmAPIClient` makes a request to a cloud API endpoint
-- **THEN** the request SHALL include the registered client identifier as part of the appropriate OAuth token exchange
-
-#### Scenario: Client identifier not required for self-hosted requests
-- **GIVEN** the user has selected "Self-hosted"
-- **WHEN** `PrizmAPIClient` makes a request to a self-hosted Vaultwarden instance
-- **THEN** the request SHALL NOT include the client identifier header
-
-#### Scenario: Missing client identifier prevents cloud login
-- **GIVEN** the user has selected "Bitwarden Cloud" and no client identifier is configured
-- **WHEN** the user attempts to log in
-- **THEN** the login SHALL fail with an error indicating that the client identifier is required
+#### Scenario: Self-hosted login unaffected
+- **GIVEN** the active account has `serverType == .selfHosted`
+- **THEN** the `client_id` value used SHALL remain `"desktop"` (Vaultwarden-compatible default)
 
 ---
 
-### Requirement: System supports CAPTCHA verification for cloud login
-The system SHALL support authentication via Bitwarden Cloud's standard pattern. As of 2026-04-18, this includes CAPTCHA verification via [hCaptcha](https://www.hcaptcha.com/). The system SHALL launch a web view modal (`WKWebView` using standard macOS configuration) in order to pass such challenges.
+### Requirement: Cloud login supports email/password with hCaptcha handling
 
-API keys SHALL be stored securely in the Keychain after a successful login.
+All three server options use email + master password login. When a cloud account (`cloudUS` or `cloudEU`) triggers an hCaptcha challenge, the system SHALL present a `WKWebView` modal for the user to complete the challenge before the token request is retried.
 
-#### Scenario: API key login option is visible for cloud
-- **GIVEN** the user has selected "Bitwarden Cloud"
-- **WHEN** the `LoginView` is displayed
-- **THEN** an option to log in with API keys SHALL be visible
+#### Scenario: hCaptcha modal shown for cloud password login
+- **GIVEN** the user attempts password login with a cloud option selected
+- **AND** the server returns an hCaptcha challenge response
+- **THEN** a `WKWebView` modal SHALL be presented
+- **AND** the token request SHALL be retried automatically on challenge completion
 
-#### Scenario: API key fields accept client_id and client_secret
-- **GIVEN** the user has chosen the API key login option
-- **WHEN** the user enters their client_id and client_secret
-- **THEN** the fields SHALL validate the format (non-empty strings)
-
-#### Scenario: API key login bypasses hCaptcha
-- **GIVEN** the user has entered valid API keys
-- **WHEN** the system submits the OAuth token request
-- **THEN** no hCaptcha challenge SHALL be presented
-- **AND** the login SHALL proceed directly on successful token exchange
-
-#### Scenario: API keys are stored in Keychain on successful login
-- **GIVEN** the user has successfully logged in via API keys
-- **WHEN** the login completes
-- **THEN** the client_id and client_secret SHALL be stored securely in the Keychain
-- **AND** future logins for this account SHALL be able to use the stored keys
-
-#### Scenario: Invalid API keys show clear error message
-- **WHEN** the user enters invalid API keys and attempts to log in
-- **THEN** an error message SHALL be displayed indicating that the API keys are invalid
-- **AND** the login SHALL not proceed
-
-#### Scenario: API key login option not shown for self-hosted by default
-- **GIVEN** the user has selected "Self-hosted"
-- **WHEN** the `LoginView` is displayed
-- **THEN** the API key login option SHALL NOT be shown (unless the self-hosted instance explicitly supports OAuth)
+#### Scenario: Self-hosted login has no hCaptcha handling
+- **GIVEN** the active account has `serverType == .selfHosted`
+- **THEN** no hCaptcha modal path exists in the login flow
 
 ---
 
-### Requirement: Errors from server environment configuration are surfaced clearly
-The system SHALL validate server environment URLs before attempting login. If the user enters an invalid URL scheme or unreachable endpoint for self-hosted configuration, the system SHALL surface a clear error message indicating the specific validation failure. Network errors during login SHALL distinguish between connectivity issues, authentication failures, and server configuration errors.
+### Requirement: Server environment errors surfaced clearly
 
-#### Scenario: Invalid URL scheme is rejected
-- **WHEN** the user enters a URL without https:// in a self-hosted field
-- **THEN** the system SHALL reject the URL and show an error message indicating that HTTPS is required
+#### Scenario: Non-HTTPS self-hosted URL rejected
+- **WHEN** the user enters a self-hosted URL without `https://`
+- **THEN** the system SHALL reject it with an error indicating HTTPS is required
 
-#### Scenario: Unreachable endpoint shows clear error
+#### Scenario: Unreachable self-hosted endpoint
 - **WHEN** the user enters a self-hosted URL that cannot be reached
-- **THEN** the login attempt SHALL fail with an error message indicating the server is unreachable
-- **AND** the specific endpoint that failed SHALL be mentioned (API or Identity)
+- **THEN** login SHALL fail with an error indicating the server is unreachable
 
-#### Scenario: Authentication failure is distinguished from network error
+#### Scenario: Authentication failure distinct from network error
 - **WHEN** login fails due to invalid credentials
-- **THEN** the error message SHALL clearly indicate an authentication failure
-- **AND** SHALL be distinct from network connectivity error messages
+- **THEN** the error SHALL clearly indicate authentication failure, not a connectivity problem
 
-#### Scenario: Cloud endpoint unreachable shows specific message
-- **WHEN** the user selects "Bitwarden Cloud" and cloud endpoints are unreachable
-- **THEN** the error message SHALL indicate that Bitwarden Cloud services are temporarily unavailable
--
+#### Scenario: Cloud endpoints unreachable
+- **WHEN** a cloud option is selected and the corresponding endpoints cannot be reached
+- **THEN** the error SHALL indicate that Bitwarden Cloud services are temporarily unavailable
