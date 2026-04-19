@@ -27,6 +27,19 @@ final class RootViewModelLockTests: XCTestCase {
         sut = RootViewModel(container: deps)
     }
 
+    /// Yields to the main actor run loop until `condition` returns true or timeout.
+    /// Replaces fixed `Task.sleep` which is flaky under parallel test execution
+    /// when multiple actor hops are involved (e.g. lockVault → authRepo → vaultKeyCache → orgKeyCache).
+    private func waitUntil(
+        timeout: Duration = .milliseconds(500),
+        _ condition: @escaping () -> Bool
+    ) async throws {
+        let deadline = ContinuousClock.now + timeout
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+    }
+
     // MARK: - 1.1 lockVault() transitions screen to .unlock
 
     func testLockVault_transitionsToUnlock() async throws {
@@ -34,7 +47,7 @@ final class RootViewModelLockTests: XCTestCase {
         sut.screen = .vault
 
         sut.lockVault()
-        try await Task.sleep(for: .milliseconds(50))
+        try await waitUntil { if case .unlock = self.sut.screen { return true }; return false }
 
         guard case .unlock = sut.screen else {
             return XCTFail("Expected .unlock, got \(sut.screen)")
@@ -46,6 +59,8 @@ final class RootViewModelLockTests: XCTestCase {
     func testLockVault_noOpWhenLogin() async throws {
         sut.screen = .login
         sut.lockVault()
+        // Fixed sleep (not polling) because this is a no-op test — there is no positive
+        // state change to poll for. 50ms is enough for the guard-return fast path.
         try await Task.sleep(for: .milliseconds(50))
 
         guard case .login = sut.screen else {
@@ -56,6 +71,8 @@ final class RootViewModelLockTests: XCTestCase {
     func testLockVault_noOpWhenUnlock() async throws {
         sut.screen = .unlock
         sut.lockVault()
+        // Fixed sleep (not polling) because this is a no-op test — there is no positive
+        // state change to poll for. 50ms is enough for the guard-return fast path.
         try await Task.sleep(for: .milliseconds(50))
 
         guard case .unlock = sut.screen else {
@@ -69,7 +86,7 @@ final class RootViewModelLockTests: XCTestCase {
         sut.screen = .vault
 
         sut.lockVault()
-        try await Task.sleep(for: .milliseconds(50))
+        try await waitUntil { self.mockAuth.lockVaultCalledCount >= 1 }
 
         XCTAssertEqual(mockAuth.lockVaultCalledCount, 1)
         XCTAssertTrue(mockVault.clearVaultCalled)
@@ -83,7 +100,7 @@ final class RootViewModelLockTests: XCTestCase {
         sut.unlockVM = nil
 
         sut.lockVault()
-        try await Task.sleep(for: .milliseconds(50))
+        try await waitUntil { self.sut.unlockVM != nil }
 
         XCTAssertNotNil(sut.unlockVM)
     }
@@ -95,7 +112,7 @@ final class RootViewModelLockTests: XCTestCase {
         sut.screen = .vault
 
         sut.lockVault()
-        try await Task.sleep(for: .milliseconds(50))
+        try await waitUntil { if case .login = self.sut.screen { return true }; return false }
 
         guard case .login = sut.screen else {
             return XCTFail("Expected .login, got \(sut.screen)")
@@ -109,7 +126,7 @@ final class RootViewModelLockTests: XCTestCase {
         sut.screen = .syncing(message: "Syncing…")
 
         sut.lockVault()
-        try await Task.sleep(for: .milliseconds(50))
+        try await waitUntil { if case .unlock = self.sut.screen { return true }; return false }
 
         guard case .unlock = sut.screen else {
             return XCTFail("Expected .unlock, got \(sut.screen)")
@@ -124,6 +141,7 @@ private final class MockRootDependencies: RootViewModelDependencies {
     let authRepo: any AuthRepository
     let vaultRepo: any VaultRepository
     let vaultKeyCache = VaultKeyCache()
+    let orgKeyCache   = OrgKeyCache()
 
     private let mockLoginUseCase = MockLoginUseCase()
     private let mockSyncUseCase = MockSyncUseCase()
@@ -151,12 +169,15 @@ private final class MockRootDependencies: RootViewModelDependencies {
             delete:          StubDeleteUseCase(),
             permanentDelete: StubPermanentDeleteUseCase(),
             restore:         StubRestoreUseCase(),
-            createFolder:    StubCreateFolder(),
-            renameFolder:    StubRenameFolder(),
-            deleteFolder:    StubDeleteFolder(),
-            moveItem:        StubMoveItem(),
-            syncTimestamp:   syncRepo,
-            getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
+            createFolder:     StubCreateFolder(),
+            renameFolder:     StubRenameFolder(),
+            deleteFolder:     StubDeleteFolder(),
+            moveItem:         StubMoveItem(),
+            createCollection: StubCreateCollection(),
+            renameCollection: StubRenameCollection(),
+            deleteCollection: StubDeleteCollection(),
+            syncTimestamp:    syncRepo,
+            getLastSyncDate:  GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
     }
 
@@ -191,4 +212,17 @@ private final class MockRootDependencies: RootViewModelDependencies {
 @MainActor private struct StubMoveItem: MoveItemToFolderUseCase {
     func execute(itemId: String, folderId: String?) async throws {}
     func execute(itemIds: [String], folderId: String?) async throws {}
+}
+@MainActor private struct StubCreateCollection: CreateCollectionUseCase {
+    func execute(name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: "stub", organizationId: organizationId, name: name)
+    }
+}
+@MainActor private struct StubRenameCollection: RenameCollectionUseCase {
+    func execute(collectionId: String, name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: collectionId, organizationId: organizationId, name: name)
+    }
+}
+@MainActor private struct StubDeleteCollection: DeleteCollectionUseCase {
+    func execute(collectionId: String, organizationId: String) async throws {}
 }

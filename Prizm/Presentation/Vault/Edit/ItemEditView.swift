@@ -58,16 +58,56 @@ struct ItemEditView: View {
             }
             .padding(.bottom, Spacing.pageHeaderBottom)
 
-            // Folder picker — shown when folders exist.
-            if !viewModel.folders.isEmpty {
-                DetailSectionCard("Folder") {
-                    Picker(selection: $viewModel.draft.folderId) {
-                        Text("None").tag(String?.none)
-                        ForEach(viewModel.folders) { folder in
-                            Text(folder.name).tag(Optional(folder.id))
+            // Collection picker — shown for org items (replaces folder picker).
+            // Folder picker — shown for personal items when folders exist.
+            if viewModel.draft.organizationId != nil {
+                // Org item: collection picker
+                let orgCollections = viewModel.collections.filter {
+                    $0.organizationId == viewModel.draft.organizationId
+                }
+                if !orgCollections.isEmpty {
+                    // Single-collection picker for this org. For items already assigned to
+                    // multiple collections, extra collection IDs (outside this org) are
+                    // preserved on save; only the selected collection within this org changes.
+                    let orgCollectionIds = Set(orgCollections.map(\.id))
+                    DetailSectionCard("Collection") {
+                        HStack {
+                            Picker(selection: Binding(
+                                get: {
+                                    viewModel.draft.collectionIds.first { orgCollectionIds.contains($0) }
+                                },
+                                set: { newId in
+                                    // Replace only the collection IDs that belong to this org;
+                                    // preserve any IDs from other orgs (should not exist in practice
+                                    // but guards against cross-org data loss).
+                                    let otherIds = viewModel.draft.collectionIds.filter { !orgCollectionIds.contains($0) }
+                                    viewModel.draft.collectionIds = otherIds + (newId.map { [$0] } ?? [])
+                                }
+                            )) {
+                                Text("None").tag(String?.none)
+                                ForEach(orgCollections) { col in
+                                    Text(col.name).tag(Optional(col.id))
+                                }
+                            } label: { EmptyView() }
+                            .pickerStyle(.menu)
+                            Spacer()
                         }
-                    } label: { EmptyView() }
-                    .pickerStyle(.menu)
+                        .padding(.vertical, Spacing.rowVertical)
+                        .padding(.horizontal, Spacing.rowHorizontal)
+                    }
+                }
+            } else if !viewModel.folders.isEmpty {
+                DetailSectionCard("Folder") {
+                    HStack {
+                        Picker(selection: $viewModel.draft.folderId) {
+                            Text("None").tag(String?.none)
+                            ForEach(viewModel.folders) { folder in
+                                Text(folder.name).tag(Optional(folder.id))
+                            }
+                        } label: { EmptyView() }
+                        .pickerStyle(.menu)
+                        Spacer()
+                    }
                     .padding(.vertical, Spacing.rowVertical)
                     .padding(.horizontal, Spacing.rowHorizontal)
                 }

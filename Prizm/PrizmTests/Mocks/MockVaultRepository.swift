@@ -12,6 +12,8 @@ final class MockVaultRepository: VaultRepository {
 
     private(set) var populatedItems: [VaultItem] = []
     private(set) var populatedFolders: [Folder] = []
+    private(set) var populatedOrganizations: [Organization] = []
+    private(set) var populatedCollections: [OrgCollection] = []
     private(set) var lastSyncedAt:   Date?        = nil
     private(set) var clearVaultCalled: Bool       = false
 
@@ -24,17 +26,22 @@ final class MockVaultRepository: VaultRepository {
 
     // MARK: - VaultRepository (write side)
 
-    func populate(items: [VaultItem], folders: [Folder], syncedAt: Date) {
-        populatedItems  = items
-        populatedFolders = folders
-        lastSyncedAt    = syncedAt
+    func populate(items: [VaultItem], folders: [Folder], organizations: [Organization],
+                  collections: [OrgCollection], syncedAt: Date) {
+        populatedItems         = items
+        populatedFolders       = folders
+        populatedOrganizations = organizations
+        populatedCollections   = collections
+        lastSyncedAt           = syncedAt
     }
 
     func clearVault() {
-        populatedItems   = []
-        populatedFolders = []
-        lastSyncedAt     = nil
-        clearVaultCalled = true
+        populatedItems         = []
+        populatedFolders       = []
+        populatedOrganizations = []
+        populatedCollections   = []
+        lastSyncedAt           = nil
+        clearVaultCalled       = true
     }
 
     // MARK: - VaultRepository (read side)
@@ -42,6 +49,14 @@ final class MockVaultRepository: VaultRepository {
     func allItems() throws -> [VaultItem] { populatedItems }
 
     func folders() throws -> [Folder] { populatedFolders }
+
+    func organizations() throws -> [Organization] { populatedOrganizations }
+
+    func collections() throws -> [OrgCollection] { populatedCollections }
+
+    func items(for collection: String) throws -> [VaultItem] {
+        populatedItems.filter { $0.collectionIds.contains(collection) }
+    }
 
     func items(for selection: SidebarSelection) throws -> [VaultItem] {
         switch selection {
@@ -56,6 +71,13 @@ final class MockVaultRepository: VaultRepository {
         case .trash:
             return populatedItems.filter(\.isDeleted)
         case .newFolder:
+            return []
+        case .organization(let orgId):
+            let orgColIds = Set(populatedCollections.filter { $0.organizationId == orgId }.map(\.id))
+            return populatedItems.filter { $0.collectionIds.contains(where: { orgColIds.contains($0) }) }
+        case .collection(let colId):
+            return populatedItems.filter { $0.collectionIds.contains(colId) }
+        case .newCollection:
             return []
         }
     }
@@ -154,15 +176,18 @@ final class MockVaultRepository: VaultRepository {
         if let idx = populatedItems.firstIndex(where: { $0.id == cipherId }) {
             let old = populatedItems[idx]
             populatedItems[idx] = VaultItem(
-                id:           old.id,
-                name:         old.name,
-                isFavorite:   old.isFavorite,
-                isDeleted:    old.isDeleted,
-                creationDate: old.creationDate,
-                revisionDate: old.revisionDate,
-                content:      old.content,
-                reprompt:     old.reprompt,
-                attachments:  attachments
+                id:             old.id,
+                name:           old.name,
+                isFavorite:     old.isFavorite,
+                isDeleted:      old.isDeleted,
+                creationDate:   old.creationDate,
+                revisionDate:   old.revisionDate,
+                content:        old.content,
+                reprompt:       old.reprompt,
+                attachments:    attachments,
+                folderId:       old.folderId,
+                organizationId: old.organizationId,
+                collectionIds:  old.collectionIds
             )
         }
     }
@@ -196,6 +221,53 @@ final class MockVaultRepository: VaultRepository {
 
     func moveItemToFolder(itemId: String, folderId: String?) async throws {}
     func moveItemsToFolder(itemIds: [String], folderId: String?) async throws {}
+
+    // MARK: - Collection CRUD stubbing
+
+    var stubbedCreateCollectionResult: OrgCollection?
+    var stubbedCreateCollectionError: Error?
+    private(set) var createCollectionCallCount: Int = 0
+    private(set) var lastCreateCollectionName: String?
+    private(set) var lastCreateCollectionOrgId: String?
+
+    func createCollection(name: String, organizationId: String) async throws -> OrgCollection {
+        createCollectionCallCount += 1
+        lastCreateCollectionName  = name
+        lastCreateCollectionOrgId = organizationId
+        if let err = stubbedCreateCollectionError { throw err }
+        if let result = stubbedCreateCollectionResult { return result }
+        let col = OrgCollection(id: UUID().uuidString, organizationId: organizationId, name: name)
+        populatedCollections.append(col)
+        return col
+    }
+
+    var stubbedRenameCollectionResult: OrgCollection?
+    var stubbedRenameCollectionError: Error?
+    private(set) var renameCollectionCallCount: Int = 0
+
+    func renameCollection(id: String, organizationId: String, name: String) async throws -> OrgCollection {
+        renameCollectionCallCount += 1
+        if let err = stubbedRenameCollectionError { throw err }
+        let col = stubbedRenameCollectionResult
+            ?? OrgCollection(id: id, organizationId: organizationId, name: name)
+        if let idx = populatedCollections.firstIndex(where: { $0.id == id }) {
+            populatedCollections[idx] = col
+        }
+        return col
+    }
+
+    var stubbedDeleteCollectionError: Error?
+    private(set) var deleteCollectionCallCount: Int = 0
+    private(set) var lastDeleteCollectionId: String?
+    private(set) var lastDeleteCollectionOrgId: String?
+
+    func deleteCollection(id: String, organizationId: String) async throws {
+        deleteCollectionCallCount += 1
+        lastDeleteCollectionId    = id
+        lastDeleteCollectionOrgId = organizationId
+        if let err = stubbedDeleteCollectionError { throw err }
+        populatedCollections.removeAll { $0.id == id }
+    }
 
 }
 

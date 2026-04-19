@@ -7,20 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		967254DE6EE74766B9E011A5 /* OptionalAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */; };
-		9B3412B1F4F648DEBC7BFC94 /* ContrastAwareOpacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505C5126B6264355A140762B /* ContrastAwareOpacity.swift */; };
 		018ED7880B384B399D0C3A98 /* SyncRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */; };
 		01C52844A03B4BA8A309902D /* ItemListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8949A6D242488CBEC15CC0 /* ItemListView.swift */; };
 		0718293040506070F90A1B2C /* ItemEditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18293040506070E0A1B2C3D4 /* ItemEditViewModel.swift */; };
 		071B2C3D4E5F609F90A0B1C2 /* CustomFieldsEditSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 182C3D4E5F6070A0A0B1C2D3 /* CustomFieldsEditSection.swift */; };
 		09856BAE1DB241E8A55EB941 /* CreateFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2508605E27F24F8FB577CE41 /* CreateFolderUseCaseImpl.swift */; };
+		13303B40353B4420986B1E9E /* Organization.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF2F621523214454973153CC /* Organization.swift */; };
 		211E56C54900452E87AA072F /* DeleteFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */; };
 		21BA94E7B93240BAB0D49B1A /* SSHKeyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E312819D0F20492CADB986E4 /* SSHKeyDetailView.swift */; };
 		23BDC74E5D1F47618262BE0D /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 59F9054E12044EC582D79C90 /* Argon2Swift */; };
-		E2AAA6708B2A46FA85BE5860 /* BiometricEnrollmentPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F53A563DEF9F47329635DE6F /* BiometricEnrollmentPromptView.swift */; };
 		2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65E7D6288C347DCA88A20DF /* AuthRepository.swift */; };
 		29304050607080F1B2C3D4E5 /* ItemEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4050607080902CC3D4E5F6 /* ItemEditView.swift */; };
 		2939BF1A524B44458BD40B01 /* Presentation/Settings/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644111ECFEEE4F96988BD8C7 /* Presentation/Settings/SettingsView.swift */; };
+		2A776694FA53418CB2002486 /* OrgKeyCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE3CE5476C5402F9BC3FF76 /* OrgKeyCache.swift */; };
 		2B6CA91FF52E48F69DA89240 /* RenameFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D6E5C134C44B349511A5DC /* RenameFolderUseCase.swift */; };
 		2CA025EEBDD14800B361F176 /* LoginUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */; };
 		2D9BD6B00E6145FA83F324D7 /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C40EE0279BE41BE97FC5942 /* ItemDetailView.swift */; };
@@ -41,6 +40,7 @@
 		4A3B67E2BD5543D4B9F46152 /* SearchVaultUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */; };
 		4B506070809000D3D4E5F607 /* EditFieldRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C607080900A10E4E5F60718 /* EditFieldRow.swift */; };
 		50B64B0B76674E2EAE36E66C /* RestoreVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4929412F2A6B4670960BFB53 /* RestoreVaultItemUseCase.swift */; };
+		550F74EE24A94D3CB50C7E1F /* OrgCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070C477B0E134C1EAFFA842D /* OrgCollection.swift */; };
 		56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */; };
 		599A7C867D6F4FA5A9B27BC2 /* Folder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC78A983744489DB1F8BCFB /* Folder.swift */; };
 		5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7429BBFA10E247D8AEACA59B /* LoginView.swift */; };
@@ -55,12 +55,15 @@
 		7AE873E2FB0A4DC5BEE93B9A /* LoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F246F209ADA45F99C9B17DB /* LoginDetailView.swift */; };
 		7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */; };
 		7F0FEAC3BB77445D9BCE9F99 /* CardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850DDD79F86D4651A98ADD0A /* CardDetailView.swift */; };
+		81E68A60DF0441BE9D6487BF /* RenameCollectionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C53A49FF8CB462DBB0E474A /* RenameCollectionUseCase.swift */; };
 		839B201DD1B0447FABC35E38 /* Presentation/Unlock/EnrollmentReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A47FABF899471394B5F56B /* Presentation/Unlock/EnrollmentReason.swift */; };
 		87146F7FF9C64EEA974FE521 /* CreateFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EA3A6C1A304AAF9510682E /* CreateFolderUseCase.swift */; };
 		87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25874A14B2430FB85D7DC9 /* VaultRepository.swift */; };
 		8F900A1B2C3D401718293040 /* CardEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90A0B1C2D3E4F02829304050 /* CardEditForm.swift */; };
+		967254DE6EE74766B9E011A5 /* OptionalAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */; };
 		98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */; };
 		98E8E51C9AD5496C88E0ABD3 /* FaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */; };
+		9B3412B1F4F648DEBC7BFC94 /* ContrastAwareOpacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505C5126B6264355A140762B /* ContrastAwareOpacity.swift */; };
 		9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */; };
 		A1B0C1D2E3F4003930405060 /* IdentityEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C1D2E3F400A04A40506070 /* IdentityEditForm.swift */; };
 		A1B2C3D4E5F64789A1B2C3D4 /* VerticalLabeledContentStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */; };
@@ -80,9 +83,13 @@
 		AA0001050000000500000005 /* PasswordGeneratorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002050000000500000005 /* PasswordGeneratorViewModel.swift */; };
 		AA0001060000000600000006 /* PasswordGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002060000000600000006 /* PasswordGeneratorView.swift */; };
 		AA0001070000000700000007 /* eff-large-wordlist.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA0002070000000700000007 /* eff-large-wordlist.txt */; };
+		AA001CC0001CC0001CC0002A /* CreateCollectionUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CC0001CC0001CC0001A /* CreateCollectionUseCaseImpl.swift */; };
+		AA001CC0001CC0001CC0004A /* RenameCollectionUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CC0001CC0001CC0003A /* RenameCollectionUseCaseImpl.swift */; };
+		AA001CC0001CC0001CC0006A /* DeleteCollectionUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CC0001CC0001CC0005A /* DeleteCollectionUseCaseImpl.swift */; };
 		AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2233445566778899001122 /* OptionKeyMonitor.swift */; };
 		AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */; };
 		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
+		AC24869F5C544E82B60C54E0 /* DeleteCollectionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDCDA57D3434985AC25FF5F /* DeleteCollectionUseCase.swift */; };
 		AC3EC95F694247B5A5809233 /* CreateVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A335CC7B3C743B59A7630D8 /* CreateVaultItemUseCase.swift */; };
 		B11759DE56D34E4199773C2D /* FieldRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E105187F1E54E0E91E82B14 /* FieldRowView.swift */; };
 		B1335B23AD5F4D1CB28E3F19 /* About/AboutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF74B2F57C4B2D9FAA790B /* About/AboutViewModel.swift */; };
@@ -114,6 +121,7 @@
 		BB1016000000000000000016 /* AttachmentsSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1016000000000000000016 /* AttachmentsSectionView.swift */; };
 		BB1017000000000000000017 /* AttachmentRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1017000000000000000017 /* AttachmentRowView.swift */; };
 		BB1018000000000000000018 /* AttachmentTempFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1018000000000000000018 /* AttachmentTempFileManager.swift */; };
+		BB1122334455667788990011 /* CollectionTreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2233445566778899001122 /* CollectionTreeNode.swift */; };
 		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
 		C2ACEC2617F14F5A80A7FCED /* DeleteFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D05DB7E6EC4A74802AEE58 /* DeleteFolderUseCase.swift */; };
 		C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */; };
@@ -127,6 +135,7 @@
 		CE4521A69D3C49298AAC03DF /* SecureNoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F78357C6C424765828B6185 /* SecureNoteDetailView.swift */; };
 		D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF90E0F31DF248FB9D12F74D /* VaultItem.swift */; };
 		D3E4F5A6B7C84892D4E5F6A7 /* GetLastSyncDateUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B74892C3D4E5F6 /* GetLastSyncDateUseCase.swift */; };
+		D45F6A25B9DC4A25A10488F6 /* CreateCollectionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F420DF3338449A8BDBACCD /* CreateCollectionUseCase.swift */; };
 		D4E5F6A7B8C94AD1E2F3A4B5 /* RawCipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95E5FF4D219144A18C2BC5AA /* RawCipher.swift */; };
 		DACC17049E22446A8EBDF996 /* MoveItemToFolderUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3F012437604C4281E27DC2 /* MoveItemToFolderUseCaseImpl.swift */; };
 		DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19616C22B9CF495087EE1F17 /* UnlockView.swift */; };
@@ -136,6 +145,7 @@
 		DD1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework */; };
 		E0F1A2B3C4D54896E1F2A3B4 /* SyncLabelFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E64896F2A3B4C5 /* SyncLabelFormatter.swift */; };
 		E17D4DA652374B49BC2CD6B1 /* VaultBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D9916B5072420494DE6F9F /* VaultBrowserView.swift */; };
+		E2AAA6708B2A46FA85BE5860 /* Presentation/Unlock/BiometricEnrollmentPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F53A563DEF9F47329635DE6F /* Presentation/Unlock/BiometricEnrollmentPromptView.swift */; };
 		E5F400A1B2C3D07D70809000 /* SSHKeyEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */; };
 		E5F607182930405BD7E8F90A /* EditVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */; };
 		E5F6A7B8C9D04BE2F3A4B5C6 /* SyncResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15F3A553820942CF9B3935FD /* SyncResponse.swift */; };
@@ -160,14 +170,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionalAnimation.swift; sourceTree = "<group>"; };
-		505C5126B6264355A140762B /* ContrastAwareOpacity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrastAwareOpacity.swift; sourceTree = "<group>"; };
 		00802736F25046A0BD600128 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		070C477B0E134C1EAFFA842D /* OrgCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrgCollection.swift; sourceTree = "<group>"; };
 		09B93B56553644E49DE5C512 /* SearchVaultUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCase.swift; sourceTree = "<group>"; };
 		0AC78A983744489DB1F8BCFB /* Folder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Folder.swift; sourceTree = "<group>"; };
 		0F78357C6C424765828B6185 /* SecureNoteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNoteDetailView.swift; sourceTree = "<group>"; };
 		0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCase.swift; sourceTree = "<group>"; };
 		1307284FEED04829B5C4B587 /* CryptoKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoKeys.swift; sourceTree = "<group>"; };
+		136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionalAnimation.swift; sourceTree = "<group>"; };
 		14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCaseImpl.swift; sourceTree = "<group>"; };
 		15F3A553820942CF9B3935FD /* SyncResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncResponse.swift; sourceTree = "<group>"; };
 		16229ED9EF5043E1AC7EC30D /* Data/Keychain/BiometricKeychainServiceImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/Keychain/BiometricKeychainServiceImpl.swift; sourceTree = "<group>"; };
@@ -177,6 +187,7 @@
 		1A2B3C4D5E6F7A8B9C0D1E2F /* CardBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardBackground.swift; sourceTree = "<group>"; };
 		212734E66AE74662AD28E6CB /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
 		226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockUseCaseImpl.swift; sourceTree = "<group>"; };
+		22F420DF3338449A8BDBACCD /* CreateCollectionUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCollectionUseCase.swift; sourceTree = "<group>"; };
 		2508605E27F24F8FB577CE41 /* CreateFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFolderUseCaseImpl.swift; sourceTree = "<group>"; };
 		257FAE34CC064783806B6A5C /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
 		3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepository.swift; sourceTree = "<group>"; };
@@ -197,6 +208,7 @@
 		4D6A671692BE497AA7E39F45 /* SyncRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepositoryImpl.swift; sourceTree = "<group>"; };
 		4F246F209ADA45F99C9B17DB /* LoginDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginDetailView.swift; sourceTree = "<group>"; };
 		50445584AD814B6EBD971FDA /* FaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconLoader.swift; sourceTree = "<group>"; };
+		505C5126B6264355A140762B /* ContrastAwareOpacity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrastAwareOpacity.swift; sourceTree = "<group>"; };
 		548AFB0AB0424A62BEAE1492 /* RenameFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameFolderUseCaseImpl.swift; sourceTree = "<group>"; };
 		5A335CC7B3C743B59A7630D8 /* CreateVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateVaultItemUseCase.swift; sourceTree = "<group>"; };
 		5C607080900A10E4E5F60718 /* EditFieldRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFieldRow.swift; sourceTree = "<group>"; };
@@ -205,6 +217,8 @@
 		6631A93BC5EA4827BC497076 /* ItemRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRowView.swift; sourceTree = "<group>"; };
 		6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermanentDeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
 		6B41D0A2F7E54938AE12C8B5 /* SearchVaultUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchVaultUseCaseImpl.swift; sourceTree = "<group>"; };
+		6C53A49FF8CB462DBB0E474A /* RenameCollectionUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameCollectionUseCase.swift; sourceTree = "<group>"; };
+		6EDCDA57D3434985AC25FF5F /* DeleteCollectionUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCollectionUseCase.swift; sourceTree = "<group>"; };
 		713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		7429BBFA10E247D8AEACA59B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
@@ -233,6 +247,9 @@
 		AA0002050000000500000005 /* PasswordGeneratorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordGeneratorViewModel.swift; sourceTree = "<group>"; };
 		AA0002060000000600000006 /* PasswordGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordGeneratorView.swift; sourceTree = "<group>"; };
 		AA0002070000000700000007 /* eff-large-wordlist.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "eff-large-wordlist.txt"; sourceTree = "<group>"; };
+		AA001CC0001CC0001CC0001A /* CreateCollectionUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCollectionUseCaseImpl.swift; sourceTree = "<group>"; };
+		AA001CC0001CC0001CC0003A /* RenameCollectionUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameCollectionUseCaseImpl.swift; sourceTree = "<group>"; };
+		AA001CC0001CC0001CC0005A /* DeleteCollectionUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCollectionUseCaseImpl.swift; sourceTree = "<group>"; };
 		AA1001000000000000000001 /* Attachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attachment.swift; sourceTree = "<group>"; };
 		AA1002000000000000000002 /* AttachmentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentRepository.swift; sourceTree = "<group>"; };
 		AA1003000000000000000003 /* VaultKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultKeyService.swift; sourceTree = "<group>"; };
@@ -271,6 +288,8 @@
 		CC1001000000000000000001 /* EmbeddedBiometricUnlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedBiometricUnlock.swift; sourceTree = "<group>"; };
 		CC1002000000000000000002 /* EmbeddedTouchIDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedTouchIDView.swift; sourceTree = "<group>"; };
 		CC1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LocalAuthenticationEmbeddedUI.framework; path = System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework; sourceTree = SDKROOT; };
+		CC2233445566778899001122 /* CollectionTreeNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionTreeNode.swift; sourceTree = "<group>"; };
+		CF2F621523214454973153CC /* Organization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Organization.swift; sourceTree = "<group>"; };
 		D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalLabeledContentStyle.swift; sourceTree = "<group>"; };
 		D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNoteEditForm.swift; sourceTree = "<group>"; };
 		D4E5F6071829304AC6D7E8F9 /* EditVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCase.swift; sourceTree = "<group>"; };
@@ -292,6 +311,7 @@
 		F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CipherMapper.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E64896F2A3B4C5 /* SyncLabelFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncLabelFormatter.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* FolderTreeNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderTreeNode.swift; sourceTree = "<group>"; };
+		F53A563DEF9F47329635DE6F /* Presentation/Unlock/BiometricEnrollmentPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation/Unlock/BiometricEnrollmentPromptView.swift; sourceTree = "<group>"; };
 		F557D7298207448A9FBFC676 /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
 		F5F177A6089741F69C02E285 /* VaultBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBrowserViewModel.swift; sourceTree = "<group>"; };
 		F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyEditForm.swift; sourceTree = "<group>"; };
@@ -300,8 +320,8 @@
 		F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskedFieldView.swift; sourceTree = "<group>"; };
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
+		FEE3CE5476C5402F9BC3FF76 /* OrgKeyCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrgKeyCache.swift; sourceTree = "<group>"; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
-		F53A563DEF9F47329635DE6F /* BiometricEnrollmentPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Presentation/Unlock/BiometricEnrollmentPromptView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -383,7 +403,10 @@
 				B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */,
 				0AC78A983744489DB1F8BCFB /* Folder.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* FolderTreeNode.swift */,
+				CC2233445566778899001122 /* CollectionTreeNode.swift */,
 				AA1001000000000000000001 /* Attachment.swift */,
+				CF2F621523214454973153CC /* Organization.swift */,
+				070C477B0E134C1EAFFA842D /* OrgCollection.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -421,6 +444,9 @@
 				AA1004000000000000000004 /* UploadAttachmentUseCase.swift */,
 				AA1005000000000000000005 /* DownloadAttachmentUseCase.swift */,
 				AA1006000000000000000006 /* DeleteAttachmentUseCase.swift */,
+				22F420DF3338449A8BDBACCD /* CreateCollectionUseCase.swift */,
+				6C53A49FF8CB462DBB0E474A /* RenameCollectionUseCase.swift */,
+				6EDCDA57D3434985AC25FF5F /* DeleteCollectionUseCase.swift */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -442,6 +468,7 @@
 			isa = PBXGroup;
 			children = (
 				1307284FEED04829B5C4B587 /* CryptoKeys.swift */,
+				FEE3CE5476C5402F9BC3FF76 /* OrgKeyCache.swift */,
 				AA0002040000000400000004 /* CryptographicRandomnessProvider.swift */,
 				3FBB82A6241244DD890E615C /* EncString.swift */,
 				D8D710BEABBB4ADD9ADFCD1F /* PrizmCryptoService.swift */,
@@ -620,6 +647,7 @@
 				88A47FABF899471394B5F56B /* Presentation/Unlock/EnrollmentReason.swift */,
 				644111ECFEEE4F96988BD8C7 /* Presentation/Settings/SettingsView.swift */,
 				3D7BAEBAFBA84808BD80CA71 /* Presentation/Settings/BiometricUnlockToggle.swift */,
+				F53A563DEF9F47329635DE6F /* Presentation/Unlock/BiometricEnrollmentPromptView.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -730,6 +758,9 @@
 				A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */,
 				2508605E27F24F8FB577CE41 /* CreateFolderUseCaseImpl.swift */,
 				BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */,
+				AA001CC0001CC0001CC0001A /* CreateCollectionUseCaseImpl.swift */,
+				AA001CC0001CC0001CC0003A /* RenameCollectionUseCaseImpl.swift */,
+				AA001CC0001CC0001CC0005A /* DeleteCollectionUseCaseImpl.swift */,
 				BE3F012437604C4281E27DC2 /* MoveItemToFolderUseCaseImpl.swift */,
 				548AFB0AB0424A62BEAE1492 /* RenameFolderUseCaseImpl.swift */,
 				AA100D00000000000000000D /* UploadAttachmentUseCaseImpl.swift */,
@@ -897,7 +928,7 @@
 				98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */,
 				A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */,
 				DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */,
-				E2AAA6708B2A46FA85BE5860 /* BiometricEnrollmentPromptView.swift in Sources */,
+				E2AAA6708B2A46FA85BE5860 /* Presentation/Unlock/BiometricEnrollmentPromptView.swift in Sources */,
 				C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */,
 				FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */,
 				AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */,
@@ -919,6 +950,7 @@
 				2E8E71AB9E244C56B93F96AD /* CustomFieldsSection.swift in Sources */,
 				2D9BD6B00E6145FA83F324D7 /* ItemDetailView.swift in Sources */,
 				A1B2C3D4E5F647A8B9C0D1E2 /* CryptoKeys.swift in Sources */,
+				2A776694FA53418CB2002486 /* OrgKeyCache.swift in Sources */,
 				B2C3D4E5F6A748B9C0D1E2F3 /* EncString.swift in Sources */,
 				C3D4E5F6A7B849C0D1E2F3A4 /* PrizmCryptoService.swift in Sources */,
 				D4E5F6A7B8C94AD1E2F3A4B5 /* RawCipher.swift in Sources */,
@@ -956,13 +988,22 @@
 				AA0001050000000500000005 /* PasswordGeneratorViewModel.swift in Sources */,
 				AA0001060000000600000006 /* PasswordGeneratorView.swift in Sources */,
 				599A7C867D6F4FA5A9B27BC2 /* Folder.swift in Sources */,
+				13303B40353B4420986B1E9E /* Organization.swift in Sources */,
+				550F74EE24A94D3CB50C7E1F /* OrgCollection.swift in Sources */,
+				D45F6A25B9DC4A25A10488F6 /* CreateCollectionUseCase.swift in Sources */,
+				81E68A60DF0441BE9D6487BF /* RenameCollectionUseCase.swift in Sources */,
+				AC24869F5C544E82B60C54E0 /* DeleteCollectionUseCase.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* FolderTreeNode.swift in Sources */,
+				BB1122334455667788990011 /* CollectionTreeNode.swift in Sources */,
 				87146F7FF9C64EEA974FE521 /* CreateFolderUseCase.swift in Sources */,
 				C2ACEC2617F14F5A80A7FCED /* DeleteFolderUseCase.swift in Sources */,
 				3025343DFDDB4ACE97F1EC2A /* MoveItemToFolderUseCase.swift in Sources */,
 				2B6CA91FF52E48F69DA89240 /* RenameFolderUseCase.swift in Sources */,
 				09856BAE1DB241E8A55EB941 /* CreateFolderUseCaseImpl.swift in Sources */,
 				211E56C54900452E87AA072F /* DeleteFolderUseCaseImpl.swift in Sources */,
+				AA001CC0001CC0001CC0002A /* CreateCollectionUseCaseImpl.swift in Sources */,
+				AA001CC0001CC0001CC0004A /* RenameCollectionUseCaseImpl.swift in Sources */,
+				AA001CC0001CC0001CC0006A /* DeleteCollectionUseCaseImpl.swift in Sources */,
 				DACC17049E22446A8EBDF996 /* MoveItemToFolderUseCaseImpl.swift in Sources */,
 				F945AAE42C17412F9A786BA1 /* RenameFolderUseCaseImpl.swift in Sources */,
 				68A370309477440DA143EB26 /* RawFolder.swift in Sources */,
@@ -1215,7 +1256,6 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1275,7 +1315,6 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;

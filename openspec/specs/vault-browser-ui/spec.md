@@ -1,14 +1,14 @@
 ## MODIFIED Requirements
 
 ### Requirement: User can browse their vault in a three-pane layout
-The system SHALL display a `NavigationSplitView` with a sidebar (categories + counts), a middle item list, and a detail pane. The sidebar SHALL be organised into sections: *Menu Items* (All Items, Favorites), *Folders* (section header always visible; folder rows shown when folders exist), *Types* (Login, Card, Identity, Secure Note, SSH Key), and *Trash*, each with a live item count. Soft-deleted items (Trash) SHALL be excluded from all non-Trash views.
+The system SHALL display a `NavigationSplitView` with a sidebar (categories + counts), a middle item list, and a detail pane. The sidebar SHALL be organised into sections: *Menu Items* (All Items, Favorites), *Folders* (section header always visible; folder rows shown when folders exist), *Types* (Login, Card, Identity, Secure Note, SSH Key), *Organizations* (section visible only when the user belongs to at least one org; each org is a disclosure group containing its collections), and *Trash*, each with a live item count. Soft-deleted items (Trash) SHALL be excluded from all non-Trash views.
 
 #### Scenario: Sidebar shows all categories with counts
 - **WHEN** the vault browser opens
-- **THEN** the sidebar shows Menu Items, Folders (header always visible; rows when folders exist), Types, and Trash sections; each entry displays its item count; type entries are shown even when the count is zero
+- **THEN** the sidebar shows Menu Items, Folders (header always visible; rows when folders exist), Types, Organizations (only when orgs exist), and Trash sections; each entry displays its item count; type entries are shown even when the count is zero
 
 #### Scenario: Selecting a sidebar category updates the item list
-- **WHEN** the user selects a sidebar entry (category, folder, or type)
+- **WHEN** the user selects a sidebar entry (category, folder, type, org, or collection)
 - **THEN** the middle pane shows only items belonging to that selection; the detail pane resets to its empty state
 
 #### Scenario: No item selected — empty detail state
@@ -27,6 +27,14 @@ The system SHALL display a `NavigationSplitView` with a sidebar (categories + co
 #### Scenario: Item list is sorted alphabetically
 - **WHEN** any category is selected
 - **THEN** the item list is sorted alphabetically by item name, case-insensitive
+
+#### Scenario: Org item rows show org membership badge
+- **WHEN** an org item appears in the item list (e.g., under All Items or a type selection)
+- **THEN** the item row SHALL display a small badge or secondary label indicating the organization name
+
+#### Scenario: Organizations section absent when user has no orgs
+- **WHEN** the user belongs to no organizations
+- **THEN** no "Organizations" section SHALL appear in the sidebar
 
 ---
 

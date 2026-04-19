@@ -14,11 +14,20 @@ nonisolated struct SyncResponse: Decodable {
     /// Decoded with a default of `[]` so that Vaultwarden instances that omit the key
     /// (or future API variants) don't cause the entire sync decode to throw.
     let folders: [RawFolder]
+    /// Organizations the user belongs to, sourced from `profile.organizations`.
+    /// In both Vaultwarden and the official Bitwarden server, org membership is nested
+    /// inside the Profile object — not a separate top-level key.
+    let organizations: [RawOrganization]
+    /// Collections across all organizations. Defaults to `[]` when absent.
+    let collections: [RawCollection]
 
-    init(profile: RawProfile, ciphers: [RawCipher], folders: [RawFolder] = []) {
+    init(profile: RawProfile, ciphers: [RawCipher], folders: [RawFolder] = [],
+         organizations: [RawOrganization] = [], collections: [RawCollection] = []) {
         self.profile = profile
         self.ciphers = ciphers
         self.folders = folders
+        self.organizations = organizations
+        self.collections = collections
     }
 
     init(from decoder: Decoder) throws {
@@ -32,6 +41,12 @@ nonisolated struct SyncResponse: Decodable {
         folders = (try? container.decode([RawFolder].self, forKey: FlexKeys("folders")))
                ?? (try? container.decode([RawFolder].self, forKey: FlexKeys("Folders")))
                ?? []
+        // Organizations are nested inside the Profile object in both Vaultwarden and the
+        // official Bitwarden server — there is no top-level `organizations` key.
+        organizations = profile.organizations
+        collections = (try? container.decode([RawCollection].self, forKey: FlexKeys("collections")))
+               ?? (try? container.decode([RawCollection].self, forKey: FlexKeys("Collections")))
+               ?? []
     }
 
     /// Ad-hoc `CodingKey` that accepts any string key, used to try multiple casing variants.
@@ -41,6 +56,81 @@ nonisolated struct SyncResponse: Decodable {
         init(_ string: String) { stringValue = string }
         init?(stringValue: String) { self.stringValue = stringValue }
         init?(intValue: Int) { return nil }
+    }
+}
+
+// MARK: - RawOrganization
+
+/// Wire-format model for a Bitwarden organization returned in the sync response.
+///
+/// `key` is the organization's symmetric key (64 bytes), RSA-OAEP-SHA1 encrypted with
+/// the user's RSA-2048 public key. Unwrapped at sync time into `OrgKeyCache`.
+/// Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+///
+/// Custom decoding handles both camelCase (Bitwarden server / Vaultwarden) and PascalCase
+/// variants — the Bitwarden API uses ASP.NET camelCase serialisation, but some server
+/// forks or versions emit PascalCase for org objects.
+nonisolated struct RawOrganization: Codable, Equatable {
+    let id:   String
+    let name: String
+    /// RSA-encrypted organization symmetric key (EncString, Type-4).
+    let key:  String
+    /// Membership role integer: 0=Owner, 1=Admin, 2=User, 3=Manager, 4=Custom.
+    let type: Int
+
+    init(id: String, name: String, key: String, type: Int) {
+        self.id   = id
+        self.name = name
+        self.key  = key
+        self.type = type
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: FlexOrgKeys.self)
+        id   = try (try? c.decode(String.self, forKey: .id))   ?? c.decode(String.self, forKey: .idUpper)
+        name = try (try? c.decode(String.self, forKey: .name)) ?? c.decode(String.self, forKey: .nameUpper)
+        key  = try (try? c.decode(String.self, forKey: .key))  ?? c.decode(String.self, forKey: .keyUpper)
+        type = try (try? c.decode(Int.self,    forKey: .type)) ?? c.decode(Int.self,    forKey: .typeUpper)
+    }
+
+    private enum FlexOrgKeys: String, CodingKey {
+        case id = "id",   idUpper   = "Id"
+        case name = "name", nameUpper = "Name"
+        case key  = "key",  keyUpper  = "Key"
+        case type = "type", typeUpper = "Type"
+    }
+}
+
+// MARK: - RawCollection
+
+/// Wire-format model for a Bitwarden collection returned in the sync response.
+///
+/// `name` is an EncString encrypted with the organization's symmetric key.
+/// Decrypted at sync time using the unwrapped org key from `OrgKeyCache`.
+///
+/// Custom decoding handles both camelCase and PascalCase field names.
+nonisolated struct RawCollection: Codable, Equatable {
+    let id:             String
+    let organizationId: String
+    let name:           String  // EncString, encrypted with org key
+
+    init(id: String, organizationId: String, name: String) {
+        self.id             = id
+        self.organizationId = organizationId
+        self.name           = name
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: FlexCollKeys.self)
+        id             = try (try? c.decode(String.self, forKey: .id))             ?? c.decode(String.self, forKey: .idUpper)
+        organizationId = try (try? c.decode(String.self, forKey: .organizationId)) ?? c.decode(String.self, forKey: .organizationIdUpper)
+        name           = try (try? c.decode(String.self, forKey: .name))           ?? c.decode(String.self, forKey: .nameUpper)
+    }
+
+    private enum FlexCollKeys: String, CodingKey {
+        case id             = "id",             idUpper             = "Id"
+        case organizationId = "organizationId", organizationIdUpper = "OrganizationId"
+        case name           = "name",           nameUpper           = "Name"
     }
 }
 
@@ -60,8 +150,49 @@ nonisolated struct RawProfile: Codable {
     let key:                 String
     /// The user's RSA-2048 private key, encrypted under the vault symmetric key.
     /// EncString (Type-2 or Type-4).
-    /// Vaultwarden returns this as `"privateKey"` (camelCase) in the sync profile.
+    /// Vaultwarden returns this as `"privateKey"` (camelCase) in the sync profile;
+    /// the official Bitwarden server uses `"PrivateKey"` (PascalCase). Both are handled.
     let privateKey:          String?
+    /// Organizations the user belongs to.
+    ///
+    /// In both Vaultwarden and the official Bitwarden server the org membership list
+    /// is nested **inside** the Profile object — there is no separate top-level
+    /// `organizations` key in the sync response. Defaults to `[]` when absent.
+    let organizations:       [RawOrganization]
     // Note: KDF params are NOT included in the Vaultwarden sync profile response.
     // They are obtained from the preLogin endpoint and stored in the Keychain at login time.
+
+    /// Custom decoding to handle both Bitwarden server (PascalCase) and Vaultwarden (camelCase)
+    /// field naming within the Profile object.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: FlexProfileKeys.self)
+        id         = try (try? c.decode(String.self,  forKey: .id))  ?? c.decode(String.self,  forKey: .idUpper)
+        email      = try (try? c.decode(String.self,  forKey: .email)) ?? c.decode(String.self, forKey: .emailUpper)
+        name       = try? (try? c.decode(String.self, forKey: .name)) ?? c.decode(String.self, forKey: .nameUpper)
+        key        = try (try? c.decode(String.self,  forKey: .key))  ?? c.decode(String.self,  forKey: .keyUpper)
+        privateKey = (try? c.decode(String.self, forKey: .privateKey))
+                  ?? (try? c.decode(String.self, forKey: .privateKeyUpper))
+        organizations = (try? c.decode([RawOrganization].self, forKey: .organizations))
+                     ?? (try? c.decode([RawOrganization].self, forKey: .organizationsUpper))
+                     ?? []
+    }
+
+    init(id: String, email: String, name: String?, key: String, privateKey: String?,
+         organizations: [RawOrganization] = []) {
+        self.id            = id
+        self.email         = email
+        self.name          = name
+        self.key           = key
+        self.privateKey    = privateKey
+        self.organizations = organizations
+    }
+
+    private enum FlexProfileKeys: String, CodingKey {
+        case id = "id", idUpper = "Id"
+        case email = "email", emailUpper = "Email"
+        case name = "name", nameUpper = "Name"
+        case key = "key", keyUpper = "Key"
+        case privateKey = "privateKey", privateKeyUpper = "PrivateKey"
+        case organizations = "organizations", organizationsUpper = "Organizations"
+    }
 }

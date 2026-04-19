@@ -8,9 +8,11 @@ import SwiftUI
 /// The sidebar is always visible, even when a category is empty.
 struct SidebarView: View {
     @Binding var selection: SidebarSelection?
-    @State private var sidebarSections: [SidebarSection] = [.menu, .types, .folders, .trash]
+    @State private var sidebarSections: [SidebarSection] = [.menu, .types, .folders, .organizations, .trash]
     let itemCounts: [SidebarSelection: Int]
     let folders: [Folder]
+    var organizations: [Organization] = []
+    var collections: [OrgCollection] = []
 
     // Folder actions — provided by VaultBrowserViewModel
     var onCreateFolder: ((String) -> Void)?
@@ -18,18 +20,38 @@ struct SidebarView: View {
     var onDeleteFolder: ((Folder) -> Void)?
     var onDropItems: (([String], String) -> Void)?   // (itemIds, folderId)
 
-    // Inline rename state
+    // Collection actions — provided by VaultBrowserViewModel
+    var onCreateCollection: ((String, String) -> Void)?  // (name, organizationId)
+    var onRenameCollection: ((String, String, String) -> Void)?  // (id, orgId, newName)
+    var onDeleteCollection: ((String, String) -> Void)?  // (id, orgId)
+
+    // Inline folder rename/create state
     @State private var renamingFolderId: String?
     @State private var renameText: String = ""
     @FocusState private var isRenameFocused: Bool
 
-    // Inline create state
     @State private var isCreatingFolder = false
     @State private var newFolderName: String = "New Folder"
     @FocusState private var isNewFolderFocused: Bool
 
+    // Inline collection create state: keyed by orgId
+    @State private var creatingCollectionInOrg: String? = nil
+    @State private var newCollectionName: String = ""
+    @FocusState private var isNewCollectionFocused: Bool
+
+    // Inline collection rename state
+    @State private var renamingCollectionId: String?
+    @State private var renamingCollectionOrgId: String?
+    @State private var collectionRenameText: String = ""
+    @FocusState private var isCollectionRenameFocused: Bool
+
+    // Delete collection confirmation
+    @State private var collectionToDelete: OrgCollection? = nil
+    @State private var showDeleteCollectionAlert = false
+
     // Tree collapse state (per-session)
     @State private var expandedFolderIds: Set<String> = []
+    @State private var expandedOrgIds: Set<String> = []
 
     private var folderTree: [FolderTreeNode] {
         FolderTreeNode.buildTree(from: folders)
@@ -38,8 +60,12 @@ struct SidebarView: View {
     var body: some View {
         List(selection: $selection) {
             ForEach(sidebarSections, id: \.self) { section in
-                Section(header: sectionHeader(for: section)) {
-                    renderRows(for: section)
+                // Hide the organizations section when the user has no org memberships.
+                if section == .organizations && organizations.isEmpty { EmptyView() }
+                else {
+                    Section(header: sectionHeader(for: section)) {
+                        renderRows(for: section)
+                    }
                 }
             }
             .onMove { from, to in
@@ -47,6 +73,15 @@ struct SidebarView: View {
             }
         }
         .navigationTitle("Prizm")
+        .alert("Delete Collection", isPresented: $showDeleteCollectionAlert,
+               presenting: collectionToDelete) { col in
+            Button("Delete", role: .destructive) {
+                onDeleteCollection?(col.id, col.organizationId)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { col in
+            Text("\u{201C}\(col.name)\u{201D} will be permanently deleted. Items in this collection will remain in the vault.")
+        }
     }
 
     // MARK: - Section Headers
@@ -54,6 +89,8 @@ struct SidebarView: View {
     @ViewBuilder
     private func sectionHeader(for section: SidebarSection) -> some View {
         switch section {
+        case .menu:
+            EmptyView()
         case .folders:
             HStack(alignment: .firstTextBaseline) {
                 Text(section.title)
@@ -64,17 +101,22 @@ struct SidebarView: View {
                     selection = .newFolder
                     isNewFolderFocused = true
                 } label: {
-                    Image(systemName: "folder.badge.plus")
+                    Image(systemName: "plus.circle")
                         .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
+                        .offset(y: -4)
                         .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
                 }
                 .buttonStyle(.plain)
                 .help("New Folder")
                 .accessibilityLabel("New Folder")
-                .padding(.trailing, 10)
+                .padding(.trailing, 14)
             }
         case .trash:
             EmptyView()
+        case .organizations:
+            Text(section.title)
         default:
             Text(section.title)
         }
@@ -123,6 +165,32 @@ struct SidebarView: View {
         case .types:
             ForEach(ItemType.allCases, id: \.self) { type in
                 SidebarRowView(title: type.displayName, systemImage: type.sfSymbol, selection: .type(type), count: itemCounts[.type(type)] ?? 0)
+            }
+        case .organizations:
+            ForEach(organizations) { org in
+                let orgCollections = collections.filter { $0.organizationId == org.id }
+                OrgDisclosureRow(
+                    org: org,
+                    collections: orgCollections,
+                    itemCounts: itemCounts,
+                    isExpanded: Binding(
+                        get: { expandedOrgIds.contains(org.id) },
+                        set: { if $0 { expandedOrgIds.insert(org.id) } else { expandedOrgIds.remove(org.id) } }
+                    ),
+                    creatingCollectionInOrg: $creatingCollectionInOrg,
+                    newCollectionName: $newCollectionName,
+                    isNewCollectionFocused: $isNewCollectionFocused,
+                    renamingCollectionId: $renamingCollectionId,
+                    renamingCollectionOrgId: $renamingCollectionOrgId,
+                    collectionRenameText: $collectionRenameText,
+                    isCollectionRenameFocused: $isCollectionRenameFocused,
+                    onCreateCollection: { name in onCreateCollection?(name, org.id) },
+                    onRenameCollection: { colId, name in onRenameCollection?(colId, org.id, name) },
+                    onDeleteCollection: { col in
+                        collectionToDelete = col
+                        showDeleteCollectionAlert = true
+                    }
+                )
             }
         case .trash:
             SidebarRowView(title: "Trash", systemImage: "trash", selection: .trash, count: itemCounts[.trash] ?? 0)
@@ -266,8 +334,202 @@ private struct FolderRowLabel: View {
 // MARK: - SidebarSection
 
 enum SidebarSection: String, CaseIterable {
-    case menu, folders, types, trash
+    case menu, folders, types, organizations, trash
     var title: String { self.rawValue.capitalized }
+}
+
+// MARK: - OrgDisclosureRow
+
+/// Renders one organization as a DisclosureGroup with its collection rows as children.
+/// The header optionally shows a `+` button when the user can manage collections.
+private struct OrgDisclosureRow: View {
+    let org: Organization
+    let collections: [OrgCollection]
+    let itemCounts: [SidebarSelection: Int]
+    @Binding var isExpanded: Bool
+
+    // Inline collection create state
+    @Binding var creatingCollectionInOrg: String?
+    @Binding var newCollectionName: String
+    @FocusState.Binding var isNewCollectionFocused: Bool
+
+    // Inline collection rename state
+    @Binding var renamingCollectionId: String?
+    @Binding var renamingCollectionOrgId: String?
+    @Binding var collectionRenameText: String
+    @FocusState.Binding var isCollectionRenameFocused: Bool
+
+    var onCreateCollection: (String) -> Void
+    var onRenameCollection: (String, String) -> Void   // (collectionId, newName)
+    var onDeleteCollection: (OrgCollection) -> Void
+
+    private var collectionTree: [CollectionTreeNode] {
+        CollectionTreeNode.buildTree(from: collections)
+    }
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            // Inline new-collection TextField (matching folder create pattern)
+            if creatingCollectionInOrg == org.id {
+                TextField("Collection name", text: $newCollectionName, onCommit: {
+                    commitCreate()
+                })
+                .focused($isNewCollectionFocused)
+                .tag(SidebarSelection.newCollection(organizationId: org.id))
+                .onExitCommand {
+                    creatingCollectionInOrg = nil
+                    newCollectionName = ""
+                }
+            }
+
+            ForEach(collectionTree) { node in
+                CollectionTreeRow(
+                    node: node,
+                    org: org,
+                    itemCounts: itemCounts,
+                    renamingCollectionId: $renamingCollectionId,
+                    renamingCollectionOrgId: $renamingCollectionOrgId,
+                    collectionRenameText: $collectionRenameText,
+                    isCollectionRenameFocused: $isCollectionRenameFocused,
+                    onRenameCollection: onRenameCollection,
+                    onDeleteCollection: onDeleteCollection
+                )
+            }
+
+            if collections.isEmpty && creatingCollectionInOrg != org.id {
+                Text("No collections")
+                    .font(Typography.listSubtitle)
+                    .foregroundStyle(.secondary)
+                    .tag(SidebarSelection?.none)
+            }
+        } label: {
+            orgHeader
+        }
+        .tag(SidebarSelection.organization(org.id))
+    }
+
+    @ViewBuilder
+    private var orgHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Label(org.name, systemImage: "building.2")
+                .font(Typography.sidebarRow)
+            Spacer()
+            if org.canManageCollections {
+                Button {
+                    newCollectionName = ""
+                    creatingCollectionInOrg = org.id
+                    isExpanded = true
+                    isNewCollectionFocused = true
+                } label: {
+                    Image(systemName: "plus.circle")
+                        .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.primary)
+                        .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
+                }
+                .buttonStyle(.plain)
+                .help("New Collection")
+                .accessibilityLabel("New Collection")
+                .padding(.trailing, 2)
+                .offset(y: -4)
+            }
+        }
+    }
+
+    private func commitCreate() {
+        let trimmed = newCollectionName.trimmingCharacters(in: .whitespacesAndNewlines)
+        creatingCollectionInOrg = nil
+        newCollectionName = ""
+        guard !trimmed.isEmpty else { return }
+        onCreateCollection(trimmed)
+    }
+}
+
+// MARK: - CollectionTreeRow
+
+/// Recursive tree row for collections: renders a DisclosureGroup for nodes with children,
+/// or a plain collection row for leaf nodes. Mirrors `FolderTreeRow`.
+private struct CollectionTreeRow: View {
+    let node: CollectionTreeNode
+    let org: Organization
+    let itemCounts: [SidebarSelection: Int]
+    @Binding var renamingCollectionId: String?
+    @Binding var renamingCollectionOrgId: String?
+    @Binding var collectionRenameText: String
+    @FocusState.Binding var isCollectionRenameFocused: Bool
+    var onRenameCollection: (String, String) -> Void   // (collectionId, newName)
+    var onDeleteCollection: (OrgCollection) -> Void
+
+    @State private var isExpanded = false
+
+    var body: some View {
+        if node.hasChildren {
+            DisclosureGroup(isExpanded: $isExpanded) {
+                ForEach(node.children) { child in
+                    CollectionTreeRow(
+                        node: child,
+                        org: org,
+                        itemCounts: itemCounts,
+                        renamingCollectionId: $renamingCollectionId,
+                        renamingCollectionOrgId: $renamingCollectionOrgId,
+                        collectionRenameText: $collectionRenameText,
+                        isCollectionRenameFocused: $isCollectionRenameFocused,
+                        onRenameCollection: onRenameCollection,
+                        onDeleteCollection: onDeleteCollection
+                    )
+                }
+            } label: {
+                nodeLabel
+            }
+        } else {
+            nodeLabel
+        }
+    }
+
+    @ViewBuilder
+    private var nodeLabel: some View {
+        if let col = node.collection,
+           renamingCollectionId == col.id && renamingCollectionOrgId == col.organizationId {
+            TextField("Collection name", text: $collectionRenameText, onCommit: {
+                let trimmed = collectionRenameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                renamingCollectionId    = nil
+                renamingCollectionOrgId = nil
+                isCollectionRenameFocused = false
+                guard !trimmed.isEmpty, trimmed != col.name else { return }
+                onRenameCollection(col.id, trimmed)
+            })
+            .focused($isCollectionRenameFocused)
+            .tag(SidebarSelection.collection(col.id))
+            .onExitCommand {
+                renamingCollectionId    = nil
+                renamingCollectionOrgId = nil
+                isCollectionRenameFocused = false
+            }
+        } else if let col = node.collection {
+            Label(node.name, systemImage: "tray.2")
+                .font(Typography.sidebarRow)
+                .badge(itemCounts[.collection(col.id)] ?? 0)
+                .tag(SidebarSelection.collection(col.id))
+                .contextMenu {
+                    if org.canManageCollections {
+                        Button("Rename") {
+                            collectionRenameText    = col.name
+                            renamingCollectionId    = col.id
+                            renamingCollectionOrgId = col.organizationId
+                            isCollectionRenameFocused = true
+                        }
+                        Divider()
+                        Button("Delete Collection", role: .destructive) {
+                            onDeleteCollection(col)
+                        }
+                    }
+                }
+        } else {
+            // Virtual parent node — not selectable, no context menu
+            Label(node.name, systemImage: "tray.2")
+                .foregroundStyle(.secondary)
+        }
+    }
 }
 
 // MARK: - SidebarRowView

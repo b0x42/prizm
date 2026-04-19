@@ -18,6 +18,8 @@ struct ItemRowView: View {
     let item:          VaultItem
     let faviconLoader: FaviconLoader
     var searchQuery:   String? = nil
+    /// Org name shown as a small badge when the item belongs to an organization (FR task 6.1).
+    var orgName:       String? = nil
 
     var body: some View {
         HStack(spacing: 10) {
@@ -37,6 +39,15 @@ struct ItemRowView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                }
+                if let org = orgName {
+                    Text(org)
+                        .font(Typography.listSubtitle)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .padding(.horizontal, Spacing.badgeHorizontal)
+                        .padding(.vertical, Spacing.badgeVertical)
+                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: Spacing.badgeCornerRadius))
                 }
             }
         }

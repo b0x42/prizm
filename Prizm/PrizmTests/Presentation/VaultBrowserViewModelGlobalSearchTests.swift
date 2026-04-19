@@ -21,7 +21,7 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         vault = MockVaultRepository()
-        vault.populate(items: [sampleLogin, sampleCard], folders: [], syncedAt: .now)
+        vault.populate(items: [sampleLogin, sampleCard], folders: [], organizations: [], collections: [], syncedAt: .now)
         let syncRepo = MockSyncTimestampRepository(storedDate: nil)
         sut = VaultBrowserViewModel(
             vault:           vault,
@@ -29,12 +29,15 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
             delete:          StubDeleteUseCase(),
             permanentDelete: StubPermanentDeleteUseCase(),
             restore:         StubRestoreUseCase(),
-            createFolder:    StubCreateFolder(),
-            renameFolder:    StubRenameFolder(),
-            deleteFolder:    StubDeleteFolder(),
-            moveItem:        StubMoveItem(),
-            syncTimestamp:   syncRepo,
-            getLastSyncDate: GetLastSyncDateUseCaseImpl(repository: syncRepo)
+            createFolder:     StubCreateFolder(),
+            renameFolder:     StubRenameFolder(),
+            deleteFolder:     StubDeleteFolder(),
+            moveItem:         StubMoveItem(),
+            createCollection: StubCreateCollection(),
+            renameCollection: StubRenameCollection(),
+            deleteCollection: StubDeleteCollection(),
+            syncTimestamp:    syncRepo,
+            getLastSyncDate:  GetLastSyncDateUseCaseImpl(repository: syncRepo)
         )
     }
 
@@ -126,4 +129,17 @@ private struct StubDeleteFolder: DeleteFolderUseCase {
 private struct StubMoveItem: MoveItemToFolderUseCase {
     func execute(itemId: String, folderId: String?) async throws {}
     func execute(itemIds: [String], folderId: String?) async throws {}
+}
+private struct StubCreateCollection: CreateCollectionUseCase {
+    func execute(name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: "stub", organizationId: organizationId, name: name)
+    }
+}
+private struct StubRenameCollection: RenameCollectionUseCase {
+    func execute(collectionId: String, name: String, organizationId: String) async throws -> OrgCollection {
+        OrgCollection(id: collectionId, organizationId: organizationId, name: name)
+    }
+}
+private struct StubDeleteCollection: DeleteCollectionUseCase {
+    func execute(collectionId: String, organizationId: String) async throws {}
 }

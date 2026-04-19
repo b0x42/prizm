@@ -162,8 +162,16 @@ struct PrizmApp: App {
                     }
                     return vm
                 },
-                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type, folderId in
-                    let vm = container.makeItemCreateViewModel(for: type, folderId: folderId)
+                makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type, contextId in
+                    // contextId is either a folderId (personal item) or collectionId (org item),
+                    // determined by whether the current sidebar selection is a collection.
+                    let isCollection = (try? container.vaultStore.collections())?.contains(where: { $0.id == contextId }) ?? false
+                    let vm: ItemEditViewModel
+                    if isCollection {
+                        vm = container.makeItemCreateViewModel(for: type, collectionId: contextId)
+                    } else {
+                        vm = container.makeItemCreateViewModel(for: type, folderId: contextId)
+                    }
                     vm.onSaveSuccess = { [weak vaultBrowserVM] item in
                         vaultBrowserVM?.handleItemSaved(item)
                     }
@@ -192,6 +200,8 @@ protocol RootViewModelDependencies: AnyObject {
     var vaultRepo: any VaultRepository { get }
     /// The per-cipher attachment key cache. Cleared on vault lock alongside the vault store.
     var vaultKeyCache: VaultKeyCache { get }
+    /// The per-organisation symmetric key cache. Cleared on vault lock alongside the vault store.
+    var orgKeyCache: OrgKeyCache { get }
     func makeLoginViewModel() -> LoginViewModel
     func makeUnlockViewModel(account: Account) -> UnlockViewModel
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel
@@ -413,9 +423,10 @@ final class RootViewModel: ObservableObject {
         Task {
             await container.authRepo.lockVault()
             container.vaultRepo.clearVault()
-            // Clear the attachment key cache in the same lock path as the vault store.
+            // Clear all key caches in the same lock path as the vault store.
             // Key material must not outlive the vault session (Constitution §III).
             await container.vaultKeyCache.clear()
+            await container.orgKeyCache.clear()
             if let account = container.authRepo.storedAccount() {
                 unlockVM = container.makeUnlockViewModel(account: account)
                 screen = .unlock

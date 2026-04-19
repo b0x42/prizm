@@ -1,6 +1,7 @@
 import Foundation
 import CommonCrypto
 import CryptoKit
+import Security
 import Argon2Swift
 import os.log
 
@@ -119,6 +120,51 @@ protocol PrizmCryptoService: Actor {
     ///
     /// - Throws: `PrizmCryptoServiceError.vaultLocked` if the vault is locked.
     func currentKeys() async throws -> CryptoKeys
+
+    // MARK: - Org key crypto (org-support)
+
+    /// Decrypts the user's RSA private key from its EncString representation.
+    ///
+    /// The profile's `privateKey` EncString is a Type-2 (AES-256-CBC + HMAC-SHA256) EncString
+    /// encrypted with the vault symmetric key. Decrypting it yields raw PKCS#8 DER bytes for
+    /// the user's RSA-2048 private key.
+    ///
+    /// - Security goal: the decrypted private key bytes are used only within `unwrapOrgKey`
+    ///   to decrypt org symmetric keys. The caller must zero the returned `Data` after use.
+    ///   The bytes are NEVER logged (Constitution §III, §VII).
+    ///
+    /// - Parameters:
+    ///   - encPrivateKey: EncString from `SyncResponse.profile.privateKey`.
+    ///   - vaultKeys:     The vault symmetric `CryptoKeys` used to decrypt it.
+    /// - Returns: Raw PKCS#8 DER bytes of the RSA private key.
+    /// - Throws: `PrizmCryptoServiceError` on decryption failure.
+    func decryptRSAPrivateKey(encPrivateKey: String, vaultKeys: CryptoKeys) async throws -> Data
+
+    /// Unwraps an organization's symmetric key using the user's RSA private key.
+    ///
+    /// The org key EncString (Type-4) contains the org's 64-byte symmetric key encrypted
+    /// with RSA-OAEP-SHA1 using the user's RSA-2048 public key.
+    ///
+    /// - Algorithm: `SecKeyCreateDecryptedData` with `kSecKeyAlgorithmRSAEncryptionOAEPSHA1`.
+    ///   SHA-1 is used here because it is the Bitwarden protocol requirement (Security Whitepaper §4),
+    ///   not a free choice. RSA-OAEP with SHA-1 remains secure for key transport when used as
+    ///   specified; the weakness of standalone SHA-1 collision resistance does not apply here.
+    ///   Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+    ///
+    /// - PKCS#8 stripping: Bitwarden stores the RSA private key as a PKCS#8-wrapped DER blob.
+    ///   `SecKeyCreateWithData` requires the raw RSA key material without the PKCS#8 header.
+    ///   The header is stripped by skipping the outer SEQUENCE → SEQUENCE (AlgorithmIdentifier)
+    ///   → BITSTRING wrapper to reach the raw PKCS#1 RSAPrivateKey DER bytes.
+    ///
+    /// - What is NOT done: This function does not cache the RSA private key — callers must
+    ///   pass the already-decrypted key bytes and zero them immediately after use.
+    ///
+    /// - Parameters:
+    ///   - encOrgKey:     Type-4 EncString from `RawOrganization.key`.
+    ///   - rsaPrivateKey: PKCS#8 DER bytes of the user's RSA private key (from `decryptRSAPrivateKey`).
+    /// - Returns: The 64-byte `CryptoKeys` pair for the organization.
+    /// - Throws: `PrizmCryptoServiceError` on RSA decryption failure.
+    func unwrapOrgKey(encOrgKey: String, rsaPrivateKey: Data) async throws -> CryptoKeys
 
     // MARK: - Attachment crypto (vault-document-storage)
     //
@@ -373,6 +419,179 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
             encryptionKey: keyData[0..<32],
             macKey:        keyData[32..<64]
         )
+    }
+
+    // MARK: - Org key crypto (RSA-OAEP-SHA1)
+
+    /// Decrypts the user's RSA private key from its EncString representation.
+    ///
+    /// - Security goal: the decrypted PKCS#8 DER bytes are returned to the caller who
+    ///   must zero them immediately after passing to `unwrapOrgKey`. The bytes are NEVER
+    ///   logged (Constitution §III — "no secrets in logs").
+    ///
+    /// - The `privateKey` field in the sync profile is a Type-2 EncString (AES-256-CBC +
+    ///   HMAC-SHA256) encrypted with the vault symmetric key. Decrypting it yields the
+    ///   PKCS#8 DER-encoded RSA-2048 private key.
+    func decryptRSAPrivateKey(encPrivateKey: String, vaultKeys: CryptoKeys) throws -> Data {
+        let enc: EncString
+        do {
+            enc = try EncString(string: encPrivateKey)
+        } catch {
+            logger.error("decryptRSAPrivateKey: failed to parse EncString: \(error, privacy: .public)")
+            throw PrizmCryptoServiceError.invalidEncUserKey
+        }
+        do {
+            return try enc.decrypt(keys: vaultKeys)
+        } catch {
+            logger.error("decryptRSAPrivateKey: AES-CBC decryption failed: \(error, privacy: .public)")
+            throw PrizmCryptoServiceError.invalidEncUserKey
+        }
+    }
+
+    /// Unwraps an organization's symmetric key using the user's RSA private key.
+    ///
+    /// - Algorithm: RSA-OAEP-SHA1 via `Security.framework`.
+    ///   `kSecKeyAlgorithmRSAEncryptionOAEPSHA1` — SHA-1 is used here because it is the
+    ///   Bitwarden protocol requirement (Security Whitepaper §4), not a free choice.
+    ///   RSA-OAEP with SHA-1 is secure for key transport; the SHA-1 collision weakness
+    ///   applies only to digital signatures, not OAEP key wrapping.
+    ///   Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+    ///
+    /// - PKCS#8 stripping: Bitwarden stores the RSA private key as a PKCS#8-wrapped blob.
+    ///   `SecKeyCreateWithData` (kSecAttrKeyTypeRSA) requires the raw PKCS#1 RSAPrivateKey
+    ///   DER bytes, not the PKCS#8 wrapper. The PKCS#8 outer structure is:
+    ///     SEQUENCE {
+    ///       INTEGER (version = 0)
+    ///       SEQUENCE { OID rsaEncryption, NULL }  ← AlgorithmIdentifier
+    ///       OCTET STRING { <PKCS#1 RSAPrivateKey> }
+    ///     }
+    ///   We skip the outer SEQUENCE + INTEGER + SEQUENCE (AlgorithmIdentifier) + OCTET STRING
+    ///   header bytes to reach the raw PKCS#1 content.
+    ///
+    /// - Type-4 EncString: org key EncStrings use type "4." followed by base64-encoded
+    ///   RSA ciphertext. There is no IV or MAC — the authentication is provided by the
+    ///   RSA-OAEP padding scheme itself.
+    func unwrapOrgKey(encOrgKey: String, rsaPrivateKey: Data) throws -> CryptoKeys {
+        // Parse Type-4 EncString: "4.<base64-ciphertext>"
+        let rsaCiphertext = try parseType4EncString(encOrgKey)
+
+        // Strip PKCS#8 wrapper to obtain raw PKCS#1 RSAPrivateKey DER bytes.
+        let pkcs1Bytes = try stripPKCS8Header(from: rsaPrivateKey)
+
+        // Import the RSA private key via Security.framework.
+        // kSecAttrKeyTypeRSA + kSecAttrKeyClassPrivate + raw PKCS#1 DER.
+        var importError: Unmanaged<CFError>?
+        let keyAttributes: [String: Any] = [
+            kSecAttrKeyType as String:  kSecAttrKeyTypeRSA,
+            kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+            kSecAttrKeySizeInBits as String: 2048
+        ]
+        guard let secKey = SecKeyCreateWithData(pkcs1Bytes as CFData, keyAttributes as CFDictionary, &importError) else {
+            let err = importError?.takeRetainedValue()
+            logger.fault("unwrapOrgKey: SecKeyCreateWithData failed: \(err.debugDescription, privacy: .public)")
+            throw PrizmCryptoServiceError.invalidEncUserKey
+        }
+
+        // Decrypt org key bytes using RSA-OAEP-SHA1.
+        // SHA-1 is mandated by the Bitwarden protocol — not a free choice.
+        var decryptError: Unmanaged<CFError>?
+        guard let orgKeyData = SecKeyCreateDecryptedData(
+            secKey,
+            .rsaEncryptionOAEPSHA1,
+            rsaCiphertext as CFData,
+            &decryptError
+        ) as Data? else {
+            let err = decryptError?.takeRetainedValue()
+            logger.fault("unwrapOrgKey: RSA-OAEP-SHA1 decryption failed: \(err.debugDescription, privacy: .public)")
+            throw PrizmCryptoServiceError.invalidEncUserKey
+        }
+
+        guard orgKeyData.count == 64 else {
+            logger.fault("unwrapOrgKey: decrypted org key has wrong length \(orgKeyData.count, privacy: .public) (expected 64)")
+            throw PrizmCryptoServiceError.invalidSymmetricKeyLength
+        }
+
+        return CryptoKeys(
+            encryptionKey: orgKeyData[0..<32],
+            macKey:        orgKeyData[32..<64]
+        )
+    }
+
+    /// Parses a Type-4 EncString ("4.<base64>") and returns the raw ciphertext bytes.
+    ///
+    /// Type-4 is used for RSA-encrypted payloads (org keys). Unlike Type-2 (AES-CBC),
+    /// it has no IV or MAC — the format is simply "4." followed by base64.
+    private func parseType4EncString(_ encString: String) throws -> Data {
+        guard encString.hasPrefix("4.") else {
+            logger.error("parseType4EncString: expected type-4 prefix, got \(String(encString.prefix(4)), privacy: .public)")
+            throw PrizmCryptoServiceError.invalidEncUserKey
+        }
+        let b64 = String(encString.dropFirst(2))
+        guard let data = Data(base64Encoded: b64) else {
+            logger.error("parseType4EncString: base64 decoding failed")
+            throw PrizmCryptoServiceError.invalidEncUserKey
+        }
+        return data
+    }
+
+    /// Strips the PKCS#8 outer wrapper from DER-encoded RSA private key bytes.
+    ///
+    /// PKCS#8 format: SEQUENCE { INTEGER(0), SEQUENCE{OID, NULL}, OCTET STRING { <PKCS#1> } }
+    /// We need the raw PKCS#1 RSAPrivateKey DER bytes inside the OCTET STRING.
+    ///
+    /// DER tag-length-value parsing:
+    /// - 0x30 = SEQUENCE
+    /// - 0x02 = INTEGER
+    /// - 0x30 = SEQUENCE (AlgorithmIdentifier)
+    /// - 0x04 = OCTET STRING (contains PKCS#1 content)
+    ///
+    /// This parser is minimal and only handles the exact PKCS#8 structure Bitwarden produces.
+    /// It does not attempt to handle all DER variants.
+    private func stripPKCS8Header(from pkcs8: Data) throws -> Data {
+        var idx = pkcs8.startIndex
+
+        // Helper: advance past a TLV tag and length, returning the content start and length.
+        func readTLV(expectedTag: UInt8) throws -> (contentStart: Data.Index, contentLength: Int) {
+            guard idx < pkcs8.endIndex, pkcs8[idx] == expectedTag else {
+                throw PrizmCryptoServiceError.invalidEncUserKey
+            }
+            idx = pkcs8.index(after: idx)
+
+            // Read length (BER/DER short or long form).
+            guard idx < pkcs8.endIndex else { throw PrizmCryptoServiceError.invalidEncUserKey }
+            var length: Int
+            let lenByte = pkcs8[idx]
+            idx = pkcs8.index(after: idx)
+            if lenByte & 0x80 == 0 {
+                length = Int(lenByte)
+            } else {
+                let numBytes = Int(lenByte & 0x7F)
+                length = 0
+                for _ in 0..<numBytes {
+                    guard idx < pkcs8.endIndex else { throw PrizmCryptoServiceError.invalidEncUserKey }
+                    length = (length << 8) | Int(pkcs8[idx])
+                    idx = pkcs8.index(after: idx)
+                }
+            }
+            return (idx, length)
+        }
+
+        // Outer SEQUENCE
+        let (outerContent, _) = try readTLV(expectedTag: 0x30)
+        _ = outerContent  // idx is already at content start
+
+        // INTEGER (version = 0)
+        let (_, intLen) = try readTLV(expectedTag: 0x02)
+        idx = pkcs8.index(idx, offsetBy: intLen)  // skip version value
+
+        // SEQUENCE (AlgorithmIdentifier)
+        let (_, algLen) = try readTLV(expectedTag: 0x30)
+        idx = pkcs8.index(idx, offsetBy: algLen)  // skip AlgorithmIdentifier
+
+        // OCTET STRING containing PKCS#1 RSAPrivateKey
+        let (pkcs1Start, pkcs1Length) = try readTLV(expectedTag: 0x04)
+        let pkcs1End = pkcs8.index(pkcs1Start, offsetBy: pkcs1Length)
+        return pkcs8[pkcs1Start..<pkcs1End]
     }
 
     // MARK: - PBKDF2-SHA256 (CommonCrypto)

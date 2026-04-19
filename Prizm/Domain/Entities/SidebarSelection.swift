@@ -50,17 +50,26 @@ nonisolated enum SidebarSelection {
     case trash
     /// Transient state while the user is typing a new folder name inline.
     case newFolder
+    /// All items across all collections in the given organization.
+    case organization(String)
+    /// Items assigned to a specific collection within an organization.
+    case collection(String)
+    /// Transient state while the user is typing a new collection name inline.
+    case newCollection(organizationId: String)
 }
 
 extension SidebarSelection {
     var displayName: String {
         switch self {
-        case .allItems:           return "All Items"
-        case .favorites:          return "Favorites"
-        case .type(let type):     return type.displayName
-        case .folder:             return "Folder"
-        case .trash:              return "Trash"
-        case .newFolder:          return "New Folder"
+        case .allItems:                      return "All Items"
+        case .favorites:                     return "Favorites"
+        case .type(let type):                return type.displayName
+        case .folder:                        return "Folder"
+        case .trash:                         return "Trash"
+        case .newFolder:                     return "New Folder"
+        case .organization:                  return "Organization"
+        case .collection:                    return "Collection"
+        case .newCollection:                 return "New Collection"
         }
     }
 }
@@ -68,24 +77,30 @@ extension SidebarSelection {
 extension SidebarSelection: Hashable {
     nonisolated static func == (lhs: SidebarSelection, rhs: SidebarSelection) -> Bool {
         switch (lhs, rhs) {
-        case (.allItems, .allItems):                   return true
-        case (.favorites, .favorites):                 return true
-        case (.type(let a), .type(let b)):             return a == b
-        case (.folder(let a), .folder(let b)):         return a == b
-        case (.trash, .trash):                         return true
-        case (.newFolder, .newFolder):                 return true
-        default:                                       return false
+        case (.allItems, .allItems):                                     return true
+        case (.favorites, .favorites):                                   return true
+        case (.type(let a), .type(let b)):                               return a == b
+        case (.folder(let a), .folder(let b)):                           return a == b
+        case (.trash, .trash):                                           return true
+        case (.newFolder, .newFolder):                                   return true
+        case (.organization(let a), .organization(let b)):               return a == b
+        case (.collection(let a), .collection(let b)):                   return a == b
+        case (.newCollection(let a), .newCollection(let b)):             return a == b
+        default:                                                         return false
         }
     }
 
     nonisolated func hash(into hasher: inout Hasher) {
         switch self {
-        case .allItems:          hasher.combine(0)
-        case .favorites:         hasher.combine(1)
-        case .type(let type):    hasher.combine(2); hasher.combine(type)
-        case .folder(let id):    hasher.combine(3); hasher.combine(id)
-        case .trash:             hasher.combine(4)
-        case .newFolder:         hasher.combine(5)
+        case .allItems:                          hasher.combine(0)
+        case .favorites:                         hasher.combine(1)
+        case .type(let type):                    hasher.combine(2); hasher.combine(type)
+        case .folder(let id):                    hasher.combine(3); hasher.combine(id)
+        case .trash:                             hasher.combine(4)
+        case .newFolder:                         hasher.combine(5)
+        case .organization(let id):              hasher.combine(6); hasher.combine(id)
+        case .collection(let id):                hasher.combine(7); hasher.combine(id)
+        case .newCollection(let orgId):          hasher.combine(8); hasher.combine(orgId)
         }
     }
 }
