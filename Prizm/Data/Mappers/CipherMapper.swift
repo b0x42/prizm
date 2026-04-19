@@ -61,52 +61,63 @@ nonisolated final class CipherMapper {
     ///   `keys.encryptionKey + keys.macKey` (64 bytes).
     ///
     /// - Parameters:
-    ///   - raw:  The encrypted wire-format cipher from the sync response.
-    ///   - keys: The vault-level symmetric key pair used to decrypt EncString fields.
+    ///   - raw:      The encrypted wire-format cipher from the sync response.
+    ///   - vaultKeys: The personal vault symmetric key pair (used for personal ciphers).
+    ///   - orgKeys:  Snapshot of `OrgKeyCache` keyed by organization ID. Pass `[:]` when
+    ///               no org key support is available (personal-only vault).
     /// - Returns: A tuple of the decrypted `VaultItem` and its 64-byte effective cipher key.
-    /// - Throws: `CipherMapperError.organisationCipherSkipped` for org ciphers.
+    /// - Throws: `CipherMapperError.organisationCipherSkipped` when the cipher's org key is absent from `orgKeys`.
     /// - Throws: `CipherMapperError.unsupportedCipherType` for unknown type integers.
     /// - Throws: `EncStringError` or `CipherMapperError.fieldDecryptionFailed` on decryption failure.
-    func map(raw: RawCipher, keys: CryptoKeys) throws -> (item: VaultItem, cipherKey: Data) {
-        // Organisation ciphers are excluded from the personal vault view
-        if raw.organizationId != nil {
-            throw CipherMapperError.organisationCipherSkipped
+    func map(raw: RawCipher, vaultKeys: CryptoKeys, orgKeys: [String: CryptoKeys] = [:]) throws -> (item: VaultItem, cipherKey: Data) {
+        // Select the key to use for this cipher.
+        // Org ciphers use the org's symmetric key; personal ciphers use the vault key.
+        let activeKeys: CryptoKeys
+        if let orgId = raw.organizationId {
+            guard let orgKey = orgKeys[orgId] else {
+                // Org key not available (org sync not yet complete, or org key unwrap failed).
+                // Skip this cipher rather than showing garbled content.
+                throw CipherMapperError.organisationCipherSkipped
+            }
+            activeKeys = orgKey
+        } else {
+            activeKeys = vaultKeys
         }
 
-        let name   = try decryptRequired(raw.name, field: "name", keys: keys)
-        let notes  = try raw.notes.map { try decryptRequired($0, field: "notes", keys: keys) }
-        let fields = try mapFields(raw.fields ?? [], keys: keys)
+        let name   = try decryptRequired(raw.name, field: "name", keys: activeKeys)
+        let notes  = try raw.notes.map { try decryptRequired($0, field: "notes", keys: activeKeys) }
+        let fields = try mapFields(raw.fields ?? [], keys: activeKeys)
 
         let content: ItemContent = try mapContent(
             type:   raw.type,
             raw:    raw,
             notes:  notes,
             fields: fields,
-            keys:   keys
+            keys:   activeKeys
         )
 
         let fallbackDate = Date(timeIntervalSince1970: 0)
         let creationDate  = raw.creationDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
         let revisionDate  = raw.revisionDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
 
-        // Effective cipher key: per-item key if present, otherwise vault-level key.
+        // Effective cipher key: per-item key if present, otherwise the active (vault or org) key.
         // Reference: Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping".
         // Must be resolved BEFORE attachment mapping so that attachment filenames are
         // decrypted with the correct key — ciphers that have a per-item key use it for
-        // their attachments too (vault-level key would cause MAC verification failures).
+        // their attachments too (active key would cause MAC verification failures).
         let cipherKey: Data
         if let encItemKey = raw.key {
-            // Per-item key: decrypt the EncString-wrapped key using the vault key.
+            // Per-item key: decrypt the EncString-wrapped key using the active key (vault OR org).
             do {
                 let enc = try EncString(string: encItemKey)
-                cipherKey = try enc.decrypt(keys: keys)
+                cipherKey = try enc.decrypt(keys: activeKeys)
             } catch {
                 Self.logger.fault("Per-item key decryption failed for cipher \(raw.id, privacy: .public)")
                 throw CipherMapperError.fieldDecryptionFailed("key")
             }
         } else {
-            // No per-item key — use the vault-level key directly.
-            cipherKey = keys.encryptionKey + keys.macKey
+            // No per-item key — use the active key directly.
+            cipherKey = activeKeys.encryptionKey + activeKeys.macKey
         }
 
         // Build CryptoKeys from the resolved 64-byte cipher key (first 32 bytes = enc, last 32 = mac).
@@ -127,18 +138,25 @@ nonisolated final class CipherMapper {
         }
 
         let item = VaultItem(
-            id:           raw.id,
-            name:         name,
-            isFavorite:   raw.favorite,
-            isDeleted:    raw.deletedDate != nil,
-            creationDate: creationDate,
-            revisionDate: revisionDate,
-            content:      content,
-            reprompt:     raw.reprompt ?? 0,
-            attachments:  attachments,
-            folderId:     raw.folderId
+            id:             raw.id,
+            name:           name,
+            isFavorite:     raw.favorite,
+            isDeleted:      raw.deletedDate != nil,
+            creationDate:   creationDate,
+            revisionDate:   revisionDate,
+            content:        content,
+            reprompt:       raw.reprompt ?? 0,
+            attachments:    attachments,
+            folderId:       raw.folderId,
+            organizationId: raw.organizationId,
+            collectionIds:  raw.collectionIds
         )
         return (item: item, cipherKey: cipherKey)
+    }
+
+    /// Backward-compatible overload — passes empty orgKeys (personal vault, no org support).
+    func map(raw: RawCipher, keys: CryptoKeys) throws -> (item: VaultItem, cipherKey: Data) {
+        try map(raw: raw, vaultKeys: keys, orgKeys: [:])
     }
 
     // MARK: - Private: Content dispatch
@@ -341,7 +359,7 @@ nonisolated final class CipherMapper {
 
         return RawCipher(
             id:             draft.id,
-            organizationId: nil,
+            organizationId: draft.organizationId,
             folderId:       draft.folderId,
             type:           type,
             name:           encName,
@@ -358,6 +376,7 @@ nonisolated final class CipherMapper {
             sshKey:         sshKeyData,
             fields:         encFields.isEmpty ? nil : encFields,
             key:            nil,
+            collectionIds:  draft.collectionIds,
             attachments:    nil
         )
     }

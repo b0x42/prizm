@@ -22,6 +22,9 @@ final class AppContainer: ObservableObject {
     /// Populated at sync time by `SyncRepositoryImpl`; cleared on vault lock alongside
     /// `vaultStore` so key material does not outlive the vault session (Constitution §III).
     let vaultKeyCache: VaultKeyCache
+    /// In-memory cache mapping organization ID → unwrapped 64-byte symmetric key.
+    /// Populated at sync time; cleared on vault lock alongside `vaultKeyCache` (Constitution §III).
+    let orgKeyCache: OrgKeyCache
 
     // MARK: - Domain repositories (Data implementations)
 
@@ -43,6 +46,9 @@ final class AppContainer: ObservableObject {
     let renameFolderUseCase:             RenameFolderUseCaseImpl
     let deleteFolderUseCase:             DeleteFolderUseCaseImpl
     let moveItemToFolderUseCase:         MoveItemToFolderUseCaseImpl
+    let createCollectionUseCase:         CreateCollectionUseCaseImpl
+    let renameCollectionUseCase:         RenameCollectionUseCaseImpl
+    let deleteCollectionUseCase:         DeleteCollectionUseCaseImpl
     let syncTimestampRepository:         SyncTimestampRepositoryImpl
     let getLastSyncDateUseCase:          any GetLastSyncDateUseCase
 
@@ -65,8 +71,9 @@ final class AppContainer: ObservableObject {
         let crypto        = PrizmCryptoServiceImpl()
         let keychain      = KeychainServiceImpl()
         let biometricKeychain = BiometricKeychainServiceImpl()
-        let vault         = VaultRepositoryImpl(apiClient: api, crypto: crypto)
         let keyCache      = VaultKeyCache()
+        let orgKeyCache   = OrgKeyCache()
+        let vault         = VaultRepositoryImpl(apiClient: api, crypto: crypto, orgKeyCache: orgKeyCache)
         let vaultKeyService = VaultKeyServiceImpl(cache: keyCache, crypto: crypto)
 
         let auth = AuthRepositoryImpl(
@@ -79,7 +86,8 @@ final class AppContainer: ObservableObject {
             apiClient:       api,
             crypto:          crypto,
             vaultRepository: vault,
-            vaultKeyCache:   keyCache
+            vaultKeyCache:   keyCache,
+            orgKeyCache:     orgKeyCache
         )
 
         let attachmentRepo = AttachmentRepositoryImpl(
@@ -101,6 +109,7 @@ final class AppContainer: ObservableObject {
         self.vaultStore      = vault
         self.faviconLoader   = FaviconLoader()
         self.vaultKeyCache   = keyCache
+        self.orgKeyCache     = orgKeyCache
         self.authRepository  = auth
         self.syncRepository  = sync
         self.syncUseCase                     = SyncUseCaseImpl(sync: sync)
@@ -116,6 +125,9 @@ final class AppContainer: ObservableObject {
         self.renameFolderUseCase             = RenameFolderUseCaseImpl(repository: vault)
         self.deleteFolderUseCase             = DeleteFolderUseCaseImpl(repository: vault)
         self.moveItemToFolderUseCase         = MoveItemToFolderUseCaseImpl(repository: vault)
+        self.createCollectionUseCase         = CreateCollectionUseCaseImpl(repository: vault)
+        self.renameCollectionUseCase         = RenameCollectionUseCaseImpl(repository: vault)
+        self.deleteCollectionUseCase         = DeleteCollectionUseCaseImpl(repository: vault)
         self.syncTimestampRepository         = syncTimestamp
         self.getLastSyncDateUseCase          = GetLastSyncDateUseCaseImpl(repository: syncTimestamp)
         // Attachment use cases — Upload and Download inject VaultKeyService;
@@ -152,17 +164,20 @@ final class AppContainer: ObservableObject {
     /// Creates a `VaultBrowserViewModel` backed by the live vault store.
     func makeVaultBrowserViewModel() -> VaultBrowserViewModel {
         VaultBrowserViewModel(
-            vault:           vaultStore,
-            search:          searchVaultUseCase,
-            delete:          deleteVaultItemUseCase,
-            permanentDelete: permanentDeleteVaultItemUseCase,
-            restore:         restoreVaultItemUseCase,
-            createFolder:    createFolderUseCase,
-            renameFolder:    renameFolderUseCase,
-            deleteFolder:    deleteFolderUseCase,
-            moveItem:        moveItemToFolderUseCase,
-            syncTimestamp:   syncTimestampRepository,
-            getLastSyncDate: getLastSyncDateUseCase
+            vault:            vaultStore,
+            search:           searchVaultUseCase,
+            delete:           deleteVaultItemUseCase,
+            permanentDelete:  permanentDeleteVaultItemUseCase,
+            restore:          restoreVaultItemUseCase,
+            createFolder:     createFolderUseCase,
+            renameFolder:     renameFolderUseCase,
+            deleteFolder:     deleteFolderUseCase,
+            moveItem:         moveItemToFolderUseCase,
+            createCollection: createCollectionUseCase,
+            renameCollection: renameCollectionUseCase,
+            deleteCollection: deleteCollectionUseCase,
+            syncTimestamp:    syncTimestampRepository,
+            getLastSyncDate:  getLastSyncDateUseCase
         )
     }
 
@@ -170,13 +185,32 @@ final class AppContainer: ObservableObject {
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
     func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
         let folders = (try? vaultStore.folders()) ?? []
-        return ItemEditViewModel(item: item, useCase: editVaultItemUseCase, folders: folders)
+        let orgs    = (try? vaultStore.organizations()) ?? []
+        let cols    = (try? vaultStore.collections()) ?? []
+        return ItemEditViewModel(item: item, useCase: editVaultItemUseCase, folders: folders,
+                                 organizations: orgs, collections: cols)
     }
 
     /// Creates an `ItemEditViewModel` in create mode for the given item type.
-    func makeItemCreateViewModel(for type: ItemType, folderId: String? = nil) -> ItemEditViewModel {
+    /// Pass `collectionId` to pre-fill the collection when creating from a collection context (task 5.9 / 7.2).
+    func makeItemCreateViewModel(for type: ItemType, folderId: String? = nil,
+                                 collectionId: String? = nil) -> ItemEditViewModel {
         let folders = (try? vaultStore.folders()) ?? []
-        return ItemEditViewModel(type: type, useCase: createVaultItemUseCase, folders: folders, folderId: folderId)
+        let orgs    = (try? vaultStore.organizations()) ?? []
+        let cols    = (try? vaultStore.collections()) ?? []
+        // Pre-populate org and collection when creating in a collection context.
+        var orgId: String? = nil
+        var colIds: [String] = []
+        if let colId = collectionId,
+           let col = cols.first(where: { $0.id == colId }) {
+            orgId  = col.organizationId
+            colIds = [colId]
+        }
+        return ItemEditViewModel(
+            type: type, useCase: createVaultItemUseCase, folders: folders,
+            folderId: folderId, organizationId: orgId, collectionIds: colIds,
+            organizations: orgs, collections: cols
+        )
     }
 
     // MARK: - AppKit panel defaults (App layer — Constitution §II)

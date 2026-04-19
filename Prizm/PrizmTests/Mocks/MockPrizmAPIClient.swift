@@ -127,6 +127,16 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         return updateCipherResponse ?? cipher
     }
 
+    // MARK: - Stubs: updateCipherCollections
+
+    nonisolated(unsafe) var updateCipherCollectionsCallCount = 0
+    nonisolated(unsafe) var lastUpdatedCipherCollections: (id: String, collectionIds: [String])?
+
+    func updateCipherCollections(id: String, collectionIds: [String]) async throws {
+        updateCipherCollectionsCallCount += 1
+        lastUpdatedCipherCollections = (id, collectionIds)
+    }
+
     // MARK: - Stubs: createCipher
 
     nonisolated(unsafe) var createCipherResponse: RawCipher?
@@ -137,6 +147,17 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         createCipherCallCount += 1
         if let err = createCipherShouldThrow { throw err }
         return createCipherResponse ?? cipher
+    }
+
+    // MARK: - Stubs: createOrgCipher
+
+    nonisolated(unsafe) var createOrgCipherResponse: RawCipher?
+    nonisolated(unsafe) var createOrgCipherCallCount: Int = 0
+
+    func createOrgCipher(cipher: RawCipher) async throws -> RawCipher {
+        createOrgCipherCallCount += 1
+        if let err = createCipherShouldThrow { throw err }
+        return createOrgCipherResponse ?? cipher
     }
 
     // MARK: - Stubs: softDeleteCipher
@@ -251,6 +272,46 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
     }
 
 
+
+    // MARK: - Stubs: Collection CRUD
+
+    nonisolated(unsafe) var createCollectionResponse: RawCollection?
+    nonisolated(unsafe) var createCollectionShouldThrow: Error?
+    nonisolated(unsafe) var createCollectionCallCount: Int = 0
+    nonisolated(unsafe) var lastCreateCollectionOrgId: String?
+    nonisolated(unsafe) var lastCreateCollectionEncryptedName: String?
+
+    func createCollection(organizationId: String, encryptedName: String) async throws -> RawCollection {
+        createCollectionCallCount += 1
+        lastCreateCollectionOrgId = organizationId
+        lastCreateCollectionEncryptedName = encryptedName
+        if let err = createCollectionShouldThrow { throw err }
+        return createCollectionResponse ?? RawCollection(
+            id: UUID().uuidString, organizationId: organizationId, name: encryptedName
+        )
+    }
+
+    nonisolated(unsafe) var renameCollectionResponse: RawCollection?
+    nonisolated(unsafe) var renameCollectionShouldThrow: Error?
+    nonisolated(unsafe) var renameCollectionCallCount: Int = 0
+
+    func renameCollection(id: String, organizationId: String, encryptedName: String) async throws -> RawCollection {
+        renameCollectionCallCount += 1
+        if let err = renameCollectionShouldThrow { throw err }
+        return renameCollectionResponse ?? RawCollection(
+            id: id, organizationId: organizationId, name: encryptedName
+        )
+    }
+
+    nonisolated(unsafe) var deleteCollectionShouldThrow: Error?
+    nonisolated(unsafe) var deleteCollectionCallCount: Int = 0
+    nonisolated(unsafe) var lastDeleteCollectionId: String?
+
+    func deleteCollection(id: String, organizationId: String) async throws {
+        deleteCollectionCallCount += 1
+        lastDeleteCollectionId = id
+        if let err = deleteCollectionShouldThrow { throw err }
+    }
 
     // MARK: - Stubs: Folder CRUD
 

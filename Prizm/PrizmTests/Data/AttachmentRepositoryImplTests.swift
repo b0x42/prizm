@@ -47,7 +47,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  []
         )
-        vaultRepo.populate(items: [item], folders: [], syncedAt: Date())
+        vaultRepo.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
     }
 
     // MARK: - Upload: fileUploadType 0 (Bitwarden-hosted)
@@ -339,7 +339,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             revisionDate: Date(),
             content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  [existing]
-        )], folders: [], syncedAt: Date())
+        )], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.delete(cipherId: cipherId, attachmentId: attachmentId)
 
@@ -380,7 +380,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             revisionDate: Date(),
             content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  [keep, toDelete]
-        )], folders: [], syncedAt: Date())
+        )], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         try await sut.delete(cipherId: cipherId, attachmentId: attachmentId)
 

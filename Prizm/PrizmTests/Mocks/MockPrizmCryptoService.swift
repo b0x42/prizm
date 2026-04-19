@@ -65,6 +65,20 @@ actor MockPrizmCryptoService: PrizmCryptoService {
         return stubbedVaultKeys
     }
 
+    // MARK: - Org key crypto stubs
+
+    nonisolated(unsafe) var stubbedRSAPrivateKey: Data = Data(count: 32)
+    nonisolated(unsafe) var stubbedOrgKeys: [String: CryptoKeys] = [:]
+
+    func decryptRSAPrivateKey(encPrivateKey: String, vaultKeys: CryptoKeys) throws -> Data {
+        stubbedRSAPrivateKey
+    }
+
+    func unwrapOrgKey(encOrgKey: String, rsaPrivateKey: Data) throws -> CryptoKeys {
+        // Return a deterministic stub org key for tests.
+        CryptoKeys(encryptionKey: Data(count: 32), macKey: Data(count: 32))
+    }
+
     // MARK: - Attachment crypto stubs
 
     nonisolated(unsafe) var stubbedAttachmentKey: Data = Data(count: 32)

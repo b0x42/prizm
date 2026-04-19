@@ -13,6 +13,8 @@ struct ItemListView: View {
     @Binding var selection: VaultItem?
     let faviconLoader: FaviconLoader
     var searchQuery:   String? = nil
+    /// Organizations list for resolving org names shown on item rows (6.1).
+    var organizations: [Organization] = []
     /// Called when the user confirms moving an item to Trash from the row context menu.
     /// Nil disables the delete context-menu action (e.g. when trash actions are unavailable).
     var onDelete: ((String) async -> Void)? = nil
@@ -48,7 +50,8 @@ struct ItemListView: View {
                     ForEach(sections, id: \.letter) { section in
                         Section(header: Text(section.letter)) {
                             ForEach(section.items, id: \.id) { item in
-                                ItemRowView(item: item, faviconLoader: faviconLoader, searchQuery: searchQuery)
+                                ItemRowView(item: item, faviconLoader: faviconLoader, searchQuery: searchQuery,
+                                            orgName: orgName(for: item))
                                     .tag(item)
                                     .draggable(item.id)
                                     .accessibilityIdentifier(AccessibilityID.ItemList.row(item.id))
@@ -86,5 +89,11 @@ struct ItemListView: View {
                 }
             }
         }
+    }
+
+    /// Returns the org name for a vault item, or nil for personal items.
+    private func orgName(for item: VaultItem) -> String? {
+        guard let orgId = item.organizationId else { return nil }
+        return organizations.first(where: { $0.id == orgId })?.name
     }
 }

@@ -79,6 +79,15 @@ protocol PrizmAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}
     func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher
 
+    /// PUT `/api/ciphers/{id}/collections` — updates the collection membership of an org cipher.
+    ///
+    /// `PUT /api/ciphers/{id}` does not change collection assignments — this endpoint must be
+    /// called separately whenever `collectionIds` changes. Passing an empty array moves the
+    /// item to the org's Default collection.
+    ///
+    /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/collections
+    func updateCipherCollections(id: String, collectionIds: [String]) async throws
+
     /// PUT `/api/ciphers/{id}/delete` — soft-deletes a cipher by moving it to Trash.
     ///
     /// Sets `deletedDate` on the server. The item remains in the user's vault data and
@@ -112,6 +121,15 @@ protocol PrizmAPIClientProtocol: Actor {
     /// The request body is a JSON-encoded `RawCipher`. The server assigns the ID and timestamps.
     /// On success the server returns the created cipher, decoded back into `RawCipher`.
     func createCipher(cipher: RawCipher) async throws -> RawCipher
+
+    /// POST `/api/ciphers/create` — creates an org-scoped cipher.
+    ///
+    /// Used for items belonging to an organization (when `cipher.organizationId != nil`).
+    /// The body must include `collectionIds[]` so the server assigns the item to the
+    /// specified collections.
+    ///
+    /// Reference: Bitwarden Server API POST /api/ciphers/create
+    func createOrgCipher(cipher: RawCipher) async throws -> RawCipher
 
     // MARK: - Attachment endpoints
 
@@ -170,6 +188,21 @@ protocol PrizmAPIClientProtocol: Actor {
 
     /// PUT `/ciphers/move` — bulk-moves ciphers to a folder.
     func moveCiphersToFolder(ids: [String], folderId: String?) async throws
+
+    // MARK: - Collection CRUD
+
+    /// POST `/api/organizations/{orgId}/collections` — creates a new collection.
+    ///
+    /// - Parameters:
+    ///   - organizationId: The org the collection belongs to.
+    ///   - encryptedName: The collection name encrypted with the org's symmetric key.
+    func createCollection(organizationId: String, encryptedName: String) async throws -> RawCollection
+
+    /// PUT `/api/organizations/{orgId}/collections/{id}` — renames an existing collection.
+    func renameCollection(id: String, organizationId: String, encryptedName: String) async throws -> RawCollection
+
+    /// DELETE `/api/organizations/{orgId}/collections/{id}` — deletes a collection.
+    func deleteCollection(id: String, organizationId: String) async throws
 
 }
 
@@ -606,6 +639,22 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         return updated
     }
 
+    // MARK: - updateCipherCollections
+
+    func updateCipherCollections(id: String, collectionIds: [String]) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/\(id)/collections")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let body = ["collectionIds": collectionIds]
+        request.httpBody = try JSONEncoder().encode(body)
+        try await performEmpty(request: request)
+    }
+
     // MARK: - softDeleteCipher
 
     func softDeleteCipher(id: String) async throws {
@@ -792,6 +841,38 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         return created
     }
 
+    // MARK: - createOrgCipher
+
+    /// Wrapper body for `POST /api/ciphers/create` — Bitwarden expects `{ "cipher": ..., "collectionIds": [...] }`.
+    private struct OrgCipherCreateRequest: Encodable {
+        let cipher: RawCipher
+        let collectionIds: [String]
+    }
+
+    func createOrgCipher(cipher: RawCipher) async throws -> RawCipher {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/ciphers/create")
+
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] createOrgCipher → POST \(url.absoluteString, privacy: .public)")
+        }
+
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let body = OrgCipherCreateRequest(cipher: cipher, collectionIds: cipher.collectionIds)
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let created: RawCipher = try await perform(request: request)
+        if DebugConfig.isEnabled {
+            logger.debug("[debug] createOrgCipher ← id=\(created.id, privacy: .public)")
+        }
+        return created
+    }
+
     // MARK: - Folder CRUD
 
     func createFolder(encryptedName: String) async throws -> RawFolder {
@@ -823,6 +904,52 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     func deleteFolder(id: String) async throws {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/folders/\(id)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "DELETE"
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        try await performEmpty(request: request)
+    }
+
+    // MARK: - Collection CRUD
+
+    /// Bitwarden collection body for create/rename — `groups` and `users` default to empty.
+    private struct CollectionBody: Encodable {
+        let name: String
+        let groups: [String]
+        let users: [String]
+    }
+
+    func createCollection(organizationId: String, encryptedName: String) async throws -> RawCollection {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/organizations/\(organizationId)/collections")
+        var request = baseRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(CollectionBody(name: encryptedName, groups: [], users: []))
+        return try await perform(request: request)
+    }
+
+    func renameCollection(id: String, organizationId: String, encryptedName: String) async throws -> RawCollection {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/organizations/\(organizationId)/collections/\(id)")
+        var request = baseRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONEncoder().encode(CollectionBody(name: encryptedName, groups: [], users: []))
+        return try await perform(request: request)
+    }
+
+    func deleteCollection(id: String, organizationId: String) async throws {
+        guard let base = baseURL else { throw APIError.baseURLNotSet }
+        let url = base.appendingPathComponent("api/organizations/\(organizationId)/collections/\(id)")
         var request = baseRequest(url: url)
         request.httpMethod = "DELETE"
         if let token = accessToken {
