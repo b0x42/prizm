@@ -20,7 +20,7 @@ The `LoginView` SHALL replace the static subtitle "Self-hosted vault" and single
 2. **Bitwarden Cloud (EU)** — hides the server URL field
 3. **Self-hosted** — shows the server URL field as it exists today
 
-When a cloud option is selected, no URL entry is required or shown. When "Self-hosted" is selected, the server URL field is shown and behaves as today. The last-used selection SHALL be remembered across app launches.
+When a cloud option is selected, no URL entry is required or shown. When "Self-hosted" is selected, the server URL field is shown and behaves as today. The last-used selection SHALL be persisted to `UserDefaults` under the key `com.prizm.login.lastServerType` (raw `String` value of `ServerType`) and restored when `LoginViewModel` is initialised.
 
 #### Scenario: Picker is visible on the login screen
 - **WHEN** `LoginView` is displayed
@@ -35,6 +35,15 @@ When a cloud option is selected, no URL entry is required or shown. When "Self-h
 - **WHEN** the user selects "Self-hosted"
 - **THEN** the server URL field SHALL be visible and editable
 - **AND** any previously entered URL SHALL be restored
+
+#### Scenario: Sign In button enabled for cloud without server URL
+- **GIVEN** the user has selected "Bitwarden Cloud (US)" or "Bitwarden Cloud (EU)"
+- **WHEN** email and master password are both non-empty
+- **THEN** the Sign In button SHALL be enabled regardless of `serverURL`
+
+#### Scenario: Sign In button still requires server URL for self-hosted
+- **GIVEN** the user has selected "Self-hosted"
+- **THEN** the Sign In button SHALL remain disabled until `serverURL`, email, and password are all non-empty
 
 #### Scenario: Last-used selection restored on relaunch
 - **GIVEN** the user last chose "Bitwarden Cloud (EU)" before quitting
@@ -53,7 +62,18 @@ When a cloud option is selected, no URL entry is required or shown. When "Self-h
 | `cloudEU` | `https://api.bitwarden.eu` | `https://identity.bitwarden.eu` | `https://icons.bitwarden.net` |
 | `selfHosted` | `{base}/api` (or override) | `{base}/identity` (or override) | `{base}/icons` (or override) |
 
-Cloud cases SHALL ignore `overrides`. `selfHosted` behaviour is unchanged. Existing Keychain records without a `serverType` key SHALL decode as `selfHosted`.
+Cloud cases SHALL ignore `overrides` and SHALL ignore `base` for URL routing. `selfHosted` behaviour is unchanged. Existing Keychain records without a `serverType` key SHALL decode as `selfHosted`.
+
+`ServerType` SHALL be a `String`-backed `RawRepresentable` enum with fixed raw values: `"cloudUS"`, `"cloudEU"`, `"selfHosted"`. These raw values are part of the Keychain storage contract and MUST NOT be renamed after any release that has written Keychain data.
+
+`ServerEnvironment` SHALL expose static factory methods for cloud cases that set `base` to a sentinel value (`https://bitwarden.com`) so the struct invariant is satisfied without exposing a meaningless URL to callers:
+
+```swift
+static func cloudUS() -> ServerEnvironment
+static func cloudEU() -> ServerEnvironment
+```
+
+The computed properties (`apiURL`, `identityURL`, `iconsURL`) SHALL switch on `serverType` and return hardcoded cloud URLs for cloud cases, falling back to `base`-derived values only for `selfHosted`. `base` MUST NOT be used for URL routing when `serverType != .selfHosted`.
 
 #### Scenario: cloudUS returns US canonical URLs
 - **GIVEN** a `ServerEnvironment` with `serverType == .cloudUS`
@@ -71,6 +91,7 @@ Cloud cases SHALL ignore `overrides`. `selfHosted` behaviour is unchanged. Exist
 - **GIVEN** a `ServerEnvironment` with `serverType == .selfHosted` and `base = https://vault.example.com`
 - **THEN** `apiURL` SHALL equal `https://vault.example.com/api`
 - **AND** `identityURL` SHALL equal `https://vault.example.com/identity`
+- **AND** `iconsURL` SHALL equal `https://vault.example.com/icons`
 
 #### Scenario: Legacy record decoded as selfHosted
 - **GIVEN** a stored JSON record with no `serverType` key
@@ -81,7 +102,13 @@ Cloud cases SHALL ignore `overrides`. `selfHosted` behaviour is unchanged. Exist
 
 ### Requirement: `PrizmAPIClient` routes requests via `ServerEnvironment`
 
-`PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. All ~32 endpoint methods SHALL use `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`. `AuthRepositoryImpl.setServerEnvironment(_:)` SHALL call `apiClient.setServerEnvironment(environment)`.
+`PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. `setBaseURL` SHALL be removed from `PrizmAPIClientProtocol` entirely. All ~32 endpoint methods SHALL use `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`.
+
+`AuthRepositoryImpl` currently calls `apiClient.setBaseURL(...)` in four places — all four SHALL be updated to `apiClient.setServerEnvironment(...)`:
+- `setServerEnvironment(_:)` — line 83
+- `storedAccount()` restoration — line 325
+- `loginWithPassword` completion — line 540
+- `unlockWithBiometrics` completion — line 606
 
 #### Scenario: cloudUS routes api requests correctly
 - **GIVEN** the active account has `serverType == .cloudUS`
@@ -102,6 +129,11 @@ Cloud cases SHALL ignore `overrides`. `selfHosted` behaviour is unchanged. Exist
 - **GIVEN** the active account has `serverType == .selfHosted` and `base = https://vault.example.com`
 - **WHEN** `PrizmAPIClient` makes a request to an `api/...` endpoint
 - **THEN** the request SHALL be sent to `https://vault.example.com/api/...`
+
+#### Scenario: refreshAccessToken routes via identityURL
+- **GIVEN** the active account has `serverType == .cloudEU`
+- **WHEN** `PrizmAPIClient.refreshAccessToken()` is called
+- **THEN** the request SHALL be sent to `https://identity.bitwarden.eu/identity/connect/token`
 
 ---
 
@@ -151,7 +183,9 @@ All three server options use email + master password login. When a cloud account
 - **GIVEN** the user attempts password login with a cloud option selected
 - **AND** the server returns an hCaptcha challenge response
 - **THEN** a `WKWebView` modal SHALL be presented
-- **AND** the token request SHALL be retried automatically on challenge completion
+- **AND** when hCaptcha completes, its JS SHALL call `window.webkit.messageHandlers.hcaptcha.postMessage(token)`
+- **AND** the native `WKScriptMessageHandler` SHALL receive the token, dismiss the modal, and retry `identityToken` with the token included
+- **AND** the token SHALL be held in memory only for the duration of the retry and NOT persisted
 
 #### Scenario: Self-hosted login has no hCaptcha handling
 - **GIVEN** the active account has `serverType == .selfHosted`
@@ -163,7 +197,7 @@ All three server options use email + master password login. When a cloud account
 
 All new interactive controls introduced by this change MUST be fully usable via VoiceOver (§VIII).
 
-- The server picker SHALL have an `accessibilityLabel` ("Server") and expose its current value via `accessibilityValue` (e.g. "Bitwarden Cloud (US)")
+- The server picker SHALL have `accessibilityIdentifier` set to `AccessibilityID.Login.serverTypePicker`, `accessibilityLabel` set to "Server", and expose its current value via `accessibilityValue` (e.g. "Bitwarden Cloud (US)")
 - The server URL text field SHALL retain its existing `accessibilityIdentifier` and have a meaningful `accessibilityLabel` ("Server URL")
 - The hCaptcha `WKWebView` modal SHALL have an accessible dismiss path (a labelled close button); VoiceOver focus SHALL move into the modal on presentation and return to the login form on dismissal
 - Error messages (unreachable server, invalid credentials, missing client identifier) SHALL be announced via `AccessibilityNotification.Announcement` as soon as they appear
@@ -199,15 +233,19 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `ServerEnvironment` with `serverType == .cloudEU` returns correct EU canonical URLs, and `iconsURL == https://icons.bitwarden.net`
 - `ServerEnvironment` with `serverType == .selfHosted` returns `base`-derived URLs unchanged
 - Decoding a legacy JSON record (no `serverType` key) yields `serverType == .selfHosted`
+- Round-trip encode/decode for each `ServerType` case preserves the exact raw string value (`"cloudUS"`, `"cloudEU"`, `"selfHosted"`)
 
 **Unit tests (Data):**
-- `PrizmAPIClient.setServerEnvironment()` stores the environment and subsequent requests use `env.apiURL` / `env.identityURL` as appropriate (representative call sites: `preLogin`, `identityToken`, `fetchSync`)
+- `PrizmAPIClient.setServerEnvironment()` stores the environment and subsequent requests use `env.apiURL` / `env.identityURL` as appropriate (representative call sites: `preLogin`, `identityToken`, `refreshAccessToken`, `fetchSync`)
 - `AuthRepositoryImpl.setServerEnvironment(_:)` calls `apiClient.setServerEnvironment(_:)` (not `setBaseURL`)
 - Cloud login attempt with empty client identifier throws before making a network request
 
 **Unit tests (Presentation):**
 - `LoginViewModel` server type selection is persisted and restored across instantiation
+- `LoginViewModel` initialised with `UserDefaults` containing `com.prizm.login.lastServerType = "cloudEU"` defaults `serverType` to `.cloudEU`
 - Selecting a cloud type clears `serverURL`; selecting self-hosted restores the last entered URL
+- `isSignInDisabled` returns `false` for cloud when email and password are non-empty, even when `serverURL` is empty
+- `isSignInDisabled` returns `true` for self-hosted when `serverURL` is empty, even when email and password are filled
 
 **Integration tests:**
 - Full login flow against a Vaultwarden stub (existing coverage) continues to pass after the `PrizmAPIClient` refactor
