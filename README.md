@@ -102,6 +102,7 @@ All cryptography runs locally on your device:
 
 - **Argon2id key derivation** (RFC 9106, memory-hard) — makes offline brute-force attacks computationally infeasible
 - **AES-256-CBC + HMAC-SHA256** authenticated encryption — all vault data stays encrypted in memory and in transit
+- **RSA-OAEP-SHA1 organisation key unwrapping** (Security.framework) — organisation symmetric keys are RSA-wrapped per member; Prizm unwraps them at sync time using your account's private key, following the Bitwarden protocol
 - **macOS Keychain** storage (device-only, `WhenUnlockedThisDeviceOnly`) — session keys never touch iCloud
 
 The app is open source. Verify these claims by reading the code. See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specifications, and what the app does not protect against. See [ACCESSIBILITY.md](ACCESSIBILITY.md) for the WCAG 2.1 conformance statement.
