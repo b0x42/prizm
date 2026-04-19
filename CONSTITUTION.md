@@ -1,14 +1,14 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.4.3 → 1.5.0
-Bump type: MINOR — New principle added (§VIII Accessibility).
-Modified sections: N/A
-Added sections:
-  - §VIII. Accessibility (NON-NEGOTIABLE): All interactive controls must be VoiceOver-
-    usable with accessibilityLabel. Decorative images hidden. Stateful controls expose
-    value. Section headers carry .isHeader trait. Transient errors announced. Project
-    must maintain ACCESSIBILITY.md conformance statement. PRs without labels are blocking.
+Version change: 1.5.0 → 1.6.0
+Bump type: MINOR — Bitwarden API Integration Requirements expanded to v2 (cloud support).
+Modified sections:
+  - Bitwarden API Integration Requirements: removed v1 self-hosted-only restriction;
+    added v2 cloud support requirements including registered client identifier
+    injection, EU region endpoints, ATS/HTTPS enforcement for all cloud domains,
+    and explicit prohibition on silently falling back between regions.
+Added sections: N/A
 Removed sections: N/A
 Templates requiring updates: N/A
 Follow-up TODOs: N/A
@@ -206,19 +206,28 @@ Reference: https://contributing.bitwarden.com/architecture/security/requirements
 
 ### Bitwarden API Integration Requirements
 
-**v1 scope: self-hosted servers only** (Vaultwarden or Bitwarden self-hosted).
-Client identifier registration with Bitwarden, Inc. is not required and does not apply.
+**v2 scope: Bitwarden Cloud (US + EU) and self-hosted** (Vaultwarden or Bitwarden self-hosted).
 
-- **Server URL**: Users supply their own server base URL; no hardcoded `bitwarden.com`
-  endpoint is permitted in v1. The app MUST NOT silently fall back to bitwarden.com.
+- **Server selection**: Users MUST explicitly select their server environment (Cloud US,
+  Cloud EU, or Self-hosted) at login. The app MUST NOT auto-detect or silently fall back
+  between environments. Switching regions requires a new login.
+- **Hardcoded cloud endpoints**: The following canonical Bitwarden Cloud endpoints are
+  approved for use and MUST NOT be changed without a Constitution amendment:
+  - US: `api.bitwarden.com`, `identity.bitwarden.com`, `icons.bitwarden.net`
+  - EU: `api.bitwarden.eu`, `identity.bitwarden.eu`, `icons.bitwarden.net`
+- **Self-hosted**: Users supply their own server base URL. The app MUST NOT silently
+  route self-hosted requests to Bitwarden Cloud endpoints.
+- **Registered client identifier**: A client identifier registered with Bitwarden, Inc.
+  MUST be used for all requests to Bitwarden Cloud endpoints (`cloudUS`, `cloudEU`).
+  It MUST be injected at build time via a gitignored `.xcconfig` file and MUST NOT
+  appear in source control. See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 - **Required headers**: All API requests MUST include the minimum required headers
-  (e.g. `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, `Device-Type`).
-  Self-hosted servers are generally permissive, but correct headers ensure compatibility.
+  (`Bitwarden-Client-Name`, `Bitwarden-Client-Version`, `Device-Type`).
 - **Client version string**: SHOULD reflect the Bitwarden server API version the client
   has been tested against; document the tested version in `Config.swift`.
-- **Future — bitwarden.com support**: If v2 adds support for bitwarden.com (the hosted
-  service), a registered client identifier MUST be obtained before that release.
-  See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
+- **ATS / HTTPS**: All cloud and self-hosted endpoints MUST use HTTPS. `NSAllowsArbitraryLoads`
+  MUST remain disabled. Self-hosted URLs entered by users MUST be validated for HTTPS
+  scheme before any network request is attempted.
 
 ---
 
@@ -304,4 +313,4 @@ Standards governing how features are built and shipped:
 
 ---
 
-**Version**: 1.5.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-10
+**Version**: 1.6.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-19

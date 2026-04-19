@@ -83,6 +83,10 @@ If the cloud server returns an hCaptcha challenge, a `WKWebView` modal handles i
 
 **Alternative considered**: API key login (`client_credentials` grant) as a CAPTCHA bypass. Rejected — out of scope for this release; the hCaptcha `WKWebView` path covers the cloud login requirement without adding a second authentication mode.
 
+### Decision: `WKWebView` for hCaptcha (§I AppKit exception)
+
+SwiftUI has no native web view API on macOS. `WKWebView` (WebKit framework) is the only platform-provided mechanism for rendering an interactive web challenge inline. Per §I, AppKit/non-SwiftUI APIs are permitted when SwiftUI has no equivalent — this qualifies. The `WKWebView` is scoped strictly to the hCaptcha modal; no other web rendering is used in the app. This usage MUST be documented in the Complexity Tracking table when the implementation plan is written.
+
 ### Decision: Data layer multi-account-ready; UI single-account for this release
 
 `ServerEnvironment` is keyed by `userId` in Keychain. Adding a second account in a future release requires no data layer changes. This release manages one active account at a time. Multi-account UI is deferred.
