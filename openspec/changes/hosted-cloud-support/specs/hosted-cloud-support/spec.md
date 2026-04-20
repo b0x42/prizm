@@ -6,10 +6,9 @@ Defines support for Bitwarden Cloud (US and EU regions) alongside self-hosted Va
 
 Per §I and §VI, non-trivial architectural decisions and AppKit exceptions must be justified here.
 
-| Component | Type | Justification | Simpler alternative rejected |
-|---|---|---|---|
-| `WKWebView` hCaptcha modal | AppKit/WebKit exception (§I) | SwiftUI has no web rendering API on macOS; `WKWebView` is the only platform-provided mechanism for an interactive web challenge | Skipping hCaptcha entirely — rejected because Bitwarden Cloud conditionally requires it; affected users would get a silent auth failure |
-| `HCaptchaPresenter` protocol + DI | Added abstraction (§VI) | Required for XCUITest determinism; without injection the hCaptcha path cannot be exercised in CI without a live network | Single concrete `WKWebView` usage — rejected because it makes the modal untestable |
+No AppKit exceptions are required for this change. New device OTP verification uses a native SwiftUI text field — no web rendering is needed.
+
+> **Spike finding (2026-04-20)**: hCaptcha was removed from Bitwarden Cloud server and all clients in [PR #1861](https://github.com/bitwarden/ios/pull/1861) (merged 2025-08-20, PM-24667). The `WKWebView` modal originally planned for this change is no longer required. New device OTP verification (email OTP on first login from an unrecognized device) is the current mechanism.
 
 ## Baseline (what already exists)
 
@@ -162,15 +161,14 @@ All requests to cloud endpoints SHALL include the required Bitwarden client head
 
 ### Requirement: Error taxonomy
 
-The existing `AuthError` enum (`Domain/Repositories/AuthRepository.swift`) SHALL be extended with three new cases for this change. `LoginViewModel` pattern-matches all `AuthError` cases; no new error type is introduced.
+The existing `AuthError` enum (`Domain/Repositories/AuthRepository.swift`) SHALL be extended with two new cases for this change. `LoginViewModel` pattern-matches all `AuthError` cases; no new error type is introduced.
 
 | Case | Thrown by | `errorDescription` |
 |---|---|---|
 | `clientIdentifierNotConfigured` | `AuthRepositoryImpl` (before network request) | `"Prizm is not configured for Bitwarden Cloud. Contact support or use a self-hosted server."` |
-| `hCaptchaRequired(siteKey: String)` | `AuthRepositoryImpl` (on challenge response) | `nil` — handled structurally by `LoginViewModel`; not shown as a plain error string |
-| `hCaptchaCancelled` | `LoginViewModel` (on modal dismiss without token) | `"Unable to complete the security challenge. To log in without this requirement, use a self-hosted Vaultwarden server."` |
+| `newDeviceVerificationRequired` | `AuthRepositoryImpl` (on `device_error` 400 response) | `nil` — handled structurally by `LoginViewModel`; triggers the OTP entry UI, not a plain error string |
 
-`hCaptchaRequired` carries the site key extracted from the server's challenge response so `LoginViewModel` can pass it to `WKWebViewHCaptchaPresenter` when constructing the challenge URL.
+`newDeviceVerificationRequired` is thrown when the server returns `HTTP 400` with `{"error": "device_error"}`. `LoginViewModel` catches it and transitions to the new device OTP entry state rather than displaying an error string.
 
 `serverUnreachable`, `invalidCredentials`, `networkUnavailable`, and `invalidURL` already exist in `AuthError` and cover the remaining error scenarios defined in this spec without modification.
 
@@ -214,39 +212,41 @@ The `client_id` is an app-level credential, not a per-user credential. No additi
 
 ---
 
-### Requirement: Cloud login supports email/password with hCaptcha handling
+### Requirement: Cloud login supports email/password with new device OTP verification
 
-All three server options use email + master password login. When a cloud account (`cloudUS` or `cloudEU`) triggers an hCaptcha challenge, the system SHALL present a `WKWebView` modal for the user to complete the challenge before the token request is retried. hCaptcha is not required on every login; the server decides when to require it.
+All three server options use email + master password login.
 
-> **Research spike required — resolve before writing tasks:**
->
-> The following must be determined by consulting the [Bitwarden iOS client](https://github.com/bitwarden/ios) (study-only reference per Constitution External Dependencies) before implementation begins. Findings SHALL replace this block with concrete values.
->
-> 1. **Trigger signal**: What HTTP status and response body field indicate an hCaptcha challenge is required? (Expected: `400` with a JSON error body containing a `HCaptcha_SiteKey` or similar field — verify against iOS source.)
-> 2. **Challenge URL**: What URL does the `WKWebView` load? (Expected: a Bitwarden-hosted page such as `https://vault.bitwarden.com/captcha-mobile-connector.html` that embeds the hCaptcha widget — verify; EU region may differ.)
-> 3. **Site key**: Is the hCaptcha site key static per region (hardcode in `ServerType`) or returned dynamically in the challenge response? (If dynamic, it must be extracted from the error body and passed to the challenge URL as a query parameter.)
-> 4. **JS message name**: Confirm the `WKScriptMessageHandler` message name is `"hcaptcha"` — verify against iOS source.
-> 5. **Token field name**: What form parameter name carries the hCaptcha token in the retried `identityToken` request? (Expected: `captchaResponse` or similar — verify.)
->
-> **Do not begin implementation of the hCaptcha path until all five points are confirmed and this block is replaced with findings.**
+When Bitwarden Cloud does not recognise the device, it returns `HTTP 400` with `{"error": "device_error", "error_description": "New device verification required"}` and sends a one-time code to the user's registered email address. The system SHALL handle this by presenting an OTP entry field inline in `LoginView` and retrying the identity token request with the `newdeviceotp` parameter.
 
-#### Scenario: hCaptcha modal shown for cloud password login
+> **Spike findings (2026-04-20)**: hCaptcha was removed from Bitwarden Cloud in [bitwarden/ios#1861](https://github.com/bitwarden/ios/pull/1861) (merged 2025-08-20). The `WKWebView` modal originally planned is not needed. The current mechanism is:
+> - **Trigger**: `HTTP 400`, `{"error": "device_error"}`
+> - **Bitwarden sends**: OTP to the user's registered email
+> - **Retry field**: `newdeviceotp=<code>` added to the `POST /connect/token` form body
+> - **No web view required** — standard SwiftUI text field
+
+New device verification is not required on every login; Bitwarden decides when to require it based on device recognition. It does not apply to self-hosted Vaultwarden instances.
+
+#### Scenario: New device OTP field shown on device_error
 - **GIVEN** the user attempts password login with a cloud option selected
-- **AND** the server returns an hCaptcha challenge response
-- **THEN** a `WKWebView` modal SHALL be presented
-- **AND** when hCaptcha completes, its JS SHALL call `window.webkit.messageHandlers.hcaptcha.postMessage(token)`
-- **AND** the native `WKScriptMessageHandler` SHALL receive the token, dismiss the modal, and retry `identityToken` with the token included
-- **AND** the token SHALL be held in memory only for the duration of the retry, NOT persisted, and zeroed from memory immediately after the retry completes or fails
+- **AND** the server returns `HTTP 400` with `{"error": "device_error"}`
+- **THEN** an OTP entry field SHALL appear in `LoginView` with the label "Check your email for a verification code"
+- **AND** the Sign In button SHALL remain disabled until the OTP field is non-empty
 
-#### Scenario: hCaptcha challenge dismissal treated as failed login
-- **GIVEN** the hCaptcha modal is presented
-- **WHEN** the user dismisses the modal without completing the challenge
-- **THEN** the login attempt SHALL be treated as a failed login
-- **AND** an appropriate error message SHALL be displayed to the user
+#### Scenario: OTP submitted and login retried
+- **GIVEN** the new device OTP field is visible and the user has entered a code
+- **WHEN** the user taps Sign In
+- **THEN** `PrizmAPIClient` SHALL retry `POST /connect/token` with the `newdeviceotp` form parameter set to the entered code
+- **AND** on success the OTP SHALL be zeroed from memory immediately
 
-#### Scenario: Self-hosted login has no hCaptcha handling
+#### Scenario: Invalid OTP shows error
+- **GIVEN** the user submits an incorrect OTP
+- **WHEN** the server returns `HTTP 400` with `{"error": "invalid_grant"}`
+- **THEN** an error message SHALL indicate the code is invalid or expired
+- **AND** the OTP field SHALL remain visible for re-entry
+
+#### Scenario: Self-hosted login has no new device OTP handling
 - **GIVEN** the active account has `serverType == .selfHosted`
-- **THEN** no hCaptcha modal path exists in the login flow
+- **THEN** no OTP entry field is shown; `device_error` responses SHALL surface as a generic auth error
 
 ---
 
@@ -256,26 +256,20 @@ All new interactive controls introduced by this change MUST be fully usable via 
 
 - The server picker SHALL have `accessibilityIdentifier` set to `AccessibilityID.Login.serverTypePicker`, `accessibilityLabel` set to "Server", and expose its current value via `accessibilityValue` (e.g. "Bitwarden Cloud (US)")
 - The server URL text field SHALL retain its existing `accessibilityIdentifier` and have a meaningful `accessibilityLabel` ("Server URL")
-- The hCaptcha `WKWebView` modal SHALL have `accessibilityLabel` set to "Complete security challenge"; VoiceOver focus SHALL move into the modal on presentation and return to the login form on dismissal
-- The modal SHALL always expose a keyboard-accessible "Cancel" button reachable without completing the web challenge
-- Error messages (unreachable server, invalid credentials, missing client identifier) SHALL be announced via `AccessibilityNotification.Announcement` as soon as they appear
-
-> **Known limitation**: `WKWebView` renders a third-party hCaptcha widget; Prizm cannot guarantee the widget itself meets WCAG 2.1 AA. If a user cannot complete the challenge via assistive technology, the Cancel path (see scenario below) provides an exit. This limitation MUST be documented in `ACCESSIBILITY.md` with a note that self-hosted Vaultwarden is available as an alternative that does not require hCaptcha.
+- The new device OTP text field SHALL have `accessibilityIdentifier` set to `AccessibilityID.Login.newDeviceOtpField` and `accessibilityLabel` set to "Verification code"
+- Error messages (unreachable server, invalid credentials, missing client identifier, invalid OTP) SHALL be announced via `AccessibilityNotification.Announcement` as soon as they appear
 
 #### Scenario: Picker exposes current selection to VoiceOver
 - **WHEN** the server picker has "Bitwarden Cloud (EU)" selected
 - **THEN** VoiceOver SHALL announce the control as "Server, Bitwarden Cloud (EU)"
 
+#### Scenario: OTP field announced when it appears
+- **WHEN** the new device OTP field appears after a `device_error` response
+- **THEN** an `AccessibilityNotification.Announcement` SHALL be posted with "Check your email for a verification code"
+
 #### Scenario: Error announced to assistive technology
 - **WHEN** an error message appears in the login form
 - **THEN** an `AccessibilityNotification.Announcement` SHALL be posted with the error text
-
-#### Scenario: hCaptcha inaccessible path
-- **GIVEN** the hCaptcha modal is presented
-- **WHEN** the user cannot complete the challenge via assistive technology and activates the "Cancel" button
-- **THEN** the modal SHALL be dismissed
-- **AND** an error message SHALL read "Unable to complete the security challenge. To log in without this requirement, use a self-hosted Vaultwarden server."
-- **AND** the `AccessibilityNotification.Announcement` SHALL be posted with that error text
 
 ---
 
@@ -285,7 +279,7 @@ All new code paths MUST produce structured `os.Logger` output (§V). Secrets MUS
 
 - Server environment selection and restoration SHALL be logged at `.info` level, including the `serverType` value
 - Each identity token request SHALL log the target `identityURL` (not the password or hash) at `.info`
-- hCaptcha challenge receipt and completion SHALL be logged at `.info`
+- New device verification required and OTP retry SHALL be logged at `.info`
 - Client identifier misconfiguration SHALL be logged at `.error` before surfacing to the Presentation layer
 - URL validation failures (non-HTTPS, parse error) SHALL be logged at `.error`
 
@@ -307,6 +301,9 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `AuthRepositoryImpl.setServerEnvironment(_:)` calls `apiClient.setServerEnvironment(_:)` (not `setBaseURL`)
 - Cloud login attempt with empty client identifier throws before making a network request
 - `PrizmAPIClient` includes `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, and `Device-Type` headers on a cloud `identityToken` request
+- `AuthRepositoryImpl` throws `AuthError.newDeviceVerificationRequired` when the identity token response is `HTTP 400` with `{"error": "device_error"}`
+- OTP retry includes `newdeviceotp` form parameter and succeeds on a valid code
+- OTP is zeroed from memory after the retry completes or fails
 
 **Unit tests (Presentation):**
 - `LoginViewModel` server type selection is persisted and restored across instantiation
@@ -320,16 +317,15 @@ Per §IV, tests MUST be written before implementation. The following are require
 
 **UI tests (XCUITest):**
 
-`LoginViewModel` SHALL accept a `HCaptchaPresenter` protocol (injected via `AppContainer`) so XCUITest can substitute a stub that immediately fires the JS token message without loading a real `WKWebView`. Production uses `WKWebViewHCaptchaPresenter`; tests use `StubHCaptchaPresenter`.
-
 - Three-way picker is visible on `LoginView`; all three options ("Bitwarden Cloud (US)", "Bitwarden Cloud (EU)", "Self-hosted") are selectable
 - Selecting "Bitwarden Cloud (US)" or "Bitwarden Cloud (EU)" hides the server URL field
 - Selecting "Self-hosted" shows the server URL field
 - Sign In button is enabled for a cloud option when email and password are non-empty and `serverURL` is empty
 - Sign In button is disabled for "Self-hosted" when `serverURL` is empty even if email and password are filled
-- Successful cloud login end-to-end against a local Bitwarden-compatible stub (using `StubHCaptchaPresenter` to bypass real web challenge)
-- hCaptcha modal presented for cloud login: `StubHCaptchaPresenter` fires the token → login proceeds
-- hCaptcha modal dismissed without token: login error message is shown
+- Successful cloud login end-to-end against a local stub (no OTP required path)
+- `device_error` response causes OTP field to appear with label "Check your email for a verification code"
+- Valid OTP entered → login succeeds; OTP field disappears
+- Invalid OTP → error message shown; OTP field remains for re-entry
 
 ---
 
@@ -372,7 +368,7 @@ Per Constitution Bitwarden API Integration Requirements, `Config.swift` SHALL ga
 
 `SECURITY.md` SHALL be updated to reflect the expanded network attack surface introduced by this change:
 - Document the two cloud regions and their canonical endpoints
-- Note that hCaptcha is handled via an embedded `WKWebView` loading a Bitwarden-hosted page; the token is held in memory only for the duration of the login retry and never persisted
+- Note that new device OTP verification is handled via a plain text field; the OTP is held in memory only for the duration of the retry and zeroed immediately after
 - Note that the registered client identifier is injected at build time and never stored at runtime beyond the request
 
 ---
@@ -381,8 +377,7 @@ Per Constitution Bitwarden API Integration Requirements, `Config.swift` SHALL ga
 
 `ACCESSIBILITY.md` SHALL be updated to document:
 - The new server picker control and its VoiceOver behaviour
-- The hCaptcha `WKWebView` modal and its known limitation (third-party widget; WCAG 2.1 AA compliance of the widget itself cannot be guaranteed by Prizm)
-- The self-hosted alternative available to users who cannot complete the hCaptcha challenge
+- The new device OTP verification field and its `accessibilityLabel` / announcement behaviour
 
 ---
 
