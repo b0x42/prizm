@@ -264,12 +264,23 @@ func resendNewDeviceOTP() async throws
 func cancelNewDeviceOTP()
 ```
 
-`AuthRepository` SHALL gain a matching method:
+`AuthRepository` SHALL gain three matching methods:
 ```swift
+/// Retries the identity token request with the supplied OTP. Zeros cached credentials after attempt.
 func loginWithNewDeviceOTP(_ otp: String) async throws -> Account
+
+/// Retries the original identity token request without an OTP, triggering the server to
+/// dispatch a new verification code. Does NOT return an Account — the user remains in
+/// the awaitingOTP state after this call.
+func requestNewDeviceOTP() async throws
+
+/// Zeros any cached credentials held from the pending new-device OTP challenge.
+func cancelNewDeviceOTP()
 ```
 
-`AuthRepositoryImpl` holds the pending environment, email, and hashed password in memory after throwing `newDeviceVerificationRequired`. `loginWithNewDeviceOTP` retries `PrizmAPIClient.identityToken` with the `newdeviceotp` form parameter added, then zeros the cached credentials immediately after the attempt (success or failure). `cancelNewDeviceOTP` zeros the cached credentials without retrying.
+`AuthRepositoryImpl` holds the pending environment, email, and hashed password in memory after throwing `newDeviceVerificationRequired`. `loginWithNewDeviceOTP` retries `PrizmAPIClient.identityToken` with the `newdeviceotp` form parameter added, then zeros cached credentials immediately after (success or failure). `requestNewDeviceOTP` re-posts the original identity token request without `newdeviceotp` — the server recognises the unverified device and sends a fresh code; no credentials are zeroed since the challenge is still pending. `cancelNewDeviceOTP` zeros cached credentials without making a network request.
+
+`LoginUseCase.resendNewDeviceOTP()` calls `auth.requestNewDeviceOTP()` — not `loginWithNewDeviceOTP`.
 
 `LoginViewModel` catches `AuthError.newDeviceVerificationRequired`, transitions to `awaitingOTP` state, and on Sign In calls `loginUseCase.completeNewDeviceOTP(otp:)`.
 
@@ -330,7 +341,7 @@ During `awaitingOTP`, email and master password fields SHALL be visible but disa
 #### Scenario: Cancel clears OTP state
 - **GIVEN** `loginState == .awaitingOTP`
 - **WHEN** the user taps Cancel
-- **THEN** `loginState` SHALL transition to `idle`
+- **THEN** `LoginViewModel` SHALL call `loginUseCase.cancelNewDeviceOTP()` before transitioning `loginState` to `idle`
 - **AND** the OTP field SHALL be hidden and its value cleared
 
 ---
@@ -455,7 +466,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `loginState` transitions to `.idle` when Cancel is tapped from `.awaitingOTP`
 - `loginState` remains `.awaitingOTP` after an invalid OTP error; error message is set
 - `loginUseCase.resendNewDeviceOTP()` is called when "Resend code" is tapped; OTP field is cleared and confirmation is announced
-- `LoginUseCaseImpl.resendNewDeviceOTP()` calls `auth.loginWithNewDeviceOTP` without an OTP value to re-trigger server dispatch
+- `LoginUseCaseImpl.resendNewDeviceOTP()` calls `auth.requestNewDeviceOTP()` to re-trigger server dispatch
 
 **Integration tests:**
 - Full login flow against a Vaultwarden stub (existing coverage) continues to pass after the `PrizmAPIClient` refactor
