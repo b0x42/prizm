@@ -112,6 +112,37 @@ The computed properties (`apiURL`, `identityURL`, `iconsURL`) SHALL switch on `s
 
 ---
 
+### Requirement: `LoginUseCase.execute` accepts `ServerEnvironment`
+
+`LoginUseCase.execute` SHALL change its signature from `execute(serverURL: String, email: String, masterPassword: Data)` to `execute(environment: ServerEnvironment, email: String, masterPassword: Data)`. `LoginViewModel` is responsible for constructing the correct `ServerEnvironment` before calling the use case:
+
+```swift
+// Cloud
+let environment = ServerEnvironment.cloudUS()   // or .cloudEU()
+
+// Self-hosted
+let environment = ServerEnvironment(base: url, overrides: nil)
+```
+
+`LoginUseCaseImpl` SHALL call `auth.validateServerURL` **only** when `environment.serverType == .selfHosted`. Cloud environments SHALL skip URL validation entirely — they use hardcoded canonical URLs with no user-supplied string to validate.
+
+The internal URL construction (`URL(string: trimmed)`) in `LoginUseCaseImpl` is removed; the environment is passed directly to `auth.setServerEnvironment(environment)`.
+
+`LoginViewModel` retains responsibility for URL string validation feedback (empty field, non-HTTPS warning) before constructing the `ServerEnvironment` — this is UI-layer input validation, distinct from the use-case-layer server reachability check.
+
+#### Scenario: Cloud login skips URL validation
+- **GIVEN** `LoginViewModel` constructs `ServerEnvironment.cloudUS()`
+- **WHEN** `LoginUseCase.execute(environment:email:masterPassword:)` is called
+- **THEN** `auth.validateServerURL` SHALL NOT be called
+- **AND** `auth.setServerEnvironment` SHALL be called with the cloud environment directly
+
+#### Scenario: Self-hosted login still validates URL
+- **GIVEN** `LoginViewModel` constructs a `selfHosted` `ServerEnvironment`
+- **WHEN** `LoginUseCase.execute(environment:email:masterPassword:)` is called
+- **THEN** `auth.validateServerURL` SHALL be called before `auth.setServerEnvironment`
+
+---
+
 ### Requirement: `PrizmAPIClient` routes requests via `ServerEnvironment`
 
 `PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. `setBaseURL` SHALL be removed from `PrizmAPIClientProtocol` entirely. All ~32 endpoint methods SHALL use `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`.
@@ -168,7 +199,9 @@ The existing `AuthError` enum (`Domain/Repositories/AuthRepository.swift`) SHALL
 | `clientIdentifierNotConfigured` | `AuthRepositoryImpl` (before network request) | `"Prizm is not configured for Bitwarden Cloud. Contact support or use a self-hosted server."` |
 | `newDeviceVerificationRequired` | `AuthRepositoryImpl` (on `device_error` 400 response) | `nil` — handled structurally by `LoginViewModel`; triggers the OTP entry UI, not a plain error string |
 
-`newDeviceVerificationRequired` is thrown when the server returns `HTTP 400` with `{"error": "device_error"}`. `LoginViewModel` catches it and transitions to the new device OTP entry state rather than displaying an error string.
+`newDeviceVerificationRequired` is thrown when the server returns `HTTP 400` with `{"error": "device_error"}`. `LoginViewModel` catches it and transitions to `awaitingOTP` state rather than displaying an error string.
+
+**Layer boundary**: `PrizmAPIClient.identityToken` throws a Data-layer error (e.g. `IdentityTokenError.newDeviceNotVerified`) when it receives a `device_error` response. `AuthRepositoryImpl` catches that Data-layer error and translates it to `AuthError.newDeviceVerificationRequired` before rethrowing — preserving the clean architecture boundary. The Domain layer and above never import or reference `IdentityTokenError` directly.
 
 `serverUnreachable`, `invalidCredentials`, `networkUnavailable`, and `invalidURL` already exist in `AuthError` and cover the remaining error scenarios defined in this spec without modification.
 
@@ -212,6 +245,96 @@ The `client_id` is an app-level credential, not a per-user credential. No additi
 
 ---
 
+### Requirement: `LoginUseCase` OTP retry flow
+
+`LoginUseCase` SHALL gain two new methods mirroring the existing 2FA pattern (`completeTOTP` / `cancelTOTP`):
+
+```swift
+/// Retries the identity token request with the new-device OTP the user received by email.
+/// Only valid to call after `execute` throws `AuthError.newDeviceVerificationRequired`.
+/// On success, triggers vault sync and returns the logged-in `Account`.
+func completeNewDeviceOTP(otp: String) async throws -> Account
+
+/// Re-triggers the original identity token request without an OTP, causing the server to
+/// dispatch a new verification code to the user's email. The OTP field should be cleared
+/// after calling this. Only valid when in the `awaitingOTP` state.
+func resendNewDeviceOTP() async throws
+
+/// Cancels a pending new-device OTP challenge and clears any cached credentials.
+func cancelNewDeviceOTP()
+```
+
+`AuthRepository` SHALL gain a matching method:
+```swift
+func loginWithNewDeviceOTP(_ otp: String) async throws -> Account
+```
+
+`AuthRepositoryImpl` holds the pending environment, email, and hashed password in memory after throwing `newDeviceVerificationRequired`. `loginWithNewDeviceOTP` retries `PrizmAPIClient.identityToken` with the `newdeviceotp` form parameter added, then zeros the cached credentials immediately after the attempt (success or failure). `cancelNewDeviceOTP` zeros the cached credentials without retrying.
+
+`LoginViewModel` catches `AuthError.newDeviceVerificationRequired`, transitions to `awaitingOTP` state, and on Sign In calls `loginUseCase.completeNewDeviceOTP(otp:)`.
+
+The `execute` method signature changes are covered by the `LoginUseCase.execute` requirement above. `LoginUseCase.protocol` doc comment SHALL be updated to reflect the new flow: `execute → (optional) completeNewDeviceOTP → sync` or `execute → (optional) completeTOTP → sync`.
+
+#### Scenario: `completeNewDeviceOTP` retries with OTP
+- **GIVEN** `execute` has thrown `AuthError.newDeviceVerificationRequired`
+- **WHEN** `completeNewDeviceOTP(otp:)` is called with a valid code
+- **THEN** `PrizmAPIClient.identityToken` SHALL be called with `newdeviceotp` set to the code
+- **AND** on success, cached credentials SHALL be zeroed and vault sync SHALL run
+- **AND** the `Account` SHALL be returned
+
+#### Scenario: `cancelNewDeviceOTP` clears cached credentials
+- **GIVEN** `execute` has thrown `AuthError.newDeviceVerificationRequired`
+- **WHEN** `cancelNewDeviceOTP()` is called
+- **THEN** cached credentials (environment, email, hashed password) SHALL be zeroed
+- **AND** no network request SHALL be made
+
+---
+
+### Requirement: `LoginViewModel` state machine
+
+`LoginViewModel` SHALL expose a `loginState: LoginState` published property. `LoginView` derives all conditional UI (OTP field visibility, field editability, button label) from this property.
+
+```swift
+enum LoginState: Equatable {
+    case idle           // initial state; all fields editable
+    case awaitingOTP    // device_error received; OTP field shown, email/password disabled
+    case loading        // network request in flight; all fields disabled
+}
+```
+
+**Valid transitions:**
+
+| From | Event | To |
+|---|---|---|
+| `idle` | Sign In tapped | `loading` |
+| `loading` | Auth success | (navigate away — no state change needed) |
+| `loading` | Auth failure (not device_error) | `idle` (error shown) |
+| `loading` | `newDeviceVerificationRequired` | `awaitingOTP` |
+| `awaitingOTP` | Sign In tapped (OTP submit) | `loading` |
+| `awaitingOTP` | Invalid OTP (`invalid_grant`) | `awaitingOTP` (error shown, field remains) |
+| `awaitingOTP` | Resend tapped | `loading` → `awaitingOTP` (OTP field cleared, confirmation announced) |
+| `awaitingOTP` | Cancel tapped | `idle` (OTP field hidden, fields re-enabled) |
+
+During `awaitingOTP`, email and master password fields SHALL be visible but disabled (`.disabled(true)`) so the user sees which account they are verifying. During `loading`, all interactive controls SHALL be disabled.
+
+#### Scenario: Fields disabled during loading
+- **GIVEN** `loginState == .loading`
+- **THEN** the email field, password field, server picker, and Sign In button SHALL all be non-interactive
+
+#### Scenario: OTP field visible and email/password disabled during awaitingOTP
+- **GIVEN** `loginState == .awaitingOTP`
+- **THEN** the OTP field SHALL be visible and editable
+- **AND** the email and password fields SHALL be visible but disabled
+- **AND** a "Cancel" button SHALL be visible that transitions to `idle`
+
+#### Scenario: Cancel clears OTP state
+- **GIVEN** `loginState == .awaitingOTP`
+- **WHEN** the user taps Cancel
+- **THEN** `loginState` SHALL transition to `idle`
+- **AND** the OTP field SHALL be hidden and its value cleared
+
+---
+
 ### Requirement: Cloud login supports email/password with new device OTP verification
 
 All three server options use email + master password login.
@@ -243,6 +366,16 @@ New device verification is not required on every login; Bitwarden decides when t
 - **WHEN** the server returns `HTTP 400` with `{"error": "invalid_grant"}`
 - **THEN** an error message SHALL indicate the code is invalid or expired
 - **AND** the OTP field SHALL remain visible for re-entry
+
+#### Scenario: Resend code clears OTP field and sends fresh code
+- **GIVEN** `loginState == .awaitingOTP`
+- **WHEN** the user taps "Resend code"
+- **THEN** `loginUseCase.resendNewDeviceOTP()` SHALL be called
+- **AND** the OTP field SHALL be cleared
+- **AND** `loginState` SHALL transition to `loading` during the request and back to `awaitingOTP` on completion
+- **AND** an `AccessibilityNotification.Announcement` SHALL be posted with "A new code has been sent to your email"
+
+`LoginUseCase` SHALL gain a `resendNewDeviceOTP() async throws` method. `AuthRepositoryImpl` implements it by retrying the original identity token request without `newdeviceotp`, causing the server to recognise the unverified device and dispatch a new code.
 
 #### Scenario: Self-hosted login has no new device OTP handling
 - **GIVEN** the active account has `serverType == .selfHosted`
@@ -280,6 +413,7 @@ All new code paths MUST produce structured `os.Logger` output (§V). Secrets MUS
 - Server environment selection and restoration SHALL be logged at `.info` level, including the `serverType` value
 - Each identity token request SHALL log the target `identityURL` (not the password or hash) at `.info`
 - New device verification required and OTP retry SHALL be logged at `.info`
+- Invalid or expired OTP (`invalid_grant` on retry) SHALL be logged at `.error`
 - Client identifier misconfiguration SHALL be logged at `.error` before surfacing to the Presentation layer
 - URL validation failures (non-HTTPS, parse error) SHALL be logged at `.error`
 
@@ -299,11 +433,15 @@ Per §IV, tests MUST be written before implementation. The following are require
 **Unit tests (Data):**
 - `PrizmAPIClient.setServerEnvironment()` stores the environment and subsequent requests use `env.apiURL` / `env.identityURL` as appropriate (representative call sites: `preLogin`, `identityToken`, `refreshAccessToken`, `fetchSync`)
 - `AuthRepositoryImpl.setServerEnvironment(_:)` calls `apiClient.setServerEnvironment(_:)` (not `setBaseURL`)
+- `LoginUseCaseImpl` does NOT call `auth.validateServerURL` when `environment.serverType == .cloudUS` or `.cloudEU`
+- `LoginUseCaseImpl` DOES call `auth.validateServerURL` when `environment.serverType == .selfHosted`
 - Cloud login attempt with empty client identifier throws before making a network request
 - `PrizmAPIClient` includes `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, and `Device-Type` headers on a cloud `identityToken` request
 - `AuthRepositoryImpl` throws `AuthError.newDeviceVerificationRequired` when the identity token response is `HTTP 400` with `{"error": "device_error"}`
+- `LoginUseCaseImpl.completeNewDeviceOTP` calls `auth.loginWithNewDeviceOTP(_:)` and triggers sync on success
+- `LoginUseCaseImpl.cancelNewDeviceOTP` calls `auth.cancelNewDeviceOTP()` and makes no network request
 - OTP retry includes `newdeviceotp` form parameter and succeeds on a valid code
-- OTP is zeroed from memory after the retry completes or fails
+- Cached credentials (environment, email, hashed password) are zeroed after retry completes or fails, and after cancel
 
 **Unit tests (Presentation):**
 - `LoginViewModel` server type selection is persisted and restored across instantiation
@@ -311,6 +449,13 @@ Per §IV, tests MUST be written before implementation. The following are require
 - Selecting a cloud type clears `serverURL`; selecting self-hosted restores the last entered URL
 - `isSignInDisabled` returns `false` for cloud when email and password are non-empty, even when `serverURL` is empty
 - `isSignInDisabled` returns `true` for self-hosted when `serverURL` is empty, even when email and password are filled
+- `isSignInDisabled` returns `true` when `loginState == .awaitingOTP` and the OTP field is empty
+- `isSignInDisabled` returns `false` when `loginState == .awaitingOTP` and the OTP field is non-empty
+- `loginState` transitions to `.awaitingOTP` when `execute` throws `AuthError.newDeviceVerificationRequired`
+- `loginState` transitions to `.idle` when Cancel is tapped from `.awaitingOTP`
+- `loginState` remains `.awaitingOTP` after an invalid OTP error; error message is set
+- `loginUseCase.resendNewDeviceOTP()` is called when "Resend code" is tapped; OTP field is cleared and confirmation is announced
+- `LoginUseCaseImpl.resendNewDeviceOTP()` calls `auth.loginWithNewDeviceOTP` without an OTP value to re-trigger server dispatch
 
 **Integration tests:**
 - Full login flow against a Vaultwarden stub (existing coverage) continues to pass after the `PrizmAPIClient` refactor
@@ -351,7 +496,15 @@ Per §IV, tests MUST be written before implementation. The following are require
 
 ### Requirement: Document tested Bitwarden API version in `Config.swift`
 
-Per Constitution Bitwarden API Integration Requirements, `Config.swift` SHALL gain a `bitwardenApiVersion` constant recording the Bitwarden server API version this client has been tested against (e.g. `static let bitwardenApiVersion = "2025-01"`). The value SHALL be determined during the implementation spike and updated whenever the tested version changes.
+Per Constitution Bitwarden API Integration Requirements, `Config.swift` SHALL gain a `bitwardenApiVersion` constant recording the Bitwarden server API version this client has been tested against:
+
+```swift
+/// Bitwarden server API version Prizm was last tested against.
+/// Update when testing against a newer server release.
+static let bitwardenApiVersion = "2026.4.0"
+```
+
+Starting value: `2026.4.0` — the current Bitwarden server release as of the implementation spike (2026-04-20, confirmed from [bitwarden/ios v2026.4.0-bwpm](https://github.com/bitwarden/ios/releases/tag/v2026.4.0-bwpm)). Update if testing against a newer release before shipping.
 
 ---
 
