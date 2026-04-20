@@ -41,15 +41,26 @@ The following is already in the codebase and must be extended rather than create
 
 The login screen SHALL present a segmented picker (or equivalent) with three options:
 
-1. **Bitwarden Cloud (US)** — no URL entry; cloud service URLs auto-configured
+1. **Bitwarden Cloud (US)** — no URL entry; US service URLs auto-configured
 2. **Bitwarden Cloud (EU)** — no URL entry; EU service URLs auto-configured
 3. **Self-hosted** — shows the existing server URL field
 
 Showing US and EU as distinct top-level choices makes the region decision explicit and avoids any ambiguity about which data centre stores the user's vault. The static subtitle "Self-hosted vault" is replaced by the picker.
 
-**Alternative considered**: Single "Bitwarden Cloud" option with a secondary region dropdown. Rejected — hides a decision that has real data-residency implications; users should see it upfront.
+**API Endpoints**:
 
-**Alternative considered**: Auto-detect region from email domain. Rejected — not reliable; same email can be registered in either region.
+| US                     | EU                    |
+|:-----------------------|:----------------------|
+| api.bitwarden.com      | api.bitwarden.eu      |
+| events.bitwarden.com   | events.bitwarden.eu   |
+| identity.bitwarden.com | identity.bitwarden.eu |
+| scim.bitwarden.com     | scim.bitwarden.eu     |
+| sso.bitwarden.com      | sso.bitwarden.eu      |
+| push.bitwarden.com     | push.bitwarden.eu     |
+
+Note that `func.bitwarden.com` and `icons.bitwarden.net` are the same across clouds. Values taken from [Bitwarden's official documentation](https://bitwarden.com/help/bitwarden-addresses/#application-endpoints).
+
+**Alternative considered**: Single "Bitwarden Cloud" option with a secondary region dropdown. Rejected — hides a decision that has real data-residency implications; users should see it upfront.
 
 ### Decision: `ServerType` flat enum with three cases
 
@@ -105,6 +116,6 @@ The registered Bitwarden client identifier SHALL be set in a gitignored `LocalSe
 
 ## Risks / Trade-offs
 
-- **EU endpoint URLs must be verified against Bitwarden's official documentation** before release. The URLs in the `ServerType` table above are based on the known Bitwarden EU region setup; confirm `api.bitwarden.eu`, `identity.bitwarden.eu`, `icons.bitwarden.eu` are correct before shipping.
+- **hCaptcha trigger conditions**: The server conditionally requires hCaptcha. The exact HTTP status and response structure indicating a required hCaptcha challenge needs to be determined at implementation time.
 - **Client identifier must never appear in the repo**: injected via gitignored xcconfig. CI injects from a secret. Development builds without the key will fail cloud login at runtime with a clear error.
 - **Self-hosted URL validation**: `AuthRepositoryImpl.validateServerURL()` already enforces HTTPS-only and strips trailing slashes. No new logic needed.

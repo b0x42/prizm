@@ -30,5 +30,5 @@ This change adds first-class support for Bitwarden Cloud alongside self-hosted s
 
 - **Domain layer**: `ServerEnvironment` extended with `ServerType` enum; no breaking changes to existing self-hosted accounts
 - **Data layer**: `PrizmAPIClient` refactored to use per-service URLs; `AuthRepositoryImpl.setServerEnvironment` wired to new API client method; backwards-compatible Keychain migration for existing records
-- **Presentation layer**: `LoginView` updated with server type picker and API key login option for cloud; no changes to vault browser or sync UI
+- **Presentation layer**: `LoginView` updated with server type picker for cloud/self-hosted selection; no changes to vault browser or sync UI
 - **No changes to vault storage or sync mechanisms**
