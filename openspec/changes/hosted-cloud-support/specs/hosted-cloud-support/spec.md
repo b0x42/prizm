@@ -62,6 +62,8 @@ When a cloud option is selected, no URL entry is required or shown. When "Self-h
 | `cloudEU` | `https://api.bitwarden.eu` | `https://identity.bitwarden.eu` | `https://icons.bitwarden.net` |
 | `selfHosted` | `{base}/api` (or override) | `{base}/identity` (or override) | `{base}/icons` (or override) |
 
+> **Reference**: Endpoint URLs confirmed via [Bitwarden's official documentation](https://bitwarden.com/help/bitwarden-addresses/).
+
 Cloud cases SHALL ignore `overrides` and SHALL ignore `base` for URL routing. `selfHosted` behaviour is unchanged. Existing Keychain records without a `serverType` key SHALL decode as `selfHosted`.
 
 `ServerType` SHALL be a `String`-backed `RawRepresentable` enum with fixed raw values: `"cloudUS"`, `"cloudEU"`, `"selfHosted"`. These raw values are part of the Keychain storage contract and MUST NOT be renamed after any release that has written Keychain data.
@@ -177,7 +179,10 @@ The `client_id` is an app-level credential, not a per-user credential. No additi
 
 ### Requirement: Cloud login supports email/password with hCaptcha handling
 
-All three server options use email + master password login. When a cloud account (`cloudUS` or `cloudEU`) triggers an hCaptcha challenge, the system SHALL present a `WKWebView` modal for the user to complete the challenge before the token request is retried.
+All three server options use email + master password login. When a cloud account (`cloudUS` or `cloudEU`) triggers an hCaptcha challenge, the system SHALL present a `WKWebView` modal for the user to complete the challenge before the token request is retried. hCaptcha is not required on every login; the server decides when to require it.
+
+> **Implementation note**:
+> The exact mechanism by which the client distinguishes hCaptcha requirement from other auth failures (e.g., invalid credentials, 2FA required) is not clearly documented in public repositories and must be discovered at implementation time via testing against cloud endpoints or referencing internal documentation.
 
 #### Scenario: hCaptcha modal shown for cloud password login
 - **GIVEN** the user attempts password login with a cloud option selected
@@ -186,6 +191,12 @@ All three server options use email + master password login. When a cloud account
 - **AND** when hCaptcha completes, its JS SHALL call `window.webkit.messageHandlers.hcaptcha.postMessage(token)`
 - **AND** the native `WKScriptMessageHandler` SHALL receive the token, dismiss the modal, and retry `identityToken` with the token included
 - **AND** the token SHALL be held in memory only for the duration of the retry and NOT persisted
+
+#### Scenario: hCaptcha challenge dismissal treated as failed login
+- **GIVEN** the hCaptcha modal is presented
+- **WHEN** the user dismisses the modal without completing the challenge
+- **THEN** the login attempt SHALL be treated as a failed login
+- **AND** an appropriate error message SHALL be displayed to the user
 
 #### Scenario: Self-hosted login has no hCaptcha handling
 - **GIVEN** the active account has `serverType == .selfHosted`
