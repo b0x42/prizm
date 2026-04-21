@@ -147,6 +147,8 @@ The internal URL construction (`URL(string: trimmed)`) in `LoginUseCaseImpl` is 
 
 `PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. `setBaseURL` SHALL be removed from `PrizmAPIClientProtocol` entirely. All ~32 endpoint methods SHALL use `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`.
 
+`APIError.baseURLNotSet` SHALL be renamed to `APIError.serverEnvironmentNotSet`. The guard that throws it — protecting against requests made before the environment is configured — is retained unchanged. All catch sites and tests that reference `baseURLNotSet` SHALL be updated to `serverEnvironmentNotSet`.
+
 `AuthRepositoryImpl` currently calls `apiClient.setBaseURL(...)` in four places — all four SHALL be updated to `apiClient.setServerEnvironment(...)`:
 - `setServerEnvironment(_:)` — line 83
 - `storedAccount()` restoration — line 325
@@ -468,6 +470,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 
 **Unit tests (Data):**
 - `PrizmAPIClient.setServerEnvironment()` stores the environment and subsequent requests use `env.apiURL` / `env.identityURL` as appropriate (representative call sites: `preLogin`, `identityToken`, `refreshAccessToken`, `fetchSync`)
+- A request made before `setServerEnvironment` is called throws `APIError.serverEnvironmentNotSet`
 - `AuthRepositoryImpl.setServerEnvironment(_:)` calls `apiClient.setServerEnvironment(_:)` (not `setBaseURL`)
 - `LoginUseCaseImpl` does NOT call `auth.validateServerURL` when `environment.serverType == .cloudUS` or `.cloudEU`
 - `LoginUseCaseImpl` DOES call `auth.validateServerURL` when `environment.serverType == .selfHosted`
