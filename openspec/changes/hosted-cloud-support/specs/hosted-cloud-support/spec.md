@@ -219,6 +219,17 @@ enum LoginResult {
 
 **Layer boundary**: `PrizmAPIClient.identityToken` throws `IdentityTokenError.newDeviceNotVerified` when it receives a `device_error` response. `AuthRepositoryImpl` catches that Data-layer error and returns `LoginResult.requiresNewDeviceOTP` — preserving the clean architecture boundary. The Domain layer and above never import or reference `IdentityTokenError` directly.
 
+`IdentityTokenError` (`Data/Network/PrizmAPIClient.swift`) SHALL gain a new case:
+
+```swift
+/// The server does not recognise this device and has dispatched a one-time code
+/// to the user's registered email. Trigger: HTTP 400, `{"error": "device_error"}`.
+/// `error_description` is informational only and SHALL NOT be used as the trigger condition.
+case newDeviceNotVerified
+```
+
+Trigger condition: `HTTP 400` response whose JSON body contains `"error": "device_error"`. The `error_description` field ("New device verification required") is informational and MUST NOT be used as the discriminator — only `error` is stable across server versions.
+
 ---
 
 ### Requirement: Error taxonomy
