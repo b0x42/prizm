@@ -199,7 +199,7 @@ The existing `AuthError` enum (`Domain/Repositories/AuthRepository.swift`) SHALL
 | `clientIdentifierNotConfigured` | `AuthRepositoryImpl` (before network request) | `"Prizm is not configured for Bitwarden Cloud. Contact support or use a self-hosted server."` |
 | `newDeviceVerificationRequired` | `AuthRepositoryImpl` (on `device_error` 400 response) | `nil` — handled structurally by `LoginViewModel`; triggers the OTP entry UI, not a plain error string |
 
-`newDeviceVerificationRequired` is thrown when the server returns `HTTP 400` with `{"error": "device_error"}`. `LoginViewModel` catches it and transitions to `awaitingOTP` state rather than displaying an error string.
+`newDeviceVerificationRequired` is thrown when the server returns `HTTP 400` with `{"error": "device_error"}`. `LoginViewModel` catches it and transitions to `flowState = .otpPrompt` rather than displaying an error string.
 
 **Layer boundary**: `PrizmAPIClient.identityToken` throws a Data-layer error (e.g. `IdentityTokenError.newDeviceNotVerified`) when it receives a `device_error` response. `AuthRepositoryImpl` catches that Data-layer error and translates it to `AuthError.newDeviceVerificationRequired` before rethrowing — preserving the clean architecture boundary. The Domain layer and above never import or reference `IdentityTokenError` directly.
 
@@ -270,7 +270,7 @@ func completeNewDeviceOTP(otp: String) async throws -> Account
 
 /// Re-triggers the original identity token request without an OTP, causing the server to
 /// dispatch a new verification code to the user's email. The OTP field should be cleared
-/// after calling this. Only valid when in the `awaitingOTP` state.
+/// after calling this. Only valid when in the `otpPrompt` state.
 func resendNewDeviceOTP() async throws
 
 /// Cancels a pending new-device OTP challenge and clears any cached credentials.
@@ -284,7 +284,7 @@ func loginWithNewDeviceOTP(_ otp: String) async throws -> Account
 
 /// Retries the original identity token request without an OTP, triggering the server to
 /// dispatch a new verification code. Does NOT return an Account — the user remains in
-/// the awaitingOTP state after this call.
+/// the `otpPrompt` state after this call.
 func requestNewDeviceOTP() async throws
 
 /// Zeros any cached credentials held from the pending new-device OTP challenge.
@@ -391,11 +391,11 @@ New device verification is not required on every login; Bitwarden decides when t
 - **AND** the OTP field SHALL remain visible for re-entry
 
 #### Scenario: Resend code clears OTP field and sends fresh code
-- **GIVEN** `loginState == .awaitingOTP`
+- **GIVEN** `flowState == .otpPrompt`
 - **WHEN** the user taps "Resend code"
 - **THEN** `loginUseCase.resendNewDeviceOTP()` SHALL be called
 - **AND** the OTP field SHALL be cleared
-- **AND** `loginState` SHALL transition to `loading` during the request and back to `awaitingOTP` on completion
+- **AND** `flowState` SHALL transition to `.loading` during the request and back to `.otpPrompt` on completion
 - **AND** an `AccessibilityNotification.Announcement` SHALL be posted with "A new code has been sent to your email"
 
 `LoginUseCase` SHALL gain a `resendNewDeviceOTP() async throws` method. `AuthRepositoryImpl` implements it by retrying the original identity token request without `newdeviceotp`, causing the server to recognise the unverified device and dispatch a new code.
