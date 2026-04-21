@@ -155,7 +155,18 @@ The internal URL construction (`URL(string: trimmed)`) in `LoginUseCaseImpl` is 
 - `loginWithPassword` completion — line 540
 - `unlockWithBiometrics` completion — line 606
 
-All requests to cloud endpoints SHALL include the required Bitwarden client headers — `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, and `Device-Type` — as already implemented in `ClientHeaders`. No change to header values is required by this change; the existing values are valid for cloud requests. A unit test SHALL assert these headers are present on a representative cloud `identityToken` request.
+All requests to cloud endpoints SHALL include the required Bitwarden client headers — `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, and `Device-Type`. Header audit:
+
+- `Bitwarden-Client-Version` ✓ — already set in `baseRequest()` (line 1029)
+- `Bitwarden-Client-Name` ✗ — **not currently set**; `baseRequest()` SHALL be updated to add this header (value: `Config.clientName`)
+- `Device-Type` ✓ — already set
+
+`baseRequest()` SHALL add:
+```swift
+req.setValue(Config.clientName, forHTTPHeaderField: "Bitwarden-Client-Name")
+```
+
+A unit test SHALL assert `Bitwarden-Client-Name` and `Bitwarden-Client-Version` headers are present on a representative cloud `identityToken` request.
 
 #### Scenario: cloudUS routes api requests correctly
 - **GIVEN** the active account has `serverType == .cloudUS`
@@ -475,7 +486,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `LoginUseCaseImpl` does NOT call `auth.validateServerURL` when `environment.serverType == .cloudUS` or `.cloudEU`
 - `LoginUseCaseImpl` DOES call `auth.validateServerURL` when `environment.serverType == .selfHosted`
 - Cloud login attempt with empty client identifier throws before making a network request
-- `PrizmAPIClient` includes `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, and `Device-Type` headers on a cloud `identityToken` request
+- `PrizmAPIClient.baseRequest()` sets `Bitwarden-Client-Name` and `Bitwarden-Client-Version` HTTP headers on every request; a cloud `identityToken` request includes both
 - `PrizmAPIClient.refreshAccessToken` sends the registered cloud `client_id` (not `"desktop"`) when `serverType` is cloud
 - `AuthRepositoryImpl.loginWithPassword` returns `LoginResult.requiresNewDeviceOTP` when the identity token response is `HTTP 400` with `{"error": "device_error"}`
 - `LoginUseCaseImpl.completeNewDeviceOTP` calls `auth.loginWithNewDeviceOTP(_:)` and triggers sync on success
