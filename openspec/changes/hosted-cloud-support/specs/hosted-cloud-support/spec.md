@@ -190,18 +190,31 @@ All requests to cloud endpoints SHALL include the required Bitwarden client head
 
 ---
 
+### Requirement: `LoginResult` extended with new device OTP case
+
+`LoginResult` (`Domain/Repositories/AuthRepository.swift`) SHALL gain a new case:
+
+```swift
+enum LoginResult {
+    case success(Account)
+    case requiresTwoFactor(TwoFactorMethod)
+    case requiresNewDeviceOTP   // server returned device_error; OTP sent to user's email
+}
+```
+
+`AuthRepositoryImpl.loginWithPassword` returns `.requiresNewDeviceOTP` when `PrizmAPIClient.identityToken` receives `HTTP 400` with `{"error": "device_error"}`. `LoginViewModel` switches on this case and transitions `flowState` to `.otpPrompt` — identical in structure to the existing `.requiresTwoFactor` → `.totpPrompt` path.
+
+**Layer boundary**: `PrizmAPIClient.identityToken` throws `IdentityTokenError.newDeviceNotVerified` when it receives a `device_error` response. `AuthRepositoryImpl` catches that Data-layer error and returns `LoginResult.requiresNewDeviceOTP` — preserving the clean architecture boundary. The Domain layer and above never import or reference `IdentityTokenError` directly.
+
+---
+
 ### Requirement: Error taxonomy
 
-The existing `AuthError` enum (`Domain/Repositories/AuthRepository.swift`) SHALL be extended with two new cases for this change. `LoginViewModel` pattern-matches all `AuthError` cases; no new error type is introduced.
+The existing `AuthError` enum (`Domain/Repositories/AuthRepository.swift`) SHALL be extended with one new case for this change. `LoginViewModel` pattern-matches all `AuthError` cases; no new error type is introduced.
 
 | Case | Thrown by | `errorDescription` |
 |---|---|---|
 | `clientIdentifierNotConfigured` | `AuthRepositoryImpl` (before network request) | `"Prizm is not configured for Bitwarden Cloud. Contact support or use a self-hosted server."` |
-| `newDeviceVerificationRequired` | `AuthRepositoryImpl` (on `device_error` 400 response) | `nil` — handled structurally by `LoginViewModel`; triggers the OTP entry UI, not a plain error string |
-
-`newDeviceVerificationRequired` is thrown when the server returns `HTTP 400` with `{"error": "device_error"}`. `LoginViewModel` catches it and transitions to `flowState = .otpPrompt` rather than displaying an error string.
-
-**Layer boundary**: `PrizmAPIClient.identityToken` throws a Data-layer error (e.g. `IdentityTokenError.newDeviceNotVerified`) when it receives a `device_error` response. `AuthRepositoryImpl` catches that Data-layer error and translates it to `AuthError.newDeviceVerificationRequired` before rethrowing — preserving the clean architecture boundary. The Domain layer and above never import or reference `IdentityTokenError` directly.
 
 `serverUnreachable`, `invalidCredentials`, `networkUnavailable`, and `invalidURL` already exist in `AuthError` and cover the remaining error scenarios defined in this spec without modification.
 
@@ -264,7 +277,7 @@ The `client_id` is an app-level credential, not a per-user credential. No additi
 
 ```swift
 /// Retries the identity token request with the new-device OTP the user received by email.
-/// Only valid to call after `execute` throws `AuthError.newDeviceVerificationRequired`.
+/// Only valid to call after `execute` returns `LoginResult.requiresNewDeviceOTP`.
 /// On success, triggers vault sync and returns the logged-in `Account`.
 func completeNewDeviceOTP(otp: String) async throws -> Account
 
@@ -291,23 +304,23 @@ func requestNewDeviceOTP() async throws
 func cancelNewDeviceOTP()
 ```
 
-`AuthRepositoryImpl` holds the pending environment, email, and hashed password in memory after throwing `newDeviceVerificationRequired`. `loginWithNewDeviceOTP` retries `PrizmAPIClient.identityToken` with the `newdeviceotp` form parameter added, then zeros cached credentials immediately after (success or failure). `requestNewDeviceOTP` re-posts the original identity token request without `newdeviceotp` — the server recognises the unverified device and sends a fresh code; no credentials are zeroed since the challenge is still pending. `cancelNewDeviceOTP` zeros cached credentials without making a network request.
+`AuthRepositoryImpl` holds the pending environment, email, and hashed password in memory after returning `LoginResult.requiresNewDeviceOTP`. `loginWithNewDeviceOTP` retries `PrizmAPIClient.identityToken` with the `newdeviceotp` form parameter added, then zeros cached credentials immediately after (success or failure). `requestNewDeviceOTP` re-posts the original identity token request without `newdeviceotp` — the server recognises the unverified device and sends a fresh code; no credentials are zeroed since the challenge is still pending. `cancelNewDeviceOTP` zeros cached credentials without making a network request.
 
 `LoginUseCase.resendNewDeviceOTP()` calls `auth.requestNewDeviceOTP()` — not `loginWithNewDeviceOTP`.
 
-`LoginViewModel` catches `AuthError.newDeviceVerificationRequired`, sets `flowState = .otpPrompt`, and on Sign In (from `NewDeviceOTPView`) calls `loginUseCase.completeNewDeviceOTP(otp:)`.
+`LoginViewModel` switches on `LoginResult.requiresNewDeviceOTP`, sets `flowState = .otpPrompt`, and on Sign In (from `NewDeviceOTPView`) calls `loginUseCase.completeNewDeviceOTP(otp:)` — identical in structure to the existing `.requiresTwoFactor` → `completeTOTP` path.
 
 The `execute` method signature changes are covered by the `LoginUseCase.execute` requirement above. `LoginUseCase.protocol` doc comment SHALL be updated to reflect the new flow: `execute → (optional) completeNewDeviceOTP → sync` or `execute → (optional) completeTOTP → sync`.
 
 #### Scenario: `completeNewDeviceOTP` retries with OTP
-- **GIVEN** `execute` has thrown `AuthError.newDeviceVerificationRequired`
+- **GIVEN** `execute` has returned `LoginResult.requiresNewDeviceOTP`
 - **WHEN** `completeNewDeviceOTP(otp:)` is called with a valid code
 - **THEN** `PrizmAPIClient.identityToken` SHALL be called with `newdeviceotp` set to the code
 - **AND** on success, cached credentials SHALL be zeroed and vault sync SHALL run
 - **AND** the `Account` SHALL be returned
 
 #### Scenario: `cancelNewDeviceOTP` clears cached credentials
-- **GIVEN** `execute` has thrown `AuthError.newDeviceVerificationRequired`
+- **GIVEN** `execute` has returned `LoginResult.requiresNewDeviceOTP`
 - **WHEN** `cancelNewDeviceOTP()` is called
 - **THEN** cached credentials (environment, email, hashed password) SHALL be zeroed
 - **AND** no network request SHALL be made
@@ -327,7 +340,7 @@ case otpPrompt   // device_error received; app shows NewDeviceOTPView
 
 `RootViewModel.Screen` (in `PrizmApp.swift`) SHALL gain a matching `.otpPrompt` case. `RootViewModel.handleLoginFlow(_:)` SHALL map `.otpPrompt → .otpPrompt` alongside the existing cases. `PrizmApp`'s root switch SHALL show `NewDeviceOTPView(viewModel: rootVM.loginVM)` for `.otpPrompt`, analogous to how `TOTPPromptView` is shown for `.totpPrompt`.
 
-`NewDeviceOTPView` is a new screen (separate SwiftUI view, same pattern as `TOTPPromptView`) that shows the OTP entry field, Resend button, and Cancel button. `LoginViewModel` transitions `flowState` to `.otpPrompt` when `execute` throws `AuthError.newDeviceVerificationRequired`.
+`NewDeviceOTPView` is a new screen (separate SwiftUI view, same pattern as `TOTPPromptView`) that shows the OTP entry field, Resend button, and Cancel button. `LoginViewModel` transitions `flowState` to `.otpPrompt` when `execute` returns `LoginResult.requiresNewDeviceOTP`.
 
 **Valid transitions (additions to existing `LoginFlowState` machine):**
 
@@ -336,7 +349,7 @@ case otpPrompt   // device_error received; app shows NewDeviceOTPView
 | `.login` | Sign In tapped | `.loading` |
 | `.loading` | Auth success | `.syncing` → `.vault` |
 | `.loading` | Auth failure (not device_error) | `.login` (error shown) |
-| `.loading` | `newDeviceVerificationRequired` | `.otpPrompt` |
+| `.loading` | `LoginResult.requiresNewDeviceOTP` returned | `.otpPrompt` |
 | `.otpPrompt` | Sign In tapped (OTP submit) | `.loading` |
 | `.otpPrompt` | Invalid OTP (`invalid_grant`) | `.otpPrompt` (error shown, field remains) |
 | `.otpPrompt` | Resend tapped | `.loading` → `.otpPrompt` (OTP field cleared, confirmation announced) |
@@ -461,7 +474,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - Cloud login attempt with empty client identifier throws before making a network request
 - `PrizmAPIClient` includes `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, and `Device-Type` headers on a cloud `identityToken` request
 - `PrizmAPIClient.refreshAccessToken` sends the registered cloud `client_id` (not `"desktop"`) when `serverType` is cloud
-- `AuthRepositoryImpl` throws `AuthError.newDeviceVerificationRequired` when the identity token response is `HTTP 400` with `{"error": "device_error"}`
+- `AuthRepositoryImpl.loginWithPassword` returns `LoginResult.requiresNewDeviceOTP` when the identity token response is `HTTP 400` with `{"error": "device_error"}`
 - `LoginUseCaseImpl.completeNewDeviceOTP` calls `auth.loginWithNewDeviceOTP(_:)` and triggers sync on success
 - `LoginUseCaseImpl.cancelNewDeviceOTP` calls `auth.cancelNewDeviceOTP()` and makes no network request
 - OTP retry includes `newdeviceotp` form parameter and succeeds on a valid code
@@ -475,7 +488,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `isSignInDisabled` returns `true` for self-hosted when `serverURL` is empty, even when email and password are filled
 - `isSignInDisabled` returns `true` in `NewDeviceOTPView` when the OTP field is empty
 - `isSignInDisabled` returns `false` in `NewDeviceOTPView` when the OTP field is non-empty
-- `flowState` transitions to `.otpPrompt` when `execute` throws `AuthError.newDeviceVerificationRequired`
+- `flowState` transitions to `.otpPrompt` when `execute` returns `LoginResult.requiresNewDeviceOTP`
 - `flowState` transitions to `.login` when Cancel is tapped from `NewDeviceOTPView` (after `cancelNewDeviceOTP()`)
 - `flowState` remains `.otpPrompt` after an invalid OTP error; error message is set
 - `loginUseCase.resendNewDeviceOTP()` is called when "Resend code" is tapped; OTP field is cleared and confirmation is announced
