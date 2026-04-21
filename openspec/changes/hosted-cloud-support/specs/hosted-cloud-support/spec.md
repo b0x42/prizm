@@ -223,15 +223,22 @@ After successful login, the `ServerEnvironment` (including `serverType`) SHALL b
 
 ---
 
-### Requirement: Registered client identifier used for cloud password login
+### Requirement: Registered client identifier used for all cloud requests
 
-The Bitwarden OAuth password grant (`grant_type=password`) requires a `client_id` parameter identifying the client application. `PrizmAPIClient` already sends this as `ClientHeaders.clientId`, currently hardcoded to `"desktop"`. For cloud accounts this value SHALL be replaced with the registered identifier obtained from Bitwarden, Inc., injected at build time via a gitignored `.xcconfig` file. Self-hosted login is unaffected — Vaultwarden does not enforce this identifier.
+Both the OAuth password grant (`grant_type=password`) and the token refresh grant (`grant_type=refresh_token`) require a `client_id` parameter identifying the client application. Confirmed against the Bitwarden iOS reference client: both request types send the same registered identifier (`"mobile"` for the iOS client). `PrizmAPIClient` currently sends `ClientHeaders.clientId = "desktop"` in both `identityToken` (line 463) and `refreshAccessToken` (line 1004). For cloud accounts both call sites SHALL use the registered identifier injected at build time via a gitignored `.xcconfig` file. Self-hosted login is unaffected — Vaultwarden does not enforce this identifier.
+
+`ClientHeaders.clientId` is currently a static constant. It SHALL become instance state on `PrizmAPIClient` (set via `setServerEnvironment`) so both call sites pick up the correct value for the active environment without any per-call parameter.
 
 The `client_id` is an app-level credential, not a per-user credential. No additional login UI is needed; it is transparent to the user.
 
 #### Scenario: Registered identifier sent on cloud password login
 - **GIVEN** the active account has `serverType == .cloudUS` or `serverType == .cloudEU`
-- **WHEN** `PrizmAPIClient` posts the identity token request
+- **WHEN** `PrizmAPIClient` posts the identity token request (`grant_type=password`)
+- **THEN** the `client_id` form parameter SHALL equal the registered identifier (not `"desktop"`)
+
+#### Scenario: Registered identifier sent on cloud token refresh
+- **GIVEN** the active account has `serverType == .cloudUS` or `serverType == .cloudEU`
+- **WHEN** `PrizmAPIClient` posts a token refresh request (`grant_type=refresh_token`)
 - **THEN** the `client_id` form parameter SHALL equal the registered identifier (not `"desktop"`)
 
 #### Scenario: Unconfigured identifier blocks cloud login
@@ -241,7 +248,7 @@ The `client_id` is an app-level credential, not a per-user credential. No additi
 
 #### Scenario: Self-hosted login unaffected
 - **GIVEN** the active account has `serverType == .selfHosted`
-- **THEN** the `client_id` value used SHALL remain `"desktop"` (Vaultwarden-compatible default)
+- **THEN** the `client_id` value used in both `identityToken` and `refreshAccessToken` SHALL remain `"desktop"` (Vaultwarden-compatible default)
 
 ---
 
@@ -447,6 +454,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `LoginUseCaseImpl` DOES call `auth.validateServerURL` when `environment.serverType == .selfHosted`
 - Cloud login attempt with empty client identifier throws before making a network request
 - `PrizmAPIClient` includes `Bitwarden-Client-Name`, `Bitwarden-Client-Version`, and `Device-Type` headers on a cloud `identityToken` request
+- `PrizmAPIClient.refreshAccessToken` sends the registered cloud `client_id` (not `"desktop"`) when `serverType` is cloud
 - `AuthRepositoryImpl` throws `AuthError.newDeviceVerificationRequired` when the identity token response is `HTTP 400` with `{"error": "device_error"}`
 - `LoginUseCaseImpl.completeNewDeviceOTP` calls `auth.loginWithNewDeviceOTP(_:)` and triggers sync on success
 - `LoginUseCaseImpl.cancelNewDeviceOTP` calls `auth.cancelNewDeviceOTP()` and makes no network request
