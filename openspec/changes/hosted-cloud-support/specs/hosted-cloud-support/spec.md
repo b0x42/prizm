@@ -30,6 +30,13 @@ The `LoginView` SHALL replace the static subtitle "Self-hosted vault" and single
 
 When a cloud option is selected, no URL entry is required or shown. When "Self-hosted" is selected, the server URL field is shown and behaves as today. The last-used selection SHALL be persisted to `UserDefaults` under the key `com.prizm.login.lastServerType` (raw `String` value of `ServerType`) and restored when `LoginViewModel` is initialised.
 
+`LoginViewModel` SHALL expose a computed property `isSignInDisabled: Bool` used by `LoginView` to disable the Sign In button. Its logic:
+- `serverType == .cloudUS` or `.cloudEU`: `true` when email or password is empty
+- `serverType == .selfHosted`: `true` when email, password, or `serverURL` is empty
+- `flowState == .otpPrompt`: `true` when the OTP field is empty
+
+`NewDeviceOTPView` uses the same `isSignInDisabled` property from `LoginViewModel` to disable its Sign In button (identical to how `TOTPPromptView` works today).
+
 #### Scenario: Picker is visible on the login screen
 - **WHEN** `LoginView` is displayed
 - **THEN** a picker offering "Bitwarden Cloud (US)", "Bitwarden Cloud (EU)", and "Self-hosted" SHALL be visible above the email field
@@ -482,7 +489,9 @@ All new interactive controls introduced by this change MUST be fully usable via 
 - The server picker SHALL have `accessibilityIdentifier` set to `AccessibilityID.Login.serverTypePicker`, `accessibilityLabel` set to "Server", and expose its current value via `accessibilityValue` (e.g. "Bitwarden Cloud (US)")
 - The server URL text field SHALL retain its existing `accessibilityIdentifier` and have a meaningful `accessibilityLabel` ("Server URL")
 - The new device OTP text field SHALL have `accessibilityIdentifier` set to `AccessibilityID.Login.newDeviceOtpField` and `accessibilityLabel` set to "Verification code"
-- Error messages (unreachable server, invalid credentials, missing client identifier, invalid OTP) SHALL be announced via `AccessibilityNotification.Announcement` as soon as they appear
+- The "Resend code" button SHALL have `accessibilityIdentifier` set to `AccessibilityID.Login.resendOtpButton` and `accessibilityLabel` set to "Resend code"
+- The "Cancel" button in `NewDeviceOTPView` SHALL have `accessibilityIdentifier` set to `AccessibilityID.Login.cancelOtpButton` and `accessibilityLabel` set to "Cancel"
+- Error messages (unreachable server, invalid credentials, missing client identifier, invalid OTP, resend failure) SHALL be announced via `AccessibilityNotification.Announcement` as soon as they appear
 
 #### Scenario: Picker exposes current selection to VoiceOver
 - **WHEN** the server picker has "Bitwarden Cloud (EU)" selected
