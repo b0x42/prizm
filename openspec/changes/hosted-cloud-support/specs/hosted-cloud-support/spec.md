@@ -282,7 +282,7 @@ func cancelNewDeviceOTP()
 
 `LoginUseCase.resendNewDeviceOTP()` calls `auth.requestNewDeviceOTP()` — not `loginWithNewDeviceOTP`.
 
-`LoginViewModel` catches `AuthError.newDeviceVerificationRequired`, transitions to `awaitingOTP` state, and on Sign In calls `loginUseCase.completeNewDeviceOTP(otp:)`.
+`LoginViewModel` catches `AuthError.newDeviceVerificationRequired`, sets `flowState = .otpPrompt`, and on Sign In (from `NewDeviceOTPView`) calls `loginUseCase.completeNewDeviceOTP(otp:)`.
 
 The `execute` method signature changes are covered by the `LoginUseCase.execute` requirement above. `LoginUseCase.protocol` doc comment SHALL be updated to reflect the new flow: `execute → (optional) completeNewDeviceOTP → sync` or `execute → (optional) completeTOTP → sync`.
 
@@ -303,46 +303,45 @@ The `execute` method signature changes are covered by the `LoginUseCase.execute`
 
 ### Requirement: `LoginViewModel` state machine
 
-`LoginViewModel` SHALL expose a `loginState: LoginState` published property. `LoginView` derives all conditional UI (OTP field visibility, field editability, button label) from this property.
+`LoginFlowState` (already defined in `LoginViewModel.swift`) SHALL gain a new case `.otpPrompt`. No new enum is introduced — the existing state machine is extended.
 
 ```swift
-enum LoginState: Equatable {
-    case idle           // initial state; all fields editable
-    case awaitingOTP    // device_error received; OTP field shown, email/password disabled
-    case loading        // network request in flight; all fields disabled
-}
+// Existing cases — unchanged:
+//   .login, .loading, .totpPrompt, .syncing(message:), .vault
+// New case added:
+case otpPrompt   // device_error received; app shows NewDeviceOTPView
 ```
 
-**Valid transitions:**
+`RootViewModel.Screen` (in `PrizmApp.swift`) SHALL gain a matching `.otpPrompt` case. `RootViewModel.handleLoginFlow(_:)` SHALL map `.otpPrompt → .otpPrompt` alongside the existing cases. `PrizmApp`'s root switch SHALL show `NewDeviceOTPView(viewModel: rootVM.loginVM)` for `.otpPrompt`, analogous to how `TOTPPromptView` is shown for `.totpPrompt`.
+
+`NewDeviceOTPView` is a new screen (separate SwiftUI view, same pattern as `TOTPPromptView`) that shows the OTP entry field, Resend button, and Cancel button. `LoginViewModel` transitions `flowState` to `.otpPrompt` when `execute` throws `AuthError.newDeviceVerificationRequired`.
+
+**Valid transitions (additions to existing `LoginFlowState` machine):**
 
 | From | Event | To |
 |---|---|---|
-| `idle` | Sign In tapped | `loading` |
-| `loading` | Auth success | (navigate away — no state change needed) |
-| `loading` | Auth failure (not device_error) | `idle` (error shown) |
-| `loading` | `newDeviceVerificationRequired` | `awaitingOTP` |
-| `awaitingOTP` | Sign In tapped (OTP submit) | `loading` |
-| `awaitingOTP` | Invalid OTP (`invalid_grant`) | `awaitingOTP` (error shown, field remains) |
-| `awaitingOTP` | Resend tapped | `loading` → `awaitingOTP` (OTP field cleared, confirmation announced) |
-| `awaitingOTP` | Cancel tapped | `idle` (OTP field hidden, fields re-enabled) |
+| `.login` | Sign In tapped | `.loading` |
+| `.loading` | Auth success | `.syncing` → `.vault` |
+| `.loading` | Auth failure (not device_error) | `.login` (error shown) |
+| `.loading` | `newDeviceVerificationRequired` | `.otpPrompt` |
+| `.otpPrompt` | Sign In tapped (OTP submit) | `.loading` |
+| `.otpPrompt` | Invalid OTP (`invalid_grant`) | `.otpPrompt` (error shown, field remains) |
+| `.otpPrompt` | Resend tapped | `.loading` → `.otpPrompt` (OTP field cleared, confirmation announced) |
+| `.otpPrompt` | Cancel tapped | `.login` (credentials zeroed) |
 
-During `awaitingOTP`, email and master password fields SHALL be visible but disabled (`.disabled(true)`) so the user sees which account they are verifying. During `loading`, all interactive controls SHALL be disabled.
+#### Scenario: OTP screen shown on device_error
+- **GIVEN** `flowState == .loading` and the server returns `device_error`
+- **THEN** `flowState` SHALL transition to `.otpPrompt`
+- **AND** `NewDeviceOTPView` SHALL be displayed
+
+#### Scenario: Cancel returns to login screen
+- **GIVEN** `flowState == .otpPrompt`
+- **WHEN** the user taps Cancel
+- **THEN** `LoginViewModel` SHALL call `loginUseCase.cancelNewDeviceOTP()` before setting `flowState` to `.login`
 
 #### Scenario: Fields disabled during loading
-- **GIVEN** `loginState == .loading`
-- **THEN** the email field, password field, server picker, and Sign In button SHALL all be non-interactive
-
-#### Scenario: OTP field visible and email/password disabled during awaitingOTP
-- **GIVEN** `loginState == .awaitingOTP`
-- **THEN** the OTP field SHALL be visible and editable
-- **AND** the email and password fields SHALL be visible but disabled
-- **AND** a "Cancel" button SHALL be visible that transitions to `idle`
-
-#### Scenario: Cancel clears OTP state
-- **GIVEN** `loginState == .awaitingOTP`
-- **WHEN** the user taps Cancel
-- **THEN** `LoginViewModel` SHALL call `loginUseCase.cancelNewDeviceOTP()` before transitioning `loginState` to `idle`
-- **AND** the OTP field SHALL be hidden and its value cleared
+- **GIVEN** `flowState == .loading`
+- **THEN** all interactive controls in the current view SHALL be non-interactive
 
 ---
 
@@ -350,7 +349,7 @@ During `awaitingOTP`, email and master password fields SHALL be visible but disa
 
 All three server options use email + master password login.
 
-When Bitwarden Cloud does not recognise the device, it returns `HTTP 400` with `{"error": "device_error", "error_description": "New device verification required"}` and sends a one-time code to the user's registered email address. The system SHALL handle this by presenting an OTP entry field inline in `LoginView` and retrying the identity token request with the `newdeviceotp` parameter.
+When Bitwarden Cloud does not recognise the device, it returns `HTTP 400` with `{"error": "device_error", "error_description": "New device verification required"}` and sends a one-time code to the user's registered email address. The system SHALL handle this by transitioning to `NewDeviceOTPView` (a dedicated screen, matching the existing `TOTPPromptView` pattern) and retrying the identity token request with the `newdeviceotp` parameter.
 
 > **Spike findings (2026-04-20)**: hCaptcha was removed from Bitwarden Cloud in [bitwarden/ios#1861](https://github.com/bitwarden/ios/pull/1861) (merged 2025-08-20). The `WKWebView` modal originally planned is not needed. The current mechanism is:
 > - **Trigger**: `HTTP 400`, `{"error": "device_error"}`
@@ -360,10 +359,10 @@ When Bitwarden Cloud does not recognise the device, it returns `HTTP 400` with `
 
 New device verification is not required on every login; Bitwarden decides when to require it based on device recognition. It does not apply to self-hosted Vaultwarden instances.
 
-#### Scenario: New device OTP field shown on device_error
+#### Scenario: New device OTP screen shown on device_error
 - **GIVEN** the user attempts password login with a cloud option selected
 - **AND** the server returns `HTTP 400` with `{"error": "device_error"}`
-- **THEN** an OTP entry field SHALL appear in `LoginView` with the label "Check your email for a verification code"
+- **THEN** `flowState` SHALL transition to `.otpPrompt` and `NewDeviceOTPView` SHALL appear with the label "Check your email for a verification code"
 - **AND** the Sign In button SHALL remain disabled until the OTP field is non-empty
 
 #### Scenario: OTP submitted and login retried
@@ -407,8 +406,8 @@ All new interactive controls introduced by this change MUST be fully usable via 
 - **WHEN** the server picker has "Bitwarden Cloud (EU)" selected
 - **THEN** VoiceOver SHALL announce the control as "Server, Bitwarden Cloud (EU)"
 
-#### Scenario: OTP field announced when it appears
-- **WHEN** the new device OTP field appears after a `device_error` response
+#### Scenario: OTP screen announced when it appears
+- **WHEN** `NewDeviceOTPView` appears after a `device_error` response
 - **THEN** an `AccessibilityNotification.Announcement` SHALL be posted with "Check your email for a verification code"
 
 #### Scenario: Error announced to assistive technology
@@ -460,11 +459,11 @@ Per §IV, tests MUST be written before implementation. The following are require
 - Selecting a cloud type clears `serverURL`; selecting self-hosted restores the last entered URL
 - `isSignInDisabled` returns `false` for cloud when email and password are non-empty, even when `serverURL` is empty
 - `isSignInDisabled` returns `true` for self-hosted when `serverURL` is empty, even when email and password are filled
-- `isSignInDisabled` returns `true` when `loginState == .awaitingOTP` and the OTP field is empty
-- `isSignInDisabled` returns `false` when `loginState == .awaitingOTP` and the OTP field is non-empty
-- `loginState` transitions to `.awaitingOTP` when `execute` throws `AuthError.newDeviceVerificationRequired`
-- `loginState` transitions to `.idle` when Cancel is tapped from `.awaitingOTP`
-- `loginState` remains `.awaitingOTP` after an invalid OTP error; error message is set
+- `isSignInDisabled` returns `true` in `NewDeviceOTPView` when the OTP field is empty
+- `isSignInDisabled` returns `false` in `NewDeviceOTPView` when the OTP field is non-empty
+- `flowState` transitions to `.otpPrompt` when `execute` throws `AuthError.newDeviceVerificationRequired`
+- `flowState` transitions to `.login` when Cancel is tapped from `NewDeviceOTPView` (after `cancelNewDeviceOTP()`)
+- `flowState` remains `.otpPrompt` after an invalid OTP error; error message is set
 - `loginUseCase.resendNewDeviceOTP()` is called when "Resend code" is tapped; OTP field is cleared and confirmation is announced
 - `LoginUseCaseImpl.resendNewDeviceOTP()` calls `auth.requestNewDeviceOTP()` to re-trigger server dispatch
 
@@ -479,7 +478,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - Sign In button is enabled for a cloud option when email and password are non-empty and `serverURL` is empty
 - Sign In button is disabled for "Self-hosted" when `serverURL` is empty even if email and password are filled
 - Successful cloud login end-to-end against a local stub (no OTP required path)
-- `device_error` response causes OTP field to appear with label "Check your email for a verification code"
+- `device_error` response causes `NewDeviceOTPView` to appear with label "Check your email for a verification code"
 - Valid OTP entered → login succeeds; OTP field disappears
 - Invalid OTP → error message shown; OTP field remains for re-entry
 
@@ -541,7 +540,7 @@ Starting value: `2026.4.0` — the current Bitwarden server release as of the im
 
 `ACCESSIBILITY.md` SHALL be updated to document:
 - The new server picker control and its VoiceOver behaviour
-- The new device OTP verification field and its `accessibilityLabel` / announcement behaviour
+- `NewDeviceOTPView` and its OTP field `accessibilityLabel` / announcement behaviour
 
 ---
 
