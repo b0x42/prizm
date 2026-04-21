@@ -463,7 +463,7 @@ New device verification is not required on every login; Bitwarden decides when t
 
 #### Scenario: Self-hosted login has no new device OTP handling
 - **GIVEN** the active account has `serverType == .selfHosted`
-- **THEN** no OTP entry field is shown; `device_error` responses SHALL surface as a generic auth error
+- **THEN** no OTP entry field is shown; `device_error` responses SHALL surface as `AuthError.invalidCredentials` (Vaultwarden does not implement new-device verification; this path should not occur in practice)
 
 ---
 
