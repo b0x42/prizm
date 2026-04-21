@@ -20,6 +20,7 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 - [ ] 2.7 Add `loginWithNewDeviceOTP(_ otp: String) async throws -> Account` to `AuthRepository` protocol
 - [ ] 2.8 Add `requestNewDeviceOTP() async throws` to `AuthRepository` protocol
 - [ ] 2.9 Add `cancelNewDeviceOTP()` to `AuthRepository` protocol
+- [ ] 2.10 Update `MockLoginUseCase` (`PrizmTests/Mocks/MockLoginUseCase.swift`) to add stub implementations for `completeNewDeviceOTP`, `resendNewDeviceOTP`, `cancelNewDeviceOTP` — protocol conformance requires this before any test target compiles
 
 ## 3. Domain Unit Tests — Entities (write before Group 4, must fail first)
 
@@ -67,7 +68,7 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 - [ ] 7.3 Add `clientIdentifier: String = Config.bitwardenClientIdentifier` parameter to `AuthRepositoryImpl.init` (production callers pass no arg; tests inject `""` to verify the guard fires, or `"test-id"` to bypass it); guard cloud login: if `environment.serverType != .selfHosted && clientIdentifier.isEmpty`, throw `AuthError.clientIdentifierNotConfigured` before any network request
 - [ ] 7.4 Skip `validateServerURL` for cloud environments; call only when `environment.serverType == .selfHosted`
 - [ ] 7.5 Implement `loginWithNewDeviceOTP(_ otp: String)`: read `pendingNewDeviceOTP` (throws `AuthError.invalidCredentials` if nil); call `identityToken(email:passwordHash:deviceIdentifier:newDeviceOTP:)` using the pending struct's fields; on success call `finalizeSession(tokenResp:stretched:environment:)` using the pending struct's `stretchedKeys` and `environment`; zero `stretchedKeys` and nil `pendingNewDeviceOTP` in a `defer` block so cleanup happens on both success and failure (Constitution §III)
-- [ ] 7.6 Implement `requestNewDeviceOTP()`: re-post original `identityToken` without `newdeviceotp`; do NOT zero cached credentials
+- [ ] 7.6 Implement `requestNewDeviceOTP()`: re-post original `identityToken` without `newdeviceotp` using the pending struct's credentials; the server WILL respond with `HTTP 400 + device_error` again — this is expected (it triggers a new OTP email); catch `IdentityTokenError.newDeviceNotVerified` and treat it as **success**; propagate any other error; do NOT zero cached credentials
 - [ ] 7.7 Implement `cancelNewDeviceOTP()`: zero `pendingNewDeviceOTP!.stretchedKeys` buffers in-place (Constitution §III — same pattern as `cancelTwoFactor()`), then set `pendingNewDeviceOTP = nil`; no network request
 - [ ] 7.8 Self-hosted `device_error` response (unexpected): surface as `AuthError.invalidCredentials`
 
