@@ -1,9 +1,9 @@
 ## 1. Build Infrastructure
 
-- [ ] 1.1 Add `LocalSecrets.xcconfig.template` to repo root with empty `BW_CLIENT_IDENTIFIER` and copy instructions
-- [ ] 1.2 Add `BWClientIdentifier` key to `Prizm/Prizm-Info.plist` with value `$(BW_CLIENT_IDENTIFIER)`
+- [ ] 1.1 Add `LocalSecrets.xcconfig.template` to `Prizm/` (same directory as `LocalConfig.xcconfig`) with empty `BW_CLIENT_IDENTIFIER` and copy instructions; xcconfig `#include` paths are relative to the including file so the template must live alongside `LocalConfig.xcconfig`
+- [ ] 1.2 Add `BWClientIdentifier` key to `Prizm/Prizm/Info.plist` with value `$(BW_CLIENT_IDENTIFIER)` (actual path — the file is currently an empty `<dict/>`)
 - [ ] 1.3 Add `LocalSecrets.xcconfig` to `.gitignore`
-- [ ] 1.4 Include `LocalSecrets.xcconfig` by adding `#include "LocalSecrets.xcconfig"` at the top of `LocalConfig.xcconfig` (this is already included in both Debug and Release configurations via the existing xcconfig chain)
+- [ ] 1.4 Include `LocalSecrets.xcconfig` by adding `#include "LocalSecrets.xcconfig"` at the top of `LocalConfig.xcconfig`; also add the same line to `LocalConfig.xcconfig.template` (committed) so future devs who copy the template get the include automatically — `LocalConfig.xcconfig` is gitignored so the change cannot be committed directly; both Debug and Release build configurations reference `LocalConfig.xcconfig` as their `baseConfigurationReference` in the Xcode project
 - [ ] 1.5 Add `Config.bitwardenClientIdentifier` to `App/Config.swift` — reads `BWClientIdentifier` from `Bundle.main`, defaults to `""`
 - [ ] 1.6 Verify `Config.clientName` exists in `Config.swift` (used in `baseRequest()` for `Bitwarden-Client-Name` header); add if absent
 
@@ -39,9 +39,10 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 
 ## 5. Data Layer — PrizmAPIClient
 
+- [ ] 5.0 Add `newDeviceOTP: String? = nil` parameter to `identityToken` in `PrizmAPIClientProtocol`, `PrizmAPIClientImpl`, and `MockPrizmAPIClient`; when non-nil, append `newdeviceotp=<value>` to the `application/x-www-form-urlencoded` body — same endpoint, one extra optional field; default `nil` keeps all existing call sites unchanged
 - [ ] 5.1 Add `IdentityTokenError.newDeviceNotVerified` case; handle `HTTP 400` + `"error": "device_error"` in `identityToken` to throw it (check only `error` field, not `error_description`)
 - [ ] 5.2 Rename `APIError.baseURLNotSet` to `APIError.serverEnvironmentNotSet`; update all catch sites and existing tests
-- [ ] 5.3 Replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)` on `PrizmAPIClientProtocol` and `PrizmAPIClientImpl`; remove `setBaseURL` entirely
+- [ ] 5.3 Replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)` on `PrizmAPIClientProtocol`, `PrizmAPIClientImpl`, and `MockPrizmAPIClient`; remove `setBaseURL` entirely — the mock must be updated in this same task or Group 6 tests will not compile
 - [ ] 5.4 Make `clientId` instance state on `PrizmAPIClient` (set via `setServerEnvironment`): cloud environments use `Config.bitwardenClientIdentifier`, self-hosted keeps `"desktop"`
 - [ ] 5.5 Update all ~32 endpoint methods to route via `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`
 - [ ] 5.6 Add `Bitwarden-Client-Name` header to `baseRequest()` using `Config.clientName`
@@ -62,19 +63,19 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 ## 7. Data Layer — AuthRepositoryImpl
 
 - [ ] 7.1 Update all four `setBaseURL` call sites to `setServerEnvironment` (lines 83, 325, 540, 606)
-- [ ] 7.2 Catch `IdentityTokenError.newDeviceNotVerified` in `loginWithPassword` and return `LoginResult.requiresNewDeviceOTP`; hold `environment`, `email`, and hashed password in memory
-- [ ] 7.3 Guard cloud login with `Config.bitwardenClientIdentifier.isEmpty` check; throw `AuthError.clientIdentifierNotConfigured` before any network request
+- [ ] 7.2 Catch `IdentityTokenError.newDeviceNotVerified` in `loginWithPassword` and return `LoginResult.requiresNewDeviceOTP`; store a new `PendingNewDeviceOTP` struct (separate from `PendingTwoFactor`) holding `email: String`, `passwordHash: String`, `var stretchedKeys: CryptoKeys` (`var` so zeroing is possible), `deviceId: String`, `environment: ServerEnvironment`; `stretchedKeys` MUST be zeroed before the struct is released on cancel or failure (Constitution §III) — follow the same in-place mutation pattern as `cancelTwoFactor()`
+- [ ] 7.3 Add `clientIdentifier: String = Config.bitwardenClientIdentifier` parameter to `AuthRepositoryImpl.init` (production callers pass no arg; tests inject `""` to verify the guard fires, or `"test-id"` to bypass it); guard cloud login: if `environment.serverType != .selfHosted && clientIdentifier.isEmpty`, throw `AuthError.clientIdentifierNotConfigured` before any network request
 - [ ] 7.4 Skip `validateServerURL` for cloud environments; call only when `environment.serverType == .selfHosted`
-- [ ] 7.5 Implement `loginWithNewDeviceOTP(_ otp: String)`: retry `identityToken` with `newdeviceotp` param; zero cached credentials after (success or failure)
+- [ ] 7.5 Implement `loginWithNewDeviceOTP(_ otp: String)`: read `pendingNewDeviceOTP` (throws `AuthError.invalidCredentials` if nil); call `identityToken(email:passwordHash:deviceIdentifier:newDeviceOTP:)` using the pending struct's fields; on success call `finalizeSession(tokenResp:stretched:environment:)` using the pending struct's `stretchedKeys` and `environment`; zero `stretchedKeys` and nil `pendingNewDeviceOTP` in a `defer` block so cleanup happens on both success and failure (Constitution §III)
 - [ ] 7.6 Implement `requestNewDeviceOTP()`: re-post original `identityToken` without `newdeviceotp`; do NOT zero cached credentials
-- [ ] 7.7 Implement `cancelNewDeviceOTP()`: zero cached credentials without network request
+- [ ] 7.7 Implement `cancelNewDeviceOTP()`: zero `pendingNewDeviceOTP!.stretchedKeys` buffers in-place (Constitution §III — same pattern as `cancelTwoFactor()`), then set `pendingNewDeviceOTP = nil`; no network request
 - [ ] 7.8 Self-hosted `device_error` response (unexpected): surface as `AuthError.invalidCredentials`
 
 ## 8. Data Unit Tests — AuthRepositoryImpl + LoginUseCaseImpl (write before Groups 7 + 9, must fail first)
 
 - [ ] 8.1 `AuthRepositoryImpl.setServerEnvironment` calls `apiClient.setServerEnvironment` (not `setBaseURL`)
 - [ ] 8.2 `AuthRepositoryImpl.loginWithPassword` returns `LoginResult.requiresNewDeviceOTP` when `identityToken` throws `IdentityTokenError.newDeviceNotVerified`
-- [ ] 8.3 `AuthRepositoryImpl` throws `AuthError.clientIdentifierNotConfigured` when `Config.bitwardenClientIdentifier` is empty and `serverType` is cloud — no network request made
+- [ ] 8.3 `AuthRepositoryImpl` throws `AuthError.clientIdentifierNotConfigured` when injected `clientIdentifier` is `""` and `serverType` is cloud — no network request made; use `init(..., clientIdentifier: "")` in the test to trigger the guard
 - [ ] 8.4 `LoginUseCaseImpl` does NOT call `auth.validateServerURL` when `environment.serverType == .cloudUS` or `.cloudEU`
 - [ ] 8.5 `LoginUseCaseImpl` DOES call `auth.validateServerURL` when `environment.serverType == .selfHosted`
 - [ ] 8.6 Cached credentials zeroed after `loginWithNewDeviceOTP` succeeds
@@ -98,21 +99,22 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 - [ ] 10.1 `LoginViewModel` initialised with `UserDefaults` key `com.prizm.login.lastServerType = "cloudEU"` → `serverType == .cloudEU`
 - [ ] 10.2 `LoginViewModel` initialised with no `UserDefaults` key → `serverType` defaults to `.cloudUS`
 - [ ] 10.3 Selecting a cloud type persists to `UserDefaults`; selecting self-hosted restores last entered URL
-- [ ] 10.4 `isSignInDisabled` returns `false` for cloud when email and password non-empty, `serverURL` empty
-- [ ] 10.5 `isSignInDisabled` returns `true` for self-hosted when `serverURL` empty, email and password filled
-- [ ] 10.6 `isSignInDisabled` returns `true` when `flowState == .otpPrompt` and `otpCode` is empty
-- [ ] 10.7 `isSignInDisabled` returns `false` when `flowState == .otpPrompt` and `otpCode` is non-empty
-- [ ] 10.8 `flowState` transitions to `.otpPrompt` when `execute` returns `LoginResult.requiresNewDeviceOTP`
-- [ ] 10.9 `flowState` transitions to `.login` when Cancel tapped (after `cancelNewDeviceOTP`)
-- [ ] 10.10 `flowState` remains `.otpPrompt` after invalid OTP error; error message set
-- [ ] 10.11 `resendNewDeviceOTP` called when Resend tapped; `otpCode` cleared on success; confirmation announced
-- [ ] 10.12 `resendNewDeviceOTP` throws → `flowState` returns to `.otpPrompt`, error message set, `otpCode` unchanged
-- [ ] 10.13 `otpCode` cleared from memory after successful OTP submission in `submitOTP()`
+- [ ] 10.4 `isSignInDisabled` returns `true` when `flowState == .loading` (prevents double-submit regardless of field content)
+- [ ] 10.5 `isSignInDisabled` returns `false` for cloud when email and password non-empty, `serverURL` empty
+- [ ] 10.6 `isSignInDisabled` returns `true` for self-hosted when `serverURL` empty, email and password filled
+- [ ] 10.7 `isSignInDisabled` returns `true` when `flowState == .otpPrompt` and `otpCode` is empty
+- [ ] 10.8 `isSignInDisabled` returns `false` when `flowState == .otpPrompt` and `otpCode` is non-empty
+- [ ] 10.9 `flowState` transitions to `.otpPrompt` when `execute` returns `LoginResult.requiresNewDeviceOTP`
+- [ ] 10.10 `flowState` transitions to `.login` when Cancel tapped (after `cancelNewDeviceOTP`)
+- [ ] 10.11 `flowState` remains `.otpPrompt` after invalid OTP error; error message set
+- [ ] 10.12 `resendNewDeviceOTP` called when Resend tapped; `otpCode` cleared on success; confirmation announced
+- [ ] 10.13 `resendNewDeviceOTP` throws → `flowState` returns to `.otpPrompt`, error message set, `otpCode` unchanged
+- [ ] 10.14 `otpCode` cleared from memory after successful OTP submission in `submitOTP()`
 
 ## 11. Presentation — LoginViewModel
 
 - [ ] 11.1 Add `serverType: ServerType` `@Published` property; persist/restore via `UserDefaults` key `com.prizm.login.lastServerType`; default to `.cloudUS` when key absent (fresh install)
-- [ ] 11.2 Add `isSignInDisabled: Bool` computed property: `true` when (cloud + email or password empty) OR (selfHosted + email, password, or serverURL empty) OR (otpPrompt + `otpCode` empty)
+- [ ] 11.2 Add `isSignInDisabled: Bool` computed property: `true` when `flowState == .loading` (prevents double-submit) OR (cloud + email or password empty) OR (selfHosted + email, password, or serverURL empty) OR (otpPrompt + `otpCode` empty)
 - [ ] 11.3 Update `signIn()` to construct `ServerEnvironment` from `serverType` (`.cloudUS()` / `.cloudEU()` / `selfHosted` from URL string) and call `loginUseCase.execute(environment:email:masterPassword:)`
 - [ ] 11.4 Handle `LoginResult.requiresNewDeviceOTP` in `signIn()`: set `flowState = .otpPrompt`
 - [ ] 11.5 Add `otpCode: String` `@Published` property for the OTP text field
