@@ -225,30 +225,36 @@ After successful login, the `ServerEnvironment` (including `serverType`) SHALL b
 
 ### Requirement: Registered client identifier used for all cloud requests
 
-Both the OAuth password grant (`grant_type=password`) and the token refresh grant (`grant_type=refresh_token`) require a `client_id` parameter identifying the client application. Confirmed against the Bitwarden iOS reference client: both request types send the same registered identifier (`"mobile"` for the iOS client). `PrizmAPIClient` currently sends `ClientHeaders.clientId = "desktop"` in both `identityToken` (line 463) and `refreshAccessToken` (line 1004). For cloud accounts both call sites SHALL use the registered identifier injected at build time via a gitignored `.xcconfig` file. Self-hosted login is unaffected — Vaultwarden does not enforce this identifier.
+Per [ADR-0023](https://contributing.bitwarden.com/architecture/adr/integration-identifiers/), third-party clients must obtain a registered identifier from Bitwarden via a support ticket. Without it, Bitwarden Cloud rejects requests with `400 Bad Request` (missing required headers) or `403 Forbidden` (unsupported identifier). Self-hosted instances perform no such checks. Prizm has obtained its registered identifier; it is injected at build time via a gitignored `LocalSecrets.xcconfig` file and MUST NOT appear in source control.
 
-`ClientHeaders.clientId` is currently a static constant. It SHALL become instance state on `PrizmAPIClient` (set via `setServerEnvironment`) so both call sites pick up the correct value for the active environment without any per-call parameter.
+`PrizmAPIClient` currently sends `ClientHeaders.clientId = "desktop"` — a real Bitwarden-registered identifier for their own desktop client. Using it would violate ADR-0023; Prizm's own registered identifier MUST be used instead.
+
+**Enforcement by grant type:**
+- `grant_type=password` (`identityToken`): strictly enforced on cloud — unregistered `client_id` → rejected
+- `grant_type=refresh_token` (`refreshAccessToken`): server-side allowlist check is bypassed for refresh grants (confirmed in `CustomTokenRequestValidator.cs`); `client_id` is not strictly validated. However, Bitwarden's official iOS client sends the same registered identifier in refresh requests for consistency, and Prizm SHALL do the same.
+
+Both `identityToken` (line 463) and `refreshAccessToken` (line 1004) SHALL use the registered identifier for cloud accounts. `ClientHeaders.clientId` is currently a static constant and SHALL become instance state on `PrizmAPIClient` (set via `setServerEnvironment`) so both call sites pick up the correct value automatically.
 
 The `client_id` is an app-level credential, not a per-user credential. No additional login UI is needed; it is transparent to the user.
 
 #### Scenario: Registered identifier sent on cloud password login
 - **GIVEN** the active account has `serverType == .cloudUS` or `serverType == .cloudEU`
 - **WHEN** `PrizmAPIClient` posts the identity token request (`grant_type=password`)
-- **THEN** the `client_id` form parameter SHALL equal the registered identifier (not `"desktop"`)
+- **THEN** the `client_id` form parameter SHALL equal Prizm's registered identifier (not `"desktop"`)
 
 #### Scenario: Registered identifier sent on cloud token refresh
 - **GIVEN** the active account has `serverType == .cloudUS` or `serverType == .cloudEU`
 - **WHEN** `PrizmAPIClient` posts a token refresh request (`grant_type=refresh_token`)
-- **THEN** the `client_id` form parameter SHALL equal the registered identifier (not `"desktop"`)
+- **THEN** the `client_id` form parameter SHALL equal Prizm's registered identifier for consistency with official Bitwarden clients
 
 #### Scenario: Unconfigured identifier blocks cloud login
 - **GIVEN** the xcconfig value for the client identifier is empty
 - **WHEN** the user attempts to log in with a cloud option selected
-- **THEN** login SHALL fail with a clear error indicating the client identifier is not configured
+- **THEN** login SHALL fail with `AuthError.clientIdentifierNotConfigured` before any network request is made
 
 #### Scenario: Self-hosted login unaffected
 - **GIVEN** the active account has `serverType == .selfHosted`
-- **THEN** the `client_id` value used in both `identityToken` and `refreshAccessToken` SHALL remain `"desktop"` (Vaultwarden-compatible default)
+- **THEN** the `client_id` value used in both `identityToken` and `refreshAccessToken` SHALL remain `"desktop"` (Vaultwarden-compatible default; self-hosted instances do not enforce identifier checks)
 
 ---
 
