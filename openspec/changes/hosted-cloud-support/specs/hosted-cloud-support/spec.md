@@ -253,6 +253,30 @@ After successful login, the `ServerEnvironment` (including `serverType`) SHALL b
 
 Per [ADR-0023](https://contributing.bitwarden.com/architecture/adr/integration-identifiers/), third-party clients must obtain a registered identifier from Bitwarden via a support ticket. Without it, Bitwarden Cloud rejects requests with `400 Bad Request` (missing required headers) or `403 Forbidden` (unsupported identifier). Self-hosted instances perform no such checks. Prizm has obtained its registered identifier; it is injected at build time via a gitignored `LocalSecrets.xcconfig` file and MUST NOT appear in source control.
 
+**Build-time injection contract:**
+
+```
+// LocalSecrets.xcconfig  (gitignored — never commit)
+BW_CLIENT_IDENTIFIER = prizm.XXXXXXXX
+```
+
+```xml
+<!-- Prizm/Prizm-Info.plist -->
+<key>BWClientIdentifier</key>
+<string>$(BW_CLIENT_IDENTIFIER)</string>
+```
+
+```swift
+// App/Config.swift
+/// Registered Bitwarden client identifier, injected at build time via LocalSecrets.xcconfig.
+/// Empty string when LocalSecrets.xcconfig is absent — cloud login fails fast with
+/// AuthError.clientIdentifierNotConfigured before any network request is attempted.
+static let bitwardenClientIdentifier: String =
+    Bundle.main.object(forInfoDictionaryKey: "BWClientIdentifier") as? String ?? ""
+```
+
+`AuthRepositoryImpl` reads `Config.bitwardenClientIdentifier` and throws `AuthError.clientIdentifierNotConfigured` if empty before making any cloud identity token request. A template file `LocalSecrets.xcconfig.template` SHALL be committed to the repo root with empty value and copy instructions.
+
 `PrizmAPIClient` currently sends `ClientHeaders.clientId = "desktop"` — a real Bitwarden-registered identifier for their own desktop client. Using it would violate ADR-0023; Prizm's own registered identifier MUST be used instead.
 
 **Enforcement by grant type:**
@@ -485,7 +509,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `AuthRepositoryImpl.setServerEnvironment(_:)` calls `apiClient.setServerEnvironment(_:)` (not `setBaseURL`)
 - `LoginUseCaseImpl` does NOT call `auth.validateServerURL` when `environment.serverType == .cloudUS` or `.cloudEU`
 - `LoginUseCaseImpl` DOES call `auth.validateServerURL` when `environment.serverType == .selfHosted`
-- Cloud login attempt with empty client identifier throws before making a network request
+- `Config.bitwardenClientIdentifier` empty (no `LocalSecrets.xcconfig`) → `AuthRepositoryImpl` throws `AuthError.clientIdentifierNotConfigured` before any network request
 - `PrizmAPIClient.baseRequest()` sets `Bitwarden-Client-Name` and `Bitwarden-Client-Version` HTTP headers on every request; a cloud `identityToken` request includes both
 - `PrizmAPIClient.refreshAccessToken` sends the registered cloud `client_id` (not `"desktop"`) when `serverType` is cloud
 - `AuthRepositoryImpl.loginWithPassword` returns `LoginResult.requiresNewDeviceOTP` when the identity token response is `HTTP 400` with `{"error": "device_error"}`
@@ -562,9 +586,10 @@ Starting value: `2026.4.0` — the current Bitwarden server release as of the im
 ### Requirement: Update `DEVELOPMENT.md` for `LocalSecrets.xcconfig`
 
 `DEVELOPMENT.md` SHALL be updated to document the new `LocalSecrets.xcconfig` setup step required for cloud login:
-- Add a `LocalSecrets.xcconfig` section explaining its purpose (injects the registered Bitwarden client identifier at build time)
-- Provide a template copy command analogous to the existing `LocalConfig.xcconfig` instructions
-- Clarify that without this file, the app will build successfully but cloud login will fail at runtime with a clear error — self-hosted login is unaffected
+- Add a `LocalSecrets.xcconfig` section explaining its purpose (injects `BW_CLIENT_IDENTIFIER` at build time via `BWClientIdentifier` Info.plist key, read by `Config.bitwardenClientIdentifier`)
+- Provide the copy command: `cp LocalSecrets.xcconfig.template LocalSecrets.xcconfig`
+- Note the xcconfig must be included in the Xcode project under the Debug and Release configurations (analogous to `LocalConfig.xcconfig`)
+- Clarify that without this file (or with an empty `BW_CLIENT_IDENTIFIER`), the app will build successfully but cloud login will fail at runtime with `AuthError.clientIdentifierNotConfigured` — self-hosted login is unaffected
 
 ---
 
