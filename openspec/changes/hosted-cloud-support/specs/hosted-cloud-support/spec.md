@@ -400,7 +400,8 @@ case otpPrompt   // device_error received; app shows NewDeviceOTPView
 | `.loading` | `LoginResult.requiresNewDeviceOTP` returned | `.otpPrompt` |
 | `.otpPrompt` | Sign In tapped (OTP submit) | `.loading` |
 | `.otpPrompt` | Invalid OTP (`invalid_grant`) | `.otpPrompt` (error shown, field remains) |
-| `.otpPrompt` | Resend tapped | `.loading` → `.otpPrompt` (OTP field cleared, confirmation announced) |
+| `.otpPrompt` | Resend tapped | `.loading` → `.otpPrompt` (OTP field cleared on success, confirmation announced) |
+| `.otpPrompt` | Resend fails (network error) | `.otpPrompt` (error shown, OTP field unchanged) |
 | `.otpPrompt` | Cancel tapped | `.login` (credentials zeroed) |
 
 #### Scenario: OTP screen shown on device_error
@@ -455,9 +456,16 @@ New device verification is not required on every login; Bitwarden decides when t
 - **GIVEN** `flowState == .otpPrompt`
 - **WHEN** the user taps "Resend code"
 - **THEN** `loginUseCase.resendNewDeviceOTP()` SHALL be called
-- **AND** the OTP field SHALL be cleared
 - **AND** `flowState` SHALL transition to `.loading` during the request and back to `.otpPrompt` on completion
+- **AND** the OTP field SHALL be cleared on success
 - **AND** an `AccessibilityNotification.Announcement` SHALL be posted with "A new code has been sent to your email"
+
+#### Scenario: Resend code fails
+- **GIVEN** `flowState == .otpPrompt`
+- **WHEN** the user taps "Resend code" and `resendNewDeviceOTP()` throws (e.g. network error)
+- **THEN** `flowState` SHALL return to `.otpPrompt`
+- **AND** an error message SHALL be shown (e.g. "Could not send a new code. Check your connection and try again.")
+- **AND** the OTP field SHALL remain unchanged — the user's existing code may still be valid
 
 `LoginUseCase` SHALL gain a `resendNewDeviceOTP() async throws` method. `AuthRepositoryImpl` implements it by retrying the original identity token request without `newdeviceotp`, causing the server to recognise the unverified device and dispatch a new code.
 
@@ -540,7 +548,8 @@ Per §IV, tests MUST be written before implementation. The following are require
 - `flowState` transitions to `.otpPrompt` when `execute` returns `LoginResult.requiresNewDeviceOTP`
 - `flowState` transitions to `.login` when Cancel is tapped from `NewDeviceOTPView` (after `cancelNewDeviceOTP()`)
 - `flowState` remains `.otpPrompt` after an invalid OTP error; error message is set
-- `loginUseCase.resendNewDeviceOTP()` is called when "Resend code" is tapped; OTP field is cleared and confirmation is announced
+- `loginUseCase.resendNewDeviceOTP()` is called when "Resend code" is tapped; on success OTP field is cleared and confirmation is announced
+- `loginUseCase.resendNewDeviceOTP()` throws → `flowState` returns to `.otpPrompt`, error message set, OTP field unchanged
 - `LoginUseCaseImpl.resendNewDeviceOTP()` calls `auth.requestNewDeviceOTP()` to re-trigger server dispatch
 
 **Integration tests:**
