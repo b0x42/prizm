@@ -12,7 +12,7 @@
 
 ## 3. Verify red styling on all destructive actions
 
-- [ ] 3.1 Audit all destructive buttons and context menu items; ensure each uses `.foregroundStyle(.red)` or `role: .destructive`: Delete Folder, Delete Collection, Move to Trash, Delete Permanently (note: Empty Trash button is not yet implemented — out of scope)
+- [ ] 3.1 Audit all destructive buttons and context menu items; ensure each uses `.foregroundStyle(.red)` or `role: .destructive`: Delete Folder, Delete Collection, Delete Permanently (note: Empty Trash button is not yet implemented — out of scope). "Move to Trash" and the Trash sidebar icon SHALL NOT use red styling — trashing is reversible
 
 ## 4. Tests
 
