@@ -16,7 +16,7 @@ final class ToggleFavoriteTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         vault = MockVaultRepository()
-        vault.populate(items: [unfavoritedItem], folders: [], organizations: [], collections: [], syncedAt: .now)
+        await vault.populate(items: [unfavoritedItem], folders: [], organizations: [], collections: [], syncedAt: .now)
         let syncRepo = MockSyncTimestampRepository(storedDate: nil)
         sut = VaultBrowserViewModel(
             vault:           vault,
@@ -57,7 +57,7 @@ final class ToggleFavoriteTests: XCTestCase {
             creationDate: .now, revisionDate: .now,
             content: unfavoritedItem.content
         )
-        vault.populate(items: [favoritedItem], folders: [], organizations: [], collections: [], syncedAt: .now)
+        await vault.populate(items: [favoritedItem], folders: [], organizations: [], collections: [], syncedAt: .now)
         vault.stubbedUpdateResult = unfavoritedItem
 
         sut.toggleFavorite(item: favoritedItem)

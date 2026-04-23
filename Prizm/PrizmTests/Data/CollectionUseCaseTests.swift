@@ -34,7 +34,7 @@ final class CollectionUseCaseTests: XCTestCase {
 
     // MARK: - VaultRepository filtering: .collection(id)
 
-    func testCollectionFiltering_returnsOnlyItemsInThatCollection() throws {
+    func testCollectionFiltering_returnsOnlyItemsInThatCollection() async throws {
         let mockAPI    = MockPrizmAPIClient()
         let mockCrypto = MockPrizmCryptoService()
         let sut        = VaultRepositoryImpl(apiClient: mockAPI, crypto: mockCrypto)
@@ -47,10 +47,10 @@ final class CollectionUseCaseTests: XCTestCase {
         let itemInBoth  = makeLogin(name: "InBoth", collectionIds: [colA, colB])
         let itemInNone  = makeLogin(name: "InNone", collectionIds: [])
 
-        sut.populate(items: [itemInA, itemInB, itemInBoth, itemInNone],
-                     folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [itemInA, itemInB, itemInBoth, itemInNone],
+                           folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.items(for: .collection(colA))
+        let result = try await sut.items(for: .collection(colA))
         let names  = result.map(\.name)
         XCTAssertTrue(names.contains("InA"),    "InA should appear for collection A")
         XCTAssertTrue(names.contains("InBoth"), "InBoth should appear for collection A")
@@ -59,18 +59,18 @@ final class CollectionUseCaseTests: XCTestCase {
         XCTAssertEqual(result.count, 2)
     }
 
-    func testCollectionFiltering_unknownId_returnsEmpty() throws {
+    func testCollectionFiltering_unknownId_returnsEmpty() async throws {
         let sut = VaultRepositoryImpl(apiClient: MockPrizmAPIClient(), crypto: MockPrizmCryptoService())
-        sut.populate(items: [makeLogin(name: "X", collectionIds: ["col-1"])],
-                     folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [makeLogin(name: "X", collectionIds: ["col-1"])],
+                           folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.items(for: .collection("no-such-collection"))
+        let result = try await sut.items(for: .collection("no-such-collection"))
         XCTAssertTrue(result.isEmpty)
     }
 
     // MARK: - VaultRepository filtering: .organization(id)
 
-    func testOrganizationFiltering_returnsItemsFromAllOrgCollections() throws {
+    func testOrganizationFiltering_returnsItemsFromAllOrgCollections() async throws {
         let mockAPI    = MockPrizmAPIClient()
         let mockCrypto = MockPrizmCryptoService()
         let sut        = VaultRepositoryImpl(apiClient: mockAPI, crypto: mockCrypto)
@@ -85,11 +85,11 @@ final class CollectionUseCaseTests: XCTestCase {
         let inOther  = makeLogin(name: "InOther", collectionIds: ["col-other"])
         let personal = makeLogin(name: "Personal", collectionIds: [])
 
-        sut.populate(items: [inColA, inColB, inOther, personal],
-                     folders: [], organizations: [],
-                     collections: [colA, colB, colOther], syncedAt: Date())
+        await sut.populate(items: [inColA, inColB, inOther, personal],
+                           folders: [], organizations: [],
+                           collections: [colA, colB, colOther], syncedAt: Date())
 
-        let result = try sut.items(for: .organization(orgId))
+        let result = try await sut.items(for: .organization(orgId))
         let names  = result.map(\.name)
         XCTAssertTrue(names.contains("InColA"),   "InColA must appear for org-1")
         XCTAssertTrue(names.contains("InColB"),   "InColB must appear for org-1")
@@ -98,13 +98,12 @@ final class CollectionUseCaseTests: XCTestCase {
         XCTAssertEqual(result.count, 2)
     }
 
-    func testOrganizationFiltering_noCollections_returnsEmpty() throws {
+    func testOrganizationFiltering_noCollections_returnsEmpty() async throws {
         let sut = VaultRepositoryImpl(apiClient: MockPrizmAPIClient(), crypto: MockPrizmCryptoService())
-        sut.populate(items: [makeLogin(name: "X", collectionIds: ["col-A"])],
-                     folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [makeLogin(name: "X", collectionIds: ["col-A"])],
+                           folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        // No collections registered for org-1 → no items returned.
-        let result = try sut.items(for: .organization("org-1"))
+        let result = try await sut.items(for: .organization("org-1"))
         XCTAssertTrue(result.isEmpty)
     }
 
@@ -200,7 +199,7 @@ final class CollectionUseCaseTests: XCTestCase {
         XCTAssertEqual(created.organizationId, "org-1")
         XCTAssertEqual(created.name, "Work Passwords", "Cache must store plaintext name")
 
-        let cached = try sut.collections()
+        let cached = try await sut.collections()
         XCTAssertTrue(cached.contains(where: { $0.id == "col-new" }),
                       "New collection must appear in collections()")
     }
@@ -257,8 +256,8 @@ final class CollectionUseCaseTests: XCTestCase {
         ))
 
         let existing = OrgCollection(id: "col-1", organizationId: "org-1", name: "Old Name")
-        sut.populate(items: [], folders: [], organizations: [],
-                     collections: [existing], syncedAt: Date())
+        await sut.populate(items: [], folders: [], organizations: [],
+                           collections: [existing], syncedAt: Date())
 
         mockAPI.renameCollectionResponse = RawCollection(
             id: "col-1", organizationId: "org-1", name: "2.encNewName|iv|mac"
@@ -268,7 +267,7 @@ final class CollectionUseCaseTests: XCTestCase {
                                                       name: "New Name")
 
         XCTAssertEqual(renamed.name, "New Name")
-        let cached = try sut.collections()
+        let cached = try await sut.collections()
         XCTAssertEqual(cached.first(where: { $0.id == "col-1" })?.name, "New Name",
                        "Cache must reflect the new plaintext name")
     }
@@ -281,12 +280,12 @@ final class CollectionUseCaseTests: XCTestCase {
         let sut        = VaultRepositoryImpl(apiClient: mockAPI, crypto: mockCrypto)
 
         let col = OrgCollection(id: "col-delete-me", organizationId: "org-1", name: "Bye")
-        sut.populate(items: [], folders: [], organizations: [],
-                     collections: [col], syncedAt: Date())
+        await sut.populate(items: [], folders: [], organizations: [],
+                           collections: [col], syncedAt: Date())
 
         try await sut.deleteCollection(id: "col-delete-me", organizationId: "org-1")
 
-        let cached = try sut.collections()
+        let cached = try await sut.collections()
         XCTAssertFalse(cached.contains(where: { $0.id == "col-delete-me" }),
                        "Deleted collection must be removed from local cache")
     }

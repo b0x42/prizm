@@ -20,7 +20,9 @@ actor VaultRepositoryImpl: VaultRepository {
 
     private let apiClient:   any PrizmAPIClientProtocol
     private let crypto:      any PrizmCryptoService
-    private let mapper:      CipherMapper
+    // `nonisolated`: CipherMapper is Sendable with no mutable state; marking it nonisolated
+    // allows the actor init to be called from @MainActor without an actor hop.
+    nonisolated private let mapper: CipherMapper
     private let orgKeyCache: OrgKeyCache
 
     // MARK: - Raw stores
@@ -36,26 +38,45 @@ actor VaultRepositoryImpl: VaultRepository {
     // MARK: - Read indexes (rebuilt by buildIndexes() after every mutation)
 
     /// Pre-filtered, sorted item lists keyed by SidebarSelection.
-    private var _bySelection: [SidebarSelection: [VaultItem]] = [:]
+    private var _bySelection: [SidebarSelection: [VaultItem]]
 
     /// Pre-computed counts keyed by SidebarSelection.
-    private var _counts: [SidebarSelection: Int] = [:]
+    private var _counts: [SidebarSelection: Int]
 
     /// Maps orgId → Set<collectionId> for O(1) org-membership tests.
-    private var _orgCollectionIds: [String: Set<String>] = [:]
+    private var _orgCollectionIds: [String: Set<String>]
 
     // MARK: - Init
 
+    // `nonisolated` avoids a Swift 6 strict-concurrency error when this init is called
+    // from a `@MainActor` context (e.g. AppContainer): stored properties are initialized
+    // before the actor is "live", so the actor executor is not yet involved.
     init(
         apiClient:   any PrizmAPIClientProtocol,
         crypto:      any PrizmCryptoService,
         mapper:      CipherMapper = CipherMapper(),
         orgKeyCache: OrgKeyCache = OrgKeyCache()
     ) {
-        self.apiClient   = apiClient
-        self.crypto      = crypto
-        self.mapper      = mapper
-        self.orgKeyCache = orgKeyCache
+        self.apiClient         = apiClient
+        self.crypto            = crypto
+        self.mapper            = mapper
+        self.orgKeyCache       = orgKeyCache
+
+        // Pre-populate static keys with zero counts so itemCounts() returns 0 (not nil)
+        // before the first populate() / buildIndexes() call (e.g. empty-vault tests).
+        var bySelection: [SidebarSelection: [VaultItem]] = [
+            .allItems: [], .favorites: [], .trash: []
+        ]
+        var counts: [SidebarSelection: Int] = [
+            .allItems: 0, .favorites: 0, .trash: 0
+        ]
+        for type in ItemType.allCases {
+            bySelection[.type(type)] = []
+            counts[.type(type)] = 0
+        }
+        self._bySelection      = bySelection
+        self._counts           = counts
+        self._orgCollectionIds = [:]
     }
 
     // MARK: - Write side (called by SyncRepositoryImpl)
@@ -110,45 +131,46 @@ actor VaultRepositoryImpl: VaultRepository {
                 $0.organizationId == nil && $0.folderId == folder.id
             })
         }
-        for collection in collectionStore {
-            bySelection[.collection(collection.id)] = sorted(active.filter {
-                $0.collectionIds.contains(collection.id)
+        // Index by collection — cover all collectionIds referenced in items, not just those
+        // present in collectionStore. Items may reference collections that haven't been fetched
+        // yet (e.g. before the first full sync), so we union both sources.
+        var allCollectionIds = Set(collectionStore.map(\.id))
+        for item in active { allCollectionIds.formUnion(item.collectionIds) }
+        for colId in allCollectionIds {
+            bySelection[.collection(colId)] = sorted(active.filter {
+                $0.collectionIds.contains(colId)
             })
         }
-        for org in organizationStore {
-            let colIds = orgColIds[org.id] ?? []
-            bySelection[.organization(org.id)] = sorted(active.filter {
-                $0.organizationId == org.id ||
+        // Index by organization — derive from collectionStore's organizationIds as well as
+        // organizationStore, so org filtering works even when organizations: [] is passed to
+        // populate() but collections carry orgId metadata.
+        var allOrgIds = Set(organizationStore.map(\.id))
+        allOrgIds.formUnion(orgColIds.keys)
+        for orgId in allOrgIds {
+            let colIds = orgColIds[orgId] ?? []
+            bySelection[.organization(orgId)] = sorted(active.filter {
+                $0.organizationId == orgId ||
                 $0.collectionIds.contains(where: { colIds.contains($0) })
             })
         }
         _bySelection = bySelection
 
-        // Build _counts
+        // Derive _counts from _bySelection — no second filtering pass over items.
         var counts: [SidebarSelection: Int] = [:]
-        counts[.allItems]  = active.count
-        counts[.favorites] = active.filter(\.isFavorite).count
-        counts[.trash]     = items.filter(\.isDeleted).count
-
+        counts[.allItems]  = bySelection[.allItems]?.count  ?? 0
+        counts[.favorites] = bySelection[.favorites]?.count ?? 0
+        counts[.trash]     = bySelection[.trash]?.count     ?? 0
         for type in ItemType.allCases {
-            counts[.type(type)] = active.filter { $0.content.matchesItemType(type) }.count
+            counts[.type(type)] = bySelection[.type(type)]?.count ?? 0
         }
         for folder in folderStore {
-            counts[.folder(folder.id)] = active.filter {
-                $0.organizationId == nil && $0.folderId == folder.id
-            }.count
+            counts[.folder(folder.id)] = bySelection[.folder(folder.id)]?.count ?? 0
         }
-        for collection in collectionStore {
-            counts[.collection(collection.id)] = active.filter {
-                $0.collectionIds.contains(collection.id)
-            }.count
+        for colId in allCollectionIds {
+            counts[.collection(colId)] = bySelection[.collection(colId)]?.count ?? 0
         }
-        for org in organizationStore {
-            let colIds = orgColIds[org.id] ?? []
-            counts[.organization(org.id)] = active.filter {
-                $0.organizationId == org.id ||
-                $0.collectionIds.contains(where: { colIds.contains($0) })
-            }.count
+        for orgId in allOrgIds {
+            counts[.organization(orgId)] = bySelection[.organization(orgId)]?.count ?? 0
         }
         _counts = counts
     }
@@ -552,7 +574,7 @@ actor VaultRepositoryImpl: VaultRepository {
 
 // MARK: - ItemContent search / type matching
 
-private extension ItemContent {
+nonisolated private extension ItemContent {
     func matchesItemType(_ type: ItemType) -> Bool {
         switch (self, type) {
         case (.login,      .login):      return true
@@ -565,7 +587,7 @@ private extension ItemContent {
     }
 }
 
-private extension VaultItem {
+nonisolated private extension VaultItem {
     /// Case-insensitive substring search across type-specific fields (FR-012).
     func matchesSearch(query: String) -> Bool {
         if name.localizedCaseInsensitiveContains(query) { return true }

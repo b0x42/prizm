@@ -28,7 +28,8 @@ nonisolated enum AttachmentMapperError: Error, Equatable {
 ///
 /// **Deviations**: none. The decryption algorithm and key usage match the Bitwarden
 /// reference implementation.
-nonisolated final class AttachmentMapper {
+// `Sendable`: no mutable instance state — only a static logger.
+nonisolated final class AttachmentMapper: Sendable {
 
     private static let logger = Logger(subsystem: "com.prizm", category: "attachments")
 
