@@ -3,12 +3,11 @@
 - [ ] 1.1 Expose `isEditing` computed property on `ItemEditViewModel` (true when `editUseCase != nil`)
 - [ ] 1.2 Add `onDelete: ((String) async -> Void)?` closure to `ItemEditView`; add a red "Delete Item" button at the bottom of the form, hidden when `!viewModel.isEditing`; include `accessibilityIdentifier`
 - [ ] 1.3 Wire confirmation alert in `ItemEditView`: on confirm, dismiss sheet then call `onDelete`
-- [ ] 1.4 Pass `onDelete` closure from `VaultBrowserView` into `ItemEditView`, calling `viewModel.performSoftDelete`
+- [ ] 1.4 Thread the `onDelete` closure through `ItemDetailView` → `ItemEditView`. `ItemDetailView` already receives `onSoftDelete` — repurpose it to pass into the edit sheet's `onDelete` parameter. The create-mode sheet in `VaultBrowserView` passes `nil` (no delete during creation).
 
 ## 2. Remove Delete from detail toolbar
 
-- [ ] 2.1 Remove the soft-delete `ToolbarItem(placement: .destructiveAction)` and `showSoftDeleteAlert` from `VaultBrowserView`'s active-item detail toolbar
-- [ ] 2.2 Remove `onSoftDelete` from `ItemDetailView` (permanent delete for trashed items stays)
+- [ ] 2.1 Remove the soft-delete `ToolbarItem(placement: .destructiveAction)` and `showSoftDeleteAlert` alert from `VaultBrowserView`'s active-item detail toolbar
 
 ## 3. Verify red styling on all destructive actions
 

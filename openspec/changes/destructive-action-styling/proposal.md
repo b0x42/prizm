@@ -4,7 +4,7 @@ Destructive actions (Delete, Empty Trash, Delete Folder, Delete Collection) have
 
 ## What Changes
 
-- Enforce `.foregroundStyle(.red)` (or `role: .destructive`) on every destructive button and menu item across the app: Delete, Delete Permanently, Empty Trash, Move to Trash, Delete Folder, Delete Collection
+- Enforce `.foregroundStyle(.red)` (or `role: .destructive`) on every destructive button and menu item across the app: Delete Item (edit sheet), Delete Permanently, Delete Folder, Delete Collection. "Move to Trash" and the Trash sidebar icon are excluded — trashing is reversible
 - Move the item Delete button out of the detail view toolbar and into the bottom of `ItemEditView`
 - Keep the existing confirmation alert flow unchanged
 - Remove the soft-delete toolbar item from `VaultBrowserView`'s detail toolbar
