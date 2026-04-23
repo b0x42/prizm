@@ -10,7 +10,7 @@ final class BiometricUnlockToggleTests: XCTestCase {
 
     private var mockAuth: MockAuthRepository!
 
-    override func setUp() {
+    override func setUp() async throws {
         mockAuth = MockAuthRepository()
     }
 

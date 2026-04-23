@@ -10,10 +10,10 @@ final class SearchVaultUseCaseImpl: SearchVaultUseCase {
         self.vault = vault
     }
 
-    func execute(query: String, in selection: SidebarSelection) throws -> [VaultItem] {
+    func execute(query: String, in selection: SidebarSelection) async throws -> [VaultItem] {
         if query.isEmpty {
-            return try vault.items(for: selection)
+            return try await vault.items(for: selection)
         }
-        return try vault.searchItems(query: query, in: selection)
+        return try await vault.searchItems(query: query, in: selection)
     }
 }

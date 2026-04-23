@@ -84,7 +84,7 @@ final class SearchVaultTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         vault = VaultRepositoryImpl(apiClient: MockPrizmAPIClient(), crypto: MockPrizmCryptoService())
-        vault.populate(items: Self.allFixtures, folders: [], organizations: [], collections: [], syncedAt: Self.now)
+        await vault.populate(items: Self.allFixtures, folders: [], organizations: [], collections: [], syncedAt: Self.now)
         sut = SearchVaultUseCaseImpl(vault: vault)
     }
 
@@ -96,95 +96,95 @@ final class SearchVaultTests: XCTestCase {
 
     // MARK: - Name search (all types)
 
-    func testSearchByName_matchesPartialCaseInsensitive() throws {
-        let results = try sut.execute(query: "git", in: .allItems)
+    func testSearchByName_matchesPartialCaseInsensitive() async throws {
+        let results = try await sut.execute(query: "git", in: .allItems)
         XCTAssertEqual(Set(results.map(\.id)), Set(["1", "2"]))
     }
 
     // MARK: - Login-specific fields
 
-    func testSearchLogin_matchesUsername() throws {
-        let results = try sut.execute(query: "octocat", in: .allItems)
+    func testSearchLogin_matchesUsername() async throws {
+        let results = try await sut.execute(query: "octocat", in: .allItems)
         XCTAssertEqual(results.map(\.id), ["1"])
     }
 
-    func testSearchLogin_matchesURI() throws {
-        let results = try sut.execute(query: "gitlab.com", in: .allItems)
+    func testSearchLogin_matchesURI() async throws {
+        let results = try await sut.execute(query: "gitlab.com", in: .allItems)
         XCTAssertEqual(results.map(\.id), ["2"])
     }
 
     // MARK: - Card-specific fields
 
-    func testSearchCard_matchesCardholderName() throws {
-        let results = try sut.execute(query: "alice smith", in: .allItems)
+    func testSearchCard_matchesCardholderName() async throws {
+        let results = try await sut.execute(query: "alice smith", in: .allItems)
         // Should match card (cardholderName) and identity (company: Acme, email: alice@acme)
         XCTAssertTrue(results.contains(where: { $0.id == "3" }), "Card should match on cardholderName")
     }
 
     // MARK: - Identity-specific fields
 
-    func testSearchIdentity_matchesEmail() throws {
-        let results = try sut.execute(query: "alice@acme", in: .allItems)
+    func testSearchIdentity_matchesEmail() async throws {
+        let results = try await sut.execute(query: "alice@acme", in: .allItems)
         XCTAssertEqual(results.map(\.id), ["4"])
     }
 
-    func testSearchIdentity_matchesCompany() throws {
-        let results = try sut.execute(query: "acme corp", in: .allItems)
+    func testSearchIdentity_matchesCompany() async throws {
+        let results = try await sut.execute(query: "acme corp", in: .allItems)
         XCTAssertEqual(results.map(\.id), ["4"])
     }
 
     // MARK: - SecureNote and SSHKey: name only
 
-    func testSearchSecureNote_matchesNameOnly() throws {
-        let results = try sut.execute(query: "secret", in: .allItems)
+    func testSearchSecureNote_matchesNameOnly() async throws {
+        let results = try await sut.execute(query: "secret", in: .allItems)
         XCTAssertEqual(results.map(\.id), ["5"])
     }
 
-    func testSearchSSHKey_matchesNameOnly() throws {
-        let results = try sut.execute(query: "deploy", in: .allItems)
+    func testSearchSSHKey_matchesNameOnly() async throws {
+        let results = try await sut.execute(query: "deploy", in: .allItems)
         XCTAssertEqual(results.map(\.id), ["6"])
     }
 
-    func testSearchSSHKey_doesNotMatchFingerprint() throws {
-        let results = try sut.execute(query: "SHA256", in: .allItems)
+    func testSearchSSHKey_doesNotMatchFingerprint() async throws {
+        let results = try await sut.execute(query: "SHA256", in: .allItems)
         XCTAssertTrue(results.isEmpty, "SSH key search should only match name, not fingerprint")
     }
 
     // MARK: - Category scoping
 
-    func testSearchScopedToLoginType() throws {
-        let results = try sut.execute(query: "git", in: .type(.login))
+    func testSearchScopedToLoginType() async throws {
+        let results = try await sut.execute(query: "git", in: .type(.login))
         XCTAssertEqual(Set(results.map(\.id)), Set(["1", "2"]))
     }
 
-    func testSearchScopedToCardType_excludesLogins() throws {
+    func testSearchScopedToCardType_excludesLogins() async throws {
         // "Alice" would match identity too, but card scope should only return the card
-        let results = try sut.execute(query: "alice", in: .type(.card))
+        let results = try await sut.execute(query: "alice", in: .type(.card))
         XCTAssertEqual(results.map(\.id), ["3"])
     }
 
-    func testSearchScopedToFavorites() throws {
-        let results = try sut.execute(query: "git", in: .favorites)
+    func testSearchScopedToFavorites() async throws {
+        let results = try await sut.execute(query: "git", in: .favorites)
         XCTAssertEqual(results.map(\.id), ["1"], "Only favorite GitHub should match")
     }
 
     // MARK: - Empty results
 
-    func testSearchNoMatch_returnsEmpty() throws {
-        let results = try sut.execute(query: "nonexistent", in: .allItems)
+    func testSearchNoMatch_returnsEmpty() async throws {
+        let results = try await sut.execute(query: "nonexistent", in: .allItems)
         XCTAssertTrue(results.isEmpty)
     }
 
-    func testSearchEmptyQuery_returnsAllInCategory() throws {
-        let results = try sut.execute(query: "", in: .allItems)
+    func testSearchEmptyQuery_returnsAllInCategory() async throws {
+        let results = try await sut.execute(query: "", in: .allItems)
         // 6 non-deleted items
         XCTAssertEqual(results.count, 6, "Empty query should return all non-deleted items")
     }
 
     // MARK: - Deleted items excluded
 
-    func testSearchExcludesDeletedItems() throws {
-        let results = try sut.execute(query: "deleted", in: .allItems)
+    func testSearchExcludesDeletedItems() async throws {
+        let results = try await sut.execute(query: "deleted", in: .allItems)
         XCTAssertTrue(results.isEmpty, "Deleted items should never appear in search results")
     }
 }

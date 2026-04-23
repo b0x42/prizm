@@ -14,8 +14,7 @@ final class MockVaultRepository: VaultRepository {
     private(set) var populatedFolders: [Folder] = []
     private(set) var populatedOrganizations: [Organization] = []
     private(set) var populatedCollections: [OrgCollection] = []
-    private(set) var lastSyncedAt:   Date?        = nil
-    private(set) var clearVaultCalled: Bool       = false
+    private(set) var clearVaultCalled: Bool = false
 
     // MARK: - update(_:) stubbing
 
@@ -27,38 +26,36 @@ final class MockVaultRepository: VaultRepository {
     // MARK: - VaultRepository (write side)
 
     func populate(items: [VaultItem], folders: [Folder], organizations: [Organization],
-                  collections: [OrgCollection], syncedAt: Date) {
+                  collections: [OrgCollection], syncedAt: Date) async {
         populatedItems         = items
         populatedFolders       = folders
         populatedOrganizations = organizations
         populatedCollections   = collections
-        lastSyncedAt           = syncedAt
     }
 
-    func clearVault() {
+    func clearVault() async {
         populatedItems         = []
         populatedFolders       = []
         populatedOrganizations = []
         populatedCollections   = []
-        lastSyncedAt           = nil
         clearVaultCalled       = true
     }
 
     // MARK: - VaultRepository (read side)
 
-    func allItems() throws -> [VaultItem] { populatedItems }
+    func allItems() async throws -> [VaultItem] { populatedItems }
 
-    func folders() throws -> [Folder] { populatedFolders }
+    func folders() async throws -> [Folder] { populatedFolders }
 
-    func organizations() throws -> [Organization] { populatedOrganizations }
+    func organizations() async throws -> [Organization] { populatedOrganizations }
 
-    func collections() throws -> [OrgCollection] { populatedCollections }
+    func collections() async throws -> [OrgCollection] { populatedCollections }
 
-    func items(for collection: String) throws -> [VaultItem] {
+    func items(for collection: String) async throws -> [VaultItem] {
         populatedItems.filter { $0.collectionIds.contains(collection) }
     }
 
-    func items(for selection: SidebarSelection) throws -> [VaultItem] {
+    func items(for selection: SidebarSelection) async throws -> [VaultItem] {
         switch selection {
         case .allItems:
             return populatedItems
@@ -82,13 +79,13 @@ final class MockVaultRepository: VaultRepository {
         }
     }
 
-    func searchItems(query: String, in selection: SidebarSelection) throws -> [VaultItem] {
-        let base = try items(for: selection)
+    func searchItems(query: String, in selection: SidebarSelection) async throws -> [VaultItem] {
+        let base = try await items(for: selection)
         guard !query.isEmpty else { return base }
         return base.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
-    func itemCounts() throws -> [SidebarSelection: Int] { [:] }
+    func itemCounts() async throws -> [SidebarSelection: Int] { [:] }
 
     func itemDetail(id: String) async throws -> VaultItem {
         guard let item = populatedItems.first(where: { $0.id == id }) else {

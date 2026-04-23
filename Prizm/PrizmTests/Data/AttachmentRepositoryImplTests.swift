@@ -47,7 +47,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             content:      .secureNote(SecureNoteContent(notes: nil, customFields: [])),
             attachments:  []
         )
-        vaultRepo.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await vaultRepo.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
     }
 
     // MARK: - Upload: fileUploadType 0 (Bitwarden-hosted)
@@ -330,7 +330,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             url:                "https://cdn.example.com/file",
             isUploadIncomplete: false
         )
-        vaultRepo.populate(items: [VaultItem(
+        await vaultRepo.populate(items: [VaultItem(
             id:           cipherId,
             name:         "Test Item",
             isFavorite:   false,
@@ -371,7 +371,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
             url:                "https://cdn.example.com/delete",
             isUploadIncomplete: false
         )
-        vaultRepo.populate(items: [VaultItem(
+        await vaultRepo.populate(items: [VaultItem(
             id:           cipherId,
             name:         "Test Item",
             isFavorite:   false,

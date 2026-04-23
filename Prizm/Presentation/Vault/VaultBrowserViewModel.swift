@@ -162,9 +162,7 @@ final class VaultBrowserViewModel: ObservableObject {
         refreshCounts()
         refreshFolders()
         refreshOrganizations()
-        // Load persisted timestamp first; fall back to in-memory value from the vault store
-        // (populated on the current session's sync, but not persisted across restarts).
-        lastSyncedAt   = getLastSyncDate.execute() ?? vault.lastSyncedAt
+        lastSyncedAt    = getLastSyncDate.execute()
         syncStatusLabel = lastSyncedAt.syncStatusLabel()
         startLabelRefreshTimer()
     }
@@ -244,19 +242,23 @@ final class VaultBrowserViewModel: ObservableObject {
     // MARK: - Refresh
 
     /// Refreshes `displayedItems` from the vault store based on current selection + search query.
+    /// Executes the vault read on the actor executor via a fire-and-forget `Task`.
     func refreshItems() {
-        do {
-            let scope: SidebarSelection
-            if isGlobalSearch {
-                if case .folder = sidebarSelection { scope = sidebarSelection }
-                else { scope = .allItems }
-            } else {
-                scope = sidebarSelection
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let scope: SidebarSelection
+                if isGlobalSearch {
+                    if case .folder = sidebarSelection { scope = sidebarSelection }
+                    else { scope = .allItems }
+                } else {
+                    scope = sidebarSelection
+                }
+                displayedItems = try await search.execute(query: searchQuery, in: scope)
+            } catch {
+                logger.error("Failed to load vault items: \(error.localizedDescription, privacy: .public)")
+                displayedItems = []
             }
-            displayedItems = try search.execute(query: searchQuery, in: scope)
-        } catch {
-            logger.error("Failed to load vault items: \(error.localizedDescription, privacy: .public)")
-            displayedItems = []
         }
     }
 
@@ -267,16 +269,22 @@ final class VaultBrowserViewModel: ObservableObject {
     /// the item hasn't changed the assignment is a no-op.
     func refreshItemSelection() {
         guard let currentId = itemSelection?.id else { return }
-        guard let updated = try? vault.allItems().first(where: { $0.id == currentId }) else { return }
-        itemSelection = updated
+        Task { [weak self] in
+            guard let self else { return }
+            guard let updated = try? await vault.allItems().first(where: { $0.id == currentId }) else { return }
+            itemSelection = updated
+        }
     }
 
     /// Refreshes sidebar item counts from the vault store.
     func refreshCounts() {
-        do {
-            itemCounts = try vault.itemCounts()
-        } catch {
-            logger.error("Failed to load item counts: \(error.localizedDescription, privacy: .public)")
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                itemCounts = try await vault.itemCounts()
+            } catch {
+                logger.error("Failed to load item counts: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
@@ -293,7 +301,7 @@ final class VaultBrowserViewModel: ObservableObject {
         self.syncTimestamp   = repository
         self.getLastSyncDate = useCase
         // Reload the persisted timestamp from the now-correct account-scoped key.
-        lastSyncedAt    = useCase.execute() ?? vault.lastSyncedAt
+        lastSyncedAt    = useCase.execute()
         syncStatusLabel = lastSyncedAt.syncStatusLabel()
     }
 
@@ -486,19 +494,25 @@ final class VaultBrowserViewModel: ObservableObject {
     // MARK: - Refresh
 
     func refreshFolders() {
-        do {
-            folders = try vault.folders()
-        } catch {
-            logger.error("Failed to load folders: \(error.localizedDescription, privacy: .public)")
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                folders = try await vault.folders()
+            } catch {
+                logger.error("Failed to load folders: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
     func refreshOrganizations() {
-        do {
-            organizations = try vault.organizations()
-            collections   = try vault.collections()
-        } catch {
-            logger.error("Failed to load organizations: \(error.localizedDescription, privacy: .public)")
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                organizations = try await vault.organizations()
+                collections   = try await vault.collections()
+            } catch {
+                logger.error("Failed to load organizations: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 

@@ -7,7 +7,7 @@ final class AuthRepositoryBiometricTests: XCTestCase {
 
     private var sut: MockAuthRepository!
 
-    override func setUp() {
+    override func setUp() async throws {
         sut = MockAuthRepository()
     }
 

@@ -140,7 +140,7 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
         )
 
         // Step 8: Patch the in-memory vault cache.
-        let currentList = (try? vaultRepository.allItems().first { $0.id == cipherId })?.attachments ?? []
+        let currentList = (try? await vaultRepository.allItems().first { $0.id == cipherId })?.attachments ?? []
         await vaultRepository.updateAttachments(currentList + [newAttachment], for: cipherId)
 
         return newAttachment
@@ -204,7 +204,7 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
     func delete(cipherId: String, attachmentId: String) async throws {
         logger.debug("delete: cipher=\(cipherId, privacy: .public) attachment=\(attachmentId, privacy: .public)")
         try await apiClient.deleteAttachment(cipherId: cipherId, attachmentId: attachmentId)
-        let currentList = (try? vaultRepository.allItems().first { $0.id == cipherId })?.attachments ?? []
+        let currentList = (try? await vaultRepository.allItems().first { $0.id == cipherId })?.attachments ?? []
         let updatedList = currentList.filter { $0.id != attachmentId }
         await vaultRepository.updateAttachments(updatedList, for: cipherId)
         logger.info("delete: removed \(attachmentId, privacy: .public) from cache")

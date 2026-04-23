@@ -155,7 +155,12 @@ struct PrizmApp: App {
                 viewModel:         rootVM.vaultBrowserVM,
                 faviconLoader:     container.faviconLoader,
                 makeEditViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] item in
-                    let vm = container.makeItemEditViewModel(for: item)
+                    let vm = container.makeItemEditViewModel(
+                        for: item,
+                        folders: vaultBrowserVM.folders,
+                        organizations: vaultBrowserVM.organizations,
+                        collections: vaultBrowserVM.collections
+                    )
                     // Wire the list-pane refresh callback to the shared VaultBrowserViewModel.
                     vm.onSaveSuccess = { [weak vaultBrowserVM] updatedItem in
                         vaultBrowserVM?.handleItemSaved(updatedItem)
@@ -165,12 +170,19 @@ struct PrizmApp: App {
                 makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type, contextId in
                     // contextId is either a folderId (personal item) or collectionId (org item),
                     // determined by whether the current sidebar selection is a collection.
-                    let isCollection = (try? container.vaultStore.collections())?.contains(where: { $0.id == contextId }) ?? false
+                    let cols = vaultBrowserVM.collections
+                    let isCollection = contextId != nil && cols.contains(where: { $0.id == contextId })
                     let vm: ItemEditViewModel
                     if isCollection {
-                        vm = container.makeItemCreateViewModel(for: type, collectionId: contextId)
+                        vm = container.makeItemCreateViewModel(
+                            for: type, collectionId: contextId,
+                            folders: vaultBrowserVM.folders, organizations: vaultBrowserVM.organizations, collections: cols
+                        )
                     } else {
-                        vm = container.makeItemCreateViewModel(for: type, folderId: contextId)
+                        vm = container.makeItemCreateViewModel(
+                            for: type, folderId: contextId,
+                            folders: vaultBrowserVM.folders, organizations: vaultBrowserVM.organizations, collections: cols
+                        )
                     }
                     vm.onSaveSuccess = { [weak vaultBrowserVM] item in
                         vaultBrowserVM?.handleItemSaved(item)
@@ -363,8 +375,26 @@ final class RootViewModel: ObservableObject {
             // be written under the fallback empty-email key. Should not occur in normal flow.
             logger.error("\(caller, privacy: .public)(.vault): no stored account; sync timestamp not re-scoped")
         }
-        vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
         screen = .vault
+        // Defer handleSyncCompleted to the next run-loop cycle so that the initial
+        // VaultBrowserView layout pass (triggered by `screen = .vault` above) commits
+        // before any @Published mutations from async vault reads arrive.
+        //
+        // Root cause: VaultRepositoryImpl is an `actor`, so every refresh Task suspends
+        // at a cross-actor hop; the continuations resume on @MainActor asynchronously.
+        // If they land while SwiftUI is computing its first layout pass for VaultBrowserView,
+        // SwiftUI emits "Publishing changes from within view updates is not allowed" →
+        // undefined behaviour → heap corruption → z_ccm_xcma_malloc_freelist EXC_BREAKPOINT.
+        //
+        // DispatchQueue.main.async (not a Swift Task) is intentional: it guarantees
+        // the block runs between run-loop iterations, after the current CATransaction
+        // (which drives the SwiftUI layout commit) has flushed.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                self.vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
+            }
+        }
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {
@@ -406,7 +436,7 @@ final class RootViewModel: ObservableObject {
             } catch {
                 logger.error("Sign-out error: \(error.localizedDescription, privacy: .public)")
             }
-            container.vaultRepo.clearVault()
+            await container.vaultRepo.clearVault()
             await container.vaultKeyCache.clear()
             unlockVM = nil
             screen   = .login
@@ -422,7 +452,7 @@ final class RootViewModel: ObservableObject {
         guard isVaultUnlocked else { return }
         Task {
             await container.authRepo.lockVault()
-            container.vaultRepo.clearVault()
+            await container.vaultRepo.clearVault()
             // Clear all key caches in the same lock path as the vault store.
             // Key material must not outlive the vault session (Constitution §III).
             await container.vaultKeyCache.clear()

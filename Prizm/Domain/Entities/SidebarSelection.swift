@@ -39,8 +39,10 @@ nonisolated enum ItemType: String, Equatable, Hashable, CaseIterable, Identifiab
 /// and as a dictionary key in `[SidebarSelection: Int]` item counts.
 ///
 /// `Equatable` and `Hashable` are implemented explicitly with `nonisolated` to
-/// prevent Swift 5.10 from inferring `@MainActor` on the synthesized conformances,
-/// which would cause a Swift 6 error when used in nonisolated contexts.
+/// prevent the compiler from inferring `@MainActor` on the conformances when
+/// `SidebarSelection` is used as a `NavigationSplitView` selection type (a SwiftUI
+/// `@MainActor` context). The `nonisolated` on the conformance extension ensures
+/// the conformance itself is nonisolated, not just the individual methods.
 nonisolated enum SidebarSelection {
     case allItems
     case favorites
@@ -74,8 +76,8 @@ extension SidebarSelection {
     }
 }
 
-extension SidebarSelection: Hashable {
-    nonisolated static func == (lhs: SidebarSelection, rhs: SidebarSelection) -> Bool {
+nonisolated extension SidebarSelection: Hashable {
+    static func == (lhs: SidebarSelection, rhs: SidebarSelection) -> Bool {
         switch (lhs, rhs) {
         case (.allItems, .allItems):                                     return true
         case (.favorites, .favorites):                                   return true
@@ -90,7 +92,7 @@ extension SidebarSelection: Hashable {
         }
     }
 
-    nonisolated func hash(into hasher: inout Hasher) {
+    func hash(into hasher: inout Hasher) {
         switch self {
         case .allItems:                          hasher.combine(0)
         case .favorites:                         hasher.combine(1)
