@@ -183,33 +183,36 @@ final class AppContainer: ObservableObject {
 
     /// Creates an `ItemEditViewModel` for the given item, wired with the live edit use case.
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
-    func makeItemEditViewModel(for item: VaultItem) -> ItemEditViewModel {
-        let folders = (try? vaultStore.folders()) ?? []
-        let orgs    = (try? vaultStore.organizations()) ?? []
-        let cols    = (try? vaultStore.collections()) ?? []
-        return ItemEditViewModel(item: item, useCase: editVaultItemUseCase, folders: folders,
-                                 organizations: orgs, collections: cols)
+    /// Pass the cached `folders`, `organizations`, and `collections` from `VaultBrowserViewModel`
+    /// — these are pre-fetched on the actor so no additional async call is needed here.
+    func makeItemEditViewModel(for item: VaultItem,
+                               folders: [Folder] = [],
+                               organizations: [Organization] = [],
+                               collections: [OrgCollection] = []) -> ItemEditViewModel {
+        ItemEditViewModel(item: item, useCase: editVaultItemUseCase,
+                          folders: folders, organizations: organizations, collections: collections)
     }
 
     /// Creates an `ItemEditViewModel` in create mode for the given item type.
     /// Pass `collectionId` to pre-fill the collection when creating from a collection context (task 5.9 / 7.2).
+    /// Pass the cached `folders`, `organizations`, and `collections` from `VaultBrowserViewModel`.
     func makeItemCreateViewModel(for type: ItemType, folderId: String? = nil,
-                                 collectionId: String? = nil) -> ItemEditViewModel {
-        let folders = (try? vaultStore.folders()) ?? []
-        let orgs    = (try? vaultStore.organizations()) ?? []
-        let cols    = (try? vaultStore.collections()) ?? []
+                                 collectionId: String? = nil,
+                                 folders: [Folder] = [],
+                                 organizations: [Organization] = [],
+                                 collections: [OrgCollection] = []) -> ItemEditViewModel {
         // Pre-populate org and collection when creating in a collection context.
         var orgId: String? = nil
         var colIds: [String] = []
         if let colId = collectionId,
-           let col = cols.first(where: { $0.id == colId }) {
+           let col = collections.first(where: { $0.id == colId }) {
             orgId  = col.organizationId
             colIds = [colId]
         }
         return ItemEditViewModel(
             type: type, useCase: createVaultItemUseCase, folders: folders,
             folderId: folderId, organizationId: orgId, collectionIds: colIds,
-            organizations: orgs, collections: cols
+            organizations: organizations, collections: collections
         )
     }
 

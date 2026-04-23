@@ -21,7 +21,7 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         vault = MockVaultRepository()
-        vault.populate(items: [sampleLogin, sampleCard], folders: [], organizations: [], collections: [], syncedAt: .now)
+        await vault.populate(items: [sampleLogin, sampleCard], folders: [], organizations: [], collections: [], syncedAt: .now)
         let syncRepo = MockSyncTimestampRepository(storedDate: nil)
         sut = VaultBrowserViewModel(
             vault:           vault,
@@ -67,10 +67,15 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
 
     // MARK: - 1.3 search passes .allItems when isGlobalSearch is true
 
-    func testGlobalSearch_searchesAllItems() {
+    func testGlobalSearch_searchesAllItems() async throws {
         sut.sidebarSelection = .type(.login)
         sut.activateGlobalSearch()
         sut.searchQuery = "Visa"
+
+        // Yield twice: once for the outer Task spawned by searchQuery.didSet,
+        // once for the inner Task spawned by refreshItems().
+        await Task.yield()
+        await Task.yield()
 
         // Visa is a Card, not a Login — should still appear in global search
         XCTAssertTrue(sut.displayedItems.contains(where: { $0.name == "Visa" }))

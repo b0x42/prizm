@@ -1,21 +1,15 @@
 import Foundation
 
 /// In-memory vault store: write side used by `SyncRepositoryImpl`, read side used by use cases.
-/// Throws `VaultError.vaultLocked` when read methods are called before a successful unlock + sync.
-/// Implemented by `VaultRepositoryImpl` in the Data layer.
+/// Implemented by `VaultRepositoryImpl` (a dedicated `actor`) in the Data layer.
+/// All methods are `async` — callers must `await` them regardless of their own isolation context.
 protocol VaultRepository: AnyObject, Sendable {
 
-    /// Timestamp of the last successful sync, or nil if no sync has occurred this session.
-    var lastSyncedAt: Date? { get }
-
     /// All non-deleted vault items, sorted alphabetically by name (case-insensitive).
-    func allItems() throws -> [VaultItem]
+    func allItems() async throws -> [VaultItem]
 
     /// Items matching the given sidebar selection, sorted alphabetically.
-    /// - `.allItems`: same as `allItems()`.
-    /// - `.favorites`: items where `isFavorite == true`.
-    /// - `.type(t)`: items whose `content` matches `t`.
-    func items(for selection: SidebarSelection) throws -> [VaultItem]
+    func items(for selection: SidebarSelection) async throws -> [VaultItem]
 
     /// Case-insensitive substring search scoped to the active sidebar selection.
     /// Searches type-specific fields per FR-012:
@@ -24,67 +18,46 @@ protocol VaultRepository: AnyObject, Sendable {
     /// - Identity:   name, email, company
     /// - SecureNote: name
     /// - SSHKey:     name
-    func searchItems(query: String, in selection: SidebarSelection) throws -> [VaultItem]
+    func searchItems(query: String, in selection: SidebarSelection) async throws -> [VaultItem]
 
-    /// Cached item counts keyed by `SidebarSelection`.
-    /// Computed once after sync and held for the session.
-    func itemCounts() throws -> [SidebarSelection: Int]
+    /// Cached item counts keyed by `SidebarSelection`. O(1) — served from a pre-built index.
+    func itemCounts() async throws -> [SidebarSelection: Int]
 
     /// Returns the fully-decrypted detail for a single item.
     /// Not cached — re-decrypts on every call (decrypt on demand, per spec).
     func itemDetail(id: String) async throws -> VaultItem
 
-    /// Replaces the in-memory vault store with `items`, `folders`, `organizations`, and `collections`,
-    /// and records the sync timestamp. Called by `SyncRepositoryImpl` after a successful sync.
+    /// Replaces the in-memory vault store and rebuilds all read indexes.
+    /// Called by `SyncRepositoryImpl` after a successful sync.
     func populate(items: [VaultItem], folders: [Folder], organizations: [Organization],
-                  collections: [OrgCollection], syncedAt: Date)
+                  collections: [OrgCollection], syncedAt: Date) async
 
     /// All organizations the user belongs to, sorted alphabetically by name.
-    func organizations() throws -> [Organization]
+    func organizations() async throws -> [Organization]
 
     /// All collections across all organizations, sorted alphabetically by name.
-    func collections() throws -> [OrgCollection]
+    func collections() async throws -> [OrgCollection]
 
     /// Items assigned to the given collection, sorted alphabetically by name.
-    func items(for collection: String) throws -> [VaultItem]
+    func items(for collection: String) async throws -> [VaultItem]
 
-    /// Clears the in-memory vault store (items and folders). Called on lock and sign-out.
-    func clearVault()
+    /// Clears the in-memory vault store and all indexes. Called on lock and sign-out.
+    func clearVault() async
 
     /// All folders, sorted alphabetically by name (case-insensitive).
-    func folders() throws -> [Folder]
+    func folders() async throws -> [Folder]
 
     /// Re-encrypts `draft`, calls `PUT /ciphers/{id}`, updates the in-memory cache, and
     /// returns the server-confirmed `VaultItem` decoded from the API response.
-    ///
-    /// - Parameter draft: The user's edited draft.
-    /// - Returns: The authoritative `VaultItem` as returned by the server.
-    /// - Throws: `VaultError.vaultLocked` if the vault is locked (translated from the Data layer).
-    /// - Throws: `APIError` on network or HTTP failure.
     func update(_ draft: DraftVaultItem) async throws -> VaultItem
 
     /// Soft-deletes the item with `id` by calling `PUT /ciphers/{id}/delete`.
-    ///
-    /// The item moves to Trash (`isDeleted == true`) on the server and remains in the
-    /// local cache (visible under `.trash`). It can be recovered via `restoreItem(id:)`.
-    ///
-    /// - Throws: `Error` on network or HTTP failure.
     func deleteItem(id: String) async throws
 
     /// Permanently removes the trashed item with `id` by calling `DELETE /ciphers/{id}`.
-    ///
-    /// **This operation is irreversible.** The item is removed from the server and from
-    /// the local cache. The item must already be in Trash (`isDeleted == true`).
-    ///
-    /// - Throws: `Error` on network or HTTP failure.
     func permanentDeleteItem(id: String) async throws
 
     /// Restores a trashed item by calling `PUT /ciphers/{id}/restore`.
-    ///
-    /// Clears `isDeleted` on the server and moves the item back to the active vault
-    /// in the local cache.
-    ///
-    /// - Throws: `Error` on network or HTTP failure.
     func restoreItem(id: String) async throws
 
     /// Encrypts a new `draft`, calls `POST /api/ciphers`, inserts the server-confirmed item
@@ -93,48 +66,23 @@ protocol VaultRepository: AnyObject, Sendable {
 
     /// Replaces the `attachments` array for the vault item identified by `cipherId`,
     /// patching the in-memory cache without a full re-sync.
-    ///
-    /// Called by `AttachmentRepositoryImpl` after a successful upload or delete so the
-    /// detail pane reflects the change immediately. `async` is required because
-    /// `VaultRepositoryImpl` is `@MainActor` and callers run on background tasks.
-    ///
-    /// - Parameters:
-    ///   - attachments: The new complete list of attachments for the cipher.
-    ///   - cipherId:    The cipher whose attachment list should be replaced.
     func updateAttachments(_ attachments: [Attachment], for cipherId: String) async
 
     // MARK: - Folder CRUD
 
-    /// Creates a folder with the given plaintext name. Encryption handled internally.
     func createFolder(name: String) async throws -> Folder
-
-    /// Renames a folder. Encryption handled internally.
     func renameFolder(id: String, name: String) async throws -> Folder
-
-    /// Deletes a folder. Items in the folder become unfoldered.
     func deleteFolder(id: String) async throws
 
     // MARK: - Move to folder
 
-    /// Moves a single item to a folder (or removes from folder if nil).
     func moveItemToFolder(itemId: String, folderId: String?) async throws
-
-    /// Moves multiple items to a folder in a single API call.
     func moveItemsToFolder(itemIds: [String], folderId: String?) async throws
 
     // MARK: - Collection CRUD
 
-    /// Creates a collection within an organization.
-    /// The name is encrypted with the org's symmetric key before being sent to the server.
     func createCollection(name: String, organizationId: String) async throws -> OrgCollection
-
-    /// Renames an existing collection within an organization.
-    /// The new name is encrypted with the org's symmetric key before being sent to the server.
     func renameCollection(id: String, organizationId: String, name: String) async throws -> OrgCollection
-
-    /// Deletes a collection from an organization.
-    /// Items that were in the collection remain in the vault — their `collectionIds` simply
-    /// no longer match a known collection.
     func deleteCollection(id: String, organizationId: String) async throws
 
 }

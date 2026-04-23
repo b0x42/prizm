@@ -155,7 +155,12 @@ struct PrizmApp: App {
                 viewModel:         rootVM.vaultBrowserVM,
                 faviconLoader:     container.faviconLoader,
                 makeEditViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] item in
-                    let vm = container.makeItemEditViewModel(for: item)
+                    let vm = container.makeItemEditViewModel(
+                        for: item,
+                        folders: vaultBrowserVM.folders,
+                        organizations: vaultBrowserVM.organizations,
+                        collections: vaultBrowserVM.collections
+                    )
                     // Wire the list-pane refresh callback to the shared VaultBrowserViewModel.
                     vm.onSaveSuccess = { [weak vaultBrowserVM] updatedItem in
                         vaultBrowserVM?.handleItemSaved(updatedItem)
@@ -165,12 +170,19 @@ struct PrizmApp: App {
                 makeCreateViewModel: { [vaultBrowserVM = rootVM.vaultBrowserVM] type, contextId in
                     // contextId is either a folderId (personal item) or collectionId (org item),
                     // determined by whether the current sidebar selection is a collection.
-                    let isCollection = (try? container.vaultStore.collections())?.contains(where: { $0.id == contextId }) ?? false
+                    let cols = vaultBrowserVM.collections
+                    let isCollection = contextId != nil && cols.contains(where: { $0.id == contextId })
                     let vm: ItemEditViewModel
                     if isCollection {
-                        vm = container.makeItemCreateViewModel(for: type, collectionId: contextId)
+                        vm = container.makeItemCreateViewModel(
+                            for: type, collectionId: contextId,
+                            folders: vaultBrowserVM.folders, organizations: vaultBrowserVM.organizations, collections: cols
+                        )
                     } else {
-                        vm = container.makeItemCreateViewModel(for: type, folderId: contextId)
+                        vm = container.makeItemCreateViewModel(
+                            for: type, folderId: contextId,
+                            folders: vaultBrowserVM.folders, organizations: vaultBrowserVM.organizations, collections: cols
+                        )
                     }
                     vm.onSaveSuccess = { [weak vaultBrowserVM] item in
                         vaultBrowserVM?.handleItemSaved(item)
@@ -406,7 +418,7 @@ final class RootViewModel: ObservableObject {
             } catch {
                 logger.error("Sign-out error: \(error.localizedDescription, privacy: .public)")
             }
-            container.vaultRepo.clearVault()
+            await container.vaultRepo.clearVault()
             await container.vaultKeyCache.clear()
             unlockVM = nil
             screen   = .login
@@ -422,7 +434,7 @@ final class RootViewModel: ObservableObject {
         guard isVaultUnlocked else { return }
         Task {
             await container.authRepo.lockVault()
-            container.vaultRepo.clearVault()
+            await container.vaultRepo.clearVault()
             // Clear all key caches in the same lock path as the vault store.
             // Key material must not outlive the vault session (Constitution §III).
             await container.vaultKeyCache.clear()

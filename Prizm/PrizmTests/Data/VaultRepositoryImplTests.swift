@@ -83,93 +83,94 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     // MARK: - allItems
 
-    func testAllItems_empty_returnsEmpty() throws {
-        XCTAssertTrue(try sut.allItems().isEmpty)
+    func testAllItems_empty_returnsEmpty() async throws {
+        let result = try await sut.allItems()
+        XCTAssertTrue(result.isEmpty)
     }
 
-    func testAllItems_excludesDeletedItems() throws {
+    func testAllItems_excludesDeletedItems() async throws {
         let active  = makeLogin(name: "Active")
         let deleted = makeLogin(name: "Deleted", isDeleted: true)
-        sut.populate(items: [active, deleted], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [active, deleted], folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.allItems()
+        let result = try await sut.allItems()
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].id, active.id)
     }
 
-    func testAllItems_sortsCaseInsensitive() throws {
+    func testAllItems_sortsCaseInsensitive() async throws {
         let items = [
             makeLogin(name: "zebra"),
             makeLogin(name: "Apple"),
             makeLogin(name: "mango"),
         ]
-        sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let names = try sut.allItems().map(\.name)
+        let names = try await sut.allItems().map(\.name)
         XCTAssertEqual(names, ["Apple", "mango", "zebra"])
     }
 
     // MARK: - items(for:)
 
-    func testItemsForAllItems_matchesAllItems() throws {
+    func testItemsForAllItems_matchesAllItems() async throws {
         let items = [makeLogin(name: "A"), makeCard(name: "B")]
-        sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let all        = try sut.allItems()
-        let forAllItems = try sut.items(for: .allItems)
+        let all        = try await sut.allItems()
+        let forAllItems = try await sut.items(for: .allItems)
         XCTAssertEqual(all, forAllItems)
     }
 
-    func testItemsForFavorites_onlyFavorites() throws {
+    func testItemsForFavorites_onlyFavorites() async throws {
         let fav    = makeLogin(name: "Fav", isFavorite: true)
         let notFav = makeLogin(name: "NotFav", isFavorite: false)
-        sut.populate(items: [fav, notFav], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [fav, notFav], folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.items(for: .favorites)
+        let result = try await sut.items(for: .favorites)
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].id, fav.id)
     }
 
-    func testItemsForTypeLogin_onlyLoginItems() throws {
+    func testItemsForTypeLogin_onlyLoginItems() async throws {
         let login = makeLogin(name: "Login Item")
         let card  = makeCard(name: "Card Item")
-        sut.populate(items: [login, card], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [login, card], folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.items(for: .type(.login))
+        let result = try await sut.items(for: .type(.login))
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].id, login.id)
     }
 
-    func testItemsForTypeCard_onlyCardItems() throws {
+    func testItemsForTypeCard_onlyCardItems() async throws {
         let login = makeLogin(name: "Login")
         let card  = makeCard(name: "Visa")
-        sut.populate(items: [login, card], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [login, card], folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.items(for: .type(.card))
+        let result = try await sut.items(for: .type(.card))
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].id, card.id)
     }
 
-    func testItemsForType_excludesDeletedItems() throws {
+    func testItemsForType_excludesDeletedItems() async throws {
         let active  = makeLogin(name: "Active", isDeleted: false)
         let deleted = makeLogin(name: "Deleted", isDeleted: true)
-        sut.populate(items: [active, deleted], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [active, deleted], folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.items(for: .type(.login))
+        let result = try await sut.items(for: .type(.login))
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].id, active.id)
     }
 
     // MARK: - itemCounts
 
-    func testItemCounts_empty_allZero() throws {
-        let counts = try sut.itemCounts()
+    func testItemCounts_empty_allZero() async throws {
+        let counts = try await sut.itemCounts()
         XCTAssertEqual(counts[.allItems], 0)
         XCTAssertEqual(counts[.favorites], 0)
         XCTAssertEqual(counts[.type(.login)], 0)
     }
 
-    func testItemCounts_correctPerCategory() throws {
+    func testItemCounts_correctPerCategory() async throws {
         let items: [VaultItem] = [
             makeLogin(name: "L1", isFavorite: true),
             makeLogin(name: "L2"),
@@ -177,9 +178,9 @@ final class VaultRepositoryImplTests: XCTestCase {
             makeSecureNote(name: "N1"),
             makeLogin(name: "Deleted Login", isDeleted: true),
         ]
-        sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let counts = try sut.itemCounts()
+        let counts = try await sut.itemCounts()
         XCTAssertEqual(counts[.allItems],          4, "allItems excludes deleted")
         XCTAssertEqual(counts[.favorites],         2, "two favorites (login + card)")
         XCTAssertEqual(counts[.type(.login)],      2, "two non-deleted logins")
@@ -191,61 +192,127 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     // MARK: - searchItems
 
-    func testSearchItems_emptyQuery_returnsAll() throws {
+    func testSearchItems_emptyQuery_returnsAll() async throws {
         let items = [makeLogin(name: "Alpha"), makeLogin(name: "Beta")]
-        sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.searchItems(query: "", in: .allItems)
+        let result = try await sut.searchItems(query: "", in: .allItems)
         XCTAssertEqual(result.count, 2)
     }
 
-    func testSearchItems_matchesName_caseInsensitive() throws {
+    func testSearchItems_matchesName_caseInsensitive() async throws {
         let items = [makeLogin(name: "MyBank"), makeLogin(name: "GitHub")]
-        sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.searchItems(query: "bank", in: .allItems)
+        let result = try await sut.searchItems(query: "bank", in: .allItems)
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].name, "MyBank")
     }
 
-    func testSearchItems_scopedToSelection() throws {
+    func testSearchItems_scopedToSelection() async throws {
         let login = makeLogin(name: "MyBank")
         let card  = makeCard(name: "MyCard")
-        sut.populate(items: [login, card], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [login, card], folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.searchItems(query: "My", in: .type(.login))
+        let result = try await sut.searchItems(query: "My", in: .type(.login))
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].id, login.id)
     }
 
-    func testSearchItems_noMatch_returnsEmpty() throws {
-        sut.populate(items: [makeLogin(name: "Alpha")], folders: [], organizations: [], collections: [], syncedAt: Date())
+    func testSearchItems_noMatch_returnsEmpty() async throws {
+        await sut.populate(items: [makeLogin(name: "Alpha")], folders: [], organizations: [], collections: [], syncedAt: Date())
 
-        let result = try sut.searchItems(query: "zzz", in: .allItems)
+        let result = try await sut.searchItems(query: "zzz", in: .allItems)
         XCTAssertTrue(result.isEmpty)
     }
 
     // MARK: - populate / clearVault
 
-    func testPopulate_updatesLastSyncedAt() {
+    func testPopulate_updatesLastSyncedAt() async {
         let date = Date(timeIntervalSince1970: 1_000_000)
-        sut.populate(items: [], folders: [], organizations: [], collections: [], syncedAt: date)
-        XCTAssertEqual(sut.lastSyncedAt, date)
+        await sut.populate(items: [], folders: [], organizations: [], collections: [], syncedAt: date)
+        let stored = await sut.lastSyncedAt
+        XCTAssertEqual(stored, date)
     }
 
-    func testClearVault_removesItemsAndTimestamp() throws {
-        sut.populate(items: [makeLogin(name: "X")], folders: [], organizations: [], collections: [], syncedAt: Date())
-        sut.clearVault()
+    func testClearVault_removesItemsAndTimestamp() async throws {
+        await sut.populate(items: [makeLogin(name: "X")], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.clearVault()
 
-        XCTAssertTrue(try sut.allItems().isEmpty)
-        XCTAssertNil(sut.lastSyncedAt)
+        let items = try await sut.allItems()
+        XCTAssertTrue(items.isEmpty)
+        let ts = await sut.lastSyncedAt
+        XCTAssertNil(ts)
+    }
+
+    // MARK: - Index correctness
+
+    func testItemCounts_O1_returnsFromCache() async throws {
+        let items: [VaultItem] = [
+            makeLogin(name: "L1", isFavorite: true),
+            makeLogin(name: "L2"),
+            makeCard(name: "C1"),
+        ]
+        await sut.populate(items: items, folders: [], organizations: [], collections: [], syncedAt: Date())
+        let counts = try await sut.itemCounts()
+        XCTAssertEqual(counts[.allItems], 3)
+        XCTAssertEqual(counts[.favorites], 1)
+        XCTAssertEqual(counts[.type(.login)], 2)
+        XCTAssertEqual(counts[.type(.card)], 1)
+    }
+
+    func testPopulateTwice_countsReflectSecondCall() async throws {
+        await sut.populate(items: [makeLogin(name: "A")], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [makeLogin(name: "B"), makeCard(name: "C")], folders: [], organizations: [], collections: [], syncedAt: Date())
+        let counts = try await sut.itemCounts()
+        XCTAssertEqual(counts[.allItems], 2)
+        XCTAssertEqual(counts[.type(.login)], 1)
+        XCTAssertEqual(counts[.type(.card)], 1)
+    }
+
+    func testClearVault_resetsIndexes() async throws {
+        await sut.populate(items: [makeLogin(name: "X")], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.clearVault()
+        let all    = try await sut.allItems()
+        let counts = try await sut.itemCounts()
+        XCTAssertTrue(all.isEmpty)
+        XCTAssertEqual(counts[.allItems] ?? 0, 0)
+    }
+
+    func testItemsForOrganization_usesPrebuiltIndex() async throws {
+        let orgId  = "org-1"
+        let colId  = "col-1"
+        let org    = Organization(id: orgId, name: "Acme", role: .user)
+        let col    = OrgCollection(id: colId, organizationId: orgId, name: "Dev")
+        let item   = VaultItem(
+            id: "i1", name: "Org Item", isFavorite: false, isDeleted: false,
+            creationDate: Date(), revisionDate: Date(),
+            content: .login(LoginContent(username: nil, password: nil, uris: [], totp: nil, notes: nil, customFields: [])),
+            organizationId: orgId, collectionIds: [colId]
+        )
+        await sut.populate(items: [item], folders: [], organizations: [org], collections: [col], syncedAt: Date())
+        let result = try await sut.items(for: .organization(orgId))
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].id, "i1")
+    }
+
+    func testCreate_updatesIndex() async throws {
+        await sut.populate(items: [], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await mockCrypto.unlockWith(keys: CryptoKeys(
+            encryptionKey: Data(repeating: 0xDE, count: 32),
+            macKey:        Data(repeating: 0xAD, count: 32)
+        ))
+        let draft = DraftVaultItem(makeLogin(name: "NewItem"))
+        _ = try await sut.create(draft)
+        let counts = try await sut.itemCounts()
+        XCTAssertEqual(counts[.allItems], 1)
     }
 
     // MARK: - itemDetail
 
     func testItemDetail_existingId_returnsItem() async throws {
         let item = makeLogin(id: "item-1", name: "Test")
-        sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [item], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         let found = try await sut.itemDetail(id: "item-1")
         XCTAssertEqual(found.id, "item-1")
@@ -267,7 +334,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testUpdate_success_replacesItemInCacheAndReturnsUpdatedItem() async throws {
         let original = makeLogin(id: "item-1", name: "Original Name")
-        sut.populate(items: [original], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [original], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         // Vault must be unlocked to provide keys to the mapper.
         await mockCrypto.unlockWith(keys: CryptoKeys(
@@ -282,13 +349,13 @@ final class VaultRepositoryImplTests: XCTestCase {
 
         XCTAssertEqual(result.name, "Updated Name")
         // Verify the in-memory cache was updated.
-        let cached = try sut.allItems().first { $0.id == "item-1" }
+        let cached = try await sut.allItems().first { $0.id == "item-1" }
         XCTAssertEqual(cached?.name, "Updated Name")
     }
 
     func testUpdate_vaultLocked_throwsVaultLocked() async throws {
         let original = makeLogin(id: "item-2", name: "Name")
-        sut.populate(items: [original], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [original], folders: [], organizations: [], collections: [], syncedAt: Date())
         // mockCrypto is locked by default (not unlocked)
 
         let draft = DraftVaultItem(original)
@@ -303,7 +370,7 @@ final class VaultRepositoryImplTests: XCTestCase {
 
     func testUpdate_apiError_throws() async throws {
         let original = makeLogin(id: "item-3", name: "Name")
-        sut.populate(items: [original], folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.populate(items: [original], folders: [], organizations: [], collections: [], syncedAt: Date())
 
         await mockCrypto.unlockWith(keys: CryptoKeys(
             encryptionKey: Data(repeating: 0xDE, count: 32),
