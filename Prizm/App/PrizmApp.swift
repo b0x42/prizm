@@ -375,8 +375,26 @@ final class RootViewModel: ObservableObject {
             // be written under the fallback empty-email key. Should not occur in normal flow.
             logger.error("\(caller, privacy: .public)(.vault): no stored account; sync timestamp not re-scoped")
         }
-        vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
         screen = .vault
+        // Defer handleSyncCompleted to the next run-loop cycle so that the initial
+        // VaultBrowserView layout pass (triggered by `screen = .vault` above) commits
+        // before any @Published mutations from async vault reads arrive.
+        //
+        // Root cause: VaultRepositoryImpl is an `actor`, so every refresh Task suspends
+        // at a cross-actor hop; the continuations resume on @MainActor asynchronously.
+        // If they land while SwiftUI is computing its first layout pass for VaultBrowserView,
+        // SwiftUI emits "Publishing changes from within view updates is not allowed" →
+        // undefined behaviour → heap corruption → z_ccm_xcma_malloc_freelist EXC_BREAKPOINT.
+        //
+        // DispatchQueue.main.async (not a Swift Task) is intentional: it guarantees
+        // the block runs between run-loop iterations, after the current CATransaction
+        // (which drives the SwiftUI layout commit) has flushed.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                self.vaultBrowserVM.handleSyncCompleted(syncedAt: Date())
+            }
+        }
     }
 
     func handleLoginFlow(_ state: LoginFlowState) {
