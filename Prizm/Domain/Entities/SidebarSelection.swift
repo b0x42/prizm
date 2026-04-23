@@ -77,7 +77,7 @@ extension SidebarSelection {
 }
 
 nonisolated extension SidebarSelection: Hashable {
-    nonisolated static func == (lhs: SidebarSelection, rhs: SidebarSelection) -> Bool {
+    static func == (lhs: SidebarSelection, rhs: SidebarSelection) -> Bool {
         switch (lhs, rhs) {
         case (.allItems, .allItems):                                     return true
         case (.favorites, .favorites):                                   return true
@@ -92,7 +92,7 @@ nonisolated extension SidebarSelection: Hashable {
         }
     }
 
-    nonisolated func hash(into hasher: inout Hasher) {
+    func hash(into hasher: inout Hasher) {
         switch self {
         case .allItems:                          hasher.combine(0)
         case .favorites:                         hasher.combine(1)

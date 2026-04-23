@@ -167,10 +167,10 @@ actor VaultRepositoryImpl: VaultRepository {
             counts[.folder(folder.id)] = bySelection[.folder(folder.id)]?.count ?? 0
         }
         for colId in allCollectionIds {
-            counts[.collection(colId)] = bySelection[.collection(colId)]?.count ?? 0
+            counts[.collection(colId)] = bySelection[.collection(colId), default: []].count
         }
         for orgId in allOrgIds {
-            counts[.organization(orgId)] = bySelection[.organization(orgId)]?.count ?? 0
+            counts[.organization(orgId)] = bySelection[.organization(orgId), default: []].count
         }
         _counts = counts
     }

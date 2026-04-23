@@ -85,6 +85,7 @@ final class CollectionUseCaseTests: XCTestCase {
         let inOther  = makeLogin(name: "InOther", collectionIds: ["col-other"])
         let personal = makeLogin(name: "Personal", collectionIds: [])
 
+        // organizations: [] intentionally — org membership derived solely from collectionStore.
         await sut.populate(items: [inColA, inColB, inOther, personal],
                            folders: [], organizations: [],
                            collections: [colA, colB, colOther], syncedAt: Date())
@@ -98,7 +99,7 @@ final class CollectionUseCaseTests: XCTestCase {
         XCTAssertEqual(result.count, 2)
     }
 
-    func testOrganizationFiltering_noCollections_returnsEmpty() async throws {
+    func testOrganizationFiltering_noMatchingOrgCollections_returnsEmpty() async throws {
         let sut = VaultRepositoryImpl(apiClient: MockPrizmAPIClient(), crypto: MockPrizmCryptoService())
         await sut.populate(items: [makeLogin(name: "X", collectionIds: ["col-A"])],
                            folders: [], organizations: [], collections: [], syncedAt: Date())
