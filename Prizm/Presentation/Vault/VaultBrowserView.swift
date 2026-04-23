@@ -22,7 +22,6 @@ struct VaultBrowserView: View {
     /// Factory for `AttachmentRowViewModel` — injected from AppContainer.
     var makeAttachmentRowViewModel: ((String, Attachment) -> AttachmentRowViewModel)? = nil
 
-    @State private var showSoftDeleteAlert = false
     @State private var showPermanentDeleteAlert = false
     @State private var showDeleteFolderAlert = false
     @State private var folderToDelete: Folder?
@@ -177,12 +176,6 @@ struct VaultBrowserView: View {
                                 .keyboardShortcut("e", modifiers: .command)
                                 .accessibilityIdentifier(AccessibilityID.Edit.editButton)
                             }
-                            ToolbarItem(placement: .destructiveAction) {
-                                Button("Delete", role: .destructive) {
-                                    showSoftDeleteAlert = true
-                                }
-                                .foregroundStyle(.red)
-                            }
                         }
                     }
                 }
@@ -202,16 +195,6 @@ struct VaultBrowserView: View {
             Button("OK", role: .cancel) { viewModel.actionError = nil }
         } message: {
             Text(viewModel.actionError ?? "")
-        }
-        .alert("Move to Trash?", isPresented: $showSoftDeleteAlert) {
-            Button("Move to Trash", role: .destructive) {
-                if let item = viewModel.itemSelection {
-                    Task { await viewModel.performSoftDelete(id: item.id) }
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("\"\(viewModel.itemSelection?.name ?? "")\" will be moved to Trash.")
         }
         .alert("Delete Permanently?", isPresented: $showPermanentDeleteAlert) {
             Button("Delete Permanently", role: .destructive) {

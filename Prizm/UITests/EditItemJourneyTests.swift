@@ -184,6 +184,44 @@ final class EditItemJourneyTests: XCTestCase {
                        "Edit sheet should dismiss immediately on Esc with no changes")
     }
 
+    // MARK: - Delete Item button hidden during creation
+
+    /// Opens the create sheet via ⌘N and verifies no Delete Item button is shown.
+    func testCreateSheet_deleteButtonHidden() throws {
+        app.typeKey("n", modifierFlags: .command)
+        let loginRow = app.cells["typePicker.row.login"]
+        XCTAssertTrue(loginRow.waitForExistence(timeout: 3))
+        app.typeKey(.return, modifierFlags: [])
+
+        let saveButton = app.buttons["edit.button.save"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 3), "Create sheet must be open")
+
+        let deleteButton = app.buttons["edit.button.delete"]
+        XCTAssertFalse(deleteButton.exists,
+                       "Delete Item button must not appear in create mode")
+
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
+    // MARK: - Detail toolbar has no Delete for active items
+
+    /// Selects an active item and verifies the detail toolbar does not contain a Delete button.
+    func testDetailToolbar_noDeleteButton_forActiveItems() throws {
+        let firstRow = app.tables["itemList.list"].cells.firstMatch
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 5))
+        firstRow.click()
+
+        // The Edit button should be visible (confirms we're looking at the right toolbar).
+        let editButton = app.buttons["edit.button.edit"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 3))
+
+        // No Delete button should exist in the toolbar for active items.
+        // Use a short timeout — we're asserting absence.
+        let deleteToolbarButton = app.buttons.matching(NSPredicate(format: "label == 'Delete'")).firstMatch
+        XCTAssertFalse(deleteToolbarButton.waitForExistence(timeout: 1),
+                       "Detail toolbar must not contain a Delete button for active items")
+    }
+
     // MARK: - Task 10.7: Menu bar extra vault lock/unlock
 
     /// Verifies the "Item" menu bar extra appears when the vault is unlocked and

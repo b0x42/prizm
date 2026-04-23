@@ -19,8 +19,13 @@ struct ItemEditView: View {
     /// Drives sheet dismissal from the parent.
     @Binding var isPresented: Bool
 
+    /// Called when the user confirms deletion from the edit sheet.
+    var onDelete: ((String) async -> Void)? = nil
+
     /// Whether the discard confirmation alert is currently showing.
     @State private var showingDiscardAlert = false
+    /// Whether the delete confirmation alert is currently showing.
+    @State private var showingDeleteAlert = false
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
@@ -117,6 +122,18 @@ struct ItemEditView: View {
 
             // Per-type edit form.
             typeEditForm
+
+            // Delete button — shown only when editing an existing item (not during creation).
+            if viewModel.isEditing, onDelete != nil {
+                Button("Delete Item") {
+                    showingDeleteAlert = true
+                }
+                .foregroundStyle(.red)
+                .padding(.vertical, Spacing.cardTop)
+                .padding(.horizontal, Spacing.pageMargin)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityIdentifier(AccessibilityID.Edit.deleteButton)
+            }
         }
         .frame(minWidth: 480, minHeight: 400)
         .toolbar {
@@ -151,6 +168,19 @@ struct ItemEditView: View {
             Button("Keep Editing", role: .cancel) { }
         } message: {
             Text("Your unsaved changes will be lost.")
+        }
+        // Delete confirmation alert — dismiss sheet then execute soft-delete.
+        .alert("Move to Trash?", isPresented: $showingDeleteAlert) {
+            Button("Move to Trash", role: .destructive) {
+                let itemId = viewModel.draft.id
+                viewModel.discard()
+                if let onDelete {
+                    Task { await onDelete(itemId) }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("\"\(viewModel.draft.name)\" will be moved to Trash.")
         }
         // Dismiss the sheet when the ViewModel signals it (save success or discard).
         .onChange(of: viewModel.isDismissed) { _, dismissed in
