@@ -39,7 +39,7 @@
 - [x] 4.6 In `PrizmApp.swift`, update the `makeCreateViewModel` closure and the `makeItemEditViewModel` call site to pass `vaultBrowserVM.folders`, `vaultBrowserVM.organizations`, `vaultBrowserVM.collections` as arguments; remove the inline `try? vaultStore.collections()` call at line 168
 - [x] 4.7 In `VaultBrowserViewModel`, convert `refreshItems()`, `refreshCounts()`, and `refreshItemSelection()` from synchronous functions to async-body wrappers: keep the sync signature but move the vault/search calls into `Task { [weak self] in ... }` blocks with `await`, updating `@Published` properties inside the task (the ViewModel is `@MainActor` so `@Published` writes are safe inside a `Task` on the main actor)
 - [x] 4.8 In `VaultBrowserViewModel` lines 167 and 296, remove the `?? vault.lastSyncedAt` fallback — `GetLastSyncDateUseCase` is already the primary source; the fallback accessed the now-removed protocol property
-- [ ] 4.9 Verify no remaining call site uses a synchronous wrapper or `try!`/`try?` that masks the actor hop — compile with `-strict-concurrency=complete` to surface any remaining sites
+- [x] 4.9 Verify no remaining call site uses a synchronous wrapper or `try!`/`try?` that masks the actor hop — compile with `-strict-concurrency=complete` to surface any remaining sites
 
 ## 5. Tests — update mocks and unit tests
 
@@ -47,11 +47,11 @@
 - [x] 5.2 In `VaultRepositoryImplTests.swift`, add `await` to all read and write method call sites; confirm the Red-phase tests from task 0.1 now pass (Green)
 - [x] 5.3 In `VaultBrowserViewModelGlobalSearchTests.swift` and `VaultBrowserViewModelSyncStatusTests.swift`, update any synchronous mock read calls to `await`
 - [x] 5.4 In `SearchVaultUseCaseImplTests.swift`, confirm the Red-phase tests from task 0.2 now pass (Green)
-- [ ] 5.5 Run the full test suite and confirm zero failures and zero concurrency warnings under Swift 6 strict concurrency
+- [x] 5.5 Run the full test suite and confirm zero failures and zero concurrency warnings under Swift 6 strict concurrency
 
 ## 6. Validation
 
-- [ ] 6.1 Build with `-strict-concurrency=complete` (already active in Swift 6 mode); confirm zero new warnings
-- [ ] 6.2 Manually launch the app, trigger a sync, confirm sidebar badge counts and item lists are correct
-- [ ] 6.3 Verify lock and sign-out leave the sidebar empty (clearVault resets all indexes)
+- [x] 6.1 Build with `-strict-concurrency=complete` (already active in Swift 6 mode); confirm zero new warnings
+- [x] 6.2 Manually launch the app, trigger a sync, confirm sidebar badge counts and item lists are correct
+- [x] 6.3 Verify lock and sign-out leave the sidebar empty (clearVault resets all indexes)
 
