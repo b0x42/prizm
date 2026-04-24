@@ -45,15 +45,15 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 - [ ] 5.2 Rename `APIError.baseURLNotSet` to `APIError.serverEnvironmentNotSet`; update all catch sites and existing tests
 - [ ] 5.3 Replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)` on `PrizmAPIClientProtocol`, `PrizmAPIClientImpl`, and `MockPrizmAPIClient`; remove `setBaseURL` entirely — the mock must be updated in this same task or Group 6 tests will not compile
 - [ ] 5.4 Make `clientId` instance state on `PrizmAPIClient` (set via `setServerEnvironment`): cloud environments use `Config.bitwardenClientIdentifier`, self-hosted keeps `"desktop"`
-- [ ] 5.5 Update all ~32 endpoint methods to route via `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`
+- [ ] 5.5 Update all ~32 endpoint methods to route via `env.apiURL`, `env.identityURL`, or `env.iconsURL` using service-relative paths (e.g. `accounts/prelogin`, `connect/token`, `sync`) — strip the `api/` and `identity/` prefixes from the current path strings; the `ServerEnvironment` computed properties absorb the difference (cloud URLs have no prefix, self-hosted URLs include it)
 - [ ] 5.6 Add `Bitwarden-Client-Name` header to `baseRequest()` using `Config.clientName`
 
-## 6. Data Unit Tests — PrizmAPIClient (write before Group 5, must fail first)
+## 6. Data Unit Tests — PrizmAPIClient (write before Group 5 implementation, must fail first; requires mock protocol stubs from 2.10 and the `setServerEnvironment` signature from 5.3 to compile — add the mock stub in 5.3 before writing these tests)
 
-- [ ] 6.1 `setServerEnvironment` with `cloudUS` → subsequent `preLogin` request URL uses `https://api.bitwarden.com`
-- [ ] 6.2 `setServerEnvironment` with `cloudEU` → subsequent `identityToken` request URL uses `https://identity.bitwarden.eu`
-- [ ] 6.3 `setServerEnvironment` with `cloudEU` → subsequent `refreshAccessToken` URL uses `https://identity.bitwarden.eu`
-- [ ] 6.4 `setServerEnvironment` with `selfHosted(base: https://vault.example.com)` → `fetchSync` URL uses `https://vault.example.com/api`
+- [ ] 6.1 `setServerEnvironment` with `cloudUS` → subsequent `preLogin` request URL is `https://api.bitwarden.com/accounts/prelogin` (no `api/` prefix in path)
+- [ ] 6.2 `setServerEnvironment` with `cloudEU` → subsequent `identityToken` request URL is `https://identity.bitwarden.eu/connect/token` (no `identity/` prefix in path)
+- [ ] 6.3 `setServerEnvironment` with `cloudEU` → subsequent `refreshAccessToken` URL is `https://identity.bitwarden.eu/connect/token`
+- [ ] 6.4 `setServerEnvironment` with `selfHosted(base: https://vault.example.com)` → `fetchSync` URL is `https://vault.example.com/api/sync` (self-hosted retains `api/` prefix)
 - [ ] 6.5 Request made before `setServerEnvironment` throws `APIError.serverEnvironmentNotSet`
 - [ ] 6.6 Cloud `identityToken` request sends `Bitwarden-Client-Name` and `Bitwarden-Client-Version` HTTP headers
 - [ ] 6.7 Cloud `identityToken` `client_id` form parameter equals `Config.bitwardenClientIdentifier` (not `"desktop"`)
@@ -68,7 +68,7 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 - [ ] 7.3 Add `clientIdentifier: String = Config.bitwardenClientIdentifier` parameter to `AuthRepositoryImpl.init` (production callers pass no arg; tests inject `""` to verify the guard fires, or `"test-id"` to bypass it); guard cloud login: if `environment.serverType != .selfHosted && clientIdentifier.isEmpty`, throw `AuthError.clientIdentifierNotConfigured` before any network request
 - [ ] 7.4 Skip `validateServerURL` for cloud environments; call only when `environment.serverType == .selfHosted`
 - [ ] 7.5 Implement `loginWithNewDeviceOTP(_ otp: String)`: read `pendingNewDeviceOTP` (throws `AuthError.invalidCredentials` if nil); call `identityToken(email:passwordHash:deviceIdentifier:newDeviceOTP:)` using the pending struct's fields; on success call `finalizeSession(tokenResp:stretched:environment:)` using the pending struct's `stretchedKeys` and `environment`; zero `stretchedKeys` and nil `pendingNewDeviceOTP` in a `defer` block so cleanup happens on both success and failure (Constitution §III)
-- [ ] 7.6 Implement `requestNewDeviceOTP()`: re-post original `identityToken` without `newdeviceotp` using the pending struct's credentials; the server WILL respond with `HTTP 400 + device_error` again — this is expected (it triggers a new OTP email); catch `IdentityTokenError.newDeviceNotVerified` and treat it as **success**; propagate any other error; do NOT zero cached credentials
+- [ ] 7.6 Implement `requestNewDeviceOTP()`: re-post original `identityToken` without `newdeviceotp` using the pending struct's credentials; the server WILL respond with `HTTP 400 + device_error` again — this is expected (it triggers a new OTP email); catch `IdentityTokenError.newDeviceNotVerified` and treat it as **success**; propagate any other error; do NOT zero cached credentials. **Implementation note**: add a code comment explaining that catching `newDeviceNotVerified` as success is intentional — the "error" response is the server's way of confirming it dispatched a new OTP email; do not "fix" this by removing the catch.
 - [ ] 7.7 Implement `cancelNewDeviceOTP()`: zero `pendingNewDeviceOTP!.stretchedKeys` buffers in-place (Constitution §III — same pattern as `cancelTwoFactor()`), then set `pendingNewDeviceOTP = nil`; no network request
 - [ ] 7.8 Self-hosted `device_error` response (unexpected): surface as `AuthError.invalidCredentials`
 
@@ -99,7 +99,7 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 
 - [ ] 10.1 `LoginViewModel` initialised with `UserDefaults` key `com.prizm.login.lastServerType = "cloudEU"` → `serverType == .cloudEU`
 - [ ] 10.2 `LoginViewModel` initialised with no `UserDefaults` key → `serverType` defaults to `.cloudUS`
-- [ ] 10.3 Selecting a cloud type persists to `UserDefaults`; selecting self-hosted restores last entered URL
+- [ ] 10.3 Selecting a cloud type persists to `UserDefaults`; selecting self-hosted restores last entered URL; `serverURL` persisted to `UserDefaults` and restored on init
 - [ ] 10.4 `isSignInDisabled` returns `true` when `flowState == .loading` (prevents double-submit regardless of field content)
 - [ ] 10.5 `isSignInDisabled` returns `false` for cloud when email and password non-empty, `serverURL` empty
 - [ ] 10.6 `isSignInDisabled` returns `true` for self-hosted when `serverURL` empty, email and password filled
@@ -115,6 +115,7 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 ## 11. Presentation — LoginViewModel
 
 - [ ] 11.1 Add `serverType: ServerType` `@Published` property; persist/restore via `UserDefaults` key `com.prizm.login.lastServerType`; default to `.cloudUS` when key absent (fresh install)
+- [ ] 11.1a Persist `serverURL` to `UserDefaults` key `com.prizm.login.lastServerURL` when the user modifies it; restore on init so the self-hosted URL survives app restarts and server-type switching within a session
 - [ ] 11.2 Add `isSignInDisabled: Bool` computed property: `true` when `flowState == .loading` (prevents double-submit) OR (cloud + email or password empty) OR (selfHosted + email, password, or serverURL empty) OR (otpPrompt + `otpCode` empty)
 - [ ] 11.3 Update `signIn()` to construct `ServerEnvironment` from `serverType` (`.cloudUS()` / `.cloudEU()` / `selfHosted` from URL string) and call `loginUseCase.execute(environment:email:masterPassword:)`
 - [ ] 11.4 Handle `LoginResult.requiresNewDeviceOTP` in `signIn()`: set `flowState = .otpPrompt`

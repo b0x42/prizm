@@ -49,7 +49,7 @@ When a cloud option is selected, no URL entry is required or shown. When "Self-h
 #### Scenario: Self-hosted selection shows the server URL field
 - **WHEN** the user selects "Self-hosted"
 - **THEN** the server URL field SHALL be visible and editable
-- **AND** any previously entered URL SHALL be restored
+- **AND** any previously entered URL SHALL be restored (persisted to `UserDefaults` under `com.prizm.login.lastServerURL`; survives app restarts and server-type switching)
 
 #### Scenario: Sign In button enabled for cloud without server URL
 - **GIVEN** the user has selected "Bitwarden Cloud (US)" or "Bitwarden Cloud (EU)"
@@ -76,6 +76,10 @@ When a cloud option is selected, no URL entry is required or shown. When "Self-h
 | `cloudUS` | `https://api.bitwarden.com` | `https://identity.bitwarden.com` | `https://icons.bitwarden.net` |
 | `cloudEU` | `https://api.bitwarden.eu` | `https://identity.bitwarden.eu` | `https://icons.bitwarden.net` |
 | `selfHosted` | `{base}/api` (or override) | `{base}/identity` (or override) | `{base}/icons` (or override) |
+
+> **URL routing note**: For self-hosted, `apiURL` includes the `/api` prefix (e.g. `https://vault.example.com/api`) and `identityURL` includes the `/identity` prefix. Endpoint methods append service-relative paths (e.g. `/accounts/prelogin`, `/connect/token`) to these URLs. This means cloud and self-hosted produce the correct final URLs without any conditional logic in the endpoint methods:
+> - Cloud: `https://api.bitwarden.com` + `/accounts/prelogin` → `https://api.bitwarden.com/accounts/prelogin`
+> - Self-hosted: `https://vault.example.com/api` + `/accounts/prelogin` → `https://vault.example.com/api/accounts/prelogin`
 
 > **Reference**: Endpoint URLs confirmed via [Bitwarden's official documentation](https://bitwarden.com/help/bitwarden-addresses/).
 >
@@ -154,6 +158,10 @@ The internal URL construction (`URL(string: trimmed)`) in `LoginUseCaseImpl` is 
 
 `PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. `setBaseURL` SHALL be removed from `PrizmAPIClientProtocol` entirely. All ~32 endpoint methods SHALL use `env.apiURL`, `env.identityURL`, or `env.iconsURL` instead of appending to a single `base`.
 
+**Path prefix stripping for cloud endpoints.** The current codebase appends paths like `api/accounts/prelogin` and `identity/connect/token` to a single `baseURL`. For self-hosted Vaultwarden, these `api/` and `identity/` prefixes are routing segments that the reverse proxy uses to dispatch to the correct internal service. For Bitwarden Cloud, each service has its own hostname (`api.bitwarden.com`, `identity.bitwarden.com`) and the prefix is NOT part of the path — the correct URLs are `https://api.bitwarden.com/accounts/prelogin` and `https://identity.bitwarden.com/connect/token`.
+
+Therefore, when `serverType != .selfHosted`, endpoint methods SHALL strip the leading `api/` or `identity/` prefix from the path before appending it to the per-service URL. When `serverType == .selfHosted`, the full path (including the prefix) SHALL be appended to `base` as today. The recommended implementation approach is to have each endpoint method use the per-service URL directly and append only the service-relative path (e.g. `accounts/prelogin`, `connect/token`, `sync`), while `selfHosted` environments include the prefix in their computed `apiURL`/`identityURL` (i.e. `{base}/api`, `{base}/identity`). This way the endpoint methods use the same path regardless of server type.
+
 `APIError.baseURLNotSet` SHALL be renamed to `APIError.serverEnvironmentNotSet`. The guard that throws it — protecting against requests made before the environment is configured — is retained unchanged. All catch sites and tests that reference `baseURLNotSet` SHALL be updated to `serverEnvironmentNotSet`.
 
 `AuthRepositoryImpl` currently calls `apiClient.setBaseURL(...)` in four places — all four SHALL be updated to `apiClient.setServerEnvironment(...)`:
@@ -177,28 +185,28 @@ A unit test SHALL assert `Bitwarden-Client-Name` and `Bitwarden-Client-Version` 
 
 #### Scenario: cloudUS routes api requests correctly
 - **GIVEN** the active account has `serverType == .cloudUS`
-- **WHEN** `PrizmAPIClient` makes a request to an `api/...` endpoint
-- **THEN** the request SHALL be sent to `https://api.bitwarden.com/api/...`
+- **WHEN** `PrizmAPIClient` makes a `preLogin` request (currently `api/accounts/prelogin`)
+- **THEN** the request SHALL be sent to `https://api.bitwarden.com/accounts/prelogin` (the `api/` prefix is NOT part of the cloud path)
 
 #### Scenario: cloudEU routes api requests correctly
 - **GIVEN** the active account has `serverType == .cloudEU`
-- **WHEN** `PrizmAPIClient` makes a request to an `api/...` endpoint
-- **THEN** the request SHALL be sent to `https://api.bitwarden.eu/api/...`
+- **WHEN** `PrizmAPIClient` makes a `fetchSync` request (currently `api/sync`)
+- **THEN** the request SHALL be sent to `https://api.bitwarden.eu/sync`
 
 #### Scenario: cloudEU routes identity requests correctly
 - **GIVEN** the active account has `serverType == .cloudEU`
-- **WHEN** `PrizmAPIClient` makes a request to an `identity/...` endpoint
-- **THEN** the request SHALL be sent to `https://identity.bitwarden.eu/identity/...`
+- **WHEN** `PrizmAPIClient` makes an `identityToken` request (currently `identity/connect/token`)
+- **THEN** the request SHALL be sent to `https://identity.bitwarden.eu/connect/token` (the `identity/` prefix is NOT part of the cloud path)
 
-#### Scenario: selfHosted routes to user-supplied URL
+#### Scenario: selfHosted routes to user-supplied URL (unchanged)
 - **GIVEN** the active account has `serverType == .selfHosted` and `base = https://vault.example.com`
-- **WHEN** `PrizmAPIClient` makes a request to an `api/...` endpoint
-- **THEN** the request SHALL be sent to `https://vault.example.com/api/...`
+- **WHEN** `PrizmAPIClient` makes a `preLogin` request
+- **THEN** the request SHALL be sent to `https://vault.example.com/api/accounts/prelogin` (the `api/` prefix IS part of the self-hosted path, as today)
 
 #### Scenario: refreshAccessToken routes via identityURL
 - **GIVEN** the active account has `serverType == .cloudEU`
 - **WHEN** `PrizmAPIClient.refreshAccessToken()` is called
-- **THEN** the request SHALL be sent to `https://identity.bitwarden.eu/identity/connect/token`
+- **THEN** the request SHALL be sent to `https://identity.bitwarden.eu/connect/token`
 
 `PrizmAPIClient` MUST NOT fall back to a different `ServerEnvironment` on request failure. A failed request SHALL surface the error directly to the caller; no automatic retry against another region or self-hosted is permitted. Switching server environments requires a new login.
 
@@ -361,6 +369,8 @@ func cancelNewDeviceOTP()
 
 `AuthRepositoryImpl` holds the pending environment, email, and hashed password in memory after returning `LoginResult.requiresNewDeviceOTP`. `loginWithNewDeviceOTP` retries `PrizmAPIClient.identityToken` with the `newdeviceotp` form parameter added, then zeros cached credentials immediately after (success or failure). `requestNewDeviceOTP` re-posts the original identity token request without `newdeviceotp` — the server recognises the unverified device and sends a fresh code; no credentials are zeroed since the challenge is still pending. `cancelNewDeviceOTP` zeros cached credentials without making a network request.
 
+**`newDeviceOTP` and `twoFactorToken` are mutually exclusive.** The server returns either `device_error` (new device verification) or `TwoFactorProviders2` (2FA challenge) on a given login attempt — never both in the same response. A request SHALL never include both `newdeviceotp` and `twoFactorToken` parameters simultaneously. The two flows use separate pending state structs (`PendingNewDeviceOTP` vs `PendingTwoFactor`) and separate `LoginResult` cases.
+
 `LoginUseCase.resendNewDeviceOTP()` calls `auth.requestNewDeviceOTP()` — not `loginWithNewDeviceOTP`.
 
 `LoginViewModel` switches on `LoginResult.requiresNewDeviceOTP`, sets `flowState = .otpPrompt`, and on Sign In (from `NewDeviceOTPView`) calls `loginUseCase.completeNewDeviceOTP(otp:)` — identical in structure to the existing `.requiresTwoFactor` → `completeTOTP` path.
@@ -423,7 +433,7 @@ case otpPrompt   // device_error received; app shows NewDeviceOTPView
 
 #### Scenario: Fields disabled during loading
 - **GIVEN** `flowState == .loading`
-- **THEN** all interactive controls in the current view SHALL be non-interactive
+- **THEN** all interactive controls in the current view SHALL be non-interactive (including Cancel and Resend buttons in `NewDeviceOTPView` during a resend request — the request is brief and non-cancellable; the user waits for it to complete before interacting again)
 
 ---
 
@@ -532,7 +542,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 - Round-trip encode/decode for each `ServerType` case preserves the exact raw string value (`"cloudUS"`, `"cloudEU"`, `"selfHosted"`)
 
 **Unit tests (Data):**
-- `PrizmAPIClient.setServerEnvironment()` stores the environment and subsequent requests use `env.apiURL` / `env.identityURL` as appropriate (representative call sites: `preLogin`, `identityToken`, `refreshAccessToken`, `fetchSync`)
+- `PrizmAPIClient.setServerEnvironment()` stores the environment and subsequent requests use `env.apiURL` / `env.identityURL` as appropriate — cloud requests SHALL NOT include the `api/` or `identity/` path prefix (representative call sites: `preLogin` → `apiURL/accounts/prelogin`, `identityToken` → `identityURL/connect/token`, `refreshAccessToken` → `identityURL/connect/token`, `fetchSync` → `apiURL/sync`)
 - A request made before `setServerEnvironment` is called throws `APIError.serverEnvironmentNotSet`
 - `AuthRepositoryImpl.setServerEnvironment(_:)` calls `apiClient.setServerEnvironment(_:)` (not `setBaseURL`)
 - `LoginUseCaseImpl` does NOT call `auth.validateServerURL` when `environment.serverType == .cloudUS` or `.cloudEU`
@@ -549,7 +559,7 @@ Per §IV, tests MUST be written before implementation. The following are require
 **Unit tests (Presentation):**
 - `LoginViewModel` server type selection is persisted and restored across instantiation
 - `LoginViewModel` initialised with `UserDefaults` containing `com.prizm.login.lastServerType = "cloudEU"` defaults `serverType` to `.cloudEU`
-- Selecting a cloud type clears `serverURL`; selecting self-hosted restores the last entered URL
+- Selecting a cloud type clears `serverURL`; selecting self-hosted restores the last entered URL; `serverURL` is persisted to `UserDefaults` and restored on init
 - `isSignInDisabled` returns `false` for cloud when email and password are non-empty, even when `serverURL` is empty
 - `isSignInDisabled` returns `true` for self-hosted when `serverURL` is empty, even when email and password are filled
 - `isSignInDisabled` returns `true` in `NewDeviceOTPView` when the OTP field is empty

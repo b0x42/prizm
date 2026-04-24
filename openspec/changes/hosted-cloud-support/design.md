@@ -82,7 +82,7 @@ Existing Keychain records with no `serverType` key SHALL decode as `selfHosted` 
 
 ### Decision: `PrizmAPIClient` accepts `ServerEnvironment` directly
 
-`PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. All ~32 endpoint methods SHALL route to `env.apiURL`, `env.identityURL`, or `env.iconsURL`. `AuthRepositoryImpl.setServerEnvironment(_:)` SHALL call `apiClient.setServerEnvironment(environment)` instead of `apiClient.setBaseURL(environment.base)`. The computed properties already return the right values — this is purely wiring.
+`PrizmAPIClient` SHALL replace `setBaseURL(_ url: URL)` with `setServerEnvironment(_ env: ServerEnvironment)`. All ~32 endpoint methods SHALL route to `env.apiURL`, `env.identityURL`, or `env.iconsURL` using service-relative paths (e.g. `accounts/prelogin`, `connect/token`, `sync`) — stripping the current `api/` and `identity/` prefixes from the path strings. The `ServerEnvironment` computed properties absorb this difference: cloud URLs have no prefix (`https://api.bitwarden.com`), while self-hosted URLs include it (`{base}/api`). This way endpoint methods use the same path regardless of server type. `AuthRepositoryImpl.setServerEnvironment(_:)` SHALL call `apiClient.setServerEnvironment(environment)` instead of `apiClient.setBaseURL(environment.base)`.
 
 ### Decision: Email/password login only; registered `client_id` enables cloud auth
 
