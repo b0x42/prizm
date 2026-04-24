@@ -115,6 +115,8 @@ nonisolated enum AccessibilityID {
         static let saveButton    = "edit.button.save"
         /// The "Discard" button in ItemEditView.
         static let discardButton = "edit.button.discard"
+        /// The "Delete Item" button in ItemEditView (edit mode only).
+        static let deleteButton  = "edit.button.delete"
         /// The inline error banner shown on save failure.
         static let errorBanner   = "edit.errorBanner"
     }

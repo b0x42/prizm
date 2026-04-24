@@ -52,6 +52,10 @@ final class ItemEditViewModel: ObservableObject {
         draft != original
     }
 
+    /// `true` when editing an existing item (as opposed to creating a new one).
+    /// Used to conditionally show the Delete button in the edit sheet.
+    var isEditing: Bool { editUseCase != nil }
+
     // MARK: - Private state
 
     /// Snapshot of the item as it was when the sheet opened — used for `hasChanges`.

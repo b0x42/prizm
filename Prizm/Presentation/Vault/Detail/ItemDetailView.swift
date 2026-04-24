@@ -64,7 +64,8 @@ struct ItemDetailView: View {
                 onEditSheetChanged?(false)
             }) {
                 if let vm = editViewModel {
-                    ItemEditView(viewModel: vm, isPresented: $isEditSheetPresented)
+                    ItemEditView(viewModel: vm, isPresented: $isEditSheetPresented,
+                                 onDelete: onSoftDelete)
                 }
             }
             .sheet(item: $addAttachmentViewModel, onDismiss: {
