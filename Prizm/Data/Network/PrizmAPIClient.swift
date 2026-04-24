@@ -5,19 +5,20 @@ import os.log
 
 /// Bitwarden REST API client for auth and vault sync operations.
 ///
-/// All requests include the `X-Client-Version` and `Bitwarden-Client-Version` headers.
-/// The identity token request additionally sends `client_id` and `deviceType` as form parameters.
+/// All requests include the `X-Client-Version`, `Bitwarden-Client-Version`, and
+/// `Bitwarden-Client-Name` headers. The identity token request additionally sends
+/// `client_id` and `deviceType` as form parameters.
 /// Reference: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 /// Missing or invalid headers result in `400 Bad Request` / `403 Forbidden` from the server.
 ///
-/// Implemented as an `actor` to serialise the mutable `baseURL` and `accessToken` state.
+/// Implemented as an `actor` to serialise the mutable `serverEnvironment` and `accessToken` state.
 protocol PrizmAPIClientProtocol: Actor {
 
-    /// The base URL configured by `AuthRepositoryImpl` after the user enters their server address.
-    var baseURL: URL? { get }
+    /// The server environment configured by `AuthRepositoryImpl`.
+    var serverEnvironment: ServerEnvironment? { get }
 
-    /// Stores the base URL; sets up derived endpoint URLs.
-    func setBaseURL(_ url: URL)
+    /// Stores the server environment; determines per-service URLs and client identifier.
+    func setServerEnvironment(_ env: ServerEnvironment)
 
     /// Stores the access token used for subsequent authenticated requests.
     func setAccessToken(_ token: String)
@@ -47,13 +48,15 @@ protocol PrizmAPIClientProtocol: Actor {
     ///   - twoFactorToken:     TOTP code from the authenticator app, if completing a 2FA challenge.
     ///   - twoFactorProvider:  Numeric 2FA provider identifier (0 = authenticatorApp).
     ///   - twoFactorRemember:  When true, requests a `TwoFactorToken` cookie for future logins.
+    ///   - newDeviceOTP:       One-time code from the user's email, if completing a new-device challenge.
     func identityToken(
         email:              String,
         passwordHash:       String,
         deviceIdentifier:   String,
         twoFactorToken:     String?,
         twoFactorProvider:  Int?,
-        twoFactorRemember:  Bool
+        twoFactorRemember:  Bool,
+        newDeviceOTP:       String?
     ) async throws -> TokenResponse
 
     /// GET `/sync?excludeDomains=true` — returns the full encrypted vault.
@@ -279,8 +282,9 @@ nonisolated struct TokenResponse: Codable {
 
 /// Semantic errors from the `/connect/token` endpoint, distinct from raw transport errors.
 ///
-/// The Bitwarden identity service returns HTTP 400 for both wrong passwords and 2FA challenges;
-/// `IdentityTokenError` models the meaningful distinctions so the repository layer can act on them.
+/// The Bitwarden identity service returns HTTP 400 for both wrong passwords, 2FA challenges,
+/// and new-device OTP requirements; `IdentityTokenError` models the meaningful distinctions
+/// so the repository layer can act on them.
 nonisolated enum IdentityTokenError: Error, Equatable {
     /// The server requires two-factor authentication before issuing a token.
     /// `providers` is the list of available 2FA type numbers (0 = authenticatorApp, etc.).
@@ -289,6 +293,10 @@ nonisolated enum IdentityTokenError: Error, Equatable {
     case twoFactorCodeInvalid
     /// Email or password is incorrect (HTTP 400 `invalid_grant` without 2FA challenge).
     case invalidCredentials
+    /// The server does not recognise this device and has dispatched a one-time code
+    /// to the user's registered email. Trigger: HTTP 400, `{"error": "device_error"}`.
+    /// `error_description` is informational only and SHALL NOT be used as the trigger condition.
+    case newDeviceNotVerified
 }
 
 // MARK: - Errors
@@ -302,8 +310,8 @@ nonisolated enum APIError: Error, Equatable {
     case httpError(statusCode: Int, body: String)
     /// The response body could not be decoded into the expected type.
     case decodingFailed
-    /// `setBaseURL` was never called before making a request.
-    case baseURLNotSet
+    /// `setServerEnvironment` was never called before making a request.
+    case serverEnvironmentNotSet
 }
 
 extension APIError: LocalizedError {
@@ -313,7 +321,7 @@ extension APIError: LocalizedError {
             return body.isEmpty ? "Server error \(statusCode)." : "Server error \(statusCode): \(body)"
         case .decodingFailed:
             return "The server response could not be read. Please try again."
-        case .baseURLNotSet:
+        case .serverEnvironmentNotSet:
             return "No server URL is configured."
         }
     }
@@ -361,10 +369,11 @@ nonisolated struct AttachmentDownloadResponse: Decodable {
 /// All requests include the required Bitwarden client identification headers:
 /// - `X-Client-Version: "2024.12.0"` (version string, required by upstream Bitwarden)
 /// - `Bitwarden-Client-Version: "2024.12.0"` (>= 2024.12.0 required for SSH key support on Vaultwarden)
+/// - `Bitwarden-Client-Name: "desktop"` (required by Bitwarden Cloud — ADR-0023)
 ///
 /// The identity token request additionally sends these as form body parameters:
-/// - `client_id: "desktop"`   (registered client identifier)
-/// - `deviceType: "7"`        (7 = macOS desktop, per Bitwarden DeviceType enum)
+/// - `client_id`: Prizm's registered identifier for cloud accounts, `"desktop"` for self-hosted
+/// - `deviceType: "7"`  (7 = macOS desktop, per Bitwarden DeviceType enum)
 ///
 /// Header requirements: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
 /// DeviceType enum values: https://github.com/bitwarden/server/blob/main/src/Core/Enums/DeviceType.cs
@@ -372,8 +381,10 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - Private state
 
-    private(set) var baseURL: URL?
+    private(set) var serverEnvironment: ServerEnvironment?
     private var accessToken: String?
+    /// Per-environment client identifier; cloud = registered Prizm ID, self-hosted = "desktop".
+    private var clientId: String = "desktop"
 
     private let session:   URLSession
     private let logger:    Logger = Logger(
@@ -386,7 +397,6 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // deviceType 7 = macOS desktop per the Bitwarden DeviceType enum:
     // https://github.com/bitwarden/server/blob/main/src/Core/Enums/DeviceType.cs
     private enum ClientHeaders {
-        static let clientId      = "desktop"
         // Vaultwarden gates SSH key ciphers (type 5) behind >= 2024.12.0.
         static let clientVersion = "2024.12.0"
         static let deviceType    = "7"
@@ -401,8 +411,12 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - Configuration
 
-    func setBaseURL(_ url: URL) {
-        baseURL = url
+    func setServerEnvironment(_ env: ServerEnvironment) {
+        serverEnvironment = env
+        // Cloud environments use the registered Prizm identifier per ADR-0023;
+        // self-hosted instances do not enforce identifier checks, so "desktop" is safe.
+        clientId = env.serverType != .selfHosted ? Config.bitwardenClientIdentifier : "desktop"
+        logger.info("Server environment set: \(env.serverType.rawValue, privacy: .public)")
     }
 
     func setAccessToken(_ token: String) {
@@ -416,8 +430,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - preLogin
 
     func preLogin(email: String) async throws -> PreLoginResponse {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/accounts/prelogin")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("accounts/prelogin")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] preLogin → POST \(url.absoluteString, privacy: .public)")
@@ -445,14 +459,18 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         deviceIdentifier:  String,
         twoFactorToken:    String?,
         twoFactorProvider: Int?,
-        twoFactorRemember: Bool
+        twoFactorRemember: Bool,
+        newDeviceOTP:      String? = nil
     ) async throws -> TokenResponse {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("identity/connect/token")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.identityURL.appendingPathComponent("connect/token")
+
+        logger.info("identityToken → POST \(env.identityURL.absoluteString, privacy: .public)")
 
         if DebugConfig.isEnabled {
             let isTOTP = twoFactorToken != nil
-            logger.debug("[debug] identityToken → POST \(url.absoluteString, privacy: .public) 2FA=\(isTOTP, privacy: .public) provider=\(twoFactorProvider.map(String.init) ?? "nil", privacy: .public)")
+            let isOTP  = newDeviceOTP != nil
+            logger.debug("[debug] identityToken → POST \(url.absoluteString, privacy: .public) 2FA=\(isTOTP, privacy: .public) provider=\(twoFactorProvider.map(String.init) ?? "nil", privacy: .public) newDeviceOTP=\(isOTP, privacy: .public)")
         }
 
         var params: [String: String] = [
@@ -460,7 +478,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
             "username":        email,
             "password":        passwordHash,
             "scope":           "api offline_access",
-            "client_id":       ClientHeaders.clientId,
+            "client_id":       clientId,
             "deviceType":      ClientHeaders.deviceType,
             "deviceIdentifier": deviceIdentifier,
             "deviceName":      "Prizm",
@@ -468,6 +486,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token    = twoFactorToken    { params["twoFactorToken"]    = token }
         if let provider = twoFactorProvider { params["twoFactorProvider"] = String(provider) }
         if twoFactorRemember                { params["twoFactorRemember"] = "true" }
+        if let otp      = newDeviceOTP      { params["newdeviceotp"]      = otp }
 
         if DebugConfig.isEnabled {
             // Log all params except password (server hash) — scrubbed for security.
@@ -491,16 +510,12 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     /// Specialized perform for the identity token endpoint.
     ///
-    /// The Bitwarden identity service overloads HTTP 400 for three distinct outcomes —
+    /// The Bitwarden identity service overloads HTTP 400 for four distinct outcomes —
     /// disambiguation requires inspecting the response body:
-    ///   1. 2FA challenge (occurs on first password attempt when 2FA is enabled):
-    ///      body contains `"TwoFactorProviders2"` key → throw `.twoFactorRequired`
-    ///   2. Bad TOTP code (occurs on the second request when the code is wrong):
-    ///      `error_description` contains "Two-factor" → throw `.twoFactorCodeInvalid`
-    ///   3. Wrong password (no 2FA in play, or bad credentials at any step):
-    ///      generic `invalid_grant` body → throw `.invalidCredentials`
-    /// Cases 2 and 3 use the same fallthrough path because they produce the same
-    /// user-facing error: re-enter your password / code.
+    ///   1. 2FA challenge: body contains `"TwoFactorProviders2"` key → throw `.twoFactorRequired`
+    ///   2. Bad TOTP code: `error_description` contains "Two-factor" → throw `.twoFactorCodeInvalid`
+    ///   3. New device verification: `"error": "device_error"` → throw `.newDeviceNotVerified`
+    ///   4. Wrong password: generic `invalid_grant` body → throw `.invalidCredentials`
     private func performIdentityToken(request: URLRequest) async throws -> TokenResponse {
         let (data, response) = try await session.data(for: request)
 
@@ -516,7 +531,6 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     let keys = json.keys.sorted().joined(separator: ", ")
                     logger.debug("[debug] identityToken 400 body keys: [\(keys, privacy: .public)]")
-                    // error_description and message are server-generated error text, not secrets.
                     if let errorDesc = json["error_description"] as? String {
                         logger.debug("[debug] identityToken 400 error_description: \(errorDesc, privacy: .public)")
                     }
@@ -531,7 +545,6 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
                     logger.debug("[debug] identityToken 400 body (non-JSON): \(body.prefix(200), privacy: .public)")
                 }
             }
-            // Parse the error body to determine the specific error type.
             if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 // 2FA challenge: server returns TwoFactorProviders2 dict with available providers.
                 if let providers2 = json["TwoFactorProviders2"] as? [String: Any] {
@@ -540,6 +553,13 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
                         logger.debug("[debug] identityToken → 2FA required, providers: \(providerTypes, privacy: .public)")
                     }
                     throw IdentityTokenError.twoFactorRequired(providers: providerTypes)
+                }
+                // New device OTP required: server returns {"error": "device_error"}.
+                // Only the `error` field is checked — `error_description` is informational only
+                // and is not stable across server versions.
+                if let errorField = json["error"] as? String, errorField == "device_error" {
+                    logger.info("New device OTP required (device_error response)")
+                    throw IdentityTokenError.newDeviceNotVerified
                 }
                 // Invalid TOTP code or wrong password.
                 if let errorDesc = json["error_description"] as? String {
@@ -567,7 +587,6 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         do {
             let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
             if DebugConfig.isEnabled {
-                // Log which fields are present — never log token values.
                 let hasKey         = tokenResponse.key != nil
                 let hasKdf         = tokenResponse.kdf != nil
                 let hasUserId      = tokenResponse.userId != nil
@@ -589,10 +608,13 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - fetchSync
 
     func fetchSync() async throws -> SyncResponse {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        var components   = URLComponents(url: base.appendingPathComponent("api/sync"), resolvingAgainstBaseURL: false)!
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        var components = URLComponents(
+            url: env.apiURL.appendingPathComponent("sync"),
+            resolvingAgainstBaseURL: false
+        )!
         components.queryItems = [URLQueryItem(name: "excludeDomains", value: "true")]
-        let url          = components.url!
+        let url = components.url!
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] fetchSync → GET \(url.absoluteString, privacy: .public) hasToken=\(self.accessToken != nil, privacy: .public)")
@@ -614,8 +636,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - updateCipher
 
     func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(id)")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers/\(id)")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] updateCipher → PUT \(url.absoluteString, privacy: .public)")
@@ -642,8 +664,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - updateCipherCollections
 
     func updateCipherCollections(id: String, collectionIds: [String]) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(id)/collections")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers/\(id)/collections")
         var request = baseRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -658,10 +680,10 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - softDeleteCipher
 
     func softDeleteCipher(id: String) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        // PUT /api/ciphers/{id}/delete — soft-delete (moves to Trash, sets deletedDate).
-        // Do NOT use DELETE /api/ciphers/{id} here; that endpoint permanently removes the cipher.
-        let url = base.appendingPathComponent("api/ciphers/\(id)/delete")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        // PUT /ciphers/{id}/delete — soft-delete (moves to Trash, sets deletedDate).
+        // Do NOT use DELETE /ciphers/{id} here; that endpoint permanently removes the cipher.
+        let url = env.apiURL.appendingPathComponent("ciphers/\(id)/delete")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] softDeleteCipher → PUT \(url.absoluteString, privacy: .public)")
@@ -682,8 +704,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - permanentDeleteCipher
 
     func permanentDeleteCipher(id: String) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(id)")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers/\(id)")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] permanentDeleteCipher → DELETE \(url.absoluteString, privacy: .public)")
@@ -704,8 +726,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - restoreCipher
 
     func restoreCipher(id: String) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(id)/restore")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers/\(id)/restore")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] restoreCipher → PUT \(url.absoluteString, privacy: .public)")
@@ -728,8 +750,11 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - createAttachmentMetadata
 
     func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment/v2")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL
+            .appendingPathComponent("ciphers")
+            .appendingPathComponent(cipherId)
+            .appendingPathComponent("attachment/v2")
         var request = baseRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -741,23 +766,27 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - uploadAttachmentBitwardenHosted
 
     func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL
+            .appendingPathComponent("ciphers")
+            .appendingPathComponent(cipherId)
+            .appendingPathComponent("attachment")
+            .appendingPathComponent(attachmentId)
 
         // Multipart/form-data with a single `data` field containing the encrypted blob.
         let boundary = UUID().uuidString
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"data\"; filename=\"attachment\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
-        body.append(encryptedBlob)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        var multipart = Data()
+        multipart.append("--\(boundary)\r\n".data(using: .utf8)!)
+        multipart.append("Content-Disposition: form-data; name=\"data\"; filename=\"attachment\"\r\n".data(using: .utf8)!)
+        multipart.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+        multipart.append(encryptedBlob)
+        multipart.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
 
         var request = baseRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
-        request.httpBody = body
+        request.httpBody = multipart
         try await performEmpty(request: request)
     }
 
@@ -781,8 +810,12 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - fetchAttachmentDownloadURL
 
     func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL
+            .appendingPathComponent("ciphers")
+            .appendingPathComponent(cipherId)
+            .appendingPathComponent("attachment")
+            .appendingPathComponent(attachmentId)
         var request = baseRequest(url: url)
         request.httpMethod = "GET"
         if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
@@ -792,14 +825,17 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - deleteAttachment
 
     func deleteAttachment(cipherId: String, attachmentId: String) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL
+            .appendingPathComponent("ciphers")
+            .appendingPathComponent(cipherId)
+            .appendingPathComponent("attachment")
+            .appendingPathComponent(attachmentId)
         var request = baseRequest(url: url)
         request.httpMethod = "DELETE"
         if let token = accessToken { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         try await performEmpty(request: request)
     }
-
 
     // MARK: - downloadBlob
 
@@ -814,13 +850,11 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         return data
     }
 
-    // MARK: - refreshAccessToken
-
     // MARK: - createCipher
 
     func createCipher(cipher: RawCipher) async throws -> RawCipher {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] createCipher → POST \(url.absoluteString, privacy: .public)")
@@ -843,15 +877,15 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - createOrgCipher
 
-    /// Wrapper body for `POST /api/ciphers/create` — Bitwarden expects `{ "cipher": ..., "collectionIds": [...] }`.
+    /// Wrapper body for `POST /ciphers/create` — Bitwarden expects `{ "cipher": ..., "collectionIds": [...] }`.
     private struct OrgCipherCreateRequest: Encodable {
         let cipher: RawCipher
         let collectionIds: [String]
     }
 
     func createOrgCipher(cipher: RawCipher) async throws -> RawCipher {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/create")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers/create")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] createOrgCipher → POST \(url.absoluteString, privacy: .public)")
@@ -876,8 +910,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - Folder CRUD
 
     func createFolder(encryptedName: String) async throws -> RawFolder {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/folders")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("folders")
         var request = baseRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -889,8 +923,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     }
 
     func updateFolder(id: String, encryptedName: String) async throws -> RawFolder {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/folders/\(id)")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("folders/\(id)")
         var request = baseRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -902,8 +936,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     }
 
     func deleteFolder(id: String) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/folders/\(id)")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("folders/\(id)")
         var request = baseRequest(url: url)
         request.httpMethod = "DELETE"
         if let token = accessToken {
@@ -922,8 +956,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     }
 
     func createCollection(organizationId: String, encryptedName: String) async throws -> RawCollection {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/organizations/\(organizationId)/collections")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("organizations/\(organizationId)/collections")
         var request = baseRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -935,8 +969,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     }
 
     func renameCollection(id: String, organizationId: String, encryptedName: String) async throws -> RawCollection {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/organizations/\(organizationId)/collections/\(id)")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("organizations/\(organizationId)/collections/\(id)")
         var request = baseRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -948,8 +982,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     }
 
     func deleteCollection(id: String, organizationId: String) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/organizations/\(organizationId)/collections/\(id)")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("organizations/\(organizationId)/collections/\(id)")
         var request = baseRequest(url: url)
         request.httpMethod = "DELETE"
         if let token = accessToken {
@@ -961,8 +995,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - Cipher partial / move
 
     func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/\(id)/partial")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers/\(id)/partial")
         var request = baseRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -976,8 +1010,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     }
 
     func moveCiphersToFolder(ids: [String], folderId: String?) async throws {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/ciphers/move")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.apiURL.appendingPathComponent("ciphers/move")
         var request = baseRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -990,9 +1024,11 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         try await performEmpty(request: request)
     }
 
+    // MARK: - refreshAccessToken
+
     func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?) {
-        guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("identity/connect/token")
+        guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
+        let url = env.identityURL.appendingPathComponent("connect/token")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] refreshAccessToken → POST \(url.absoluteString, privacy: .public)")
@@ -1001,7 +1037,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         let params: [String: String] = [
             "grant_type":    "refresh_token",
             "refresh_token": refreshToken,
-            "client_id":     ClientHeaders.clientId,
+            "client_id":     clientId,
         ]
 
         var request = baseRequest(url: url)
@@ -1027,6 +1063,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         req.setValue("application/json",          forHTTPHeaderField: "Accept")
         req.setValue(ClientHeaders.clientVersion, forHTTPHeaderField: "X-Client-Version")
         req.setValue(ClientHeaders.clientVersion, forHTTPHeaderField: "Bitwarden-Client-Version")
+        req.setValue(Config.clientName,           forHTTPHeaderField: "Bitwarden-Client-Name")
         return req
     }
 
@@ -1050,7 +1087,6 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
             // Scrub: do not log response body (may contain tokens or error details with PII).
             logger.error("HTTP \(http.statusCode) for \(request.url?.path ?? "unknown")")
             if DebugConfig.isEnabled {
-                // Log only top-level JSON keys on error, never values.
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     let keys = json.keys.sorted().joined(separator: ", ")
                     logger.debug("[debug] error body keys: [\(keys, privacy: .public)]")

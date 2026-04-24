@@ -1,4 +1,5 @@
 // LocalConfig.xcconfig — per-developer signing settings
+#include "LocalSecrets.xcconfig"
 //
 // Setup:
 //   cp LocalConfig.xcconfig.template LocalConfig.xcconfig

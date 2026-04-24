@@ -45,6 +45,27 @@ never receives plaintext vault content or the master key at any point.
 Authentication sends a one-way derived hash (`serverHash`) rather than the master
 password itself.
 
+### Cloud endpoints (Bitwarden Cloud)
+
+| Service | US endpoint | EU endpoint |
+|---|---|---|
+| API | `https://api.bitwarden.com` | `https://api.bitwarden.eu` |
+| Identity | `https://identity.bitwarden.com` | `https://identity.bitwarden.eu` |
+| Icons | `https://icons.bitwarden.net` | `https://icons.bitwarden.net` |
+
+Cloud login requires a registered `client_id` injected at build time via `LocalSecrets.xcconfig`
+→ `BWClientIdentifier` in `Info.plist` → `Config.bitwardenClientIdentifier`. This value is
+never logged. See `DEVELOPMENT.md` for setup instructions.
+
+### New-device OTP memory handling
+
+When Bitwarden Cloud returns HTTP 400 `device_error`, the app stores a `PendingNewDeviceOTP`
+struct in memory holding the stretched master keys. These keys are zeroed in-place (via
+`Data.resetBytes(in:)`) in all exit paths: OTP success, OTP failure, and explicit cancel.
+Setting the struct to `nil` alone is insufficient — ARC may defer deallocation. In-place
+zeroing reduces the window during which derived key material can be read from a heap dump
+(Constitution §III).
+
 ### Algorithms
 
 | Algorithm | Purpose | Implementation |

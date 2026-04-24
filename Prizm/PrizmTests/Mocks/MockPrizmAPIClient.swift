@@ -9,7 +9,7 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
     // MARK: - Configuration state
     // nonisolated(unsafe) allows tests to read/write without await — safe in single-threaded tests.
 
-    nonisolated(unsafe) var baseURL: URL?
+    nonisolated(unsafe) var serverEnvironment: ServerEnvironment?
     nonisolated(unsafe) var storedAccessToken: String?
 
     // MARK: - Stubs: preLogin
@@ -22,6 +22,7 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
     nonisolated(unsafe) var tokenResponse: TokenResponse?
     nonisolated(unsafe) var tokenShouldThrow: Error?
     nonisolated(unsafe) var tokenTwoFactorProviders: [Int]?
+    nonisolated(unsafe) var lastIdentityTokenNewDeviceOTP: String?
 
     // MARK: - Stubs: fetchSync
 
@@ -43,8 +44,8 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
 
     // MARK: - Protocol conformance
 
-    func setBaseURL(_ url: URL) {
-        baseURL = url
+    func setServerEnvironment(_ env: ServerEnvironment) {
+        serverEnvironment = env
     }
 
     func setAccessToken(_ token: String) {
@@ -68,8 +69,10 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         deviceIdentifier:  String,
         twoFactorToken:    String?,
         twoFactorProvider: Int?,
-        twoFactorRemember: Bool
+        twoFactorRemember: Bool,
+        newDeviceOTP:      String?
     ) async throws -> TokenResponse {
+        lastIdentityTokenNewDeviceOTP = newDeviceOTP
         if let err = tokenShouldThrow { throw err }
 
         if let providers = tokenTwoFactorProviders, tokenResponse == nil {
@@ -93,7 +96,7 @@ actor MockPrizmAPIClient: PrizmAPIClientProtocol {
         }
 
         guard let resp = tokenResponse else {
-            throw APIError.baseURLNotSet
+            throw APIError.serverEnvironmentNotSet
         }
         return resp
     }

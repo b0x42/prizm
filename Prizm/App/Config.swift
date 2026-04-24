@@ -21,6 +21,16 @@ extension Notification.Name {
 enum Config {
     static let clientName = "desktop"
     static let deviceType = 7
+
+    /// Registered Bitwarden client identifier, injected at build time via LocalSecrets.xcconfig.
+    /// Empty string when LocalSecrets.xcconfig is absent — cloud login fails fast with
+    /// AuthError.clientIdentifierNotConfigured before any network request is attempted.
+    static let bitwardenClientIdentifier: String =
+        Bundle.main.object(forInfoDictionaryKey: "BWClientIdentifier") as? String ?? ""
+
+    /// Bitwarden server API version Prizm was last tested against.
+    /// Update when testing against a newer server release.
+    static let bitwardenApiVersion = "2026.4.0"
 }
 
 /// Gates verbose debug logging throughout the Data layer.

@@ -73,6 +73,32 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 
 ---
 
+## Login Screen — Server Picker
+
+The server-type picker (`Picker` with `.segmented` style) is annotated with:
+- `accessibilityIdentifier`: `login.serverTypePicker`
+- `accessibilityLabel`: `"Server"` (replaces the default empty label from the segmented style)
+- `accessibilityValue`: the current selection label ("Bitwarden US", "Bitwarden EU", or "Self-hosted")
+
+VoiceOver announces the control as *"Server, Bitwarden US, segmented control, 1 of 3"* on first focus
+and reads the new value when the selection changes.
+
+## New-Device OTP Screen (`NewDeviceOTPView`)
+
+| Element | Identifier | Label |
+|---|---|---|
+| OTP text field | `login.newDeviceOtpField` | "Verification code" |
+| Sign In button | *(inherited from `login.signIn` pattern)* | "Sign In" |
+| Resend button | `login.resendOtpButton` | "Resend code" |
+| Cancel button | `login.cancelOtpButton` | "Cancel" |
+| Error label | `login.otpErrorMessage` | *(dynamic error text)* |
+
+The header "Check your email" has the `.isHeader` accessibility trait so VoiceOver reads it with
+heading emphasis on first appearance.
+
+All error messages (OTP invalid, resend failure) are posted as `AccessibilityNotification.Announcement`
+so VoiceOver announces them immediately without requiring focus to move to the error label.
+
 ## Known Gaps
 
 1. **Drag-and-drop lacks keyboard alternative** (2.1.1) — Folder drag-and-drop operations cannot be performed via keyboard alone. Items can be moved to folders via the edit form as a workaround.

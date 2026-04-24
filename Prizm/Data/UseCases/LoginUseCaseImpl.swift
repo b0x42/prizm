@@ -4,10 +4,11 @@ import os.log
 // MARK: - LoginUseCaseImpl
 
 /// Orchestrates the full account login flow:
-///   1. Validate + set server URL.
+///   1. Set server environment (validate URL for self-hosted only).
 ///   2. Call `AuthRepository.loginWithPassword`.
 ///   3. If `.success`: call `SyncRepository.sync` to populate the vault.
 ///   4. If `.requiresTwoFactor`: return immediately — sync is deferred to after TOTP.
+///   5. If `.requiresNewDeviceOTP`: return immediately — sync deferred to after OTP.
 ///
 /// `SyncRepository.sync` is called here (not inside `AuthRepository`) to keep the
 /// Domain layer orchestration visible and testable at the use-case level.
@@ -23,27 +24,22 @@ final class LoginUseCaseImpl: LoginUseCase {
         self.sync = sync
     }
 
-    func execute(serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
-        // Step 1: Validate URL (throws AuthError.invalidURL on failure).
-        try auth.validateServerURL(serverURL)
+    func execute(environment: ServerEnvironment, email: String, masterPassword: Data) async throws -> LoginResult {
+        // Validate server URL only for self-hosted — cloud URLs are static factory values.
+        if environment.serverType == .selfHosted {
+            let urlString = environment.base.absoluteString
+            try auth.validateServerURL(urlString)
+        }
 
-        // Step 2: Configure server environment.
-        let trimmed = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-        guard let url = URL(string: trimmed) else { throw AuthError.invalidURL }
-        let environment = ServerEnvironment(base: url, overrides: nil)
         try await auth.setServerEnvironment(environment)
 
-        // Step 3: Attempt password login.
         logger.info("Attempting login for \(email, privacy: .private)")
         let result = try await auth.loginWithPassword(email: email, masterPassword: masterPassword)
 
         switch result {
         case .success:
-            // Step 4: Sync vault immediately after successful login.
-            // Sync is best-effort: if the server is temporarily unreachable the user
-            // still lands in the vault browser showing items from the last sync.
-            // Failing the entire login on a sync error would lock users out even when
-            // the server is degraded — unacceptable for a password manager.
+            // Sync vault immediately after successful login.
+            // Sync is best-effort: a degraded server should not prevent vault access.
             logger.info("Login succeeded — starting vault sync")
             do {
                 _ = try await sync.sync(progress: { _ in })
@@ -53,10 +49,13 @@ final class LoginUseCaseImpl: LoginUseCase {
             return result
 
         case .requiresTwoFactor:
-            // Sync is deferred until TOTP is accepted. At this point we have derived the
-            // master key but do not yet have an access token, so a sync request would be
-            // rejected with 401. The vault populates after completeTOTP succeeds below.
+            // Sync deferred until TOTP accepted — no access token yet.
             logger.info("Login requires 2FA")
+            return result
+
+        case .requiresNewDeviceOTP:
+            // Sync deferred until OTP accepted — no access token yet.
+            logger.info("Login requires new-device OTP")
             return result
         }
     }
@@ -64,7 +63,6 @@ final class LoginUseCaseImpl: LoginUseCase {
     func completeTOTP(code: String, rememberDevice: Bool) async throws -> Account {
         logger.info("Completing TOTP")
         let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
-        // Sync failure is non-fatal — show vault with whatever was synced (FR-049).
         do {
             _ = try await sync.sync(progress: { _ in })
         } catch {
@@ -75,5 +73,25 @@ final class LoginUseCaseImpl: LoginUseCase {
 
     func cancelTOTP() {
         auth.cancelTwoFactor()
+    }
+
+    func completeNewDeviceOTP(otp: String) async throws -> Account {
+        logger.info("Completing new-device OTP")
+        let account = try await auth.loginWithNewDeviceOTP(otp)
+        do {
+            _ = try await sync.sync(progress: { _ in })
+        } catch {
+            logger.error("Post-OTP sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
+        }
+        return account
+    }
+
+    func resendNewDeviceOTP() async throws {
+        logger.info("Resending new-device OTP")
+        try await auth.requestNewDeviceOTP()
+    }
+
+    func cancelNewDeviceOTP() {
+        auth.cancelNewDeviceOTP()
     }
 }

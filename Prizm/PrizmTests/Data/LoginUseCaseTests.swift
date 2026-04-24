@@ -1,8 +1,6 @@
 import XCTest
 @testable import Prizm
 
-/// Failing tests for LoginUseCaseImpl (T026).
-/// These will fail until LoginUseCaseImpl + AuthRepositoryImpl + SyncRepositoryImpl are implemented.
 @MainActor
 final class LoginUseCaseTests: XCTestCase {
 
@@ -10,7 +8,10 @@ final class LoginUseCaseTests: XCTestCase {
     private var mockAuth: MockAuthRepository!
     private var mockSync: MockSyncRepository!
 
-    private let serverURL      = "https://vault.example.com"
+    private let selfHostedEnv = ServerEnvironment(
+        base: URL(string: "https://vault.example.com")!,
+        overrides: nil
+    )
     private let email          = "alice@example.com"
     private let masterPassword = Data("masterPassword1!".utf8)
 
@@ -21,15 +22,14 @@ final class LoginUseCaseTests: XCTestCase {
         sut = LoginUseCaseImpl(auth: mockAuth, sync: mockSync)
     }
 
-    // MARK: - T026: execute(serverURL:email:masterPassword:)
+    // MARK: - execute: self-hosted success path
 
-    /// Full success path: validates URL, sets environment, calls loginWithPassword, syncs, returns .success.
     func testExecute_validCredentials_returnsSuccessAndSyncs() async throws {
-        mockAuth.stubbedLoginResult  = .success(makeAccount())
-        mockSync.stubbedSyncResult   = makeSyncResult()
+        mockAuth.stubbedLoginResult = .success(makeAccount())
+        mockSync.stubbedSyncResult  = makeSyncResult()
 
         let result = try await sut.execute(
-            serverURL:      serverURL,
+            environment:    selfHostedEnv,
             email:          email,
             masterPassword: masterPassword
         )
@@ -43,14 +43,15 @@ final class LoginUseCaseTests: XCTestCase {
         XCTAssertTrue(mockSync.syncCalled,                 "Expected sync to be called after login")
     }
 
-    /// An invalid server URL is rejected before any network call is made.
-    func testExecute_invalidURL_throwsBeforeNetwork() async throws {
+    // MARK: - execute: self-hosted URL validation
+
+    func testExecute_selfHosted_invalidURL_throwsBeforeNetwork() async throws {
         mockAuth.validateServerURLError = AuthError.invalidURL
 
         let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(
-                serverURL:      "not-a-url",
+                environment:    selfHostedEnv,
                 email:          email,
                 masterPassword: masterPassword
             )
@@ -62,13 +63,43 @@ final class LoginUseCaseTests: XCTestCase {
         XCTAssertFalse(mockSync.syncCalled,              "Sync must not be called on invalid URL")
     }
 
-    /// When loginWithPassword returns .requiresTwoFactor, the use case returns the same result
-    /// without triggering a sync.
+    // MARK: - 8.4: cloud skips validateServerURL
+
+    func testExecute_cloudUS_doesNotCallValidateServerURL() async throws {
+        mockAuth.stubbedLoginResult = .success(makeAccount())
+
+        _ = try await sut.execute(
+            environment:    .cloudUS(),
+            email:          email,
+            masterPassword: masterPassword
+        )
+
+        XCTAssertFalse(mockAuth.validateServerURLCalled,
+                       "validateServerURL must NOT be called for cloud environments")
+    }
+
+    // MARK: - 8.5: self-hosted calls validateServerURL
+
+    func testExecute_selfHosted_callsValidateServerURL() async throws {
+        mockAuth.stubbedLoginResult = .success(makeAccount())
+
+        _ = try await sut.execute(
+            environment:    selfHostedEnv,
+            email:          email,
+            masterPassword: masterPassword
+        )
+
+        XCTAssertTrue(mockAuth.validateServerURLCalled,
+                      "validateServerURL must be called for self-hosted environments")
+    }
+
+    // MARK: - execute: 2FA
+
     func testExecute_requires2FA_returnsTwoFactorWithoutSync() async throws {
         mockAuth.stubbedLoginResult = .requiresTwoFactor(.authenticatorApp)
 
         let result = try await sut.execute(
-            serverURL:      serverURL,
+            environment:    selfHostedEnv,
             email:          email,
             masterPassword: masterPassword
         )
@@ -82,14 +113,32 @@ final class LoginUseCaseTests: XCTestCase {
         XCTAssertFalse(mockSync.syncCalled, "Sync must not be called when 2FA is required")
     }
 
-    /// Invalid credentials propagate as AuthError.invalidCredentials.
+    // MARK: - execute: new-device OTP
+
+    func testExecute_requiresNewDeviceOTP_returnsOTPWithoutSync() async throws {
+        mockAuth.stubbedLoginResult = .requiresNewDeviceOTP
+
+        let result = try await sut.execute(
+            environment:    .cloudUS(),
+            email:          email,
+            masterPassword: masterPassword
+        )
+
+        guard case .requiresNewDeviceOTP = result else {
+            return XCTFail("Expected .requiresNewDeviceOTP, got \(result)")
+        }
+        XCTAssertFalse(mockSync.syncCalled, "Sync must not be called when OTP is required")
+    }
+
+    // MARK: - execute: invalid credentials
+
     func testExecute_invalidCredentials_throws() async throws {
         mockAuth.loginWithPasswordError = AuthError.invalidCredentials
 
         let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(
-                serverURL:      serverURL,
+                environment:    selfHostedEnv,
                 email:          email,
                 masterPassword: masterPassword
             )
@@ -100,13 +149,14 @@ final class LoginUseCaseTests: XCTestCase {
         XCTAssertFalse(mockSync.syncCalled, "Sync must not be called on failed login")
     }
 
-    /// A sync failure after successful login is non-fatal — result is still .success (FR-049).
-    func testExecute_syncFailure_throws() async throws {
+    // MARK: - execute: sync failure is non-fatal
+
+    func testExecute_syncFailure_stillReturnsSuccess() async throws {
         mockAuth.stubbedLoginResult = .success(makeAccount())
         mockSync.syncShouldThrow    = SyncError.networkUnavailable
 
         let result = try await sut.execute(
-            serverURL:      serverURL,
+            environment:    selfHostedEnv,
             email:          email,
             masterPassword: masterPassword
         )
@@ -119,11 +169,10 @@ final class LoginUseCaseTests: XCTestCase {
 
     // MARK: - cancelTOTP
 
-    /// cancelTOTP delegates to auth.cancelTwoFactor() — clears pending in-memory key material.
     func testCancelTOTP_callsCancelTwoFactor() async throws {
         mockAuth.stubbedLoginResult = .requiresTwoFactor(.authenticatorApp)
         _ = try await sut.execute(
-            serverURL:      serverURL,
+            environment:    selfHostedEnv,
             email:          email,
             masterPassword: masterPassword
         )
@@ -131,7 +180,30 @@ final class LoginUseCaseTests: XCTestCase {
         sut.cancelTOTP()
 
         XCTAssertTrue(mockAuth.cancelTwoFactorCalled,
-                      "cancelTOTP must forward to auth.cancelTwoFactor to clear pending key material")
+                      "cancelTOTP must forward to auth.cancelTwoFactor")
+    }
+
+    // MARK: - 8.11: completeNewDeviceOTP triggers sync
+
+    func testCompleteNewDeviceOTP_triggersSync() async throws {
+        let account = try await sut.completeNewDeviceOTP(otp: "123456")
+        XCTAssertTrue(mockAuth.loginWithNewDeviceOTPCalled, "Expected loginWithNewDeviceOTP to be called")
+        XCTAssertTrue(mockSync.syncCalled,                  "Expected sync after OTP success")
+        XCTAssertEqual(account.email, mockAuth.stubbedLoginResult.account?.email)
+    }
+
+    // MARK: - 8.12: cancelNewDeviceOTP delegates to auth
+
+    func testCancelNewDeviceOTP_callsAuthCancel() {
+        sut.cancelNewDeviceOTP()
+        XCTAssertTrue(mockAuth.cancelNewDeviceOTPCalled)
+    }
+
+    // MARK: - 8.13: resendNewDeviceOTP delegates to auth
+
+    func testResendNewDeviceOTP_callsAuthRequest() async throws {
+        try await sut.resendNewDeviceOTP()
+        XCTAssertTrue(mockAuth.requestNewDeviceOTPCalled)
     }
 
     // MARK: - Helpers
@@ -141,14 +213,20 @@ final class LoginUseCaseTests: XCTestCase {
             userId:            "user-guid-001",
             email:             email,
             name:              "Alice",
-            serverEnvironment: ServerEnvironment(
-                base:      URL(string: "https://vault.example.com")!,
-                overrides: nil
-            )
+            serverEnvironment: selfHostedEnv
         )
     }
 
     private func makeSyncResult() -> SyncResult {
         SyncResult(syncedAt: Date(), totalCiphers: 0, failedDecryptionCount: 0)
+    }
+}
+
+// MARK: - LoginResult helper for tests
+
+private extension LoginResult {
+    var account: Account? {
+        if case .success(let a) = self { return a }
+        return nil
     }
 }
