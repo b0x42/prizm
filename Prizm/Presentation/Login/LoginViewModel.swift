@@ -105,9 +105,9 @@ final class LoginViewModel: ObservableObject {
 
         Task {
             do {
-                let environment = try buildEnvironment()
                 let result = try await loginUseCase.execute(
-                    environment:    environment,
+                    serverType:     serverType,
+                    serverURL:      serverURL,
                     email:          email,
                     masterPassword: passwordData
                 )
@@ -238,21 +238,6 @@ final class LoginViewModel: ObservableObject {
     }
 
     // MARK: - Private helpers
-
-    private func buildEnvironment() throws -> ServerEnvironment {
-        switch serverType {
-        case .cloudUS:
-            return .cloudUS()
-        case .cloudEU:
-            return .cloudEU()
-        case .selfHosted:
-            let trimmed = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-            guard let base = URL(string: trimmed), !trimmed.isEmpty else {
-                throw AuthError.invalidURL
-            }
-            return ServerEnvironment(base: base, overrides: nil)
-        }
-    }
 
     private func postAnnouncement(_ message: String) {
         AccessibilityNotification.Announcement(message).post()

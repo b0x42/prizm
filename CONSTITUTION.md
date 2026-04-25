@@ -221,8 +221,9 @@ Reference: https://contributing.bitwarden.com/architecture/security/requirements
   MUST be used for all requests to Bitwarden Cloud endpoints (`cloudUS`, `cloudEU`).
   It MUST be injected at build time via a gitignored `.xcconfig` file and MUST NOT
   appear in source control. See: https://contributing.bitwarden.com/architecture/adr/integration-identifiers/
-- **Required headers**: All API requests MUST include the minimum required headers
-  (`Bitwarden-Client-Name`, `Bitwarden-Client-Version`, `Device-Type`).
+- **Required headers**: All API requests MUST include `Bitwarden-Client-Name` and
+  `Bitwarden-Client-Version`. The `Device-Type` parameter is required only on identity
+  token requests (`/connect/token`), where it is sent as a form body field, not a header.
 - **Client version string**: SHOULD reflect the Bitwarden server API version the client
   has been tested against; document the tested version in `Config.swift`.
 - **ATS / HTTPS**: All cloud and self-hosted endpoints MUST use HTTPS. `NSAllowsArbitraryLoads`
@@ -313,4 +314,4 @@ Standards governing how features are built and shipped:
 
 ---
 
-**Version**: 1.6.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-19
+**Version**: 1.6.1 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-25

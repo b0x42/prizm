@@ -125,7 +125,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         }
 
         // Step 2: Derive master key locally — never sent to server.
-        // `masterPassword` is `Data` so we can zero it after the KDF call (Constitution §III).
+        // `masterPassword` is `Data` (typed to allow zeroing; `String` cannot be zeroed).
+        // Swift CoW prevents in-place zeroing of a value-type parameter without unsafe code;
+        // the local copy is released on return. Accepted limitation — tracked as §III known gap.
         logger.info("Step 2: deriving master key (KDF)")
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
@@ -363,7 +365,10 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             logger.info("New OTP dispatched (device_error treated as success)")
             return
         }
-        // Any other error propagates — credentials not zeroed, caller may retry.
+        // Unexpected: server returned a token response instead of device_error.
+        // The device may have been verified by another client while this challenge was open.
+        // Pending state is preserved — caller can still submit OTP or cancel.
+        logger.warning("requestNewDeviceOTP: unexpected token success — device may have already been verified")
     }
 
     func cancelNewDeviceOTP() {
@@ -371,6 +376,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         // Setting pendingNewDeviceOTP = nil alone does not guarantee immediate deallocation —
         // ARC may defer it. Zeroing the Data buffers in-place reduces the window during
         // which derived key material lives in the heap (Constitution §III).
+        // Note: passwordHash (String) cannot be zeroed — String storage is immutable.
+        // This is an accepted limitation shared with the TOTP flow (cancelTwoFactor).
         if let pending = pendingNewDeviceOTP {
             pendingNewDeviceOTP!.stretchedKeys.encryptionKey.resetBytes(
                 in: 0..<pending.stretchedKeys.encryptionKey.count

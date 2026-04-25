@@ -428,15 +428,17 @@ final class AuthRepositoryImplTests: XCTestCase {
         mockAPI.tokenShouldThrow = nil
         mockAPI.tokenResponse    = makeTokenResponse()
         _ = try await sutWithId.loginWithNewDeviceOTP("123456")
-        // Calling again should throw because pending state was cleared.
+        // Calling again should throw otpSessionExpired because pending state was cleared.
         await XCTAssertThrowsErrorAsync(
             try await sutWithId.loginWithNewDeviceOTP("000000")
         ) { error in
-            XCTAssertEqual(error as? AuthError, .invalidCredentials)
+            XCTAssertEqual(error as? AuthError, .otpSessionExpired)
         }
     }
 
-    func testLoginWithNewDeviceOTP_failure_clearsPendingState() async throws {
+    // MARK: - 8.7: wrong OTP preserves pending state so user can retry
+
+    func testLoginWithNewDeviceOTP_failure_preservesPendingForRetry() async throws {
         let sutWithId = AuthRepositoryImpl(
             apiClient:        mockAPI,
             crypto:           mockCrypto,
@@ -449,15 +451,14 @@ final class AuthRepositoryImplTests: XCTestCase {
         mockAPI.tokenShouldThrow     = IdentityTokenError.newDeviceNotVerified
         mockCrypto.stubbedServerHash = "hash=="
         _ = try await sutWithId.loginWithPassword(email: "a@b.com", masterPassword: Data("pw".utf8))
-        // OTP call fails.
+        // First OTP attempt fails — wrong code.
         mockAPI.tokenShouldThrow = IdentityTokenError.invalidCredentials
         _ = try? await sutWithId.loginWithNewDeviceOTP("000000")
-        // Pending state should be cleared even on failure — second call throws.
-        await XCTAssertThrowsErrorAsync(
-            try await sutWithId.loginWithNewDeviceOTP("111111")
-        ) { error in
-            XCTAssertEqual(error as? AuthError, .invalidCredentials)
-        }
+        // Pending state must be preserved so the user can retry with the correct code.
+        mockAPI.tokenShouldThrow = nil
+        mockAPI.tokenResponse    = makeTokenResponse()
+        let account = try await sutWithId.loginWithNewDeviceOTP("123456")
+        XCTAssertEqual(account.email, "a@b.com", "Retry with correct OTP should succeed")
     }
 
     // MARK: - 8.8: pending OTP state cleared after cancelNewDeviceOTP
@@ -476,11 +477,11 @@ final class AuthRepositoryImplTests: XCTestCase {
         mockCrypto.stubbedServerHash = "hash=="
         _ = try await sutWithId.loginWithPassword(email: "a@b.com", masterPassword: Data("pw".utf8))
         sutWithId.cancelNewDeviceOTP()
-        // loginWithNewDeviceOTP should now throw because pending is nil.
+        // loginWithNewDeviceOTP should now throw otpSessionExpired because pending is nil.
         await XCTAssertThrowsErrorAsync(
             try await sutWithId.loginWithNewDeviceOTP("123456")
         ) { error in
-            XCTAssertEqual(error as? AuthError, .invalidCredentials)
+            XCTAssertEqual(error as? AuthError, .otpSessionExpired)
         }
     }
 

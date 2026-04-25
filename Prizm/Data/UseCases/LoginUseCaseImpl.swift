@@ -4,11 +4,12 @@ import os.log
 // MARK: - LoginUseCaseImpl
 
 /// Orchestrates the full account login flow:
-///   1. Set server environment (validate URL for self-hosted only).
-///   2. Call `AuthRepository.loginWithPassword`.
-///   3. If `.success`: call `SyncRepository.sync` to populate the vault.
-///   4. If `.requiresTwoFactor`: return immediately — sync is deferred to after TOTP.
-///   5. If `.requiresNewDeviceOTP`: return immediately — sync deferred to after OTP.
+///   1. Build `ServerEnvironment` from caller-supplied `serverType` + `serverURL`.
+///   2. Validate URL (self-hosted only) and set environment on `AuthRepository`.
+///   3. Call `AuthRepository.loginWithPassword`.
+///   4. If `.success`: call `SyncRepository.sync` to populate the vault.
+///   5. If `.requiresTwoFactor`: return immediately — sync is deferred to after TOTP.
+///   6. If `.requiresNewDeviceOTP`: return immediately — sync deferred to after OTP.
 ///
 /// `SyncRepository.sync` is called here (not inside `AuthRepository`) to keep the
 /// Domain layer orchestration visible and testable at the use-case level.
@@ -24,11 +25,12 @@ final class LoginUseCaseImpl: LoginUseCase {
         self.sync = sync
     }
 
-    func execute(environment: ServerEnvironment, email: String, masterPassword: Data) async throws -> LoginResult {
-        // Validate server URL only for self-hosted — cloud URLs are static factory values.
-        if environment.serverType == .selfHosted {
-            let urlString = environment.base.absoluteString
-            try auth.validateServerURL(urlString)
+    func execute(serverType: ServerType, serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
+        let environment = try buildEnvironment(serverType: serverType, serverURL: serverURL)
+        // Validate self-hosted URL against HTTPS scheme and host presence (Constitution §III).
+        // Cloud URLs are hardcoded constants and never need validation.
+        if serverType == .selfHosted {
+            try auth.validateServerURL(environment.base.absoluteString)
         }
 
         try await auth.setServerEnvironment(environment)
@@ -93,5 +95,22 @@ final class LoginUseCaseImpl: LoginUseCase {
 
     func cancelNewDeviceOTP() {
         auth.cancelNewDeviceOTP()
+    }
+
+    // MARK: - Private helpers
+
+    private func buildEnvironment(serverType: ServerType, serverURL: String) throws -> ServerEnvironment {
+        switch serverType {
+        case .cloudUS:
+            return .cloudUS()
+        case .cloudEU:
+            return .cloudEU()
+        case .selfHosted:
+            let trimmed = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
+            guard !trimmed.isEmpty, let base = URL(string: trimmed) else {
+                throw AuthError.invalidURL
+            }
+            return ServerEnvironment(base: base, overrides: nil)
+        }
     }
 }

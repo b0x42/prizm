@@ -3,19 +3,20 @@ import Foundation
 /// Orchestrates the full account login flow:
 /// `execute` → (optional) `completeNewDeviceOTP` or `completeTOTP` → sync.
 ///
-/// The caller is responsible for constructing the correct `ServerEnvironment` before calling
-/// `execute`. On a new-device OTP challenge, the flow is:
-///   1. `execute(environment:email:masterPassword:)` → `.requiresNewDeviceOTP`
+/// The caller passes raw user input; environment construction and URL validation
+/// are handled internally. On a new-device OTP challenge:
+///   1. `execute(serverType:serverURL:email:masterPassword:)` → `.requiresNewDeviceOTP`
 ///   2. User enters the OTP received by email
 ///   3. `completeNewDeviceOTP(otp:)` → Account (triggers vault sync)
 ///
-/// On a TOTP 2FA challenge, the flow is:
-///   1. `execute(environment:email:masterPassword:)` → `.requiresTwoFactor`
+/// On a TOTP 2FA challenge:
+///   1. `execute(serverType:serverURL:email:masterPassword:)` → `.requiresTwoFactor`
 ///   2. User enters the authenticator code
 ///   3. `completeTOTP(code:rememberDevice:)` → Account (triggers vault sync)
 protocol LoginUseCase {
     func execute(
-        environment:    ServerEnvironment,
+        serverType:     ServerType,
+        serverURL:      String,
         email:          String,
         masterPassword: Data
     ) async throws -> LoginResult

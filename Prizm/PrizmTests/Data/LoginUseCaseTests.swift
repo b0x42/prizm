@@ -8,10 +8,7 @@ final class LoginUseCaseTests: XCTestCase {
     private var mockAuth: MockAuthRepository!
     private var mockSync: MockSyncRepository!
 
-    private let selfHostedEnv = ServerEnvironment(
-        base: URL(string: "https://vault.example.com")!,
-        overrides: nil
-    )
+    private let selfHostedURL  = "https://vault.example.com"
     private let email          = "alice@example.com"
     private let masterPassword = Data("masterPassword1!".utf8)
 
@@ -29,7 +26,8 @@ final class LoginUseCaseTests: XCTestCase {
         mockSync.stubbedSyncResult  = makeSyncResult()
 
         let result = try await sut.execute(
-            environment:    selfHostedEnv,
+            serverType:     .selfHosted,
+            serverURL:      selfHostedURL,
             email:          email,
             masterPassword: masterPassword
         )
@@ -51,7 +49,8 @@ final class LoginUseCaseTests: XCTestCase {
         let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(
-                environment:    selfHostedEnv,
+                serverType:     .selfHosted,
+                serverURL:      selfHostedURL,
                 email:          email,
                 masterPassword: masterPassword
             )
@@ -69,7 +68,8 @@ final class LoginUseCaseTests: XCTestCase {
         mockAuth.stubbedLoginResult = .success(makeAccount())
 
         _ = try await sut.execute(
-            environment:    .cloudUS(),
+            serverType:     .cloudUS,
+            serverURL:      "",
             email:          email,
             masterPassword: masterPassword
         )
@@ -84,7 +84,8 @@ final class LoginUseCaseTests: XCTestCase {
         mockAuth.stubbedLoginResult = .success(makeAccount())
 
         _ = try await sut.execute(
-            environment:    selfHostedEnv,
+            serverType:     .selfHosted,
+            serverURL:      selfHostedURL,
             email:          email,
             masterPassword: masterPassword
         )
@@ -99,7 +100,8 @@ final class LoginUseCaseTests: XCTestCase {
         mockAuth.stubbedLoginResult = .requiresTwoFactor(.authenticatorApp)
 
         let result = try await sut.execute(
-            environment:    selfHostedEnv,
+            serverType:     .selfHosted,
+            serverURL:      selfHostedURL,
             email:          email,
             masterPassword: masterPassword
         )
@@ -119,7 +121,8 @@ final class LoginUseCaseTests: XCTestCase {
         mockAuth.stubbedLoginResult = .requiresNewDeviceOTP
 
         let result = try await sut.execute(
-            environment:    .cloudUS(),
+            serverType:     .cloudUS,
+            serverURL:      "",
             email:          email,
             masterPassword: masterPassword
         )
@@ -138,7 +141,8 @@ final class LoginUseCaseTests: XCTestCase {
         let sut = self.sut!
         await XCTAssertThrowsErrorAsync(
             try await sut.execute(
-                environment:    selfHostedEnv,
+                serverType:     .selfHosted,
+                serverURL:      selfHostedURL,
                 email:          email,
                 masterPassword: masterPassword
             )
@@ -156,7 +160,8 @@ final class LoginUseCaseTests: XCTestCase {
         mockSync.syncShouldThrow    = SyncError.networkUnavailable
 
         let result = try await sut.execute(
-            environment:    selfHostedEnv,
+            serverType:     .selfHosted,
+            serverURL:      selfHostedURL,
             email:          email,
             masterPassword: masterPassword
         )
@@ -172,7 +177,8 @@ final class LoginUseCaseTests: XCTestCase {
     func testCancelTOTP_callsCancelTwoFactor() async throws {
         mockAuth.stubbedLoginResult = .requiresTwoFactor(.authenticatorApp)
         _ = try await sut.execute(
-            environment:    selfHostedEnv,
+            serverType:     .selfHosted,
+            serverURL:      selfHostedURL,
             email:          email,
             masterPassword: masterPassword
         )
@@ -213,7 +219,7 @@ final class LoginUseCaseTests: XCTestCase {
             userId:            "user-guid-001",
             email:             email,
             name:              "Alice",
-            serverEnvironment: selfHostedEnv
+            serverEnvironment: ServerEnvironment(base: URL(string: selfHostedURL)!, overrides: nil)
         )
     }
 

@@ -13,7 +13,8 @@ final class MockLoginUseCase: LoginUseCase {
     private(set) var completeNewDeviceOTPCalled:    Bool = false
     private(set) var resendNewDeviceOTPCalled:      Bool = false
     private(set) var cancelNewDeviceOTPCalled:      Bool = false
-    private(set) var lastExecutedEnvironment:       ServerEnvironment?
+    private(set) var lastExecutedServerType:         ServerType?
+    private(set) var lastExecutedServerURL:          String?
 
     // MARK: - Stubs
 
@@ -35,9 +36,10 @@ final class MockLoginUseCase: LoginUseCase {
 
     // MARK: - LoginUseCase
 
-    func execute(environment: ServerEnvironment, email: String, masterPassword: Data) async throws -> LoginResult {
+    func execute(serverType: ServerType, serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
         executeCallCount += 1
-        lastExecutedEnvironment = environment
+        lastExecutedServerType = serverType
+        lastExecutedServerURL  = serverURL
         if let err = executeError { throw err }
         return stubbedResult
     }
