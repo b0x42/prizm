@@ -87,6 +87,7 @@ and reads the new value when the selection changes.
 
 | Element | Identifier | Label |
 |---|---|---|
+| "Check your email" header | `login.newDeviceOtpHeader` | "Check your email" |
 | OTP text field | `login.newDeviceOtpField` | "Verification code" |
 | Sign In button | *(inherited from `login.signIn` pattern)* | "Sign In" |
 | Resend button | `login.resendOtpButton` | "Resend code" |

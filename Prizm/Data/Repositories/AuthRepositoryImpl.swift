@@ -309,15 +309,6 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         guard let pending = pendingNewDeviceOTP else {
             throw AuthError.otpSessionExpired
         }
-        // Zero stretched keys and clear pending state on both success and failure (Constitution §III).
-        // Use local counts captured before the defer fires so the ranges are stable.
-        let encCount = pending.stretchedKeys.encryptionKey.count
-        let macCount = pending.stretchedKeys.macKey.count
-        defer {
-            pendingNewDeviceOTP!.stretchedKeys.encryptionKey.resetBytes(in: 0..<encCount)
-            pendingNewDeviceOTP!.stretchedKeys.macKey.resetBytes(in: 0..<macCount)
-            pendingNewDeviceOTP = nil
-        }
         let tokenResp: TokenResponse
         do {
             tokenResp = try await apiClient.identityToken(
@@ -331,8 +322,15 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             )
         } catch {
             logger.error("New-device OTP rejected: \(error.localizedDescription, privacy: .public)")
+            // Preserve pendingNewDeviceOTP so the user can correct the code and retry.
             throw error
         }
+        // OTP accepted: zero key material before clearing pending state (Constitution §III).
+        let encCount = pendingNewDeviceOTP!.stretchedKeys.encryptionKey.count
+        let macCount = pendingNewDeviceOTP!.stretchedKeys.macKey.count
+        pendingNewDeviceOTP!.stretchedKeys.encryptionKey.resetBytes(in: 0..<encCount)
+        pendingNewDeviceOTP!.stretchedKeys.macKey.resetBytes(in: 0..<macCount)
+        pendingNewDeviceOTP = nil
         logger.info("New-device OTP accepted")
         return try await finalizeSession(
             tokenResp:   tokenResp,

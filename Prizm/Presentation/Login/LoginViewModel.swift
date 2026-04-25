@@ -136,12 +136,12 @@ final class LoginViewModel: ObservableObject {
                 logger.error("Sign-in failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
                 flowState    = .login
-                postErrorAnnouncement(err.errorDescription ?? err.localizedDescription)
+                postAnnouncement(err.errorDescription ?? err.localizedDescription)
             } catch {
                 logger.error("Sign-in failed: \(error.localizedDescription, privacy: .public)")
                 errorMessage = error.localizedDescription
                 flowState    = .login
-                postErrorAnnouncement(error.localizedDescription)
+                postAnnouncement(error.localizedDescription)
             }
         }
     }
@@ -166,12 +166,12 @@ final class LoginViewModel: ObservableObject {
                 logger.error("TOTP submission failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
                 flowState    = .totpPrompt
-                postErrorAnnouncement(err.errorDescription ?? err.localizedDescription)
+                postAnnouncement(err.errorDescription ?? err.localizedDescription)
             } catch {
                 logger.error("TOTP submission failed: \(error.localizedDescription, privacy: .public)")
                 errorMessage = error.localizedDescription
                 flowState    = .totpPrompt
-                postErrorAnnouncement(error.localizedDescription)
+                postAnnouncement(error.localizedDescription)
             }
         }
     }
@@ -193,12 +193,12 @@ final class LoginViewModel: ObservableObject {
                 logger.error("OTP submission failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
                 flowState    = .otpPrompt
-                postErrorAnnouncement(err.errorDescription ?? err.localizedDescription)
+                postAnnouncement(err.errorDescription ?? err.localizedDescription)
             } catch {
                 logger.error("OTP submission failed: \(error.localizedDescription, privacy: .public)")
                 errorMessage = error.localizedDescription
                 flowState    = .otpPrompt
-                postErrorAnnouncement(error.localizedDescription)
+                postAnnouncement(error.localizedDescription)
             }
         }
     }
@@ -221,12 +221,12 @@ final class LoginViewModel: ObservableObject {
                 logger.error("OTP resend failed: \(err.localizedDescription, privacy: .public)")
                 flowState    = .otpPrompt
                 errorMessage = err.errorDescription
-                postErrorAnnouncement(err.errorDescription ?? err.localizedDescription)
+                postAnnouncement(err.errorDescription ?? err.localizedDescription)
             } catch {
                 logger.error("OTP resend failed: \(error.localizedDescription, privacy: .public)")
                 flowState    = .otpPrompt
                 errorMessage = error.localizedDescription
-                postErrorAnnouncement(error.localizedDescription)
+                postAnnouncement(error.localizedDescription)
             }
         }
     }
@@ -256,9 +256,5 @@ final class LoginViewModel: ObservableObject {
 
     private func postAnnouncement(_ message: String) {
         AccessibilityNotification.Announcement(message).post()
-    }
-
-    private func postErrorAnnouncement(_ message: String) {
-        postAnnouncement(message)
     }
 }

@@ -22,6 +22,7 @@ struct NewDeviceOTPView: View {
                 Text("Check your email")
                     .font(Typography.screenHeading)
                     .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier(AccessibilityID.Login.newDeviceOtpHeader)
                 Text("Check your email for a verification code.")
                     .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)

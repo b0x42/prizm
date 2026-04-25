@@ -416,7 +416,6 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         // Cloud environments use the registered Prizm identifier per ADR-0023;
         // self-hosted instances do not enforce identifier checks, so "desktop" is safe.
         clientId = env.serverType != .selfHosted ? Config.bitwardenClientIdentifier : "desktop"
-        logger.info("Server environment set: \(env.serverType.rawValue, privacy: .public)")
     }
 
     func setAccessToken(_ token: String) {

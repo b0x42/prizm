@@ -170,7 +170,7 @@ final class LoginPickerJourneyTests: XCTestCase {
         app.secureTextFields["login.password"].typeText(password)
         app.buttons["login.signIn"].click()
 
-        let otpHeader = app.staticTexts["totp.headerTitle"]
+        let otpHeader = app.staticTexts["login.newDeviceOtpHeader"]
         XCTAssertTrue(
             otpHeader.waitForExistence(timeout: 15),
             "NewDeviceOTPView header should appear after device_error"
