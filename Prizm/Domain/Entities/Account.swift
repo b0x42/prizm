@@ -15,6 +15,15 @@ nonisolated enum ServerType: String, Codable, Equatable {
     case cloudUS    = "cloudUS"
     case cloudEU    = "cloudEU"
     case selfHosted = "selfHosted"
+
+    /// User-visible display name used in the login picker and VoiceOver announcements.
+    var displayName: String {
+        switch self {
+        case .cloudUS:    return "Bitwarden Cloud (US)"
+        case .cloudEU:    return "Bitwarden Cloud (EU)"
+        case .selfHosted: return "Self-hosted"
+        }
+    }
 }
 
 /// The server a user account belongs to (cloud Bitwarden or self-hosted Vaultwarden).

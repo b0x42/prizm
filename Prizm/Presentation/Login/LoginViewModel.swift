@@ -61,6 +61,12 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Computed state
 
+    /// True while an async operation is in flight. Use to disable secondary controls (Resend, Cancel).
+    var isLoading: Bool {
+        if case .loading = flowState { return true }
+        return false
+    }
+
     var isSignInDisabled: Bool {
         switch flowState {
         case .loading:
@@ -99,7 +105,7 @@ final class LoginViewModel: ObservableObject {
 
         Task {
             do {
-                let environment = buildEnvironment()
+                let environment = try buildEnvironment()
                 let result = try await loginUseCase.execute(
                     environment:    environment,
                     email:          email,
@@ -201,20 +207,24 @@ final class LoginViewModel: ObservableObject {
     func resendOTP() {
         logger.info("Resending OTP")
         errorMessage = nil
+        flowState    = .loading
 
         Task {
             do {
                 try await loginUseCase.resendNewDeviceOTP()
-                otpCode = ""
+                flowState = .otpPrompt
+                otpCode   = ""
                 let msg = "A new code has been sent to your email."
                 postAnnouncement(msg)
                 logger.info("OTP resend succeeded")
             } catch let err as AuthError {
                 logger.error("OTP resend failed: \(err.localizedDescription, privacy: .public)")
+                flowState    = .otpPrompt
                 errorMessage = err.errorDescription
                 postErrorAnnouncement(err.errorDescription ?? err.localizedDescription)
             } catch {
                 logger.error("OTP resend failed: \(error.localizedDescription, privacy: .public)")
+                flowState    = .otpPrompt
                 errorMessage = error.localizedDescription
                 postErrorAnnouncement(error.localizedDescription)
             }
@@ -229,7 +239,7 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Private helpers
 
-    private func buildEnvironment() -> ServerEnvironment {
+    private func buildEnvironment() throws -> ServerEnvironment {
         switch serverType {
         case .cloudUS:
             return .cloudUS()
@@ -237,7 +247,9 @@ final class LoginViewModel: ObservableObject {
             return .cloudEU()
         case .selfHosted:
             let trimmed = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-            let base    = URL(string: trimmed) ?? URL(string: "https://")!
+            guard let base = URL(string: trimmed), !trimmed.isEmpty else {
+                throw AuthError.invalidURL
+            }
             return ServerEnvironment(base: base, overrides: nil)
         }
     }

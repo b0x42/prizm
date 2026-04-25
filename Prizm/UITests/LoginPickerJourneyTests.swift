@@ -34,23 +34,23 @@ final class LoginPickerJourneyTests: XCTestCase {
         let picker = app.segmentedControls["login.serverTypePicker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5), "Server type picker should be visible")
 
-        let bitwardenUS = picker.buttons["Bitwarden US"]
-        let bitwardenEU = picker.buttons["Bitwarden EU"]
+        let bitwardenUS = picker.buttons["Bitwarden Cloud (US)"]
+        let bitwardenEU = picker.buttons["Bitwarden Cloud (EU)"]
         let selfHosted  = picker.buttons["Self-hosted"]
 
-        XCTAssertTrue(bitwardenUS.exists, "Bitwarden US option should exist")
-        XCTAssertTrue(bitwardenEU.exists, "Bitwarden EU option should exist")
+        XCTAssertTrue(bitwardenUS.exists, "Bitwarden Cloud (US) option should exist")
+        XCTAssertTrue(bitwardenEU.exists, "Bitwarden Cloud (EU) option should exist")
         XCTAssertTrue(selfHosted.exists,  "Self-hosted option should exist")
 
         // Each option is selectable without error.
         bitwardenEU.click()
-        XCTAssertTrue(bitwardenEU.isSelected, "Bitwarden EU should be selected after click")
+        XCTAssertTrue(bitwardenEU.isSelected, "Bitwarden Cloud (EU) should be selected after click")
 
         selfHosted.click()
         XCTAssertTrue(selfHosted.isSelected, "Self-hosted should be selected after click")
 
         bitwardenUS.click()
-        XCTAssertTrue(bitwardenUS.isSelected, "Bitwarden US should be selected after click")
+        XCTAssertTrue(bitwardenUS.isSelected, "Bitwarden Cloud (US) should be selected after click")
     }
 
     // MARK: - 14.2 Cloud hides server URL field; self-hosted shows it
@@ -59,16 +59,16 @@ final class LoginPickerJourneyTests: XCTestCase {
         let picker = app.segmentedControls["login.serverTypePicker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
 
-        picker.buttons["Bitwarden US"].click()
+        picker.buttons["Bitwarden Cloud (US)"].click()
         XCTAssertFalse(
             app.textFields["login.serverURL"].exists,
-            "Server URL field should be hidden for Bitwarden US"
+            "Server URL field should be hidden for Bitwarden Cloud (US)"
         )
 
-        picker.buttons["Bitwarden EU"].click()
+        picker.buttons["Bitwarden Cloud (EU)"].click()
         XCTAssertFalse(
             app.textFields["login.serverURL"].exists,
-            "Server URL field should be hidden for Bitwarden EU"
+            "Server URL field should be hidden for Bitwarden Cloud (EU)"
         )
 
         picker.buttons["Self-hosted"].click()
@@ -83,7 +83,7 @@ final class LoginPickerJourneyTests: XCTestCase {
     func testSignInButtonEnabledForCloudWithEmailAndPassword() {
         let picker   = app.segmentedControls["login.serverTypePicker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.buttons["Bitwarden US"].click()
+        picker.buttons["Bitwarden Cloud (US)"].click()
 
         let signIn   = app.buttons["login.signIn"]
         XCTAssertFalse(signIn.isEnabled, "Sign In should be disabled before any input")
@@ -130,7 +130,7 @@ final class LoginPickerJourneyTests: XCTestCase {
 
         let picker = app.segmentedControls["login.serverTypePicker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.buttons["Bitwarden US"].click()
+        picker.buttons["Bitwarden Cloud (US)"].click()
 
         app.textFields["login.email"].click()
         app.textFields["login.email"].typeText(email)
@@ -162,7 +162,7 @@ final class LoginPickerJourneyTests: XCTestCase {
 
         let picker = app.segmentedControls["login.serverTypePicker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.buttons["Bitwarden US"].click()
+        picker.buttons["Bitwarden Cloud (US)"].click()
 
         app.textFields["login.email"].click()
         app.textFields["login.email"].typeText(email)
@@ -207,7 +207,7 @@ final class LoginPickerJourneyTests: XCTestCase {
 
         let picker = app.segmentedControls["login.serverTypePicker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.buttons["Bitwarden US"].click()
+        picker.buttons["Bitwarden Cloud (US)"].click()
 
         app.textFields["login.email"].click()
         app.textFields["login.email"].typeText(email)
@@ -249,7 +249,7 @@ final class LoginPickerJourneyTests: XCTestCase {
 
         let picker = app.segmentedControls["login.serverTypePicker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.buttons["Bitwarden US"].click()
+        picker.buttons["Bitwarden Cloud (US)"].click()
 
         app.textFields["login.email"].click()
         app.textFields["login.email"].typeText(email)

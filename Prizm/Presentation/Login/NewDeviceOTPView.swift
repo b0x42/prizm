@@ -75,6 +75,7 @@ struct NewDeviceOTPView: View {
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
+            .disabled(viewModel.isLoading)
             .accessibilityIdentifier(AccessibilityID.Login.resendOtpButton)
             .accessibilityLabel("Resend code")
 
@@ -84,6 +85,7 @@ struct NewDeviceOTPView: View {
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
+            .disabled(viewModel.isLoading)
             .accessibilityIdentifier(AccessibilityID.Login.cancelOtpButton)
             .accessibilityLabel("Cancel")
 
@@ -92,7 +94,10 @@ struct NewDeviceOTPView: View {
         .padding(.horizontal, Spacing.screenHorizontal)
         .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 360)
-        .onAppear { otpFieldFocused = true }
+        .onAppear {
+            otpFieldFocused = true
+            AccessibilityNotification.Announcement("Check your email for a verification code").post()
+        }
     }
 
     // MARK: - Private

@@ -307,16 +307,15 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     func loginWithNewDeviceOTP(_ otp: String) async throws -> Account {
         logger.info("Submitting new-device OTP")
         guard let pending = pendingNewDeviceOTP else {
-            throw AuthError.invalidCredentials
+            throw AuthError.otpSessionExpired
         }
         // Zero stretched keys and clear pending state on both success and failure (Constitution §III).
+        // Use local counts captured before the defer fires so the ranges are stable.
+        let encCount = pending.stretchedKeys.encryptionKey.count
+        let macCount = pending.stretchedKeys.macKey.count
         defer {
-            pendingNewDeviceOTP!.stretchedKeys.encryptionKey.resetBytes(
-                in: 0..<pending.stretchedKeys.encryptionKey.count
-            )
-            pendingNewDeviceOTP!.stretchedKeys.macKey.resetBytes(
-                in: 0..<pending.stretchedKeys.macKey.count
-            )
+            pendingNewDeviceOTP!.stretchedKeys.encryptionKey.resetBytes(in: 0..<encCount)
+            pendingNewDeviceOTP!.stretchedKeys.macKey.resetBytes(in: 0..<macCount)
             pendingNewDeviceOTP = nil
         }
         let tokenResp: TokenResponse
@@ -345,7 +344,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     func requestNewDeviceOTP() async throws {
         logger.info("Requesting new OTP dispatch")
         guard let pending = pendingNewDeviceOTP else {
-            throw AuthError.invalidCredentials
+            throw AuthError.otpSessionExpired
         }
         do {
             // Re-posting without newdeviceotp causes the server to dispatch a new OTP email

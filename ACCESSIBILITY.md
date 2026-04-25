@@ -78,9 +78,9 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 The server-type picker (`Picker` with `.segmented` style) is annotated with:
 - `accessibilityIdentifier`: `login.serverTypePicker`
 - `accessibilityLabel`: `"Server"` (replaces the default empty label from the segmented style)
-- `accessibilityValue`: the current selection label ("Bitwarden US", "Bitwarden EU", or "Self-hosted")
+- `accessibilityValue`: the current selection label ("Bitwarden Cloud (US)", "Bitwarden Cloud (EU)", or "Self-hosted")
 
-VoiceOver announces the control as *"Server, Bitwarden US, segmented control, 1 of 3"* on first focus
+VoiceOver announces the control as *"Server, Bitwarden Cloud (US), segmented control, 1 of 3"* on first focus
 and reads the new value when the selection changes.
 
 ## New-Device OTP Screen (`NewDeviceOTPView`)

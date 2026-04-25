@@ -29,9 +29,9 @@ struct LoginView: View {
                     .accessibilityIdentifier(AccessibilityID.Login.headerTitle)
                 // Server-type picker — replaces the static subtitle
                 Picker("Server", selection: $viewModel.serverType) {
-                    Text("Bitwarden US").tag(ServerType.cloudUS)
-                    Text("Bitwarden EU").tag(ServerType.cloudEU)
-                    Text("Self-hosted").tag(ServerType.selfHosted)
+                    ForEach([ServerType.cloudUS, .cloudEU, .selfHosted], id: \.self) { type in
+                        Text(type.displayName).tag(type)
+                    }
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 360)
@@ -122,11 +122,5 @@ struct LoginView: View {
         viewModel.signIn()
     }
 
-    private func pickerLabel(for type: ServerType) -> String {
-        switch type {
-        case .cloudUS:   return "Bitwarden US"
-        case .cloudEU:   return "Bitwarden EU"
-        case .selfHosted: return "Self-hosted"
-        }
-    }
+    private func pickerLabel(for type: ServerType) -> String { type.displayName }
 }

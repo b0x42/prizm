@@ -147,6 +147,9 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
     /// Cloud login attempted without a registered Bitwarden client identifier.
     /// Thrown before any network request is made.
     case clientIdentifierNotConfigured
+    /// OTP completion or resend called when no new-device OTP challenge is active
+    /// (e.g. called out of sequence after session was cancelled or expired).
+    case otpSessionExpired
 
     var errorDescription: String? {
         switch self {
@@ -173,6 +176,8 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
             return "Biometric unlock is not available. Please unlock with your master password."
         case .clientIdentifierNotConfigured:
             return "Prizm is not configured for Bitwarden Cloud. Contact support or use a self-hosted server."
+        case .otpSessionExpired:
+            return "The verification session has expired. Please sign in again."
         }
     }
 }

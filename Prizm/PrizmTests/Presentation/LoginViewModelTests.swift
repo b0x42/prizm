@@ -178,8 +178,11 @@ final class LoginViewModelTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100_000_000)
         sut.otpCode = "555555"
         sut.resendOTP()
+        // flowState should go to .loading immediately on resend.
+        XCTAssertEqual(sut.flowState, .loading, "resendOTP must set .loading before the async call")
         try await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertTrue(mockUseCase.resendNewDeviceOTPCalled)
+        XCTAssertEqual(sut.flowState, .otpPrompt, "flowState must return to .otpPrompt on resend success")
         XCTAssertEqual(sut.otpCode, "")
     }
 
