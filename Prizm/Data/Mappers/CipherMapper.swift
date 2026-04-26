@@ -33,7 +33,8 @@ nonisolated enum CipherMapperError: Error, Equatable {
 /// - Network I/O.
 /// - Keychain access.
 /// - KDF derivation.
-nonisolated final class CipherMapper {
+// `Sendable`: all state is immutable (let properties, nonisolated(unsafe) static).
+nonisolated final class CipherMapper: Sendable {
 
     private let attachmentMapper = AttachmentMapper()
 

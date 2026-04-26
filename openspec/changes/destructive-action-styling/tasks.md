@@ -1,0 +1,20 @@
+## 1. Move Delete into edit sheet
+
+- [x] 1.1 Expose `isEditing` computed property on `ItemEditViewModel` (true when `editUseCase != nil`)
+- [x] 1.2 Add `onDelete: ((String) async -> Void)?` closure to `ItemEditView`; add a red "Delete Item" button at the bottom of the form, hidden when `!viewModel.isEditing`; include `accessibilityIdentifier`
+- [x] 1.3 Wire confirmation alert in `ItemEditView`: on confirm, dismiss sheet then call `onDelete`
+- [x] 1.4 Thread the `onDelete` closure through `ItemDetailView` → `ItemEditView`. `ItemDetailView` already receives `onSoftDelete` — repurpose it to pass into the edit sheet's `onDelete` parameter. The create-mode sheet in `VaultBrowserView` passes `nil` (no delete during creation).
+
+## 2. Remove Delete from detail toolbar
+
+- [x] 2.1 Remove the soft-delete `ToolbarItem(placement: .destructiveAction)` and `showSoftDeleteAlert` alert from `VaultBrowserView`'s active-item detail toolbar
+
+## 3. Verify red styling on all destructive actions
+
+- [x] 3.1 Audit all destructive buttons and context menu items; ensure each uses `.foregroundStyle(.red)` or `role: .destructive`: Delete Folder, Delete Collection, Delete Permanently (note: Empty Trash button is not yet implemented — out of scope). "Move to Trash" and the Trash sidebar icon SHALL NOT use red styling — trashing is reversible
+
+## 4. Tests
+
+- [x] 4.1 Update existing delete-related UI tests to trigger soft-delete from the edit sheet instead of the detail toolbar
+- [x] 4.2 Add test: "Delete Item" button is not shown in edit sheet during item creation
+- [x] 4.3 Add test: detail toolbar does not contain Delete button for active items
