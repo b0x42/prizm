@@ -19,17 +19,17 @@ extension Notification.Name {
 // MARK: - App config
 
 enum Config {
-    // nonisolated(unsafe): both values are immutable after process start and safe to read from
-    // any isolation domain. `bitwardenClientIdentifier` reads from Info.plist (set once at
-    // launch); `clientName` is a string literal. Using nonisolated(unsafe) avoids propagating
-    // @MainActor isolation (inferred from Bundle.main) to every actor that reads Config.
-    nonisolated(unsafe) static let clientName = "desktop"
+    static nonisolated let clientName = "desktop"
     static let deviceType = 7
 
     /// Registered Bitwarden client identifier, injected at build time via LocalSecrets.xcconfig.
     /// Empty string when LocalSecrets.xcconfig is absent — cloud login fails fast with
     /// AuthError.clientIdentifierNotConfigured before any network request is attempted.
-    nonisolated(unsafe) static let bitwardenClientIdentifier: String =
+    ///
+    /// `nonisolated` prevents @MainActor isolation (inferred from Bundle.main) from
+    /// propagating to every actor that reads this constant. String is Sendable so the
+    /// value is safe to share across isolation domains without the `unsafe` qualifier.
+    static nonisolated let bitwardenClientIdentifier: String =
         Bundle.main.object(forInfoDictionaryKey: "BWClientIdentifier") as? String ?? ""
 
     /// Bitwarden server API version Prizm was last tested against.
