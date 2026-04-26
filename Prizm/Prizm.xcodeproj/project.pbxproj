@@ -62,6 +62,7 @@
 		8F900A1B2C3D401718293040 /* CardEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90A0B1C2D3E4F02829304050 /* CardEditForm.swift */; };
 		967254DE6EE74766B9E011A5 /* OptionalAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AE7B9ED374714B6D40A4B /* OptionalAnimation.swift */; };
 		98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */; };
+		AA1234567890ABCDEF123456 /* NewDeviceOTPView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1234567890ABCDEF123456 /* NewDeviceOTPView.swift */; };
 		98E8E51C9AD5496C88E0ABD3 /* FaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */; };
 		9B3412B1F4F648DEBC7BFC94 /* ContrastAwareOpacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505C5126B6264355A140762B /* ContrastAwareOpacity.swift */; };
 		9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */; };
@@ -317,6 +318,7 @@
 		F600A1B2C3D4E08E80900A1B /* SSHKeyEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyEditForm.swift; sourceTree = "<group>"; };
 		F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPPromptView.swift; sourceTree = "<group>"; };
+		BB1234567890ABCDEF123456 /* NewDeviceOTPView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewDeviceOTPView.swift; sourceTree = "<group>"; };
 		F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskedFieldView.swift; sourceTree = "<group>"; };
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
@@ -666,6 +668,7 @@
 				713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */,
 				7429BBFA10E247D8AEACA59B /* LoginView.swift */,
 				F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */,
+				BB1234567890ABCDEF123456 /* NewDeviceOTPView.swift */,
 			);
 			path = Login;
 			sourceTree = "<group>";
@@ -926,6 +929,7 @@
 				9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */,
 				5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */,
 				98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */,
+				AA1234567890ABCDEF123456 /* NewDeviceOTPView.swift in Sources */,
 				A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */,
 				DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */,
 				E2AAA6708B2A46FA85BE5860 /* Presentation/Unlock/BiometricEnrollmentPromptView.swift in Sources */,
