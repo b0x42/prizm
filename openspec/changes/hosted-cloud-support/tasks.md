@@ -50,7 +50,7 @@ _(Protocol declarations require no unit tests — skip straight to implementatio
 
 ## 6. Data Unit Tests — PrizmAPIClient (write before Group 5 implementation, must fail first; requires mock protocol stubs from 2.10 and the `setServerEnvironment` signature from 5.3 to compile — add the mock stub in 5.3 before writing these tests)
 
-- [x] 6.1 `setServerEnvironment` with `cloudUS` → subsequent `preLogin` request URL is `https://api.bitwarden.com/accounts/prelogin` (no `api/` prefix in path)
+- [x] 6.1 `setServerEnvironment` with `cloudUS` → subsequent `preLogin` request URL is `https://identity.bitwarden.com/accounts/prelogin` (`prelogin` lives on the identity service, not the API service — confirmed by curl)
 - [x] 6.2 `setServerEnvironment` with `cloudEU` → subsequent `identityToken` request URL is `https://identity.bitwarden.eu/connect/token` (no `identity/` prefix in path)
 - [x] 6.3 `setServerEnvironment` with `cloudEU` → subsequent `refreshAccessToken` URL is `https://identity.bitwarden.eu/connect/token`
 - [x] 6.4 `setServerEnvironment` with `selfHosted(base: https://vault.example.com)` → `fetchSync` URL is `https://vault.example.com/api/sync` (self-hosted retains `api/` prefix)
