@@ -413,9 +413,12 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func setServerEnvironment(_ env: ServerEnvironment) {
         serverEnvironment = env
-        // Cloud environments use the registered Prizm identifier per ADR-0023;
-        // self-hosted instances do not enforce identifier checks, so "desktop" is safe.
-        clientId = env.serverType != .selfHosted ? Config.bitwardenClientIdentifier : "desktop"
+        // Bitwarden Cloud password grant (grant_type=password) requires client_id to be one
+        // of Bitwarden's own registered OAuth client names ("desktop", "web", "mobile", etc.).
+        // The UUID in Config.bitwardenClientIdentifier is for API key auth (client_credentials)
+        // only — using it for password grant returns invalid_client on both US and EU.
+        // "desktop" is accepted by both regions and is the conventional choice for native apps.
+        clientId = "desktop"
     }
 
     func setAccessToken(_ token: String) {
@@ -534,6 +537,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     let keys = json.keys.sorted().joined(separator: ", ")
                     logger.debug("[debug] identityToken 400 body keys: [\(keys, privacy: .public)]")
+                    if let errorVal = json["error"] as? String {
+                        logger.debug("[debug] identityToken 400 error: \(errorVal, privacy: .public)")
+                    }
                     if let errorDesc = json["error_description"] as? String {
                         logger.debug("[debug] identityToken 400 error_description: \(errorDesc, privacy: .public)")
                     }
