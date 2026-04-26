@@ -19,7 +19,9 @@ extension Notification.Name {
 // MARK: - App config
 
 enum Config {
-    static nonisolated let clientName = "desktop"
+    // "desktop" is rejected by bitwarden.eu — the EU server blocks impersonation of
+    // Bitwarden's own client names. Use "prizm" (Prizm's registered client name).
+    static nonisolated let clientName = "prizm"
     static let deviceType = 7
 
     /// Registered Bitwarden client identifier, injected at build time via LocalSecrets.xcconfig.

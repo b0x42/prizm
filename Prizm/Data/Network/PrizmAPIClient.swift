@@ -430,9 +430,10 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func preLogin(email: String) async throws -> PreLoginResponse {
         guard let env = serverEnvironment else { throw APIError.serverEnvironmentNotSet }
-        // prelogin lives on the identity service, not the API service.
-        // Confirmed: POST https://api.bitwarden.{com,eu}/accounts/prelogin → 404
-        //            POST https://identity.bitwarden.{com,eu}/accounts/prelogin → 200
+        // prelogin is served by the identity service, not the API service — despite the
+        // /accounts/ prefix suggesting otherwise. Using apiURL returns 404 on both regions.
+        // POST https://identity.bitwarden.{com,eu}/accounts/prelogin → 200 ✓
+        // POST https://api.bitwarden.{com,eu}/accounts/prelogin       → 404 ✗
         let url = env.identityURL.appendingPathComponent("accounts/prelogin")
 
         if DebugConfig.isEnabled {
