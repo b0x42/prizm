@@ -352,7 +352,8 @@ final class AuthRepositoryImplTests: XCTestCase {
     func testSetServerEnvironment_callsApiClientSetServerEnvironment() async throws {
         let env = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
         try await sut.setServerEnvironment(env)
-        XCTAssertNotNil(await mockAPI.serverEnvironment, "apiClient.setServerEnvironment must be called")
+        let serverEnv = await mockAPI.serverEnvironment
+        XCTAssertNotNil(serverEnv, "apiClient.setServerEnvironment must be called")
     }
 
     // MARK: - 8.2: loginWithPassword returns .requiresNewDeviceOTP on device_error

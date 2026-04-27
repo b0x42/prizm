@@ -18,14 +18,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
 
-      - name: Select Xcode
-        run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
-
-      - name: Install xcpretty
-        run: gem install xcpretty --no-document
+      - name: Select Xcode 26.4.1
+        run: sudo xcode-select --switch /Applications/Xcode_26.4.1.app/Contents/Developer
 
       - name: Create CI signing config
-        run: cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
+        run: |
+          cp Prizm/LocalConfig.xcconfig.template Prizm/LocalConfig.xcconfig
+          cp Prizm/LocalSecrets.xcconfig.template Prizm/LocalSecrets.xcconfig
 
       - name: Build (no signing)
         run: |
@@ -37,7 +36,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            build | xcpretty
+            build 2>&1 | xcbeautify --renderer github-actions
 
       - name: Test (no signing)
         run: |
@@ -49,4 +48,4 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty
+            2>&1 | xcbeautify --renderer github-actions
