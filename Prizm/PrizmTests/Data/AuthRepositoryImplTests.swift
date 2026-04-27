@@ -352,7 +352,7 @@ final class AuthRepositoryImplTests: XCTestCase {
     func testSetServerEnvironment_callsApiClientSetServerEnvironment() async throws {
         let env = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
         try await sut.setServerEnvironment(env)
-        let serverEnv = await mockAPI.serverEnvironment
+        let serverEnv = mockAPI.serverEnvironment
         XCTAssertNotNil(serverEnv, "apiClient.setServerEnvironment must be called")
     }
 
