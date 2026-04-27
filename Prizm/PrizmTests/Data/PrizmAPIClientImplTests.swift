@@ -79,7 +79,7 @@ final class PrizmAPIClientImplTests: XCTestCase {
 
         XCTAssertEqual(
             CapturingURLProtocol.lastRequest?.url?.absoluteString,
-            "https://api.bitwarden.com/accounts/prelogin"
+            "https://identity.bitwarden.com/accounts/prelogin"
         )
     }
 
@@ -168,7 +168,7 @@ final class PrizmAPIClientImplTests: XCTestCase {
         XCTAssertNotNil(headers["Bitwarden-Client-Version"], "Bitwarden-Client-Version header required")
     }
 
-    // MARK: - 6.7: cloud identityToken client_id = Config.bitwardenClientIdentifier
+    // MARK: - 6.7: cloud identityToken client_id = "desktop"
 
     func testCloudIdentityToken_clientId_isRegisteredIdentifier() async throws {
         await sut.setServerEnvironment(.cloudUS())
@@ -186,13 +186,11 @@ final class PrizmAPIClientImplTests: XCTestCase {
 
         let body   = formBody(from: CapturingURLProtocol.lastRequest)
         let actual = body["client_id"] ?? ""
-        XCTAssertEqual(actual, Config.bitwardenClientIdentifier,
-                       "Cloud client_id must equal Config.bitwardenClientIdentifier")
-        XCTAssertNotEqual(actual, "desktop",
-                          "Cloud client_id must NOT be 'desktop'")
+        XCTAssertEqual(actual, "desktop",
+                       "Cloud client_id must be 'desktop' for password grant")
     }
 
-    // MARK: - 6.8: cloud refreshAccessToken client_id = registered identifier
+    // MARK: - 6.8: cloud refreshAccessToken client_id = "desktop"
 
     func testCloudRefreshToken_clientId_isRegisteredIdentifier() async throws {
         await sut.setServerEnvironment(.cloudUS())
@@ -202,7 +200,7 @@ final class PrizmAPIClientImplTests: XCTestCase {
 
         let body   = formBody(from: CapturingURLProtocol.lastRequest)
         let actual = body["client_id"] ?? ""
-        XCTAssertEqual(actual, Config.bitwardenClientIdentifier)
+        XCTAssertEqual(actual, "desktop")
     }
 
     // MARK: - 6.9: selfHosted identityToken client_id = "desktop"
