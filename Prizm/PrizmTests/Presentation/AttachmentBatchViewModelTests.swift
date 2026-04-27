@@ -142,6 +142,8 @@ final class AttachmentBatchViewModelTests: XCTestCase {
         sut.confirm()
         XCTAssertTrue(sut.isUploading)
         sut.cancel()
+        // Allow cancelled tasks to finish before the test exits.
+        try await Task.sleep(for: .milliseconds(50))
     }
 
     // MARK: - cancel
@@ -167,6 +169,8 @@ final class AttachmentBatchViewModelTests: XCTestCase {
 
         XCTAssertTrue(sut.isDismissed)
         XCTAssertFalse(sut.isUploading)
+        // Allow cancelled tasks to finish before the test exits.
+        try await Task.sleep(for: .milliseconds(50))
     }
 
     // MARK: - vault lock
