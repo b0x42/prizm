@@ -4,19 +4,36 @@ import XCTest
 // MARK: - CapturingURLProtocol
 
 /// URLProtocol subclass that captures every outbound request and returns a configured response.
-/// Class-level state is intentionally nonisolated(unsafe) — tests run serially in one process.
+/// All shared state is guarded by a lock because `startLoading()` runs on URLSession's
+/// delegate queue while tests read from `@MainActor`.
 final class CapturingURLProtocol: URLProtocol {
 
-    nonisolated(unsafe) static var capturedRequests: [URLRequest] = []
-    nonisolated(unsafe) static var nextStatusCode: Int = 200
-    nonisolated(unsafe) static var nextResponseData: Data = Data("{}".utf8)
+    private static let lock = NSLock()
+    private nonisolated(unsafe) static var _capturedRequests: [URLRequest] = []
+    private nonisolated(unsafe) static var _nextStatusCode: Int = 200
+    private nonisolated(unsafe) static var _nextResponseData: Data = Data("{}".utf8)
+
+    static var capturedRequests: [URLRequest] {
+        get { lock.withLock { _capturedRequests } }
+        set { lock.withLock { _capturedRequests = newValue } }
+    }
+    static var nextStatusCode: Int {
+        get { lock.withLock { _nextStatusCode } }
+        set { lock.withLock { _nextStatusCode = newValue } }
+    }
+    static var nextResponseData: Data {
+        get { lock.withLock { _nextResponseData } }
+        set { lock.withLock { _nextResponseData = newValue } }
+    }
 
     static var lastRequest: URLRequest? { capturedRequests.last }
 
     static func reset() {
-        capturedRequests   = []
-        nextStatusCode     = 200
-        nextResponseData   = Data("{}".utf8)
+        lock.withLock {
+            _capturedRequests = []
+            _nextStatusCode   = 200
+            _nextResponseData = Data("{}".utf8)
+        }
     }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -37,16 +54,20 @@ final class CapturingURLProtocol: URLProtocol {
             stream.close()
             captured.httpBody = body
         }
-        CapturingURLProtocol.capturedRequests.append(captured)
+
+        let (statusCode, responseData) = CapturingURLProtocol.lock.withLock {
+            CapturingURLProtocol._capturedRequests.append(captured)
+            return (CapturingURLProtocol._nextStatusCode, CapturingURLProtocol._nextResponseData)
+        }
 
         let response = HTTPURLResponse(
             url: request.url!,
-            statusCode: CapturingURLProtocol.nextStatusCode,
+            statusCode: statusCode,
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "application/json"]
         )!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: CapturingURLProtocol.nextResponseData)
+        client?.urlProtocol(self, didLoad: responseData)
         client?.urlProtocolDidFinishLoading(self)
     }
 
