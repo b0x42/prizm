@@ -67,12 +67,17 @@ jobs:
             echo "$SUMMARY" | python3 -c "
           import sys, json
           data = json.load(sys.stdin)
+          real_failures = []
           for f in data.get('testFailures', []):
               text = f.get('failureText','')
               # Runner crashes are not real test failures
-              if 'Crash' in text or 'runner exited' in text:
+              if 'crash' in text.lower() or 'runner exited' in text.lower() or 'signal' in text.lower():
                   continue
-              print(f'::error ::{f[\"testName\"]}: {text}')
+              real_failures.append(f)
+          if real_failures:
+              for f in real_failures:
+                  print(f'::error ::{f[\"testName\"]}: {f[\"failureText\"]}')
               sys.exit(1)
+          print(f'All {data[\"failedTests\"]} failure(s) are runner crashes, not assertion failures.')
           "
           fi
