@@ -4,10 +4,12 @@ import os.log
 // MARK: - LoginUseCaseImpl
 
 /// Orchestrates the full account login flow:
-///   1. Validate + set server URL.
-///   2. Call `AuthRepository.loginWithPassword`.
-///   3. If `.success`: call `SyncRepository.sync` to populate the vault.
-///   4. If `.requiresTwoFactor`: return immediately — sync is deferred to after TOTP.
+///   1. Build `ServerEnvironment` from caller-supplied `serverType` + `serverURL`.
+///   2. Validate URL (self-hosted only) and set environment on `AuthRepository`.
+///   3. Call `AuthRepository.loginWithPassword`.
+///   4. If `.success`: call `SyncRepository.sync` to populate the vault.
+///   5. If `.requiresTwoFactor`: return immediately — sync is deferred to after TOTP.
+///   6. If `.requiresNewDeviceOTP`: return immediately — sync deferred to after OTP.
 ///
 /// `SyncRepository.sync` is called here (not inside `AuthRepository`) to keep the
 /// Domain layer orchestration visible and testable at the use-case level.
@@ -23,27 +25,23 @@ final class LoginUseCaseImpl: LoginUseCase {
         self.sync = sync
     }
 
-    func execute(serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
-        // Step 1: Validate URL (throws AuthError.invalidURL on failure).
-        try auth.validateServerURL(serverURL)
+    func execute(serverType: ServerType, serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
+        let environment = try buildEnvironment(serverType: serverType, serverURL: serverURL)
+        // Validate self-hosted URL against HTTPS scheme and host presence (Constitution §III).
+        // Cloud URLs are hardcoded constants and never need validation.
+        if serverType == .selfHosted {
+            try auth.validateServerURL(environment.base.absoluteString)
+        }
 
-        // Step 2: Configure server environment.
-        let trimmed = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
-        guard let url = URL(string: trimmed) else { throw AuthError.invalidURL }
-        let environment = ServerEnvironment(base: url, overrides: nil)
         try await auth.setServerEnvironment(environment)
 
-        // Step 3: Attempt password login.
         logger.info("Attempting login for \(email, privacy: .private)")
         let result = try await auth.loginWithPassword(email: email, masterPassword: masterPassword)
 
         switch result {
         case .success:
-            // Step 4: Sync vault immediately after successful login.
-            // Sync is best-effort: if the server is temporarily unreachable the user
-            // still lands in the vault browser showing items from the last sync.
-            // Failing the entire login on a sync error would lock users out even when
-            // the server is degraded — unacceptable for a password manager.
+            // Sync vault immediately after successful login.
+            // Sync is best-effort: a degraded server should not prevent vault access.
             logger.info("Login succeeded — starting vault sync")
             do {
                 _ = try await sync.sync(progress: { _ in })
@@ -53,10 +51,13 @@ final class LoginUseCaseImpl: LoginUseCase {
             return result
 
         case .requiresTwoFactor:
-            // Sync is deferred until TOTP is accepted. At this point we have derived the
-            // master key but do not yet have an access token, so a sync request would be
-            // rejected with 401. The vault populates after completeTOTP succeeds below.
+            // Sync deferred until TOTP accepted — no access token yet.
             logger.info("Login requires 2FA")
+            return result
+
+        case .requiresNewDeviceOTP:
+            // Sync deferred until OTP accepted — no access token yet.
+            logger.info("Login requires new-device OTP")
             return result
         }
     }
@@ -64,7 +65,6 @@ final class LoginUseCaseImpl: LoginUseCase {
     func completeTOTP(code: String, rememberDevice: Bool) async throws -> Account {
         logger.info("Completing TOTP")
         let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
-        // Sync failure is non-fatal — show vault with whatever was synced (FR-049).
         do {
             _ = try await sync.sync(progress: { _ in })
         } catch {
@@ -75,5 +75,42 @@ final class LoginUseCaseImpl: LoginUseCase {
 
     func cancelTOTP() {
         auth.cancelTwoFactor()
+    }
+
+    func completeNewDeviceOTP(otp: String) async throws -> Account {
+        logger.info("Completing new-device OTP")
+        let account = try await auth.loginWithNewDeviceOTP(otp)
+        do {
+            _ = try await sync.sync(progress: { _ in })
+        } catch {
+            logger.error("Post-OTP sync failed (non-fatal): \(error.localizedDescription, privacy: .public)")
+        }
+        return account
+    }
+
+    func resendNewDeviceOTP() async throws {
+        logger.info("Resending new-device OTP")
+        try await auth.requestNewDeviceOTP()
+    }
+
+    func cancelNewDeviceOTP() {
+        auth.cancelNewDeviceOTP()
+    }
+
+    // MARK: - Private helpers
+
+    private func buildEnvironment(serverType: ServerType, serverURL: String) throws -> ServerEnvironment {
+        switch serverType {
+        case .cloudUS:
+            return .cloudUS()
+        case .cloudEU:
+            return .cloudEU()
+        case .selfHosted:
+            let trimmed = serverURL.hasSuffix("/") ? String(serverURL.dropLast()) : serverURL
+            guard !trimmed.isEmpty, let base = URL(string: trimmed) else {
+                throw AuthError.invalidURL
+            }
+            return ServerEnvironment(base: base, overrides: nil)
+        }
     }
 }

@@ -15,6 +15,12 @@ nonisolated enum AccessibilityID {
         static let signInButton      = "login.signIn"
         static let errorMessage      = "login.error"
         static let headerTitle       = "login.headerTitle"
+        static let serverTypePicker  = "login.serverTypePicker"
+        static let newDeviceOtpHeader = "login.newDeviceOtpHeader"
+        static let newDeviceOtpField = "login.newDeviceOtpField"
+        static let resendOtpButton   = "login.resendOtpButton"
+        static let cancelOtpButton   = "login.cancelOtpButton"
+        static let otpErrorMessage   = "login.otpErrorMessage"
     }
 
     // MARK: - TOTP (US1)

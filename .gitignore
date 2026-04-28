@@ -42,6 +42,8 @@ fastlane/test_output
 
 # Per-developer Xcode signing config (contains Team ID — never commit)
 Prizm/LocalConfig.xcconfig
+# Per-developer secrets (contains client identifier — never commit)
+Prizm/LocalSecrets.xcconfig
 
 # Local dev Vaultwarden
 dev-vault/

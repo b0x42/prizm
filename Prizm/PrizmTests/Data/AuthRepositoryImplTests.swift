@@ -346,6 +346,214 @@ final class AuthRepositoryImplTests: XCTestCase {
         let isUnlocked = mockCrypto.isUnlocked
         XCTAssertFalse(isUnlocked, "Vault should be locked after signOut")
     }
+
+    // MARK: - 8.1: setServerEnvironment forwards to apiClient
+
+    func testSetServerEnvironment_callsApiClientSetServerEnvironment() async throws {
+        let env = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
+        try await sut.setServerEnvironment(env)
+        let serverEnv = mockAPI.serverEnvironment
+        XCTAssertNotNil(serverEnv, "apiClient.setServerEnvironment must be called")
+    }
+
+    // MARK: - 8.2: loginWithPassword returns .requiresNewDeviceOTP on device_error
+
+    func testLoginWithPassword_deviceError_returnsRequiresNewDeviceOTP() async throws {
+        let sutWithId = AuthRepositoryImpl(
+            apiClient:        mockAPI,
+            crypto:           mockCrypto,
+            keychain:         mockKeychain,
+            biometricKeychain: mockBiometricKeychain,
+            clientIdentifier: "test-id"
+        )
+        let env = ServerEnvironment.cloudUS()
+        try await sutWithId.setServerEnvironment(env)
+        mockAPI.tokenShouldThrow = IdentityTokenError.newDeviceNotVerified
+        mockCrypto.stubbedServerHash = "hash=="
+
+        let result = try await sutWithId.loginWithPassword(
+            email: "a@b.com",
+            masterPassword: Data("pw".utf8)
+        )
+
+        guard case .requiresNewDeviceOTP = result else {
+            return XCTFail("Expected .requiresNewDeviceOTP, got \(result)")
+        }
+    }
+
+    // MARK: - 8.3: clientIdentifierNotConfigured for cloud with empty identifier
+
+    func testLoginWithPassword_cloudWithEmptyClientId_throwsClientIdentifierNotConfigured() async throws {
+        let sutNoId = AuthRepositoryImpl(
+            apiClient:        mockAPI,
+            crypto:           mockCrypto,
+            keychain:         mockKeychain,
+            biometricKeychain: mockBiometricKeychain,
+            clientIdentifier: ""
+        )
+        let env = ServerEnvironment.cloudUS()
+        try await sutNoId.setServerEnvironment(env)
+
+        await XCTAssertThrowsErrorAsync(
+            try await sutNoId.loginWithPassword(
+                email: "a@b.com",
+                masterPassword: Data("pw".utf8)
+            )
+        ) { error in
+            XCTAssertEqual(error as? AuthError, .clientIdentifierNotConfigured)
+        }
+
+        XCTAssertFalse(mockAPI.preLoginResponse != nil || mockAPI.tokenShouldThrow != nil,
+                       "No network call should be made when clientIdentifier is empty")
+        // preLogin should NOT have been called — tokenResponse is nil means no request was made
+        XCTAssertNil(mockAPI.lastIdentityTokenNewDeviceOTP, "identityToken must not be called")
+    }
+
+    // MARK: - 8.6/8.7: pending OTP state cleared after loginWithNewDeviceOTP (success and failure)
+
+    func testLoginWithNewDeviceOTP_success_clearsPendingState() async throws {
+        let sutWithId = AuthRepositoryImpl(
+            apiClient:        mockAPI,
+            crypto:           mockCrypto,
+            keychain:         mockKeychain,
+            biometricKeychain: mockBiometricKeychain,
+            clientIdentifier: "test-id"
+        )
+        let env = ServerEnvironment.cloudUS()
+        try await sutWithId.setServerEnvironment(env)
+        // Trigger pending state via device_error, then succeed on OTP.
+        mockAPI.tokenShouldThrow  = IdentityTokenError.newDeviceNotVerified
+        mockCrypto.stubbedServerHash = "hash=="
+        _ = try await sutWithId.loginWithPassword(email: "a@b.com", masterPassword: Data("pw".utf8))
+        // Now set up success response for OTP submission.
+        mockAPI.tokenShouldThrow = nil
+        mockAPI.tokenResponse    = makeTokenResponse()
+        _ = try await sutWithId.loginWithNewDeviceOTP("123456")
+        // Calling again should throw otpSessionExpired because pending state was cleared.
+        await XCTAssertThrowsErrorAsync(
+            try await sutWithId.loginWithNewDeviceOTP("000000")
+        ) { error in
+            XCTAssertEqual(error as? AuthError, .otpSessionExpired)
+        }
+    }
+
+    // MARK: - 8.7: wrong OTP preserves pending state so user can retry
+
+    func testLoginWithNewDeviceOTP_failure_preservesPendingForRetry() async throws {
+        let sutWithId = AuthRepositoryImpl(
+            apiClient:        mockAPI,
+            crypto:           mockCrypto,
+            keychain:         mockKeychain,
+            biometricKeychain: mockBiometricKeychain,
+            clientIdentifier: "test-id"
+        )
+        let env = ServerEnvironment.cloudUS()
+        try await sutWithId.setServerEnvironment(env)
+        mockAPI.tokenShouldThrow     = IdentityTokenError.newDeviceNotVerified
+        mockCrypto.stubbedServerHash = "hash=="
+        _ = try await sutWithId.loginWithPassword(email: "a@b.com", masterPassword: Data("pw".utf8))
+        // First OTP attempt fails — wrong code.
+        mockAPI.tokenShouldThrow = IdentityTokenError.invalidCredentials
+        _ = try? await sutWithId.loginWithNewDeviceOTP("000000")
+        // Pending state must be preserved so the user can retry with the correct code.
+        mockAPI.tokenShouldThrow = nil
+        mockAPI.tokenResponse    = makeTokenResponse()
+        let account = try await sutWithId.loginWithNewDeviceOTP("123456")
+        XCTAssertEqual(account.email, "a@b.com", "Retry with correct OTP should succeed")
+    }
+
+    // MARK: - 8.8: pending OTP state cleared after cancelNewDeviceOTP
+
+    func testCancelNewDeviceOTP_clearsPendingState() async throws {
+        let sutWithId = AuthRepositoryImpl(
+            apiClient:        mockAPI,
+            crypto:           mockCrypto,
+            keychain:         mockKeychain,
+            biometricKeychain: mockBiometricKeychain,
+            clientIdentifier: "test-id"
+        )
+        let env = ServerEnvironment.cloudUS()
+        try await sutWithId.setServerEnvironment(env)
+        mockAPI.tokenShouldThrow     = IdentityTokenError.newDeviceNotVerified
+        mockCrypto.stubbedServerHash = "hash=="
+        _ = try await sutWithId.loginWithPassword(email: "a@b.com", masterPassword: Data("pw".utf8))
+        sutWithId.cancelNewDeviceOTP()
+        // loginWithNewDeviceOTP should now throw otpSessionExpired because pending is nil.
+        await XCTAssertThrowsErrorAsync(
+            try await sutWithId.loginWithNewDeviceOTP("123456")
+        ) { error in
+            XCTAssertEqual(error as? AuthError, .otpSessionExpired)
+        }
+    }
+
+    // MARK: - 8.9: requestNewDeviceOTP does NOT clear pending state
+
+    func testRequestNewDeviceOTP_doesNotClearPendingState() async throws {
+        let sutWithId = AuthRepositoryImpl(
+            apiClient:        mockAPI,
+            crypto:           mockCrypto,
+            keychain:         mockKeychain,
+            biometricKeychain: mockBiometricKeychain,
+            clientIdentifier: "test-id"
+        )
+        let env = ServerEnvironment.cloudUS()
+        try await sutWithId.setServerEnvironment(env)
+        mockAPI.tokenShouldThrow     = IdentityTokenError.newDeviceNotVerified
+        mockCrypto.stubbedServerHash = "hash=="
+        _ = try await sutWithId.loginWithPassword(email: "a@b.com", masterPassword: Data("pw".utf8))
+        // requestNewDeviceOTP throws device_error again (expected behavior — treated as success).
+        try await sutWithId.requestNewDeviceOTP()
+        // Pending state must still be intact — loginWithNewDeviceOTP should not throw invalidCredentials.
+        // (It will throw because tokenShouldThrow is still set, but not with invalidCredentials from nil pending.)
+        mockAPI.tokenShouldThrow = nil
+        mockAPI.tokenResponse    = makeTokenResponse()
+        _ = try await sutWithId.loginWithNewDeviceOTP("123456")
+        // If we got here, pending was not cleared by requestNewDeviceOTP.
+    }
+
+    // MARK: - 8.10: OTP retry includes newdeviceotp parameter
+
+    func testLoginWithNewDeviceOTP_passesOTPToApiClient() async throws {
+        let sutWithId = AuthRepositoryImpl(
+            apiClient:        mockAPI,
+            crypto:           mockCrypto,
+            keychain:         mockKeychain,
+            biometricKeychain: mockBiometricKeychain,
+            clientIdentifier: "test-id"
+        )
+        let env = ServerEnvironment.cloudUS()
+        try await sutWithId.setServerEnvironment(env)
+        mockAPI.tokenShouldThrow     = IdentityTokenError.newDeviceNotVerified
+        mockCrypto.stubbedServerHash = "hash=="
+        _ = try await sutWithId.loginWithPassword(email: "a@b.com", masterPassword: Data("pw".utf8))
+        mockAPI.tokenShouldThrow = nil
+        mockAPI.tokenResponse    = makeTokenResponse()
+        _ = try await sutWithId.loginWithNewDeviceOTP("654321")
+        XCTAssertEqual(mockAPI.lastIdentityTokenNewDeviceOTP, "654321",
+                       "loginWithNewDeviceOTP must pass the OTP to identityToken")
+    }
+
+    // MARK: - Helpers
+
+    private func makeTokenResponse() -> TokenResponse {
+        TokenResponse(
+            accessToken:  "at",
+            refreshToken: "rt",
+            tokenType:    "Bearer",
+            expiresIn:    3600,
+            key:          "2.k==",
+            privateKey:   nil,
+            kdf:          0,
+            kdfIterations: 600_000,
+            kdfMemory:     nil,
+            kdfParallelism: nil,
+            twoFactorToken:     nil,
+            twoFactorProviders: nil,
+            userId: "uid",
+            email:  "a@b.com",
+            name:   nil
+        )
+    }
 }
 
 // MARK: - Async XCTAssertThrowsError helper

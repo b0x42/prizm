@@ -4,13 +4,12 @@ import SwiftUI
 
 /// The initial authentication screen (User Story 1, FR-001–FR-010).
 ///
-/// Collects server URL, email, and master password, then initiates the login flow
+/// Collects server type, email, and master password, then initiates the login flow
 /// via `LoginViewModel`. The view itself is stateless — all logic lives in the VM.
 struct LoginView: View {
 
     @ObservedObject var viewModel: LoginViewModel
 
-    /// Focus state used to advance through fields on Return.
     @FocusState private var focusedField: Field?
 
     private enum Field: Hashable {
@@ -27,25 +26,36 @@ struct LoginView: View {
                     .accessibilityHidden(true)
                 Text("Prizm")
                     .font(Typography.screenHeading)
-                Text("Self-hosted vault")
-                    .font(Typography.fieldLabel)
-                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(AccessibilityID.Login.headerTitle)
+                // Server-type picker — replaces the static subtitle
+                Picker("Server", selection: $viewModel.serverType) {
+                    ForEach([ServerType.cloudUS, .cloudEU, .selfHosted], id: \.self) { type in
+                        Text(type.displayName).tag(type)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 360)
+                .accessibilityIdentifier(AccessibilityID.Login.serverTypePicker)
+                .accessibilityLabel("Server")
+                .accessibilityValue(pickerLabel(for: viewModel.serverType))
             }
             .padding(.top, 24)
 
             // MARK: Form fields
             VStack(spacing: 12) {
-                // Server URL — FR-001
-                LabeledContent("Server URL") {
-                    TextField("https://vault.example.com", text: $viewModel.serverURL)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($focusedField, equals: .serverURL)
-                        .autocorrectionDisabled()
-                        .onSubmit { focusedField = .email }
-                        .accessibilityIdentifier(AccessibilityID.Login.serverURLField)
+                // Server URL — only shown for self-hosted
+                if viewModel.serverType == .selfHosted {
+                    LabeledContent("Server URL") {
+                        TextField("https://vault.example.com", text: $viewModel.serverURL)
+                            .textFieldStyle(.roundedBorder)
+                            .focused($focusedField, equals: .serverURL)
+                            .autocorrectionDisabled()
+                            .onSubmit { focusedField = .email }
+                            .accessibilityIdentifier(AccessibilityID.Login.serverURLField)
+                    }
                 }
 
-                // Email — FR-003
+                // Email
                 LabeledContent("Email") {
                     TextField("you@example.com", text: $viewModel.email)
                         .textFieldStyle(.roundedBorder)
@@ -55,7 +65,7 @@ struct LoginView: View {
                         .accessibilityIdentifier(AccessibilityID.Login.emailField)
                 }
 
-                // Master password — FR-005
+                // Master password
                 LabeledContent("Master password") {
                     SecureField("Enter master password", text: $viewModel.password)
                         .textFieldStyle(.roundedBorder)
@@ -78,7 +88,7 @@ struct LoginView: View {
                     .accessibilityIdentifier(AccessibilityID.Login.errorMessage)
             }
 
-            // MARK: Sign In button — FR-007
+            // MARK: Sign In button
             Button(action: signIn) {
                 if case .loading = viewModel.flowState {
                     ProgressView()
@@ -91,7 +101,7 @@ struct LoginView: View {
             }
             .buttonStyle(.borderedProminent)
             .frame(width: 360)
-            .disabled(isSignInDisabled)
+            .disabled(viewModel.isSignInDisabled)
             .keyboardShortcut(.return, modifiers: [])
             .accessibilityIdentifier(AccessibilityID.Login.signInButton)
 
@@ -100,20 +110,17 @@ struct LoginView: View {
         .padding(.horizontal, Spacing.screenHorizontal)
         .padding(.bottom, 32)
         .frame(minWidth: 480, minHeight: 400)
-        .onAppear { focusedField = .serverURL }
+        .onAppear {
+            focusedField = viewModel.serverType == .selfHosted ? .serverURL : .email
+        }
     }
 
     // MARK: - Private helpers
 
-    private var isSignInDisabled: Bool {
-        if case .loading = viewModel.flowState { return true }
-        return viewModel.serverURL.isEmpty || viewModel.email.isEmpty || viewModel.password.isEmpty
-    }
-
     private func signIn() {
-        guard !isSignInDisabled else { return }
+        guard !viewModel.isSignInDisabled else { return }
         viewModel.signIn()
     }
+
+    private func pickerLabel(for type: ServerType) -> String { type.displayName }
 }
-
-

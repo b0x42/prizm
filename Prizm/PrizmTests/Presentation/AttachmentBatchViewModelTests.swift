@@ -95,9 +95,7 @@ final class AttachmentBatchViewModelTests: XCTestCase {
         sut.loadItems(from: [url])
 
         sut.confirm()
-
-        // Wait for upload task to complete
-        try await Task.sleep(for: .milliseconds(200))
+        await sut.awaitCompletion()
 
         XCTAssertTrue(sut.items.allSatisfy { $0.state == .succeeded })
     }
@@ -108,8 +106,7 @@ final class AttachmentBatchViewModelTests: XCTestCase {
         sut.loadItems(from: [url])
 
         sut.confirm()
-
-        try await Task.sleep(for: .milliseconds(200))
+        await sut.awaitCompletion()
 
         XCTAssertTrue(sut.isDismissed)
     }
@@ -120,8 +117,7 @@ final class AttachmentBatchViewModelTests: XCTestCase {
         sut.loadItems(from: [url])
 
         sut.confirm()
-
-        try await Task.sleep(for: .milliseconds(200))
+        await sut.awaitCompletion()
 
         XCTAssertTrue(sut.items.first?.state == .failed("The operation couldn't be completed.") ||
                       {
@@ -142,6 +138,7 @@ final class AttachmentBatchViewModelTests: XCTestCase {
         sut.confirm()
         XCTAssertTrue(sut.isUploading)
         sut.cancel()
+        await sut.awaitCompletion()
     }
 
     // MARK: - cancel
@@ -167,6 +164,7 @@ final class AttachmentBatchViewModelTests: XCTestCase {
 
         XCTAssertTrue(sut.isDismissed)
         XCTAssertFalse(sut.isUploading)
+        await sut.awaitCompletion()
     }
 
     // MARK: - vault lock

@@ -142,6 +142,9 @@ struct PrizmApp: App {
         case .totpPrompt:
             TOTPPromptView(viewModel: rootVM.loginVM)
 
+        case .otpPrompt:
+            NewDeviceOTPView(viewModel: rootVM.loginVM)
+
         case .unlock:
             if let unlockVM = rootVM.unlockVM {
                 UnlockView(viewModel: unlockVM)
@@ -239,6 +242,7 @@ final class RootViewModel: ObservableObject {
         case login
         case loading
         case totpPrompt
+        case otpPrompt
         case unlock
         case syncing(message: String)
         case vault
@@ -402,6 +406,7 @@ final class RootViewModel: ObservableObject {
         case .login:       screen = .login
         case .loading:     screen = .loading
         case .totpPrompt:  screen = .totpPrompt
+        case .otpPrompt:   screen = .otpPrompt
         case .syncing(let msg): screen = .syncing(message: msg)
         case .vault:       transitionToVault(caller: "handleLoginFlow")
         }

@@ -19,8 +19,24 @@ extension Notification.Name {
 // MARK: - App config
 
 enum Config {
-    static let clientName = "desktop"
+    // "desktop" is rejected by bitwarden.eu — the EU server blocks impersonation of
+    // Bitwarden's own client names. Use "prizm" (Prizm's registered client name).
+    static nonisolated let clientName = "prizm"
     static let deviceType = 7
+
+    /// Registered Bitwarden client identifier, injected at build time via LocalSecrets.xcconfig.
+    /// Empty string when LocalSecrets.xcconfig is absent — cloud login fails fast with
+    /// AuthError.clientIdentifierNotConfigured before any network request is attempted.
+    ///
+    /// `nonisolated` prevents @MainActor isolation (inferred from Bundle.main) from
+    /// propagating to every actor that reads this constant. String is Sendable so the
+    /// value is safe to share across isolation domains without the `unsafe` qualifier.
+    static nonisolated let bitwardenClientIdentifier: String =
+        Bundle.main.object(forInfoDictionaryKey: "BWClientIdentifier") as? String ?? ""
+
+    /// Bitwarden server API version Prizm was last tested against.
+    /// Update when testing against a newer server release.
+    static let bitwardenApiVersion = "2026.4.0"
 }
 
 /// Gates verbose debug logging throughout the Data layer.
