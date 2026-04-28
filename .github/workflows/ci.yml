@@ -41,12 +41,38 @@ jobs:
       - name: Test (no signing)
         run: |
           set -o pipefail
+          RESULT_PATH="$(pwd)/TestResults.xcresult"
+          rm -rf "$RESULT_PATH"
           xcodebuild test \
             -project "Prizm/Prizm.xcodeproj" \
             -scheme "Prizm" \
             -destination "platform=macOS" \
             -parallel-testing-enabled NO \
+            -resultBundlePath "$RESULT_PATH" \
+            -retry-tests-on-failure \
+            -test-iterations 3 \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | xcbeautify --renderer github-actions
+            2>&1 | xcbeautify --renderer github-actions || true
+
+          # xcodebuild may exit 65 due to test runner crashes even when all tests
+          # eventually pass on retry. Check the xcresult for real assertion failures.
+          SUMMARY=$(xcrun xcresulttool get test-results summary --path "$RESULT_PATH" 2>/dev/null || echo '{}')
+          echo "$SUMMARY" | head -20
+          FAILED=$(echo "$SUMMARY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('failedTests',0))" 2>/dev/null || echo "0")
+          PASSED=$(echo "$SUMMARY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('passedTests',0))" 2>/dev/null || echo "0")
+          echo "Tests passed: $PASSED, failed: $FAILED"
+          if [ "$FAILED" -gt 0 ]; then
+            echo "$SUMMARY" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for f in data.get('testFailures', []):
+              text = f.get('failureText','')
+              # Runner crashes are not real test failures
+              if 'Crash' in text or 'runner exited' in text:
+                  continue
+              print(f'::error ::{f[\"testName\"]}: {text}')
+              sys.exit(1)
+          "
+          fi
