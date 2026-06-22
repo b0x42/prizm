@@ -26,7 +26,7 @@ protocol AuthRepository: AnyObject {
     ///
     /// - Security goal: `masterPassword` is `Data` so the caller can zero the bytes
     ///   after the call returns, reducing heap exposure (Constitution §III).
-    /// - Returns: `.success(Account)` or `.requiresTwoFactor(method:)`.
+    /// - Returns: `.success(Account)`, `.requiresTwoFactor(method:)`, or `.requiresNewDeviceOTP`.
     /// - Throws: `AuthError` on network or credential failure.
     func loginWithPassword(email: String, masterPassword: Data) async throws -> LoginResult
 
@@ -45,6 +45,21 @@ protocol AuthRepository: AnyObject {
     ///   the next login attempt or app restart (Constitution §III). Call this whenever the
     ///   user dismisses the TOTP prompt without submitting a code.
     func cancelTwoFactor()
+
+    /// Retries the identity token request with the new-device OTP the user received by email.
+    /// Only valid to call after `loginWithPassword` returns `LoginResult.requiresNewDeviceOTP`.
+    /// - Returns: The authenticated `Account`.
+    /// - Throws: `AuthError.invalidCredentials` if no pending OTP state exists.
+    func loginWithNewDeviceOTP(_ otp: String) async throws -> Account
+
+    /// Re-triggers the original identity token request without an OTP, causing the server to
+    /// dispatch a new verification code to the user's registered email. Does NOT return an
+    /// Account — the user remains in the OTP challenge state after this call.
+    func requestNewDeviceOTP() async throws
+
+    /// Zeros any cached credentials held from the pending new-device OTP challenge.
+    /// No network request is made.
+    func cancelNewDeviceOTP()
 
     // MARK: - Unlock
 
@@ -102,6 +117,9 @@ protocol AuthRepository: AnyObject {
 nonisolated enum LoginResult {
     case success(Account)
     case requiresTwoFactor(TwoFactorMethod)
+    /// The server does not recognise this device and has dispatched a one-time code
+    /// to the user's registered email. Retry with `loginWithNewDeviceOTP(_:)`.
+    case requiresNewDeviceOTP
 }
 
 /// Two-factor methods supported in v1. Only `authenticatorApp` (TOTP) is handled;
@@ -126,6 +144,12 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
     case biometricItemNotFound
     /// Biometric unlock cannot be enabled — vault is locked (keys not in memory).
     case biometricUnavailable
+    /// Cloud login attempted without a registered Bitwarden client identifier.
+    /// Thrown before any network request is made.
+    case clientIdentifierNotConfigured
+    /// OTP completion or resend called when no new-device OTP challenge is active
+    /// (e.g. called out of sequence after session was cancelled or expired).
+    case otpSessionExpired
 
     var errorDescription: String? {
         switch self {
@@ -150,6 +174,10 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
             return nil
         case .biometricUnavailable:
             return "Biometric unlock is not available. Please unlock with your master password."
+        case .clientIdentifierNotConfigured:
+            return "Prizm is not configured for Bitwarden Cloud. Contact support or use a self-hosted server."
+        case .otpSessionExpired:
+            return "The verification session has expired. Please sign in again."
         }
     }
 }

@@ -38,6 +38,29 @@ A free Apple ID ("Personal Team") works for local builds. You do not need a paid
 
 > **The build will fail without this file.** `LocalConfig.xcconfig` is git-ignored so your Team ID never appears in the repository.
 
+### LocalSecrets.xcconfig (required for Bitwarden Cloud login)
+
+Bitwarden Cloud requires a registered client identifier. For self-hosted Vaultwarden, this file is optional — self-hosted login works without it.
+
+```bash
+cp Prizm/LocalSecrets.xcconfig.template Prizm/LocalSecrets.xcconfig
+```
+
+Set your registered Bitwarden client identifier (obtained from the Bitwarden developer portal):
+
+```
+BW_CLIENT_IDENTIFIER = com.example.prizm
+```
+
+**How the secret flows:**
+
+1. `BW_CLIENT_IDENTIFIER` in `LocalSecrets.xcconfig` (gitignored)
+2. → `BWClientIdentifier` in `Prizm/Prizm/Info.plist` via `$(BW_CLIENT_IDENTIFIER)`
+3. → `Config.bitwardenClientIdentifier` in `App/Config.swift` via `Bundle.main`
+4. → `client_id` form parameter in identity token requests to Bitwarden Cloud
+
+Without this value, cloud login will fail with `AuthError.clientIdentifierNotConfigured`. Self-hosted Vaultwarden login is unaffected — it always uses `"desktop"` as the `client_id`.
+
 ## Building
 
 Open the project in Xcode:

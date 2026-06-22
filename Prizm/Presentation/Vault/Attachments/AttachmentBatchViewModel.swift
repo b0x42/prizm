@@ -193,11 +193,25 @@ final class AttachmentBatchViewModel: Identifiable {
     /// Files already partially uploaded will show as "Upload incomplete" on the next sync.
     /// - Security: each Task catches `CancellationError` and zeroes its file bytes before exiting.
     func cancel() {
-        for task in uploadTasks { task.cancel() }
+        let tasks = uploadTasks
         uploadTasks.removeAll()
+        for task in tasks { task.cancel() }
         isUploading  = false
         isDismissed  = true
+        // Store cancelled tasks so awaitCompletion() can wait for them to finish.
+        cancelledTasks = tasks
     }
+
+    /// Awaits completion of all in-flight or recently-cancelled upload tasks.
+    /// Used by tests to avoid deallocating the ViewModel while background tasks
+    /// are still unwinding.
+    func awaitCompletion() async {
+        for task in uploadTasks { await task.value }
+        for task in cancelledTasks { await task.value }
+        cancelledTasks.removeAll()
+    }
+
+    private var cancelledTasks: [Task<Void, Never>] = []
 
     // MARK: - Vault lock (task 6b.6)
 

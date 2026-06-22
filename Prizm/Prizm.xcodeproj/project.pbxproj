@@ -88,6 +88,7 @@
 		AA001CC0001CC0001CC0006A /* DeleteCollectionUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CC0001CC0001CC0005A /* DeleteCollectionUseCaseImpl.swift */; };
 		AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2233445566778899001122 /* OptionKeyMonitor.swift */; };
 		AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */; };
+		AA1234567890ABCDEF123456 /* NewDeviceOTPView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1234567890ABCDEF123456 /* NewDeviceOTPView.swift */; };
 		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
 		AC24869F5C544E82B60C54E0 /* DeleteCollectionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDCDA57D3434985AC25FF5F /* DeleteCollectionUseCase.swift */; };
 		AC3EC95F694247B5A5809233 /* CreateVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A335CC7B3C743B59A7630D8 /* CreateVaultItemUseCase.swift */; };
@@ -279,6 +280,7 @@
 		B465482A0CFB4710AD4727CB /* CreateVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		B5D05DB7E6EC4A74802AEE58 /* DeleteFolderUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFolderUseCase.swift; sourceTree = "<group>"; };
 		B65E7D6288C347DCA88A20DF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
+		BB1234567890ABCDEF123456 /* NewDeviceOTPView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewDeviceOTPView.swift; sourceTree = "<group>"; };
 		BB2233445566778899001122 /* OptionKeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionKeyMonitor.swift; sourceTree = "<group>"; };
 		BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityIdentifiers.swift; sourceTree = "<group>"; };
 		BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFolderUseCaseImpl.swift; sourceTree = "<group>"; };
@@ -666,6 +668,7 @@
 				713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */,
 				7429BBFA10E247D8AEACA59B /* LoginView.swift */,
 				F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */,
+				BB1234567890ABCDEF123456 /* NewDeviceOTPView.swift */,
 			);
 			path = Login;
 			sourceTree = "<group>";
@@ -926,6 +929,7 @@
 				9D5A14583F6A4B3BAF956201 /* LoginViewModel.swift in Sources */,
 				5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */,
 				98329A0BFD094D69BF05D595 /* TOTPPromptView.swift in Sources */,
+				AA1234567890ABCDEF123456 /* NewDeviceOTPView.swift in Sources */,
 				A2D9C5FB40924655AABA3088 /* SyncProgressView.swift in Sources */,
 				DB71D59F021648E1982C90FA /* UnlockView.swift in Sources */,
 				E2AAA6708B2A46FA85BE5860 /* Presentation/Unlock/BiometricEnrollmentPromptView.swift in Sources */,
@@ -1256,6 +1260,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1315,6 +1320,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;

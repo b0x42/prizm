@@ -49,18 +49,35 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     }
     private var pendingTwoFactor: PendingTwoFactor?
 
+    // MARK: - Pending new-device OTP state
+    // Set by loginWithPassword when the server returns device_error; consumed by loginWithNewDeviceOTP.
+
+    private struct PendingNewDeviceOTP {
+        let email:        String
+        let passwordHash: String
+        // `var` so cancelNewDeviceOTP() can zero key buffers in-place (Constitution §III).
+        var stretchedKeys: CryptoKeys
+        let deviceId:     String
+        let environment:  ServerEnvironment
+    }
+    private var pendingNewDeviceOTP: PendingNewDeviceOTP?
+
     // MARK: - Init
 
+    private let clientIdentifier: String
+
     init(
-        apiClient: any PrizmAPIClientProtocol,
-        crypto:    any PrizmCryptoService,
-        keychain:  any KeychainService,
-        biometricKeychain: any BiometricKeychainService
+        apiClient:         any PrizmAPIClientProtocol,
+        crypto:            any PrizmCryptoService,
+        keychain:          any KeychainService,
+        biometricKeychain: any BiometricKeychainService,
+        clientIdentifier:  String = Config.bitwardenClientIdentifier
     ) {
-        self.apiClient = apiClient
-        self.crypto    = crypto
-        self.keychain  = keychain
+        self.apiClient        = apiClient
+        self.crypto           = crypto
+        self.keychain         = keychain
         self.biometricKeychain = biometricKeychain
+        self.clientIdentifier  = clientIdentifier
     }
 
     // MARK: - Server configuration
@@ -74,13 +91,15 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         guard let url = URL(string: trimmed),
               url.scheme == "https",
               url.host != nil else {
+            logger.error("URL validation failed: \(urlString, privacy: .public)")
             throw AuthError.invalidURL
         }
     }
 
     func setServerEnvironment(_ environment: ServerEnvironment) async throws {
         serverEnvironment = environment
-        await apiClient.setBaseURL(environment.base)
+        await apiClient.setServerEnvironment(environment)
+        logger.info("Server environment set: \(environment.serverType.rawValue, privacy: .public)")
     }
 
     // MARK: - Login
@@ -89,6 +108,12 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         logger.info("Login attempt for \(email, privacy: .private)")
         guard let env = serverEnvironment else {
             throw AuthError.serverUnreachable
+        }
+        // Cloud environments require a registered client identifier (ADR-0023).
+        // Self-hosted Vaultwarden does not enforce this check.
+        if env.serverType != .selfHosted && clientIdentifier.isEmpty {
+            logger.error("Cloud login blocked: bitwardenClientIdentifier not configured")
+            throw AuthError.clientIdentifierNotConfigured
         }
 
         // Step 1: Fetch KDF params.
@@ -100,7 +125,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         }
 
         // Step 2: Derive master key locally — never sent to server.
-        // `masterPassword` is `Data` so we can zero it after the KDF call (Constitution §III).
+        // `masterPassword` is `Data` (typed to allow zeroing; `String` cannot be zeroed).
+        // Swift CoW prevents in-place zeroing of a value-type parameter without unsafe code;
+        // the local copy is released on return. Accepted limitation — tracked as §III known gap.
         logger.info("Step 2: deriving master key (KDF)")
         let masterKey  = try await crypto.makeMasterKey(
             password: masterPassword,
@@ -143,7 +170,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
                 deviceIdentifier:  deviceId,
                 twoFactorToken:    nil,
                 twoFactorProvider: nil,
-                twoFactorRemember: false
+                twoFactorRemember: false,
+                newDeviceOTP:      nil
             )
         } catch let err as IdentityTokenError {
             switch err {
@@ -163,6 +191,23 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             case .invalidCredentials:
                 logger.error("Login failed: \(AuthError.invalidCredentials.localizedDescription, privacy: .public)")
                 throw AuthError.invalidCredentials
+            case .newDeviceNotVerified:
+                // Cloud: server doesn't recognise this device; an OTP was dispatched to the user's email.
+                // Self-hosted: this response is unexpected — surface as invalid credentials.
+                if env.serverType != .selfHosted {
+                    pendingNewDeviceOTP = PendingNewDeviceOTP(
+                        email:        email,
+                        passwordHash: serverHash,
+                        stretchedKeys: stretched,
+                        deviceId:     deviceId,
+                        environment:  env
+                    )
+                    logger.info("New-device OTP required — pending OTP stored")
+                    return .requiresNewDeviceOTP
+                } else {
+                    logger.error("Unexpected device_error from self-hosted server")
+                    throw AuthError.invalidCredentials
+                }
             }
         }
 
@@ -208,7 +253,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
                 deviceIdentifier:  pending.deviceId,
                 twoFactorToken:    code,
                 twoFactorProvider: 0,   // authenticatorApp
-                twoFactorRemember: rememberDevice
+                twoFactorRemember: rememberDevice,
+                newDeviceOTP:      nil
             )
         } catch let err as IdentityTokenError {
             switch err {
@@ -221,6 +267,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             case .twoFactorRequired:
                 logger.error("Login failed: \(AuthError.invalidTwoFactorCode.localizedDescription, privacy: .public)")
                 throw AuthError.invalidTwoFactorCode
+            case .newDeviceNotVerified:
+                logger.error("Unexpected device_error during TOTP flow")
+                throw AuthError.invalidCredentials
             }
         }
 
@@ -255,6 +304,90 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         }
         pendingTwoFactor = nil
         logger.info("Pending 2FA state cleared — stretched keys zeroed")
+    }
+
+    func loginWithNewDeviceOTP(_ otp: String) async throws -> Account {
+        logger.info("Submitting new-device OTP")
+        guard let pending = pendingNewDeviceOTP else {
+            throw AuthError.otpSessionExpired
+        }
+        let tokenResp: TokenResponse
+        do {
+            tokenResp = try await apiClient.identityToken(
+                email:             pending.email,
+                passwordHash:      pending.passwordHash,
+                deviceIdentifier:  pending.deviceId,
+                twoFactorToken:    nil,
+                twoFactorProvider: nil,
+                twoFactorRemember: false,
+                newDeviceOTP:      otp
+            )
+        } catch {
+            logger.error("New-device OTP rejected: \(error.localizedDescription, privacy: .public)")
+            // Preserve pendingNewDeviceOTP so the user can correct the code and retry.
+            throw error
+        }
+        // OTP accepted: zero key material before clearing pending state (Constitution §III).
+        let encCount = pendingNewDeviceOTP!.stretchedKeys.encryptionKey.count
+        let macCount = pendingNewDeviceOTP!.stretchedKeys.macKey.count
+        pendingNewDeviceOTP!.stretchedKeys.encryptionKey.resetBytes(in: 0..<encCount)
+        pendingNewDeviceOTP!.stretchedKeys.macKey.resetBytes(in: 0..<macCount)
+        pendingNewDeviceOTP = nil
+        logger.info("New-device OTP accepted")
+        return try await finalizeSession(
+            tokenResp:   tokenResp,
+            stretched:   pending.stretchedKeys,
+            environment: pending.environment
+        )
+    }
+
+    func requestNewDeviceOTP() async throws {
+        logger.info("Requesting new OTP dispatch")
+        guard let pending = pendingNewDeviceOTP else {
+            throw AuthError.otpSessionExpired
+        }
+        do {
+            // Re-posting without newdeviceotp causes the server to dispatch a new OTP email
+            // and respond with HTTP 400 + device_error again. That "error" is the server's
+            // confirmation that the email was sent — catching it here is intentional.
+            // Do NOT remove this catch: it converts the expected error into a success path.
+            _ = try await apiClient.identityToken(
+                email:             pending.email,
+                passwordHash:      pending.passwordHash,
+                deviceIdentifier:  pending.deviceId,
+                twoFactorToken:    nil,
+                twoFactorProvider: nil,
+                twoFactorRemember: false,
+                newDeviceOTP:      nil
+            )
+        } catch IdentityTokenError.newDeviceNotVerified {
+            // Expected: server sent a new OTP email and returned device_error as confirmation.
+            logger.info("New OTP dispatched (device_error treated as success)")
+            return
+        }
+        // Unexpected: server returned a token response instead of device_error.
+        // The device may have been verified by another client while this challenge was open.
+        // Pending state is preserved — caller can still submit OTP or cancel.
+        logger.warning("requestNewDeviceOTP: unexpected token success — device may have already been verified")
+    }
+
+    func cancelNewDeviceOTP() {
+        // Explicitly zero the stretched key buffers before releasing the struct.
+        // Setting pendingNewDeviceOTP = nil alone does not guarantee immediate deallocation —
+        // ARC may defer it. Zeroing the Data buffers in-place reduces the window during
+        // which derived key material lives in the heap (Constitution §III).
+        // Note: passwordHash (String) cannot be zeroed — String storage is immutable.
+        // This is an accepted limitation shared with the TOTP flow (cancelTwoFactor).
+        if let pending = pendingNewDeviceOTP {
+            pendingNewDeviceOTP!.stretchedKeys.encryptionKey.resetBytes(
+                in: 0..<pending.stretchedKeys.encryptionKey.count
+            )
+            pendingNewDeviceOTP!.stretchedKeys.macKey.resetBytes(
+                in: 0..<pending.stretchedKeys.macKey.count
+            )
+        }
+        pendingNewDeviceOTP = nil
+        logger.info("Pending new-device OTP state cleared — stretched keys zeroed")
     }
 
     func unlockWithPassword(_ masterPassword: Data) async throws -> Account {
@@ -322,7 +455,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         // Restore API client state so the post-unlock sync can make authenticated requests.
         // Both baseURL and accessToken are nil on a fresh app launch until restored here.
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        await apiClient.setServerEnvironment(restoredAccount.serverEnvironment)
 
         if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
             await apiClient.setAccessToken(accessToken)
@@ -420,8 +553,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         // from a heap dump after sign-out (Constitution §III).
         await apiClient.clearAccessToken()
 
-        serverEnvironment = nil
-        pendingTwoFactor  = nil
+        serverEnvironment   = nil
+        pendingTwoFactor    = nil
+        pendingNewDeviceOTP = nil
     }
 
     // MARK: - Lock
@@ -537,7 +671,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
 
         // Restore API client state — same as unlockWithPassword().
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        await apiClient.setServerEnvironment(restoredAccount.serverEnvironment)
 
         if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
             await apiClient.setAccessToken(accessToken)
@@ -603,7 +737,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
 
         await crypto.unlockWith(keys: vaultKeys)
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        await apiClient.setServerEnvironment(restoredAccount.serverEnvironment)
 
         if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
             await apiClient.setAccessToken(accessToken)

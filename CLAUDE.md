@@ -65,6 +65,7 @@ xcodebuild test \
 |---|---|
 | vault-document-storage | `openspec/changes/vault-document-storage/` |
 | vault-sync-status | `openspec/changes/vault-sync-status/` |
+| hosted-cloud-support | `openspec/changes/hosted-cloud-support/` |
 
 ## Change Workflow (openspec)
 

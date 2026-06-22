@@ -10,6 +10,10 @@ final class MockAuthRepository: AuthRepository {
     private(set) var loginWithPasswordCalled:      Bool = false
     private(set) var unlockWithPasswordCalled:     Bool = false
     private(set) var cancelTwoFactorCalled:        Bool = false
+    private(set) var validateServerURLCalled:      Bool = false
+    private(set) var loginWithNewDeviceOTPCalled:  Bool = false
+    private(set) var requestNewDeviceOTPCalled:    Bool = false
+    private(set) var cancelNewDeviceOTPCalled:     Bool = false
     private(set) var signOutCalled:                Bool = false
     var             lockVaultCalledCount:           Int  = 0
 
@@ -37,17 +41,24 @@ final class MockAuthRepository: AuthRepository {
     /// When non-nil, `unlockWithPassword` throws this error.
     var unlockWithPasswordError: Error?
 
+    /// When non-nil, `loginWithNewDeviceOTP` throws this error.
+    var loginWithNewDeviceOTPError: Error?
+
+    /// When non-nil, `requestNewDeviceOTP` throws this error.
+    var requestNewDeviceOTPError: Error?
+
     // MARK: - AuthRepository
 
     var serverEnvironment: ServerEnvironment?
 
     func validateServerURL(_ urlString: String) throws {
+        validateServerURLCalled = true
         if let err = validateServerURLError { throw err }
     }
 
     func setServerEnvironment(_ environment: ServerEnvironment) async throws {
-        serverEnvironment            = environment
-        setServerEnvironmentCalled   = true
+        serverEnvironment          = environment
+        setServerEnvironmentCalled = true
     }
 
     func loginWithPassword(email: String, masterPassword: Data) async throws -> LoginResult {
@@ -65,6 +76,24 @@ final class MockAuthRepository: AuthRepository {
 
     func cancelTwoFactor() {
         cancelTwoFactorCalled = true
+    }
+
+    func loginWithNewDeviceOTP(_ otp: String) async throws -> Account {
+        loginWithNewDeviceOTPCalled = true
+        if let err = loginWithNewDeviceOTPError { throw err }
+        guard case .success(let account) = stubbedLoginResult else {
+            throw AuthError.invalidCredentials
+        }
+        return account
+    }
+
+    func requestNewDeviceOTP() async throws {
+        requestNewDeviceOTPCalled = true
+        if let err = requestNewDeviceOTPError { throw err }
+    }
+
+    func cancelNewDeviceOTP() {
+        cancelNewDeviceOTPCalled = true
     }
 
     func unlockWithPassword(_ masterPassword: Data) async throws -> Account {
