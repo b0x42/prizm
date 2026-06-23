@@ -58,14 +58,32 @@ final class KeychainServiceImpl: KeychainService {
     private let service = "com.prizm"
     private let logger = Logger(subsystem: "com.prizm", category: "KeychainService")
 
-    /// When `true` (default, production), routes all queries through the modern data
-    /// protection keychain (`kSecUseDataProtectionKeychain`), which requires the
-    /// `keychain-access-groups` entitlement. Pass `false` in test targets that run
-    /// without code signing, where the entitlement is unavailable.
+    /// When `true`, routes all queries through the modern data protection keychain
+    /// (`kSecUseDataProtectionKeychain`), which requires the `keychain-access-groups`
+    /// entitlement. Auto-detected at init: unsigned builds (e.g. Homebrew) receive
+    /// `false` and fall back to the legacy login keychain.
+    /// Pass an explicit value in tests to bypass the probe.
     private let useDataProtectionKeychain: Bool
 
-    init(useDataProtectionKeychain: Bool = true) {
-        self.useDataProtectionKeychain = useDataProtectionKeychain
+    init(useDataProtectionKeychain: Bool? = nil) {
+        if let explicit = useDataProtectionKeychain {
+            self.useDataProtectionKeychain = explicit
+            return
+        }
+        // Probe whether the data protection keychain is accessible. Unsigned builds
+        // lack the `keychain-access-groups` entitlement and receive -34018
+        // (errSecMissingEntitlement). errSecItemNotFound means the keychain is
+        // reachable — just no item stored yet.
+        let probe: [CFString: Any] = [
+            kSecClass:                     kSecClassGenericPassword,
+            kSecAttrService:               "com.prizm.probe",
+            kSecAttrAccount:               "entitlement-check",
+            kSecUseDataProtectionKeychain: true,
+            kSecMatchLimit:                kSecMatchLimitOne,
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(probe as CFDictionary, &result)
+        self.useDataProtectionKeychain = (status != errSecMissingEntitlement)
     }
 
     /// Returns the base Keychain query dictionary for `key`.
