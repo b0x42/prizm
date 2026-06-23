@@ -76,14 +76,17 @@ final class KeychainServiceImpl: KeychainService {
         // reachable — just no item stored yet.
         let probe: [CFString: Any] = [
             kSecClass:                     kSecClassGenericPassword,
-            kSecAttrService:               "com.prizm.probe",
-            kSecAttrAccount:               "entitlement-check",
+            kSecAttrService:               "com.prizm",
+            kSecAttrAccount:               "__entitlement-probe__",
             kSecUseDataProtectionKeychain: true,
             kSecMatchLimit:                kSecMatchLimitOne,
         ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(probe as CFDictionary, &result)
-        self.useDataProtectionKeychain = (status != errSecMissingEntitlement)
+        let status = SecItemCopyMatching(probe as CFDictionary, nil)
+        // Confirm reachability by checking for known-good statuses only.
+        // Any other code (e.g. errSecInteractionNotAllowed on cold boot) must not
+        // be treated as confirmation — it would arm the data-protection path and
+        // cause all real SecItem calls to fail with errSecMissingEntitlement.
+        self.useDataProtectionKeychain = (status == errSecItemNotFound || status == errSecSuccess)
     }
 
     /// Returns the base Keychain query dictionary for `key`.
