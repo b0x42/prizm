@@ -76,6 +76,8 @@ brew install --cask prizm
 
 The app is not notarized. After downloading, right-click (Control-click) the `.app` and choose **Open**, then confirm. You only need to do this once. After that, you can open it normally.
 
+macOS will also show a **"Prizm wants to use your login keychain"** prompt on first launch — click **Allow**. This is expected for unsigned apps; Prizm uses it to store credentials securely.
+
 Alternatively, from Terminal:
 
 ```bash
