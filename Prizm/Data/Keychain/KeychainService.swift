@@ -103,7 +103,10 @@ final class KeychainServiceImpl: KeychainService {
         self.useDataProtectionKeychain = entitled
         if entitled {
             probe[kSecValueData] = nil
-            SecItemDelete(probe as CFDictionary)
+            let deleteStatus = SecItemDelete(probe as CFDictionary)
+            if deleteStatus != errSecSuccess {
+                logger.error("Failed to delete entitlement probe item: status \(deleteStatus)")
+            }
         } else {
             logger.info("Data protection keychain unavailable (status \(status)) — falling back to login keychain")
         }
