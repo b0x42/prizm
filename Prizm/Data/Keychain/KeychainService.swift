@@ -70,23 +70,46 @@ final class KeychainServiceImpl: KeychainService {
             self.useDataProtectionKeychain = explicit
             return
         }
-        // Probe whether the data protection keychain is accessible. Unsigned builds
-        // lack the `keychain-access-groups` entitlement and receive -34018
-        // (errSecMissingEntitlement). errSecItemNotFound means the keychain is
-        // reachable — just no item stored yet.
-        let probe: [CFString: Any] = [
+        // Probe whether the data protection keychain is *writable*. Unsigned builds
+        // (Homebrew, teamless local builds) lack the `keychain-access-groups`
+        // entitlement and must fall back to the legacy login keychain — #60.
+        //
+        // The probe must be a write, not a read: as of macOS 26.5,
+        // SecItemCopyMatching no longer enforces the entitlement and returns
+        // errSecItemNotFound where SecItemAdd fails with -34018
+        // (errSecMissingEntitlement). A read probe therefore arms the
+        // data-protection path on unsigned builds and the first real write —
+        // storing the device identifier during sign-in — fails with the exact
+        // error #60 was meant to prevent.
+        //
+        // The probe item mirrors the attributes of real writes (same service and
+        // kSecAttrAccessible) so it exercises the same policy checks, and is
+        // deleted immediately on success.
+        var probe: [CFString: Any] = [
             kSecClass:                     kSecClassGenericPassword,
             kSecAttrService:               "com.prizm",
             kSecAttrAccount:               "__entitlement-probe__",
+            kSecAttrAccessible:            kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecUseDataProtectionKeychain: true,
-            kSecMatchLimit:                kSecMatchLimitOne,
+            kSecValueData:                 Data("probe".utf8),
         ]
-        let status = SecItemCopyMatching(probe as CFDictionary, nil)
-        // Confirm reachability by checking for known-good statuses only.
-        // Any other code (e.g. errSecInteractionNotAllowed on cold boot) must not
-        // be treated as confirmation — it would arm the data-protection path and
-        // cause all real SecItem calls to fail with errSecMissingEntitlement.
-        self.useDataProtectionKeychain = (status == errSecItemNotFound || status == errSecSuccess)
+        let status = SecItemAdd(probe as CFDictionary, nil)
+        // Only known-good statuses confirm the entitlement: errSecSuccess, or
+        // errSecDuplicateItem from a probe item a previous crashed run left behind.
+        // Any other code (e.g. errSecInteractionNotAllowed while the keychain is
+        // locked) selects the legacy fallback rather than risking -34018 on real
+        // writes.
+        let entitled = (status == errSecSuccess || status == errSecDuplicateItem)
+        self.useDataProtectionKeychain = entitled
+        if entitled {
+            probe[kSecValueData] = nil
+            let deleteStatus = SecItemDelete(probe as CFDictionary)
+            if deleteStatus != errSecSuccess {
+                logger.error("Failed to delete entitlement probe item: status \(deleteStatus)")
+            }
+        } else {
+            logger.info("Data protection keychain unavailable (status \(status)) — falling back to login keychain")
+        }
     }
 
     /// Returns the base Keychain query dictionary for `key`.
