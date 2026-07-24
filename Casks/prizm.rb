@@ -1,5 +1,5 @@
 cask "prizm" do
-  version "1.4.2"
+  version "1.4.3"
   sha256 :no_check
 
   url "https://github.com/b0x42/prizm/releases/download/v#{version}/Prizm-v#{version}.dmg"
