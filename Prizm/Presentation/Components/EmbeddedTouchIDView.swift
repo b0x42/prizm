@@ -4,7 +4,7 @@ import SwiftUI
 
 /// An `NSViewRepresentable` wrapper for `LAAuthenticationView`.
 ///
-/// This view is entirely passive — it contains no delegate or callbacks. Its sole
+/// This view is entirely passive - it contains no delegate or callbacks. Its sole
 /// purpose is to be paired with an `LAContext` before `evaluatePolicy` is called.
 /// Once paired, any `evaluatePolicy` call on that context routes its UI through
 /// this view rather than showing the standard system modal dialog.

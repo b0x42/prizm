@@ -34,6 +34,7 @@ final class LoginViewModel: ObservableObject {
 
     private let loginUseCase: any LoginUseCase
     private let logger = Logger(subsystem: "com.prizm", category: "LoginViewModel")
+    private var flowTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -43,13 +44,27 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Actions
 
+    func prepareForNewAccount() {
+        cancelPendingFlow()
+        serverURL = ""
+        email = ""
+        errorMessage = nil
+        flowState = .login
+    }
+
+    func cancelPendingFlow() {
+        flowTask?.cancel()
+        loginUseCase.cancelTOTP()
+        password = ""
+    }
+
     /// Validates credentials and initiates the login sequence.
     func signIn() {
         logger.info("Sign-in flow started")
         errorMessage = nil
         flowState    = .loading
 
-        // Convert the password String to Data at this boundary — the only place the
+        // Convert the password String to Data at this boundary - the only place the
         // String-to-bytes conversion happens. `Data` can be zeroed after the KDF call;
         // `String` cannot (Constitution §III).
         // Reject empty password here to match the UI's disabled-button guard.
@@ -60,13 +75,15 @@ final class LoginViewModel: ObservableObject {
             return
         }
 
-        Task {
+        flowTask?.cancel()
+        flowTask = Task {
             do {
                 let result = try await loginUseCase.execute(
                     serverURL:      serverURL,
                     email:          email,
                     masterPassword: passwordData
                 )
+                try Task.checkCancellation()
 
                 switch result {
                 case .success:
@@ -86,6 +103,8 @@ final class LoginViewModel: ObservableObject {
                     flowState = .totpPrompt
                 }
 
+            } catch is CancellationError {
+                return
             } catch let err as AuthError {
                 logger.error("Sign-in failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription
@@ -110,10 +129,14 @@ final class LoginViewModel: ObservableObject {
         errorMessage = nil
         flowState    = .loading
 
-        Task {
+        flowTask?.cancel()
+        flowTask = Task {
             do {
                 let _ = try await loginUseCase.completeTOTP(code: code, rememberDevice: rememberDevice)
+                try Task.checkCancellation()
                 flowState = .vault
+            } catch is CancellationError {
+                return
             } catch let err as AuthError {
                 logger.error("TOTP submission failed: \(err.localizedDescription, privacy: .public)")
                 errorMessage = err.errorDescription

@@ -2,7 +2,7 @@ import XCTest
 @testable import Prizm
 
 /// Unit tests for Domain entity validation rules (T013).
-/// Requires a unit-test target — add one in Xcode:
+/// Requires a unit-test target - add one in Xcode:
 ///   File → New → Target → macOS Unit Testing Bundle → "PrizmTests"
 ///   then add this file to that target's Compile Sources.
 @MainActor

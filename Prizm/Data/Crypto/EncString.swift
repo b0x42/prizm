@@ -9,13 +9,13 @@ import CryptoKit
 /// Values match the numeric type prefix in the wire format
 /// (Bitwarden Security Whitepaper §4: "Cipher String Types").
 nonisolated enum EncType: Int {
-    /// Type 0 — AES-256-CBC, Base64 IV + Base64 ciphertext (no MAC).
+    /// Type 0 - AES-256-CBC, Base64 IV + Base64 ciphertext (no MAC).
     case aes256Cbc_B64             = 0
-    /// Type 2 — AES-256-CBC + HMAC-SHA256, Base64 IV|ciphertext|mac.
+    /// Type 2 - AES-256-CBC + HMAC-SHA256, Base64 IV|ciphertext|mac.
     case aes256Cbc_HmacSha256_B64  = 2
-    /// Type 4 — RSA-2048-OAEP-SHA1, Base64 IV|ciphertext|mac.
+    /// Type 4 - RSA-2048-OAEP-SHA1, Base64 IV|ciphertext|mac.
     case rsaOaepSha1_B64           = 4
-    /// Type 6 — RSA-2048-OAEP-SHA256, Base64 ciphertext only.
+    /// Type 6 - RSA-2048-OAEP-SHA256, Base64 ciphertext only.
     case rsaOaepSha256_B64         = 6
 }
 
@@ -27,7 +27,7 @@ nonisolated enum EncStringError: Error, Equatable {
     case malformedEncString
     /// The numeric type prefix is not one of the supported values (0, 2, 4, 6).
     case unsupportedEncType
-    /// HMAC-SHA256 verification failed — ciphertext may have been tampered with.
+    /// HMAC-SHA256 verification failed - ciphertext may have been tampered with.
     case macMismatch
     /// AES decryption failed (CommonCrypto returned an error status).
     case decryptionFailed
@@ -44,11 +44,11 @@ nonisolated enum EncStringError: Error, Equatable {
 /// The wire format is:  `<type>.<iv_b64>|<ct_b64>[|<mac_b64>]`
 ///
 /// Supported types (Bitwarden Security Whitepaper §4, "Cipher String Types"):
-/// - **Type 0** — AES-256-CBC, no MAC.  Deprecated but still appears in old vaults.
-/// - **Type 2** — AES-256-CBC + HMAC-SHA256 (authenticated encryption).  Default for
+/// - **Type 0** - AES-256-CBC, no MAC.  Deprecated but still appears in old vaults.
+/// - **Type 2** - AES-256-CBC + HMAC-SHA256 (authenticated encryption).  Default for
 ///   all new symmetric encryption.
-/// - **Type 4** — RSA-2048-OAEP-SHA1 wrapped AES key.
-/// - **Type 6** — RSA-2048-OAEP-SHA256 wrapped AES key (newer).
+/// - **Type 4** - RSA-2048-OAEP-SHA1 wrapped AES key.
+/// - **Type 6** - RSA-2048-OAEP-SHA256 wrapped AES key (newer).
 nonisolated struct EncString {
 
     let encType:    EncType
@@ -133,7 +133,7 @@ nonisolated struct EncString {
 
     /// Verifies the HMAC-SHA256 MAC over `iv || ciphertext`.
     ///
-    /// Per the Bitwarden Security Whitepaper §4: "Encrypt-then-MAC" — the MAC is
+    /// Per the Bitwarden Security Whitepaper §4: "Encrypt-then-MAC" - the MAC is
     /// computed over the IV concatenated with the ciphertext using the MAC key,
     /// and **must** be verified before any decryption is attempted to prevent
     /// padding-oracle attacks (Vaudenay, 2002).
@@ -186,7 +186,7 @@ nonisolated struct EncString {
     ///   - keys: Symmetric key pair.
     /// - Returns: A new `EncString` of type `.aes256Cbc_HmacSha256_B64`.
     static func encrypt(data: Data, keys: CryptoKeys) throws -> EncString {
-        // Random IV (16 bytes) — SecRandomCopyBytes is backed by /dev/urandom and is
+        // Random IV (16 bytes) - SecRandomCopyBytes is backed by /dev/urandom and is
         // the correct API for generating cryptographic IVs on Apple platforms.
         var ivBytes = [UInt8](repeating: 0, count: 16)
         let status = SecRandomCopyBytes(kSecRandomDefault, 16, &ivBytes)

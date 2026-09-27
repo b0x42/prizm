@@ -26,7 +26,7 @@ nonisolated enum CipherMapperError: Error, Equatable {
 ///   Swift structs, so the Presentation layer never imports or calls crypto code.
 ///   Decryption failures are surfaced once during sync rather than scattered across the UI.
 /// - Map the raw `type` integer to a typed `ItemContent` enum case.
-/// - Filter out organisation ciphers (`organizationId != nil`) — personal vault only.
+/// - Filter out organisation ciphers (`organizationId != nil`) - personal vault only.
 /// - Map raw `RawField` array to `[CustomField]` domain values.
 ///
 /// **What this class does NOT do**:
@@ -58,7 +58,7 @@ nonisolated final class CipherMapper: Sendable {
     /// **Effective cipher key derivation** (Bitwarden Security Whitepaper §4):
     /// - If `raw.key` is non-nil (cipher has a per-item symmetric key), decrypt it with the
     ///   vault key and return the 64-byte plaintext as the effective key.
-    /// - If `raw.key` is nil, the cipher uses the vault-level key directly — return
+    /// - If `raw.key` is nil, the cipher uses the vault-level key directly - return
     ///   `keys.encryptionKey + keys.macKey` (64 bytes).
     ///
     /// - Parameters:
@@ -102,9 +102,9 @@ nonisolated final class CipherMapper: Sendable {
         let revisionDate  = raw.revisionDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
 
         // Effective cipher key: per-item key if present, otherwise the active (vault or org) key.
-        // Reference: Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping".
+        // Reference: Bitwarden Security Whitepaper §4 - "Cipher Key Wrapping".
         // Must be resolved BEFORE attachment mapping so that attachment filenames are
-        // decrypted with the correct key — ciphers that have a per-item key use it for
+        // decrypted with the correct key - ciphers that have a per-item key use it for
         // their attachments too (active key would cause MAC verification failures).
         let cipherKey: Data
         if let encItemKey = raw.key {
@@ -117,7 +117,7 @@ nonisolated final class CipherMapper: Sendable {
                 throw CipherMapperError.fieldDecryptionFailed("key")
             }
         } else {
-            // No per-item key — use the active key directly.
+            // No per-item key - use the active key directly.
             cipherKey = activeKeys.encryptionKey + activeKeys.macKey
         }
 
@@ -155,7 +155,7 @@ nonisolated final class CipherMapper: Sendable {
         return (item: item, cipherKey: cipherKey)
     }
 
-    /// Backward-compatible overload — passes empty orgKeys (personal vault, no org support).
+    /// Backward-compatible overload - passes empty orgKeys (personal vault, no org support).
     func map(raw: RawCipher, keys: CryptoKeys) throws -> (item: VaultItem, cipherKey: Data) {
         try map(raw: raw, vaultKeys: keys, orgKeys: [:])
     }
@@ -318,7 +318,7 @@ nonisolated final class CipherMapper: Sendable {
     ///   ever leaves the device in plaintext. Every string field that is an EncString on the
     ///   Bitwarden wire format is re-encrypted here before the request body is serialised.
     ///
-    /// - Algorithm: EncString type-2 — AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC).
+    /// - Algorithm: EncString type-2 - AES-256-CBC + HMAC-SHA256 (Encrypt-then-MAC).
     ///   Spec reference: Bitwarden Security Whitepaper §4 (https://bitwarden.com/images/resources/security-white-paper-download.pdf).
     ///   Standard reference: AES-CBC per NIST SP 800-38A; HMAC-SHA256 per RFC 2104.
     ///   Each field gets a cryptographically random 16-byte IV via `SecRandomCopyBytes`
@@ -330,10 +330,10 @@ nonisolated final class CipherMapper: Sendable {
     ///   official web vault uses when editing an item.
     ///
     /// - What is NOT done:
-    ///   • `id`, `type`, `favorite` are plain JSON values (not EncStrings) — sent as-is.
-    ///   • `organizationId` is sent as `nil` — this mapper only handles personal vault items;
+    ///   • `id`, `type`, `favorite` are plain JSON values (not EncStrings) - sent as-is.
+    ///   • `organizationId` is sent as `nil` - this mapper only handles personal vault items;
     ///     editing org ciphers is out of scope for v1 and requires org key unwrapping.
-    ///   • `deletedDate`, `creationDate`, `revisionDate` are sent as `nil` — the server is
+    ///   • `deletedDate`, `creationDate`, `revisionDate` are sent as `nil` - the server is
     ///     authoritative for these timestamps and ignores client-provided values on PUT.
     ///   • Biometric re-authentication before re-encryption is not performed here; it is
     ///     the caller's responsibility (see `VaultRepositoryImpl.update` TODO).
@@ -468,7 +468,7 @@ nonisolated final class CipherMapper: Sendable {
     // MARK: - Private: SSH Key reverse map
 
     private func toRawSSHKey(_ c: DraftSSHKeyContent, keys: CryptoKeys) throws -> RawSSHKeyData {
-        // keyFingerprint is auto-derived and not sent to the API — it is server-authoritative.
+        // keyFingerprint is auto-derived and not sent to the API - it is server-authoritative.
         RawSSHKeyData(
             privateKey:     try c.privateKey.map  { try encryptString($0, keys: keys) },
             publicKey:      try c.publicKey.map   { try encryptString($0, keys: keys) },

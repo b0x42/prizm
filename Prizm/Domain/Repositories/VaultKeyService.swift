@@ -5,11 +5,11 @@ import Foundation
 /// Provides the effective cipher key for a given vault item, used by attachment
 /// upload and download use cases.
 ///
-/// The returned 64-byte `Data` is `encryptionKey ‖ macKey` — the same layout that
+/// The returned 64-byte `Data` is `encryptionKey ‖ macKey` - the same layout that
 /// `CryptoKeys` stores as two separate 32-byte fields. Passing raw `Data` rather than
 /// `CryptoKeys` keeps the Domain layer free of Data-layer types (Constitution §II).
 ///
-/// Implemented by `VaultKeyServiceImpl` in the Data layer. Foundation-only — no crypto
+/// Implemented by `VaultKeyServiceImpl` in the Data layer. Foundation-only - no crypto
 /// imports belong in the Domain layer.
 protocol VaultKeyService: Sendable {
 

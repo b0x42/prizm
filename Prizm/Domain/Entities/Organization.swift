@@ -22,7 +22,7 @@ nonisolated enum OrgRole: Int, Equatable, Hashable {
 
 /// A Bitwarden organization the user belongs to.
 /// Produced by `CipherMapper` / `SyncRepositoryImpl` from `RawOrganization`.
-/// Value type — safe to pass across layers without defensive copying.
+/// Value type - safe to pass across layers without defensive copying.
 nonisolated struct Organization: Identifiable, Equatable, Hashable {
     let id: String
     let name: String
@@ -31,7 +31,7 @@ nonisolated struct Organization: Identifiable, Equatable, Hashable {
     /// Whether this user may create, rename, and delete collections in this org.
     ///
     /// True for `.owner`, `.admin`, and `.manager`. False for `.user` and `.custom`.
-    /// `.custom` defaults to `false` — custom-role collection permissions require server-side
+    /// `.custom` defaults to `false` - custom-role collection permissions require server-side
     /// permission flags that are not present in the sync `type` integer (Bitwarden Security
     /// Whitepaper §4). Deny by default.
     var canManageCollections: Bool {

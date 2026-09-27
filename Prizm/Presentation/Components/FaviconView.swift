@@ -18,6 +18,7 @@ struct FaviconView: View {
     let itemType: ItemType
     let loader:   FaviconLoader
     var size:     CGFloat = 16
+    var fallbackColor: Color = .secondary
 
     @State private var image: NSImage? = nil
 
@@ -27,15 +28,17 @@ struct FaviconView: View {
                 Image(nsImage: img)
                     .resizable()
                     .interpolation(.medium)
-                    .scaledToFit()
+                    .scaledToFill()
             } else {
                 Image(systemName: itemType.sfSymbol)
                     .resizable()
                     .scaledToFit()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(fallbackColor)
             }
         }
         .frame(width: size, height: size)
+        .background(Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: Spacing.itemIconCornerRadius))
         .accessibilityHidden(true)
         .task(id: domain) {
             guard let domain else {

@@ -6,7 +6,7 @@ import XCTest
 /// Unit tests for the `MaskedFieldView` display logic.
 ///
 /// SwiftUI views cannot be instantiated directly in XCTest without a host app or ViewInspector.
-/// These tests therefore target the observable state contract via `MaskedFieldState` — a small,
+/// These tests therefore target the observable state contract via `MaskedFieldState` - a small,
 /// testable value type that `MaskedFieldView` owns as `@State`.
 ///
 /// Acceptance criteria (FR-026, FR-027):

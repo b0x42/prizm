@@ -24,7 +24,7 @@ Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift.
 
 ## Why Prizm
 
-The official Bitwarden desktop app is built with Electron — a Chromium-based web wrapper. It works, but it doesn't feel like a Mac app.
+The official Bitwarden desktop app is built with Electron - a Chromium-based web wrapper. It works, but it doesn't feel like a Mac app.
 
 Prizm fills that gap: a fully native macOS client, built in SwiftUI, that connects to the same self-hosted Vaultwarden or Bitwarden server you already run. It looks and behaves like a real Mac app because it is one.
 
@@ -44,15 +44,15 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 
 ## Features
 
-- **Full vault management** — browse, create, edit, delete, and restore all item types (logins, cards, identities, secure notes, SSH keys) with Trash and favourites support
-- **Organisation & collection support** — view and manage items across organisations; collections shown as a collapsible tree in the sidebar with item counts; create, rename, and delete collections (admin/manager role); org items encrypted with RSA-unwrapped organisation keys
-- **Folder organization** — create, rename, and delete folders; nested subfolders via `/` naming convention with collapsible tree view; drag-and-drop items onto folders; folder-scoped search
-- **Built for power users** — ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / website, Option to reveal masked fields. [Full shortcut list](#shortcuts)
-- **File attachments** — upload, download, open, and delete encrypted file attachments on any vault item; drag-and-drop batch upload; two-layer AES-256-CBC + HMAC-SHA256 encryption with per-attachment keys
-- **Password & passphrase generator** — configurable length, character sets, and word separators
-- **Touch ID / Face ID unlock** — unlock your vault with biometrics; auto-prompts on lock; graceful re-enrollment when fingerprints change
-- **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
-- **Accessible** — VoiceOver labels and hints on all controls, keyboard navigable, respects Reduce Motion and Increase Contrast; targets WCAG 2.1 AA. See [ACCESSIBILITY.md](ACCESSIBILITY.md)
+- **Full vault management** - browse, create, edit, delete, and restore all item types (logins, cards, identities, secure notes, SSH keys) with Trash and favourites support
+- **Organisation & collection support** - view and manage items across organisations; collections shown as a collapsible tree in the sidebar with item counts; create, rename, and delete collections (admin/manager role); org items encrypted with RSA-unwrapped organisation keys
+- **Folder organization** - create, rename, and delete folders; nested subfolders via `/` naming convention with collapsible tree view; drag-and-drop items onto folders; folder-scoped search
+- **Built for power users** - ⌘F global search with match highlighting, ⌘N new item, ⌘L lock, one-keystroke copy for username / password / website, Option to reveal masked fields. [Full shortcut list](#shortcuts)
+- **File attachments** - upload, download, open, and delete encrypted file attachments on any vault item; drag-and-drop batch upload; two-layer AES-256-CBC + HMAC-SHA256 encryption with per-attachment keys
+- **Password & passphrase generator** - configurable length, character sets, and word separators
+- **Touch ID / Face ID unlock** - unlock your vault with biometrics; auto-prompts on lock; graceful re-enrollment when fingerprints change
+- **Auto-lock** - locks on sleep and screensaver; sync status always visible in the sidebar
+- **Accessible** - VoiceOver labels and hints on all controls, keyboard navigable, respects Reduce Motion and Increase Contrast; targets WCAG 2.1 AA. See [ACCESSIBILITY.md](ACCESSIBILITY.md)
 
 ## Install
 
@@ -76,7 +76,7 @@ brew install --cask prizm
 
 The app is not notarized. After downloading, right-click (Control-click) the `.app` and choose **Open**, then confirm. You only need to do this once. After that, you can open it normally.
 
-macOS will also show a **"Prizm wants to use your login keychain"** prompt on first launch — click **Allow**. This is expected for unsigned apps; Prizm uses it to store credentials securely.
+macOS will also show a **"Prizm wants to use your login keychain"** prompt on first launch - click **Allow**. This is expected for unsigned apps; Prizm uses it to store credentials securely.
 
 Alternatively, from Terminal:
 
@@ -98,14 +98,14 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full setup instructions, including how 
 
 ## Privacy & Security
 
-Prizm collects nothing. No telemetry, no analytics, no crash reporting, no usage data. There is no Prizm server — the app talks exclusively to your Vaultwarden or Bitwarden instance. Nothing leaves your server.
+Prizm collects nothing. No telemetry, no analytics, no crash reporting, no usage data. There is no Prizm server - the app talks exclusively to your Vaultwarden or Bitwarden instance. Nothing leaves your server.
 
 All cryptography runs locally on your device:
 
-- **Argon2id key derivation** (RFC 9106, memory-hard) — makes offline brute-force attacks computationally infeasible
-- **AES-256-CBC + HMAC-SHA256** authenticated encryption — all vault data stays encrypted in memory and in transit
-- **RSA-OAEP-SHA1 organisation key unwrapping** (Security.framework) — organisation symmetric keys are RSA-wrapped per member; Prizm unwraps them at sync time using your account's private key, following the Bitwarden protocol
-- **macOS Keychain** storage (device-only, `WhenUnlockedThisDeviceOnly`) — session keys never touch iCloud
+- **Argon2id key derivation** (RFC 9106, memory-hard) - makes offline brute-force attacks computationally infeasible
+- **AES-256-CBC + HMAC-SHA256** authenticated encryption - all vault data stays encrypted in memory and in transit
+- **RSA-OAEP-SHA1 organisation key unwrapping** (Security.framework) - organisation symmetric keys are RSA-wrapped per member; Prizm unwraps them at sync time using your account's private key, following the Bitwarden protocol
+- **macOS Keychain** storage (device-only, `WhenUnlockedThisDeviceOnly`) - session keys never touch iCloud
 
 The app is open source. Verify these claims by reading the code. See [SECURITY.md](SECURITY.md) for the full threat model, algorithm specifications, and what the app does not protect against. See [ACCESSIBILITY.md](ACCESSIBILITY.md) for the WCAG 2.1 conformance statement.
 
@@ -123,6 +123,7 @@ The app is open source. Verify these claims by reading the code. See [SECURITY.m
 | ⌥⇧⌘C | Copy website |
 | ⇧⌘Q | Sign out |
 | ⌥ (hold) | Reveal masked fields |
+| ⌘R | Toggle masked fields |
 
 Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts**. Add a rule for Prizm with the exact menu item name and your preferred key combination.
 
@@ -134,18 +135,18 @@ Any shortcut can be remapped in **System Settings → Keyboard → Keyboard Shor
 | Multiple accounts | Bitwarden cloud login | Browser auto-fill extension |
 | | | Full support for KDBX 4 (KeePass) |
 
-**Now** — actively in development. **Next** — planned for the following 3–6 months. **Later** — on the list with no fixed timeline.
+**Now** - actively in development. **Next** - planned for the following 3–6 months. **Later** - on the list with no fixed timeline.
 
-Want to shift something up the list? [Open an issue](https://github.com/b0x42/prizm/issues) — priorities are driven by user feedback.
+Want to shift something up the list? [Open an issue](https://github.com/b0x42/prizm/issues) - priorities are driven by user feedback.
 
 ## Known Limitations
 
-- **Not notarized** — The app is not signed with an Apple Developer ID. On first launch, right-click and choose Open to bypass Gatekeeper.
-- **No browser auto-fill** — There is no browser extension. Copy-paste is the current workflow.
-- **macOS 26 required** — The app uses SwiftUI features only available in macOS 26.
-- **Passkeys not supported** — SSH key items are viewable but passkey-based login is not implemented.
-- **No offline vault creation** — Creating or editing items requires an active server connection.
-- **Attachment size limit** — Files larger than 500 MB are rejected. Bitwarden-hosted servers require a premium subscription for attachments; Vaultwarden is unaffected.
+- **Not notarized** - The app is not signed with an Apple Developer ID. On first launch, right-click and choose Open to bypass Gatekeeper.
+- **No browser auto-fill** - There is no browser extension. Copy-paste is the current workflow.
+- **macOS 26 required** - The app uses SwiftUI features only available in macOS 26.
+- **Passkeys not supported** - SSH key items are viewable but passkey-based login is not implemented.
+- **No offline vault creation** - Creating or editing items requires an active server connection.
+- **Attachment size limit** - Files larger than 500 MB are rejected. Bitwarden-hosted servers require a premium subscription for attachments; Vaultwarden is unaffected.
 
 ## Contributing
 

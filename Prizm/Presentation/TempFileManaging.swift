@@ -5,7 +5,7 @@ import Foundation
 /// Protocol for managing the lifecycle of temporary files written during attachment open.
 ///
 /// Placed in the Presentation layer (not Domain) because it is an infrastructure concern
-/// driven by UI lifecycle events — not a business rule. `AttachmentRowViewModel` depends
+/// driven by UI lifecycle events - not a business rule. `AttachmentRowViewModel` depends
 /// on `any TempFileManaging` so it never imports the App-layer concrete type directly,
 /// keeping the Presentation layer clean (Constitution §II).
 ///
@@ -23,4 +23,8 @@ protocol TempFileManaging: AnyObject, Sendable {
     /// Called on each foreground transition and by a scheduled background task spawned
     /// by `AttachmentRowViewModel` 30 seconds after `register(url:)`.
     func cleanup()
+
+    /// Immediately zeroes and deletes every registered file.
+    /// Used when crossing an account or vault security boundary.
+    func cleanupAll()
 }

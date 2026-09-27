@@ -10,13 +10,13 @@ import Foundation
 /// it is preserved verbatim and decrypted on demand when a file operation
 /// (upload, download) is required.
 ///
-/// Value type — safe to pass across layers without defensive copying.
+/// Value type - safe to pass across layers without defensive copying.
 nonisolated struct Attachment: Identifiable, Equatable, Hashable {
     /// Server-assigned attachment ID.
     let id: String
     /// Plaintext file name (decrypted from EncString at sync time).
     let fileName: String
-    /// Per-attachment key wrapped as a type-2 EncString — NOT decrypted at
+    /// Per-attachment key wrapped as a type-2 EncString - NOT decrypted at
     /// rest in the domain entity. Decrypted on demand inside `AttachmentRepositoryImpl`
     /// when a download or upload operation is performed.
     let encryptedKey: String

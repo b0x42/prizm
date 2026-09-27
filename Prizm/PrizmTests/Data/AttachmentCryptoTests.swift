@@ -129,10 +129,10 @@ final class AttachmentCryptoTests: XCTestCase {
 
     // MARK: - 2.8 Known-Answer Tests (KATs)
 
-    /// NIST SP 800-38A Appendix F.2.5 — AES-256-CBC Encrypt
+    /// NIST SP 800-38A Appendix F.2.5 - AES-256-CBC Encrypt
     ///
     /// Test vector: https://csrc.nist.gov/publications/detail/sp/800-38a/final
-    /// Appendix F.2.5 — CBC-AES256.Encrypt
+    /// Appendix F.2.5 - CBC-AES256.Encrypt
     ///
     /// Key:        603deb1015ca71be2b73aef0857d7781
     ///             1f352c073b6108d72d9810a30914dff4
@@ -165,10 +165,10 @@ final class AttachmentCryptoTests: XCTestCase {
         // confirming our AES-256-CBC core matches the NIST spec.
         // Block 2 is AES_CBC_encrypt(padding_block XOR block1_ciphertext) with the NIST key.
         let pkcs7Ciphertext = Data([
-            // Block 1 — exactly matches NIST SP 800-38A F.2.5 ciphertext block 1
+            // Block 1 - exactly matches NIST SP 800-38A F.2.5 ciphertext block 1
             0xf5, 0x8c, 0x4c, 0x04, 0xd6, 0xe5, 0xf1, 0xba,
             0x77, 0x9e, 0xab, 0xfb, 0x5f, 0x7b, 0xfb, 0xd6,
-            // Block 2 — AES-CBC of the PKCS7 padding block (16 × 0x10) after block 1
+            // Block 2 - AES-CBC of the PKCS7 padding block (16 × 0x10) after block 1
             0x48, 0x5a, 0x5c, 0x81, 0x51, 0x9c, 0xf3, 0x78,
             0xfa, 0x36, 0xd4, 0x2b, 0x85, 0x47, 0xed, 0xc0
         ])
@@ -184,7 +184,7 @@ final class AttachmentCryptoTests: XCTestCase {
             "AES-256-CBC decryption must match NIST SP 800-38A Appendix F.2.5 test vector")
     }
 
-    /// RFC 4231 §4.2 — HMAC-SHA256 Test Case 1
+    /// RFC 4231 §4.2 - HMAC-SHA256 Test Case 1
     ///
     /// Source: https://www.rfc-editor.org/rfc/rfc4231#section-4.2
     /// Key:    0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b (20 bytes)
@@ -206,7 +206,7 @@ final class AttachmentCryptoTests: XCTestCase {
             "HMAC-SHA256 must match RFC 4231 §4.2 Test Case 1 vector")
     }
 
-    /// EncString type-2 KAT — round-trip with a fixed IV
+    /// EncString type-2 KAT - round-trip with a fixed IV
     ///
     /// Bitwarden EncString type-2 format: `"2.<base64(IV)>|<base64(ciphertext)>|<base64(HMAC)>"`
     /// Ref: Bitwarden Security Whitepaper §4 "Cipher String Types"
@@ -227,7 +227,7 @@ final class AttachmentCryptoTests: XCTestCase {
     /// by the NIST and RFC 4231 KATs in this file; this test validates the EncString
     /// assembly (format, parsing, and MAC coverage).
     func test_KAT_EncString_type2_roundTrip_fixedIV() throws {
-        // Source: Bitwarden Security Whitepaper §4 — type-2 EncString (AES-256-CBC + HMAC-SHA256)
+        // Source: Bitwarden Security Whitepaper §4 - type-2 EncString (AES-256-CBC + HMAC-SHA256)
         // https://bitwarden.com/images/resources/security-white-paper-download.pdf
         let cipherKey = CryptoKeys(
             encryptionKey: Data(repeating: 0xAA, count: 32),
@@ -263,7 +263,7 @@ final class AttachmentCryptoTests: XCTestCase {
         XCTAssertEqual(decrypted, plaintext, "EncString round-trip must recover original plaintext")
     }
 
-    /// RFC 4231 §4.6 — HMAC-SHA256 Test Case 5
+    /// RFC 4231 §4.6 - HMAC-SHA256 Test Case 5
     ///
     /// Source: https://www.rfc-editor.org/rfc/rfc4231#section-4.6
     /// Key:    0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c (20 bytes)

@@ -15,6 +15,25 @@ func optionalAnimation<Result>(
     }
 }
 
+/// Set to `true` by a floating layer (e.g. the search suggestions dropdown) so views
+/// underneath it stop reacting to `onHover`.
+///
+/// On macOS, `onHover` is not occluded by views drawn on top, so a hover over the
+/// dropdown also highlights the list row or field beneath it. Disabling hit testing on
+/// the whole split view would fix that too, but toggling `allowsHitTesting` on a subtree
+/// hosting AppKit-backed views (`List`, `HSplitView`) re-hosts them and shifted the
+/// item list under the sidebar. Suppressing hover through the environment is layout-neutral.
+struct HoverSuppressedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var isHoverSuppressed: Bool {
+        get { self[HoverSuppressedKey.self] }
+        set { self[HoverSuppressedKey.self] = newValue }
+    }
+}
+
 /// Reads the current Reduce Motion preference from the accessibility system.
 enum AccessibilityInfo {
     static var prefersReducedMotion: Bool {

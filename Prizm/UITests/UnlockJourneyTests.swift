@@ -8,7 +8,7 @@ import XCTest
 ///
 /// **Prerequisites**: A session must be stored (run LoginJourneyTests first or
 /// use `--ui-testing --inject-session` launch args to pre-seed a test session).
-/// **Success Criteria**: SC-002 — unlock-to-vault ≤5s.
+/// **Success Criteria**: SC-002 - unlock-to-vault ≤5s.
 final class UnlockJourneyTests: XCTestCase {
 
     private var app: XCUIApplication!
@@ -97,7 +97,7 @@ final class UnlockJourneyTests: XCTestCase {
             "Error message should appear for wrong password"
         )
 
-        // Should still be on the unlock screen — not redirected to login.
+        // Should still be on the unlock screen - not redirected to login.
         let header = app.staticTexts["unlock.headerTitle"]
         XCTAssertTrue(header.exists, "Should remain on unlock screen after wrong password")
     }

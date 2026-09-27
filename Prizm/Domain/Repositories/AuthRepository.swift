@@ -49,7 +49,7 @@ protocol AuthRepository: AnyObject {
     // MARK: - Unlock
 
     /// Re-derives the symmetric key from `masterPassword` using stored KDF params.
-    /// No network request is made — purely local crypto.
+    /// No network request is made - purely local crypto.
     ///
     /// - Security goal: `masterPassword` is `Data` so the caller can zero the bytes
     ///   after the call returns (Constitution §III).
@@ -59,17 +59,28 @@ protocol AuthRepository: AnyObject {
 
     // MARK: - Session
 
-    /// Returns the stored `Account` from Keychain, or nil if no session exists.
+    /// Returns every locally retained account profile.
+    func storedAccounts() -> [Account]
+
+    /// Returns the active account profile, or nil if no profile is selected.
+    func activeAccount() -> Account?
+
+    /// Selects a retained profile without unlocking its vault.
+    func activateAccount(profileId: UUID) async throws
+
+    /// Deletes one retained profile and its local credentials.
+    func removeAccount(profileId: UUID) async throws
+
+    /// Backwards-compatible alias for `activeAccount()`.
     func storedAccount() -> Account?
 
-    /// Clears all per-user Keychain keys and resets in-memory state.
-    /// Called on explicit sign-out. Triggers transition to blank `LoginView`.
+    /// Removes the active account profile and resets in-memory state.
     func signOut() async throws
 
     // MARK: - Lock
 
     /// Releases decrypted key material from `PrizmCryptoServiceImpl`.
-    /// Does NOT clear Keychain tokens — session survives lock/unlock.
+    /// Does NOT clear Keychain tokens - session survives lock/unlock.
     func lockVault() async
 
     // MARK: - Biometric unlock
@@ -80,8 +91,14 @@ protocol AuthRepository: AnyObject {
     var deviceBiometricCapable: Bool { get }
 
     /// Whether biometric unlock is available (enabled in preferences AND device supports biometrics).
-    /// Fast synchronous check suitable for UI binding — does NOT read the Keychain.
+    /// Fast synchronous check suitable for UI binding - does NOT read the Keychain.
     var biometricUnlockAvailable: Bool { get }
+
+    /// Whether the enrollment offer has already been handled for the active profile.
+    var biometricEnrollmentPromptShown: Bool { get }
+
+    /// Records enrollment-offer completion for the active profile.
+    func setBiometricEnrollmentPromptShown(_ shown: Bool)
 
     /// Stores the current vault symmetric key in a biometric-protected Keychain item.
     /// Requires the vault to be unlocked (keys in memory).
@@ -122,9 +139,9 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
     /// Biometric Keychain item was invalidated due to fingerprint enrollment change.
     case biometricInvalidated
     /// Biometric Keychain item was deleted externally (Keychain Access, reinstall, etc.).
-    /// Distinct from `biometricInvalidated` — no error is shown; the app silently falls back.
+    /// Distinct from `biometricInvalidated` - no error is shown; the app silently falls back.
     case biometricItemNotFound
-    /// Biometric unlock cannot be enabled — vault is locked (keys not in memory).
+    /// Biometric unlock cannot be enabled - vault is locked (keys not in memory).
     case biometricUnavailable
 
     var errorDescription: String? {
@@ -146,7 +163,7 @@ nonisolated enum AuthError: Error, LocalizedError, Equatable {
         case .biometricInvalidated:
             return "Your Touch ID settings have changed. Please enter your master password to continue."
         case .biometricItemNotFound:
-            // Intentionally nil — this error is handled silently in UnlockViewModel.
+            // Intentionally nil - this error is handled silently in UnlockViewModel.
             return nil
         case .biometricUnavailable:
             return "Biometric unlock is not available. Please unlock with your master password."

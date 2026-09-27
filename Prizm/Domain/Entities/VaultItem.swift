@@ -1,7 +1,7 @@
 import Foundation
 
 /// A fully-decrypted vault entry. Produced by `CipherMapper` from a `RawCipher`.
-/// Value type — safe to pass across layers without defensive copying.
+/// Value type - safe to pass across layers without defensive copying.
 nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
     let id: String
     let folderId: String?
@@ -62,6 +62,17 @@ nonisolated enum ItemContent: Equatable, Hashable {
     case card(CardContent)
     case identity(IdentityContent)
     case sshKey(SSHKeyContent)
+
+    func matchesItemType(_ type: ItemType) -> Bool {
+        switch (self, type) {
+        case (.login,      .login):      return true
+        case (.card,       .card):       return true
+        case (.identity,   .identity):   return true
+        case (.secureNote, .secureNote): return true
+        case (.sshKey,     .sshKey):     return true
+        default:                         return false
+        }
+    }
 }
 
 // MARK: - Login

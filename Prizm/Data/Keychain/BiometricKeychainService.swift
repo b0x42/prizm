@@ -5,7 +5,7 @@ import LocalAuthentication
 ///
 /// Separate from `KeychainService` because `kSecAccessControl` (used here for
 /// `.biometryCurrentSet`) and `kSecAttrAccessible` (used by `KeychainServiceImpl`)
-/// are mutually exclusive on the same SecItem — see design Decision 3.
+/// are mutually exclusive on the same SecItem - see design Decision 3.
 ///
 /// This is a Data-layer implementation detail consumed only by `AuthRepositoryImpl`.
 /// It MUST NOT be placed in the Domain layer (Constitution §II).
@@ -18,7 +18,7 @@ protocol BiometricKeychainService {
 
     /// Read and return the data stored for `key`, evaluating the biometric policy on
     /// the provided `context`. If `LAAuthenticationView` was paired with `context`
-    /// before this call, `evaluatePolicy` routes through that embedded view — no
+    /// before this call, `evaluatePolicy` routes through that embedded view - no
     /// system modal appears. On success the evaluated context is passed to
     /// `SecItemCopyMatching` via `kSecUseAuthenticationContext`.
     /// - Throws: `KeychainError.itemNotFound` if no item exists.

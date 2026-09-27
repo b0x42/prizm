@@ -6,7 +6,7 @@ import XCTest
 /// Biometric Keychain operations require `.biometryCurrentSet` access control,
 /// which cannot be exercised in CI (no enrolled biometrics). These tests use
 /// `useDataProtectionKeychain: false` to exercise the SecItem code paths without
-/// the biometric gate — the access control flag is tested manually (task 10.4).
+/// the biometric gate - the access control flag is tested manually (task 10.4).
 @MainActor
 final class BiometricKeychainServiceTests: XCTestCase {
 

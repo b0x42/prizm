@@ -40,6 +40,16 @@ final class AccessibilityLabelTests: XCTestCase {
         XCTAssertFalse(plus.label.isEmpty, "New Item button must have a non-empty label")
     }
 
+    func testAccountMenuExposesAccessibleCoreCommands() {
+        let accountMenu = app.menuBars.menuBarItems["Account"]
+        XCTAssertTrue(accountMenu.waitForExistence(timeout: 5))
+        accountMenu.click()
+
+        XCTAssertTrue(app.menuItems["Add Account…"].exists)
+        XCTAssertTrue(app.menuItems["Remove This Account…"].exists)
+        XCTAssertTrue(app.menuItems["Lock Vault"].exists)
+    }
+
     func testFavoriteStarHasLabel() throws {
         // Select the first item to make the detail toolbar appear.
         let firstRow = app.outlines.buttons.element(boundBy: 0)
@@ -48,7 +58,7 @@ final class AccessibilityLabelTests: XCTestCase {
         }
         firstRow.click()
 
-        // The favorite star is a toolbar button without a fixed identifier —
+        // The favorite star is a toolbar button without a fixed identifier -
         // look for a button whose label contains "Favorite" or "Unfavorite".
         let star = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'favorite'")).firstMatch
         XCTAssertTrue(star.waitForExistence(timeout: 5), "Favorite star must exist")

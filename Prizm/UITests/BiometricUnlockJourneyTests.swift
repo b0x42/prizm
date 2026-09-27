@@ -6,7 +6,7 @@ import XCTest
 /// cancellation fallback, and lockout message. Requires `--mock-biometrics`
 /// launch argument to simulate biometric availability.
 ///
-/// Touch ID is indicated by a badge on the lock icon and subtitle copy —
+/// Touch ID is indicated by a badge on the lock icon and subtitle copy -
 /// there is no separate Touch ID button (design Decision 2).
 final class BiometricUnlockJourneyTests: XCTestCase {
 

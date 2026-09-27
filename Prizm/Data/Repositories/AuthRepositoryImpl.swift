@@ -34,6 +34,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     // MARK: - Server configuration
 
     private(set) var serverEnvironment: ServerEnvironment?
+    private var sessionGeneration: UInt64 = 0
 
     // MARK: - Pending 2FA state
     // Set by loginWithPassword when the server requests 2FA; consumed by loginWithTOTP.
@@ -46,6 +47,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         // (Constitution §III). Swift ARC does not guarantee immediate deallocation on nil.
         var stretchedKeys: CryptoKeys
         let deviceId:      String
+        let sessionGeneration: UInt64
     }
     private var pendingTwoFactor: PendingTwoFactor?
 
@@ -61,6 +63,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         self.crypto    = crypto
         self.keychain  = keychain
         self.biometricKeychain = biometricKeychain
+        migrateLegacyAccountIfNeeded()
     }
 
     // MARK: - Server configuration
@@ -68,7 +71,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     func validateServerURL(_ urlString: String) throws {
         // Strip trailing slash for normalisation.
         let trimmed = urlString.hasSuffix("/") ? String(urlString.dropLast()) : urlString
-        // Only HTTPS is permitted — Constitution §III requires all vault communication
+        // Only HTTPS is permitted - Constitution §III requires all vault communication
         // to use TLS. Allowing http:// would expose the master password hash and tokens
         // to network interception even on "trusted" local networks.
         guard let url = URL(string: trimmed),
@@ -79,6 +82,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     }
 
     func setServerEnvironment(_ environment: ServerEnvironment) async throws {
+        sessionGeneration &+= 1
         serverEnvironment = environment
         await apiClient.setBaseURL(environment.base)
     }
@@ -90,6 +94,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         guard let env = serverEnvironment else {
             throw AuthError.serverUnreachable
         }
+        let generation = sessionGeneration
 
         // Step 1: Fetch KDF params.
         logger.info("Step 1: fetching KDF params for \(email, privacy: .private)")
@@ -99,7 +104,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             logger.debug("[debug] KDF params → type=\(String(describing: kdfParams.type), privacy: .public) iterations=\(kdfParams.iterations, privacy: .public) memory=\(kdfParams.memory.map(String.init) ?? "nil", privacy: .public) parallelism=\(kdfParams.parallelism.map(String.init) ?? "nil", privacy: .public)")
         }
 
-        // Step 2: Derive master key locally — never sent to server.
+        // Step 2: Derive master key locally - never sent to server.
         // `masterPassword` is `Data` so we can zero it after the KDF call (Constitution §III).
         logger.info("Step 2: deriving master key (KDF)")
         let masterKey  = try await crypto.makeMasterKey(
@@ -121,8 +126,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         // Step 4: Compute server authentication hash.
         // Per Bitwarden Security Whitepaper §4 + RFC 8018 §5.2 (PBKDF2):
         // A second PBKDF2 round is applied over the masterKey using the plaintext
-        // password as input, producing a value the server can verify without storing —
-        // or ever receiving — the raw master key. The master key never leaves the device.
+        // password as input, producing a value the server can verify without storing -
+        // or ever receiving - the raw master key. The master key never leaves the device.
         logger.info("Step 4: computing server authentication hash")
         let serverHash = try await crypto.makeServerHash(
             masterKey: masterKey,
@@ -153,7 +158,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
                     passwordHash:  serverHash,
                     kdfParams:     kdfParams,
                     stretchedKeys: stretched,
-                    deviceId:      deviceId
+                    deviceId:      deviceId,
+                    sessionGeneration: generation
                 )
                 logger.info("2FA required")
                 return .requiresTwoFactor(twoFactorMethod(from: providers))
@@ -173,7 +179,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
                 passwordHash:  serverHash,
                 kdfParams:     kdfParams,
                 stretchedKeys: stretched,
-                deviceId:      deviceId
+                deviceId:      deviceId,
+                sessionGeneration: generation
             )
             logger.info("2FA required")
             return .requiresTwoFactor(twoFactorMethod(from: providers))
@@ -187,7 +194,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         let account = try await finalizeSession(
             tokenResp:    tokenResp,
             stretched:    stretched,
-            environment:  env
+            environment:  env,
+            generation: generation
         )
         logger.info("Login succeeded")
         return .success(account)
@@ -196,7 +204,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     func loginWithTOTP(code: String, rememberDevice: Bool) async throws -> Account {
         logger.info("Submitting TOTP code")
         guard let pending = pendingTwoFactor,
-              let env     = serverEnvironment else {
+              let env     = serverEnvironment,
+              pending.sessionGeneration == sessionGeneration else {
             throw AuthError.invalidCredentials
         }
 
@@ -229,7 +238,8 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         return try await finalizeSession(
             tokenResp:   tokenResp,
             stretched:   pending.stretchedKeys,
-            environment: env
+            environment: env,
+            generation: pending.sessionGeneration
         )
     }
 
@@ -237,49 +247,35 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
 
     func cancelTwoFactor() {
         // Explicitly zero the stretched key buffers before releasing the struct.
-        // Setting pendingTwoFactor = nil alone does not guarantee immediate deallocation —
+        // Setting pendingTwoFactor = nil alone does not guarantee immediate deallocation -
         // ARC may defer it. Zeroing the Data buffers in-place reduces the window during
         // which derived key material lives in the heap (Constitution §III).
-        // Note: passwordHash (String) cannot be zeroed — String storage is immutable.
-        // `pendingTwoFactor!` is used for the mutations rather than the local `pending`
-        // copy produced by `if let` — zeroing `pending` would only zero the copy's CoW
-        // buffer, not the stored struct's. In-place mutation through `pendingTwoFactor!`
-        // is safe here because we verified non-nil one line above.
-        if let pending = pendingTwoFactor {
-            pendingTwoFactor!.stretchedKeys.encryptionKey.resetBytes(
-                in: 0..<pending.stretchedKeys.encryptionKey.count
+        // Note: passwordHash (String) cannot be zeroed - String storage is immutable.
+        // The optional releases its reference before the local buffers are mutated.
+        // This avoids Data corruption through Optional's nested _modify accessor.
+        if var pending = pendingTwoFactor {
+            pendingTwoFactor = nil
+            pending.stretchedKeys.encryptionKey.resetBytes(
+                in: pending.stretchedKeys.encryptionKey.indices
             )
-            pendingTwoFactor!.stretchedKeys.macKey.resetBytes(
-                in: 0..<pending.stretchedKeys.macKey.count
+            pending.stretchedKeys.macKey.resetBytes(
+                in: pending.stretchedKeys.macKey.indices
             )
         }
-        pendingTwoFactor = nil
-        logger.info("Pending 2FA state cleared — stretched keys zeroed")
+        logger.info("Pending 2FA state cleared - stretched keys zeroed")
     }
 
     func unlockWithPassword(_ masterPassword: Data) async throws -> Account {
         logger.info("Unlock attempt")
-        let userId: String
-        do {
-            userId = try readString(key: KeychainKey.activeUserId)
-        } catch {
-            logger.error("No active user ID in Keychain: \(error.localizedDescription, privacy: .public)")
+        guard let restoredAccount = activeAccount() else {
+            logger.error("No active account profile in Keychain")
             throw AuthError.invalidCredentials
         }
+        let profileId = restoredAccount.profileId
+        let generation = sessionGeneration
 
-        // Read account data (email, name, serverEnvironment) once via account(for:).
-        // Previously email was also read directly below for use in makeMasterKey, producing
-        // a duplicate read. Now account(for:) is called first and email is reused from it.
-        let restoredAccount: Account
-        do {
-            restoredAccount = try account(for: userId)
-        } catch {
-            logger.error("Missing session data in Keychain: \(error.localizedDescription, privacy: .public)")
-            throw AuthError.invalidCredentials
-        }
-
-        let kdfKey    = KeychainKey.user(userId, "kdfParams")
-        let encKeyKey = KeychainKey.user(userId, "encUserKey")
+        let kdfKey    = KeychainKey.profile(profileId, "kdfParams")
+        let encKeyKey = KeychainKey.profile(profileId, "encUserKey")
 
         let kdfJSON: String
         let encUserKey: String
@@ -313,120 +309,169 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             kdf:      kdfParams
         )
         let stretched  = try await crypto.stretchKey(masterKey: masterKey)
-        let vaultKeys  = try await crypto.decryptSymmetricKey(
-            encUserKey:    encUserKey,
-            stretchedKeys: stretched
-        )
+        let vaultKeys: CryptoKeys
+        do {
+            vaultKeys = try await crypto.decryptSymmetricKey(
+                encUserKey:    encUserKey,
+                stretchedKeys: stretched
+            )
+        } catch PrizmCryptoServiceError.invalidEncUserKey {
+            // A wrong password derives valid-looking keys, but authentication of the
+            // encrypted user key fails. Keep that crypto detail inside the Data layer.
+            logger.error("Unlock rejected: encrypted user key authentication failed")
+            throw AuthError.invalidCredentials
+        } catch PrizmCryptoServiceError.invalidSymmetricKeyLength {
+            logger.error("Unlock rejected: decrypted user key has an invalid length")
+            throw AuthError.invalidCredentials
+        }
+        try ensureCurrentGeneration(generation)
         await crypto.unlockWith(keys: vaultKeys)
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await crypto.lockVault()
+            throw error
+        }
 
         // Restore API client state so the post-unlock sync can make authenticated requests.
         // Both baseURL and accessToken are nil on a fresh app launch until restored here.
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        let storedAccessToken = try? readString(key: KeychainKey.profile(profileId, "accessToken"))
+        await apiClient.activateSession(
+            baseURL: restoredAccount.serverEnvironment.base,
+            accessToken: storedAccessToken
+        )
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await apiClient.invalidateSession()
+            await crypto.lockVault()
+            throw error
+        }
 
-        if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
-            await apiClient.setAccessToken(accessToken)
+        if storedAccessToken != nil {
             if DebugConfig.isEnabled {
                 logger.debug("[debug] unlock: baseURL and access token restored to API client")
             }
 
             // The stored access token may be expired. Attempt a refresh using the stored
             // refresh token so the post-unlock sync doesn't fail with 401.
-            let refreshTokenOpt = try? readString(key: KeychainKey.user(userId, "refreshToken"))
+            let refreshTokenOpt = try? readString(key: KeychainKey.profile(profileId, "refreshToken"))
             if refreshTokenOpt == nil {
-                logger.debug("Unlock: no refresh token in Keychain — skipping token refresh")
+                logger.debug("Unlock: no refresh token in Keychain - skipping token refresh")
             }
             if let refreshToken = refreshTokenOpt {
                 do {
                     let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
+                    try ensureCurrentGeneration(generation)
                     do {
-                        try writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                        try writeString(tokens.accessToken, key: KeychainKey.profile(profileId, "accessToken"))
                         if let newRefresh = tokens.refreshToken {
-                            try writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                            try writeString(newRefresh, key: KeychainKey.profile(profileId, "refreshToken"))
                         }
                     } catch {
-                        // Persisting the refreshed token failed — the next launch will use
+                        // Persisting the refreshed token failed - the next launch will use
                         // the old (expired) token and the user may be signed out unexpectedly.
-                        logger.error("Unlock: failed to persist refreshed tokens — next launch may require re-auth: \(error.localizedDescription, privacy: .public)")
+                        logger.error("Unlock: failed to persist refreshed tokens - next launch may require re-auth: \(error.localizedDescription, privacy: .public)")
                     }
                     if DebugConfig.isEnabled {
                         logger.debug("[debug] unlock: access token refreshed successfully")
                     }
+                } catch APIError.sessionInvalidated {
+                    await crypto.lockVault()
+                    throw APIError.sessionInvalidated
                 } catch {
-                    // Refresh failed — keep the old token; sync will fail with 401 (non-fatal).
-                    logger.warning("Unlock: token refresh failed — sync may fail: \(error.localizedDescription, privacy: .public)")
+                    // Refresh failed - keep the old token; sync will fail with 401 (non-fatal).
+                    logger.warning("Unlock: token refresh failed - sync may fail: \(error.localizedDescription, privacy: .public)")
                 }
             }
         } else {
-            logger.error("Unlock: access token not found in Keychain — sync will fail with 401")
+            logger.error("Unlock: access token not found in Keychain - sync will fail with 401")
         }
 
+        try ensureCurrentGeneration(generation)
         logger.info("Unlock succeeded")
         return restoredAccount
     }
 
     // MARK: - Session
 
+    func storedAccounts() -> [Account] {
+        migrateLegacyAccountIfNeeded()
+        guard let data = try? keychain.read(key: KeychainKey.accountsIndex),
+              let accounts = try? JSONDecoder().decode([Account].self, from: data) else {
+            return []
+        }
+        return accounts
+    }
+
+    func activeAccount() -> Account? {
+        migrateLegacyAccountIfNeeded()
+        guard let rawId = try? readString(key: KeychainKey.activeProfileId),
+              let profileId = UUID(uuidString: rawId) else {
+            return nil
+        }
+        return storedAccounts().first { $0.profileId == profileId }
+    }
+
     func storedAccount() -> Account? {
-        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
-            logger.debug("No stored account — activeUserId not found")
-            return nil
+        activeAccount()
+    }
+
+    func activateAccount(profileId: UUID) async throws {
+        guard let account = storedAccounts().first(where: { $0.profileId == profileId }) else {
+            throw AuthError.invalidCredentials
         }
-        do {
-            return try account(for: userId)
-        } catch {
-            logger.error("Failed to reconstruct account for stored userId: \(error.localizedDescription, privacy: .public)")
-            return nil
+
+        sessionGeneration &+= 1
+        // Selection alone must not restore a bearer token. Network access is activated
+        // only after password or biometric unlock succeeds for the target profile.
+        await apiClient.invalidateSession()
+        try writeString(profileId.uuidString, key: KeychainKey.activeProfileId)
+        serverEnvironment = account.serverEnvironment
+        cancelTwoFactor()
+        logger.info("Account profile activated")
+    }
+
+    func removeAccount(profileId: UUID) async throws {
+        var accounts = storedAccounts()
+        guard accounts.contains(where: { $0.profileId == profileId }) else { return }
+        let wasActive = activeAccount()?.profileId == profileId
+
+        try? biometricKeychain.deleteBiometric(key: KeychainKey.biometricVaultKey(profileId))
+        for suffix in KeychainKey.profileSecretSuffixes {
+            try keychain.delete(key: KeychainKey.profile(profileId, suffix))
         }
+        accounts.removeAll { $0.profileId == profileId }
+        try persistAccounts(accounts)
+
+        if wasActive {
+            if let replacement = accounts.first {
+                try await activateAccount(profileId: replacement.profileId)
+            } else {
+                try keychain.delete(key: KeychainKey.activeProfileId)
+                await apiClient.invalidateSession()
+                serverEnvironment = nil
+            }
+        }
+        UserDefaults.standard.removeObject(forKey: PreferenceKey.biometricEnabled(profileId))
+        UserDefaults.standard.removeObject(forKey: PreferenceKey.biometricPromptShown(profileId))
+        logger.info("Account profile removed")
     }
 
     func signOut() async throws {
-        logger.info("Signing out — clearing session data")
-        let userId: String
-        do {
-            userId = try readString(key: KeychainKey.activeUserId)
-        } catch {
-            logger.debug("No active userId during sign-out (may already be cleared)")
-            userId = ""
-        }
-
-        // Clear biometric Keychain item and preference before clearing other keys.
-        try? await disableBiometricUnlock()
-
-        // Clear per-user keys first — best-effort, log failures.
-        if !userId.isEmpty {
-            for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
-                           "email", "name", "serverEnvironment"] {
-                do {
-                    try keychain.delete(key: KeychainKey.user(userId, suffix))
-                } catch {
-                    logger.debug("Keychain delete \(suffix) skipped: \(error.localizedDescription, privacy: .public)")
-                }
-            }
-        }
-        // Clear global key last.
-        do {
-            try keychain.delete(key: KeychainKey.activeUserId)
-        } catch {
-            logger.debug("activeUserId delete skipped: \(error.localizedDescription, privacy: .public)")
-        }
-
-        // Use self.lockVault() rather than crypto.lockVault() directly so that the
-        // .vaultDidLock notification is posted — ItemEditViewModel observes it to
-        // dismiss any open edit sheet and clear the plaintext DraftVaultItem (§III).
+        logger.info("Signing out active account")
+        let profileId = activeAccount()?.profileId
         await lockVault()
-
-        // Clear the bearer token from the API client's memory so it cannot be read
-        // from a heap dump after sign-out (Constitution §III).
-        await apiClient.clearAccessToken()
-
-        serverEnvironment = nil
-        pendingTwoFactor  = nil
+        if let profileId {
+            try await removeAccount(profileId: profileId)
+        }
     }
 
     // MARK: - Lock
 
     func lockVault() async {
+        sessionGeneration &+= 1
         await crypto.lockVault()
         // Notify any open edit sheets to dismiss immediately (no confirmation prompt).
         // Posted on the main queue because subscribers are @MainActor UI components.
@@ -442,74 +487,76 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     }
 
     var biometricUnlockAvailable: Bool {
-        // Fast synchronous check for UI binding (design Decision 5).
-        // Actual Keychain item existence is verified only inside unlockWithBiometrics().
-        UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
+        guard let profileId = activeAccount()?.profileId else { return false }
+        return UserDefaults.standard.bool(forKey: PreferenceKey.biometricEnabled(profileId))
             && LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
     }
 
+    var biometricEnrollmentPromptShown: Bool {
+        guard let profileId = activeAccount()?.profileId else { return false }
+        return UserDefaults.standard.bool(forKey: PreferenceKey.biometricPromptShown(profileId))
+    }
+
+    func setBiometricEnrollmentPromptShown(_ shown: Bool) {
+        guard let profileId = activeAccount()?.profileId else { return }
+        UserDefaults.standard.set(shown, forKey: PreferenceKey.biometricPromptShown(profileId))
+    }
+
     func enableBiometricUnlock() async throws {
-        // Guard: vault must be unlocked — keys must be in memory (spec requirement).
+        // Guard: vault must be unlocked - keys must be in memory (spec requirement).
         guard await crypto.isUnlocked else {
             throw AuthError.biometricUnavailable
         }
         let keys = try await crypto.currentKeys()
         let data = keys.toData()
-        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
+        guard let profileId = activeAccount()?.profileId else {
             throw AuthError.biometricUnavailable
         }
         try biometricKeychain.writeBiometric(
             data: data,
-            key: KeychainKey.biometricVaultKey(userId)
+            key: KeychainKey.biometricVaultKey(profileId)
         )
-        UserDefaults.standard.set(true, forKey: "biometricUnlockEnabled")
+        UserDefaults.standard.set(true, forKey: PreferenceKey.biometricEnabled(profileId))
         logger.info("Biometric unlock enabled")
     }
 
     func disableBiometricUnlock() async throws {
-        if let userId = try? readString(key: KeychainKey.activeUserId) {
-            try? biometricKeychain.deleteBiometric(key: KeychainKey.biometricVaultKey(userId))
+        if let profileId = activeAccount()?.profileId {
+            try? biometricKeychain.deleteBiometric(key: KeychainKey.biometricVaultKey(profileId))
+            UserDefaults.standard.set(false, forKey: PreferenceKey.biometricEnabled(profileId))
         }
-        UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
         logger.info("Biometric unlock disabled")
     }
 
     func unlockWithBiometrics() async throws -> Account {
         logger.info("Biometric unlock attempt")
-        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
+        guard let restoredAccount = activeAccount() else {
             throw AuthError.biometricUnavailable
         }
+        let profileId = restoredAccount.profileId
+        let generation = sessionGeneration
 
-        let restoredAccount: Account
-        do {
-            restoredAccount = try account(for: userId)
-        } catch {
-            logger.error("Missing session data for biometric unlock: \(error.localizedDescription, privacy: .public)")
-            throw AuthError.biometricUnavailable
-        }
-
-        // Read the biometric Keychain item — evaluatePolicy runs inside readBiometric,
+        // Read the biometric Keychain item - evaluatePolicy runs inside readBiometric,
         // producing the inline Touch ID prompt (no security-agent modal).
         let keyData: Data
         do {
             keyData = try await biometricKeychain.readBiometric(
-                key: KeychainKey.biometricVaultKey(userId)
+                key: KeychainKey.biometricVaultKey(profileId)
             )
         } catch let error as KeychainError where error == .itemNotFound {
-            // Keychain item deleted externally (Keychain Access, reinstall, etc.) —
+            // Keychain item deleted externally (Keychain Access, reinstall, etc.) -
             // NOT a fingerprint-change. Degrade silently: clear the flag and reset
             // the enrollment gate so re-enrollment is offered after next password unlock.
             // UnlockViewModel must NOT show an error for this case (spec §degradation).
-            UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
-            UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
+            clearBiometricPreferences(profileId: profileId)
             throw AuthError.biometricItemNotFound
         } catch let laError as LAError {
             switch laError.code {
             case .userCancel, .systemCancel, .appCancel:
-                // User cancelled — rethrow as errSecUserCanceled so UnlockViewModel re-arms.
+                // User cancelled - rethrow as errSecUserCanceled so UnlockViewModel re-arms.
                 throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecUserCanceled))
             default:
-                // Lockout or other LAError — surface error without clearing stored key.
+                // Lockout or other LAError - surface error without clearing stored key.
                 throw laError
             }
         } catch {
@@ -522,8 +569,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
                     throw error
                 }
             }
-            UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
-            UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
+            clearBiometricPreferences(profileId: profileId)
             throw AuthError.biometricInvalidated
         }
 
@@ -533,28 +579,50 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             throw AuthError.biometricUnavailable
         }
 
+        try ensureCurrentGeneration(generation)
         await crypto.unlockWith(keys: vaultKeys)
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await crypto.lockVault()
+            throw error
+        }
 
-        // Restore API client state — same as unlockWithPassword().
+        // Restore API client state - same as unlockWithPassword().
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        let storedAccessToken = try? readString(key: KeychainKey.profile(profileId, "accessToken"))
+        await apiClient.activateSession(
+            baseURL: restoredAccount.serverEnvironment.base,
+            accessToken: storedAccessToken
+        )
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await apiClient.invalidateSession()
+            await crypto.lockVault()
+            throw error
+        }
 
-        if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
-            await apiClient.setAccessToken(accessToken)
+        if storedAccessToken != nil {
 
-            if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
+            if let refreshToken = try? readString(key: KeychainKey.profile(profileId, "refreshToken")) {
                 do {
                     let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
-                    try? writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                    try ensureCurrentGeneration(generation)
+                    try? writeString(tokens.accessToken, key: KeychainKey.profile(profileId, "accessToken"))
                     if let newRefresh = tokens.refreshToken {
-                        try? writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                        try? writeString(newRefresh, key: KeychainKey.profile(profileId, "refreshToken"))
                     }
+                } catch APIError.sessionInvalidated {
+                    await crypto.lockVault()
+                    throw APIError.sessionInvalidated
                 } catch {
-                    logger.warning("Biometric unlock: token refresh failed — sync may fail: \(error.localizedDescription, privacy: .public)")
+                    logger.warning("Biometric unlock: token refresh failed - sync may fail: \(error.localizedDescription, privacy: .public)")
                 }
             }
         }
 
+        try ensureCurrentGeneration(generation)
         logger.info("Biometric unlock succeeded")
         return restoredAccount
     }
@@ -563,36 +631,29 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
 
     /// Evaluates biometric policy on `context` then reads the vault key and unlocks.
     /// If `LAAuthenticationView` was paired with `context` before this call (via
-    /// `EmbeddedTouchIDView`), `evaluatePolicy` routes inline — no modal appears.
+    /// `EmbeddedTouchIDView`), `evaluatePolicy` routes inline - no modal appears.
     func unlockWithBiometrics(context: LAContext) async throws -> Account {
         logger.info("Embedded biometric unlock attempt")
-        guard let userId = try? readString(key: KeychainKey.activeUserId) else {
+        guard let restoredAccount = activeAccount() else {
             throw AuthError.biometricUnavailable
         }
-
-        let restoredAccount: Account
-        do {
-            restoredAccount = try account(for: userId)
-        } catch {
-            logger.error("Missing session data for embedded biometric unlock: \(error.localizedDescription, privacy: .public)")
-            throw AuthError.biometricUnavailable
-        }
+        let profileId = restoredAccount.profileId
+        let generation = sessionGeneration
 
         // readBiometric(key:context:) calls evaluatePolicy on the provided context.
         // Because LAAuthenticationView is paired with it, no modal appears.
         let keyData: Data
         do {
             keyData = try await biometricKeychain.readBiometric(
-                key: KeychainKey.biometricVaultKey(userId),
+                key: KeychainKey.biometricVaultKey(profileId),
                 context: context
             )
         } catch let error as KeychainError where error == .itemNotFound {
             // Same silent-degradation path as the non-embedded overload above.
-            UserDefaults.standard.set(false, forKey: "biometricUnlockEnabled")
-            UserDefaults.standard.set(false, forKey: "biometricEnrollmentPromptShown")
+            clearBiometricPreferences(profileId: profileId)
             throw AuthError.biometricItemNotFound
         } catch {
-            // Let LAError (cancel, lockout) propagate — caller handles re-arming.
+            // Let LAError (cancel, lockout) propagate - caller handles re-arming.
             throw error
         }
 
@@ -601,25 +662,47 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             throw AuthError.biometricUnavailable
         }
 
+        try ensureCurrentGeneration(generation)
         await crypto.unlockWith(keys: vaultKeys)
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await crypto.lockVault()
+            throw error
+        }
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        let storedAccessToken = try? readString(key: KeychainKey.profile(profileId, "accessToken"))
+        await apiClient.activateSession(
+            baseURL: restoredAccount.serverEnvironment.base,
+            accessToken: storedAccessToken
+        )
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await apiClient.invalidateSession()
+            await crypto.lockVault()
+            throw error
+        }
 
-        if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
-            await apiClient.setAccessToken(accessToken)
-            if let refreshToken = try? readString(key: KeychainKey.user(userId, "refreshToken")) {
+        if storedAccessToken != nil {
+            if let refreshToken = try? readString(key: KeychainKey.profile(profileId, "refreshToken")) {
                 do {
                     let tokens = try await apiClient.refreshAccessToken(refreshToken: refreshToken)
-                    try? writeString(tokens.accessToken, key: KeychainKey.user(userId, "accessToken"))
+                    try ensureCurrentGeneration(generation)
+                    try? writeString(tokens.accessToken, key: KeychainKey.profile(profileId, "accessToken"))
                     if let newRefresh = tokens.refreshToken {
-                        try? writeString(newRefresh, key: KeychainKey.user(userId, "refreshToken"))
+                        try? writeString(newRefresh, key: KeychainKey.profile(profileId, "refreshToken"))
                     }
+                } catch APIError.sessionInvalidated {
+                    await crypto.lockVault()
+                    throw APIError.sessionInvalidated
                 } catch {
                     logger.warning("Embedded biometric: token refresh failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
         }
 
+        try ensureCurrentGeneration(generation)
         logger.info("Embedded biometric unlock succeeded")
         return restoredAccount
     }
@@ -630,16 +713,18 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     private func finalizeSession(
         tokenResp:   TokenResponse,
         stretched:   CryptoKeys,
-        environment: ServerEnvironment
+        environment: ServerEnvironment,
+        generation: UInt64
     ) async throws -> Account {
+        try ensureCurrentGeneration(generation)
         // Vaultwarden omits UserId/Email from the token response body (unlike the official
         // Bitwarden server, which includes them as PascalCase fields). Extract identity from
         // JWT claims instead: sub → userId, email → email, name → display name.
         // Trust model: the JWT was just issued by the user's own configured server over HTTPS
-        // and is only used to read their own identity — not to make authorization decisions.
+        // and is only used to read their own identity - not to make authorization decisions.
         // A malicious server could falsify these claims, but trusting the chosen server is
         // an explicit prerequisite of self-hosting. Signature verification is skipped for
-        // this reason — see decodeJWTClaims for the full rationale.
+        // this reason - see decodeJWTClaims for the full rationale.
         let jwtClaims = decodeJWTClaims(tokenResp.accessToken)
         let userId = tokenResp.userId ?? jwtClaims["sub"] as? String
         let email  = tokenResp.email  ?? jwtClaims["email"] as? String
@@ -655,7 +740,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
               let encKey       = tokenResp.key,
               let accessToken  = tokenResp.accessToken.isEmpty ? nil : tokenResp.accessToken,
               let refreshToken = tokenResp.refreshToken else {
-            logger.error("finalizeSession: missing required fields — userId=\(userId != nil, privacy: .public) email=\(email != nil, privacy: .public) key=\(tokenResp.key != nil, privacy: .public) accessTokenNonEmpty=\(!tokenResp.accessToken.isEmpty, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
+            logger.error("finalizeSession: missing required fields - userId=\(userId != nil, privacy: .public) email=\(email != nil, privacy: .public) key=\(tokenResp.key != nil, privacy: .public) accessTokenNonEmpty=\(!tokenResp.accessToken.isEmpty, privacy: .public) refreshToken=\(tokenResp.refreshToken != nil, privacy: .public)")
             throw AuthError.invalidCredentials
         }
         logger.info("Session finalized for user \(userId, privacy: .private)")
@@ -668,41 +753,72 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             encUserKey:    encKey,
             stretchedKeys: stretched
         )
+        try ensureCurrentGeneration(generation)
         if DebugConfig.isEnabled {
-            logger.debug("[debug] vault keys decrypted — encKey=\(vaultKeys.encryptionKey.count, privacy: .public) bytes, macKey=\(vaultKeys.macKey.count, privacy: .public) bytes")
+            logger.debug("[debug] vault keys decrypted - encKey=\(vaultKeys.encryptionKey.count, privacy: .public) bytes, macKey=\(vaultKeys.macKey.count, privacy: .public) bytes")
         }
         await crypto.unlockWith(keys: vaultKeys)
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await crypto.lockVault()
+            throw error
+        }
 
-        // Persist session data in Keychain.
-        try writeString(userId,       key: KeychainKey.activeUserId)
-        try writeString(accessToken,  key: KeychainKey.user(userId, "accessToken"))
-        try writeString(refreshToken, key: KeychainKey.user(userId, "refreshToken"))
-        try writeString(encKey,       key: KeychainKey.user(userId, "encUserKey"))
-        try writeString(email,        key: KeychainKey.user(userId, "email"))
+        var accounts = storedAccounts()
+        let profileId = accounts.first {
+            $0.userId == userId
+                && canonicalOrigin($0.serverEnvironment.base) == canonicalOrigin(environment.base)
+        }?.profileId ?? UUID()
+        let account = Account(
+            profileId: profileId,
+            userId: userId,
+            email: email,
+            name: name,
+            serverEnvironment: environment
+        )
+
+        // Persist session data under the local profile identity. This prevents remote
+        // user IDs from colliding across independent self-hosted instances.
+        try writeString(accessToken,  key: KeychainKey.profile(profileId, "accessToken"))
+        try writeString(refreshToken, key: KeychainKey.profile(profileId, "refreshToken"))
+        try writeString(encKey,       key: KeychainKey.profile(profileId, "encUserKey"))
+        try writeString(email,        key: KeychainKey.profile(profileId, "email"))
         if let name {
-            try writeString(name,     key: KeychainKey.user(userId, "name"))
+            try writeString(name,     key: KeychainKey.profile(profileId, "name"))
         }
 
         // Persist KDF params for offline unlock.
         let kdfJSON = try JSONEncoder().encode(tokenResp.kdfParams(environment: environment))
-        try keychain.write(data: kdfJSON, key: KeychainKey.user(userId, "kdfParams"))
+        try keychain.write(data: kdfJSON, key: KeychainKey.profile(profileId, "kdfParams"))
 
         // Persist server environment for unlock.
         let envJSON = try JSONEncoder().encode(environment)
-        try keychain.write(data: envJSON, key: KeychainKey.user(userId, "serverEnvironment"))
+        try keychain.write(data: envJSON, key: KeychainKey.profile(profileId, "serverEnvironment"))
 
-        await apiClient.setAccessToken(accessToken)
+        if let index = accounts.firstIndex(where: { $0.profileId == profileId }) {
+            accounts[index] = account
+        } else {
+            accounts.append(account)
+        }
+        try persistAccounts(accounts)
+        try writeString(profileId.uuidString, key: KeychainKey.activeProfileId)
+        try writeString(String(KeychainKey.currentSchemaVersion), key: KeychainKey.schemaVersion)
 
-        return Account(
-            userId:            userId,
-            email:             email,
-            name:              name,
-            serverEnvironment: environment
-        )
+        await apiClient.activateSession(baseURL: environment.base, accessToken: accessToken)
+        do {
+            try ensureCurrentGeneration(generation)
+        } catch {
+            await apiClient.invalidateSession()
+            await crypto.lockVault()
+            throw error
+        }
+
+        return account
     }
 
-    /// Reconstructs an `Account` from Keychain data for a known `userId`.
-    private func account(for userId: String) throws -> Account {
+    /// Reconstructs the legacy single-account record before profile migration.
+    private func legacyAccount(for userId: String, profileId: UUID) throws -> Account {
         let email = try readString(key: KeychainKey.user(userId, "email"))
         let name  = try? readString(key: KeychainKey.user(userId, "name"))
         let envData = try keychain.read(key: KeychainKey.user(userId, "serverEnvironment"))
@@ -714,7 +830,134 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             logger.error("Server environment decode failed: \(error.localizedDescription, privacy: .public)")
             throw AuthError.invalidCredentials
         }
-        return Account(userId: userId, email: email, name: name, serverEnvironment: env)
+        return Account(
+            profileId: profileId,
+            userId: userId,
+            email: email,
+            name: name,
+            serverEnvironment: env
+        )
+    }
+
+    private func persistAccounts(_ accounts: [Account]) throws {
+        try keychain.write(data: JSONEncoder().encode(accounts), key: KeychainKey.accountsIndex)
+    }
+
+    /// Migrates the sole legacy profile using a write-verify-delete sequence. Re-running
+    /// after interruption is safe because an existing account index is authoritative.
+    private func migrateLegacyAccountIfNeeded() {
+        if let data = try? keychain.read(key: KeychainKey.accountsIndex),
+           let accounts = try? JSONDecoder().decode([Account].self, from: data) {
+            if (try? keychain.read(key: KeychainKey.activeProfileId)) == nil,
+               let first = accounts.first {
+                try? writeString(first.profileId.uuidString, key: KeychainKey.activeProfileId)
+            }
+            if let legacyUserId = try? readString(key: KeychainKey.activeUserId) {
+                cleanupLegacyAccount(userId: legacyUserId)
+            }
+            return
+        }
+        guard let userId = try? readString(key: KeychainKey.activeUserId) else { return }
+
+        let profileId = UUID()
+        do {
+            let account = try legacyAccount(for: userId, profileId: profileId)
+            for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams"] {
+                let oldKey = KeychainKey.user(userId, suffix)
+                if let data = try? keychain.read(key: oldKey) {
+                    try keychain.write(data: data, key: KeychainKey.profile(profileId, suffix))
+                }
+            }
+            try writeString(account.email, key: KeychainKey.profile(profileId, "email"))
+            if let name = account.name {
+                try writeString(name, key: KeychainKey.profile(profileId, "name"))
+            }
+            try keychain.write(
+                data: JSONEncoder().encode(account.serverEnvironment),
+                key: KeychainKey.profile(profileId, "serverEnvironment")
+            )
+            try persistAccounts([account])
+            try writeString(profileId.uuidString, key: KeychainKey.activeProfileId)
+
+            // Verify the durable registry before removing legacy records.
+            guard activeAccountWithoutMigration()?.profileId == profileId else {
+                throw KeychainError.invalidData
+            }
+            cleanupLegacyAccount(userId: userId)
+            logger.info("Legacy account migrated to profile storage")
+        } catch {
+            logger.error("Legacy account migration failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// The legacy active-user key doubles as a durable cleanup marker. It is removed
+    /// only after every old credential has been deleted, so interrupted cleanup retries.
+    private func cleanupLegacyAccount(userId: String) {
+        var cleanupFailed = false
+        for suffix in KeychainKey.profileSecretSuffixes {
+            do {
+                try keychain.delete(key: KeychainKey.user(userId, suffix))
+            } catch {
+                cleanupFailed = true
+                logger.error("Legacy key cleanup failed for \(suffix, privacy: .public)")
+            }
+        }
+        do {
+            try biometricKeychain.deleteBiometric(
+                key: KeychainKey.legacyBiometricVaultKey(userId)
+            )
+        } catch {
+            cleanupFailed = true
+            logger.error("Legacy biometric key cleanup failed")
+        }
+        guard !cleanupFailed else { return }
+
+        do {
+            try writeString(String(KeychainKey.currentSchemaVersion), key: KeychainKey.schemaVersion)
+            try keychain.delete(key: KeychainKey.activeUserId)
+            UserDefaults.standard.removeObject(forKey: "biometricUnlockEnabled")
+            UserDefaults.standard.removeObject(forKey: "biometricEnrollmentPromptShown")
+        } catch {
+            logger.error("Legacy cleanup marker could not be completed")
+        }
+    }
+
+    private func activeAccountWithoutMigration() -> Account? {
+        guard let rawId = try? readString(key: KeychainKey.activeProfileId),
+              let profileId = UUID(uuidString: rawId),
+              let data = try? keychain.read(key: KeychainKey.accountsIndex),
+              let accounts = try? JSONDecoder().decode([Account].self, from: data) else {
+            return nil
+        }
+        return accounts.first { $0.profileId == profileId }
+    }
+
+    private func canonicalOrigin(_ url: URL) -> String {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url.absoluteString
+        }
+        components.scheme = components.scheme?.lowercased()
+        components.host = components.host?.lowercased()
+        components.user = nil
+        components.password = nil
+        while components.path.count > 1, components.path.hasSuffix("/") {
+            components.path.removeLast()
+        }
+        components.query = nil
+        components.fragment = nil
+        if components.scheme == "https", components.port == 443 { components.port = nil }
+        return components.string ?? url.absoluteString
+    }
+
+    private func ensureCurrentGeneration(_ generation: UInt64) throws {
+        guard generation == sessionGeneration, !Task.isCancelled else {
+            throw APIError.sessionInvalidated
+        }
+    }
+
+    private func clearBiometricPreferences(profileId: UUID) {
+        UserDefaults.standard.set(false, forKey: PreferenceKey.biometricEnabled(profileId))
+        UserDefaults.standard.set(false, forKey: PreferenceKey.biometricPromptShown(profileId))
     }
 
     /// Returns the persisted device identifier UUID, generating and storing one on first use.
@@ -725,7 +968,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         do {
             return try readString(key: KeychainKey.deviceIdentifier)
         } catch {
-            logger.debug("No device identifier — generating new UUID")
+            logger.debug("No device identifier - generating new UUID")
         }
         let newId = UUID().uuidString
         try writeString(newId, key: KeychainKey.deviceIdentifier)
@@ -751,7 +994,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
 
     /// Decodes the payload of a JWT access token without verifying the signature.
     ///
-    /// Vaultwarden does not return `UserId` or `Email` in the token response body —
+    /// Vaultwarden does not return `UserId` or `Email` in the token response body -
     /// they are present as standard JWT claims (`sub` = userId, `email` = email, `name` = name).
     ///
     /// - Security goal: extract the user's own identity fields from a freshly-issued token.
@@ -760,7 +1003,7 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     ///   It is never used for access-control or authorization decisions.
     /// - What this does NOT protect against: a compromised or malicious self-hosted server.
     ///   If the server issues a JWT with a falsified `sub`, we would store the wrong userId.
-    ///   Defending against a malicious server is out of scope — the user chose to trust it.
+    ///   Defending against a malicious server is out of scope - the user chose to trust it.
     /// - Base64url decoding per RFC 7519 §3 (JWT compact serialization: header.payload.signature).
     ///
     /// - Parameter jwt: A dot-separated JWT string (`header.payload.signature`).
@@ -815,16 +1058,48 @@ private extension TokenResponse {
 ///   - Global:    `bw.macos:<name>`
 ///   - Per-user:  `bw.macos:<userId>:<name>`
 enum KeychainKey {
+    static let currentSchemaVersion = 2
+    static let schemaVersion    = "bw.macos:schemaVersion"
+    static let accountsIndex    = "bw.macos:accountsIndex"
+    static let activeProfileId  = "bw.macos:activeProfileId"
     static let activeUserId    = "bw.macos:activeUserId"
     static let deviceIdentifier = "bw.macos:deviceIdentifier"
+    static let profileSecretSuffixes = [
+        "accessToken", "refreshToken", "encUserKey", "kdfParams",
+        "email", "name", "serverEnvironment",
+    ]
 
+    /// Legacy namespace retained only for the version-1 migration path.
     static func user(_ userId: String, _ name: String) -> String {
         "bw.macos:\(userId):\(name)"
     }
 
-    /// Per-user biometric vault key — stored via `BiometricKeychainServiceImpl`
+    static func profile(_ profileId: UUID, _ name: String) -> String {
+        "bw.macos:profile:\(profileId.uuidString):\(name)"
+    }
+
+    /// Per-profile biometric vault key - stored via `BiometricKeychainServiceImpl`
     /// behind `.biometryCurrentSet` access control (design Decision 1).
+    static func biometricVaultKey(_ profileId: UUID) -> String {
+        profile(profileId, "biometricVaultKey")
+    }
+
+    /// Legacy overload used by migration tests and old records.
     static func biometricVaultKey(_ userId: String) -> String {
+        legacyBiometricVaultKey(userId)
+    }
+
+    static func legacyBiometricVaultKey(_ userId: String) -> String {
         "bw.macos:\(userId):biometricVaultKey"
+    }
+}
+
+enum PreferenceKey {
+    static func biometricEnabled(_ profileId: UUID) -> String {
+        "biometricUnlockEnabled.\(profileId.uuidString)"
+    }
+
+    static func biometricPromptShown(_ profileId: UUID) -> String {
+        "biometricEnrollmentPromptShown.\(profileId.uuidString)"
     }
 }

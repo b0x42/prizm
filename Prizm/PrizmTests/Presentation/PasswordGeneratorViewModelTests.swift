@@ -50,7 +50,7 @@ final class PasswordGeneratorViewModelTests: XCTestCase {
         vm.length = 42
         vm.mode = .passphrase
 
-        // Load a new VM from the same defaults — should restore.
+        // Load a new VM from the same defaults - should restore.
         let provider2 = MockRandomnessProvider()
         let vm2 = PasswordGeneratorViewModel(provider: provider2, defaults: defaults)
         XCTAssertEqual(vm2.length, 42)

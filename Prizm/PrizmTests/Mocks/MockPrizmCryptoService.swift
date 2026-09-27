@@ -5,7 +5,7 @@ import Foundation
 actor MockPrizmCryptoService: PrizmCryptoService {
 
     // MARK: - State
-    // nonisolated(unsafe) allows tests to read/write without await — safe in single-threaded tests.
+    // nonisolated(unsafe) allows tests to read/write without await - safe in single-threaded tests.
 
     nonisolated(unsafe) var _isUnlocked: Bool = false
     nonisolated var isUnlocked: Bool { _isUnlocked }
@@ -25,11 +25,16 @@ actor MockPrizmCryptoService: PrizmCryptoService {
     nonisolated(unsafe) var stubbedDecryptList:  [VaultItem] = []
     nonisolated(unsafe) var stubbedFailedCount:  Int = 0
     nonisolated(unsafe) var stubbedFolders:      [Folder] = []
+    nonisolated(unsafe) var masterKeyDelay: TimeInterval = 0
 
     // MARK: - PrizmCryptoService
 
     func makeMasterKey(password: Data, email: String, kdf: KdfParams) async throws -> Data {
-        stubbedMasterKey
+        if masterKeyDelay > 0 {
+            // Deliberately ignore cancellation to verify the repository's generation guard.
+            try? await Task.sleep(for: .seconds(masterKeyDelay))
+        }
+        return stubbedMasterKey
     }
 
     func stretchKey(masterKey: Data) async throws -> CryptoKeys {

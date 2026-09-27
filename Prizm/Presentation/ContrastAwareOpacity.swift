@@ -29,4 +29,28 @@ enum Opacity {
     static func dropTarget(_ contrast: ColorSchemeContrast) -> Double {
         contrast == .increased ? 0.4 : 0.25
     }
+
+    static func fieldHover(_ contrast: ColorSchemeContrast) -> Double {
+        contrast == .increased ? 0.16 : 0.08
+    }
+
+    static func contextPickerBorder(_ contrast: ColorSchemeContrast, isHovered: Bool) -> Double {
+        if isHovered {
+            return contrast == .increased ? 1 : 0.8
+        }
+        return contrast == .increased ? 0.5 : 0.28
+    }
+
+    static func editingBanner(_ contrast: ColorSchemeContrast) -> Double {
+        contrast == .increased ? 0.35 : 0.2
+    }
+
+    static func searchStatusBackground(_ contrast: ColorSchemeContrast) -> Double {
+        contrast == .increased ? 0.38 : 0.24
+    }
+
+    static func itemRowHover(_ contrast: ColorSchemeContrast) -> Double {
+        contrast == .increased ? 0.16 : 0.08
+    }
+
 }

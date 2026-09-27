@@ -4,7 +4,7 @@ import Security
 /// Cryptographically secure random byte generator backed by `SecRandomCopyBytes`.
 ///
 /// **Security goal:** Provide CSPRNG-quality randomness for password and passphrase generation.
-/// **Algorithm:** `SecRandomCopyBytes` (Security.framework) — Apple's standard CSPRNG API,
+/// **Algorithm:** `SecRandomCopyBytes` (Security.framework) - Apple's standard CSPRNG API,
 /// documented as suitable for generating cryptographic keys and nonces.
 /// **Reference:** Apple Security framework documentation; NIST SP 800-90A Rev 1.
 ///

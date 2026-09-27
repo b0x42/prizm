@@ -17,7 +17,7 @@ import os.log
 /// - Thread safety: declared as `actor` because it is written from the sync path
 ///   (background `actor SyncRepositoryImpl`) and read from attachment operation paths
 ///   (`VaultKeyServiceImpl`). An `actor` prevents data races under Swift 6 strict
-///   concurrency checking (Constitution §II — "actor for shared mutable state in
+///   concurrency checking (Constitution §II - "actor for shared mutable state in
 ///   Data layer").
 actor VaultKeyCache {
 
@@ -48,22 +48,29 @@ actor VaultKeyCache {
         cache[cipherId]
     }
 
+    /// Stores the effective key for an item created after the last full sync.
+    ///
+    /// This is required for immediate attachment uploads, especially for organization
+    /// items whose effective key differs from the user's personal vault key.
+    func store(key: Data, for cipherId: String) {
+        if var existing = cache.removeValue(forKey: cipherId) {
+            existing.resetBytes(in: existing.indices)
+        }
+        cache[cipherId] = key
+    }
+
     /// Zeros all key material and clears the cache.
     ///
-    /// Called on vault lock and sign-out — mirrors the lifecycle of `VaultRepositoryImpl`.
+    /// Called on vault lock and sign-out - mirrors the lifecycle of `VaultRepositoryImpl`.
     /// Zeroing before clearing reduces the window during which key bytes remain on the
     /// heap after the cache is discarded (Constitution §III).
     func clear() {
-        // Pre-capture count before starting the _modify accessor: accessing cache[key]
-        // inside the resetBytes argument while _modify already holds exclusive write
-        // access to cache[key] causes a simultaneous-access violation at runtime.
-        for key in cache.keys {
-            let count = cache[key]?.count ?? 0
-            if count > 0 {
-                cache[key]?.resetBytes(in: 0..<count)
-            }
+        // Remove values before zeroing them. Mutating Data through Dictionary's
+        // optional _modify accessor can corrupt its CoW backing storage on macOS 26.
+        while let entry = cache.popFirst() {
+            var keyData = entry.value
+            keyData.resetBytes(in: keyData.indices)
         }
-        cache.removeAll()
-        logger.info("VaultKeyCache cleared — key material zeroed")
+        logger.info("VaultKeyCache cleared - key material zeroed")
     }
 }

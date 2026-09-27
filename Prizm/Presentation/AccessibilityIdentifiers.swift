@@ -47,6 +47,13 @@ nonisolated enum AccessibilityID {
         static let enrollmentPrompt  = "unlock.enrollmentPrompt"
     }
 
+    enum AccountMenu {
+        static let add = "accountMenu.add"
+        static let remove = "accountMenu.remove"
+        static let lock = "accountMenu.lock"
+        static func profile(_ id: UUID) -> String { "accountMenu.profile.\(id.uuidString)" }
+    }
+
     // MARK: - Vault Browser (US3)
 
     enum Vault {
@@ -75,6 +82,11 @@ nonisolated enum AccessibilityID {
         static let list              = "itemList.list"
         static let emptyState        = "itemList.empty"
         static func row(_ id: String) -> String { "itemList.row.\(id)" }
+    }
+
+    enum Transfer {
+        static let confirm = "transfer.confirm"
+        static let error = "transfer.error"
     }
 
     // MARK: - Item Detail (US3)

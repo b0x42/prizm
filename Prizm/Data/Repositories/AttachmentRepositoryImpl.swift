@@ -15,9 +15,9 @@ import os.log
 ///   (EncString type-2 for key/metadata; binary IV‖ciphertext‖HMAC for the blob).
 ///
 /// - Algorithm: Bitwarden two-layer attachment encryption per Security Whitepaper §4.
-///   - Layer 1: `encryptData` — AES-256-CBC + HMAC-SHA256 over raw file bytes.
-///   - Layer 2: `encryptAttachmentKey` — EncString type-2 wrapping the 64-byte attachment key.
-///   - File name: `encryptFileName` — EncString type-2 wrapping the plaintext name.
+///   - Layer 1: `encryptData` - AES-256-CBC + HMAC-SHA256 over raw file bytes.
+///   - Layer 2: `encryptAttachmentKey` - EncString type-2 wrapping the 64-byte attachment key.
+///   - File name: `encryptFileName` - EncString type-2 wrapping the plaintext name.
 ///
 /// - Crypto injection: takes `any PrizmCryptoService` (protocol, not concrete type) so that
 ///   tests can supply a mock. The 6 attachment crypto methods (`generateAttachmentKey`,
@@ -125,7 +125,7 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
         logger.info("upload: blob uploaded for attachmentId=\(metaResponse.attachmentId, privacy: .public)")
 
         // Construct the returned Attachment.
-        // url = nil — the v2 response URL is the signed upload URL, not a download URL.
+        // url = nil - the v2 response URL is the signed upload URL, not a download URL.
         // The permanent download URL is provided by the server on the next sync.
         // The download flow handles url = nil by fetching on demand.
         let sizeName = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
@@ -177,7 +177,7 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
         do {
             encBlob = try await fetchBlob(from: downloadURL)
         } catch let err as APIError where statusCode(of: err) == 403 {
-            logger.info("download: 403 on first attempt — fetching fresh URL for \(attachment.id, privacy: .public)")
+            logger.info("download: 403 on first attempt - fetching fresh URL for \(attachment.id, privacy: .public)")
             downloadURL = try await fetchFreshDownloadURL(cipherId: cipherId, attachmentId: attachment.id)
             do {
                 encBlob = try await fetchBlob(from: downloadURL)

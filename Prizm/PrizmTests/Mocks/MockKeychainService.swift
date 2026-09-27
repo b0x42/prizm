@@ -17,6 +17,7 @@ final class MockKeychainService: KeychainService {
     private(set) var writtenKeys: [String]    = []
     /// All keys passed to read(key:), in call order. Used to assert no duplicate reads.
     private(set) var readKeys:   [String]     = []
+    var deleteErrors: [String: Error] = [:]
 
     // MARK: - KeychainService
 
@@ -34,6 +35,7 @@ final class MockKeychainService: KeychainService {
     }
 
     func delete(key: String) throws {
+        if let error = deleteErrors[key] { throw error }
         deletedKeys.insert(key)
         store.removeValue(forKey: key)
     }

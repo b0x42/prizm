@@ -38,6 +38,10 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
     }
 
     override func tearDown() async throws {
+        if let profileId = sut.activeAccount()?.profileId {
+            UserDefaults.standard.removeObject(forKey: PreferenceKey.biometricEnabled(profileId))
+            UserDefaults.standard.removeObject(forKey: PreferenceKey.biometricPromptShown(profileId))
+        }
         UserDefaults.standard.removeObject(forKey: "biometricUnlockEnabled")
         UserDefaults.standard.removeObject(forKey: "biometricEnrollmentPromptShown")
         try await super.tearDown()
@@ -58,9 +62,10 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
     func testEnableBiometricUnlock_vaultUnlocked_writesKeychain() async throws {
         mockCrypto._isUnlocked = true
         try await sut.enableBiometricUnlock()
-        XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
+        let profileId = try XCTUnwrap(sut.activeAccount()?.profileId)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: PreferenceKey.biometricEnabled(profileId)))
         // Verify the biometric keychain has a 64-byte item.
-        let key = KeychainKey.biometricVaultKey(testUserId)
+        let key = KeychainKey.biometricVaultKey(profileId)
         let data = try await mockBiometricKeychain.readBiometric(key: key)
         XCTAssertEqual(data.count, 64)
     }
@@ -71,12 +76,13 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         // Enable first.
         mockCrypto._isUnlocked = true
         try await sut.enableBiometricUnlock()
-        XCTAssertTrue(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
+        let profileId = try XCTUnwrap(sut.activeAccount()?.profileId)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: PreferenceKey.biometricEnabled(profileId)))
 
         try await sut.disableBiometricUnlock()
-        XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: PreferenceKey.biometricEnabled(profileId)))
         // Keychain item should be gone.
-        let key = KeychainKey.biometricVaultKey(testUserId)
+        let key = KeychainKey.biometricVaultKey(profileId)
         do {
             _ = try await mockBiometricKeychain.readBiometric(key: key)
             XCTFail("Expected itemNotFound")
@@ -90,9 +96,10 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
     func testUnlockWithBiometrics_success_returnsAccount() async throws {
         // Seed a biometric key.
         let keys = CryptoKeys(encryptionKey: Data(count: 32), macKey: Data(count: 32))
+        let profileId = try XCTUnwrap(sut.activeAccount()?.profileId)
         try mockBiometricKeychain.writeBiometric(
             data: keys.toData(),
-            key: KeychainKey.biometricVaultKey(testUserId)
+            key: KeychainKey.biometricVaultKey(profileId)
         )
 
         let account = try await sut.unlockWithBiometrics()
@@ -100,7 +107,7 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
     }
 
     func testUnlockWithBiometrics_itemNotFound_throwsBiometricItemNotFound() async {
-        // No biometric key in keychain — externally deleted or never written.
+        // No biometric key in keychain - externally deleted or never written.
         // Must throw .biometricItemNotFound (silent degradation), not .biometricInvalidated.
         do {
             _ = try await sut.unlockWithBiometrics()
@@ -117,8 +124,9 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
     func testSignOut_deletesBiometricKeychainItem() async throws {
         mockCrypto._isUnlocked = true
         try await sut.enableBiometricUnlock()
+        let profileId = try XCTUnwrap(sut.activeAccount()?.profileId)
         try await sut.signOut()
-        XCTAssertFalse(UserDefaults.standard.bool(forKey: "biometricUnlockEnabled"))
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: PreferenceKey.biometricEnabled(profileId)))
     }
 
     // MARK: - Helpers

@@ -88,6 +88,7 @@
 		AA001CC0001CC0001CC0006A /* DeleteCollectionUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CC0001CC0001CC0005A /* DeleteCollectionUseCaseImpl.swift */; };
 		AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2233445566778899001122 /* OptionKeyMonitor.swift */; };
 		AA11BB22CC3344DD55EE66FF /* AccessibilityIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */; };
+		AA3344556677889900112233 /* SearchableSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4455667788990011223344 /* SearchableSelect.swift */; };
 		AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25C290F2D7A470EB4AB8698 /* KdfParams.swift */; };
 		AC24869F5C544E82B60C54E0 /* DeleteCollectionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDCDA57D3434985AC25FF5F /* DeleteCollectionUseCase.swift */; };
 		AC3EC95F694247B5A5809233 /* CreateVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A335CC7B3C743B59A7630D8 /* CreateVaultItemUseCase.swift */; };
@@ -122,6 +123,8 @@
 		BB1017000000000000000017 /* AttachmentRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1017000000000000000017 /* AttachmentRowView.swift */; };
 		BB1018000000000000000018 /* AttachmentTempFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1018000000000000000018 /* AttachmentTempFileManager.swift */; };
 		BB1122334455667788990011 /* CollectionTreeNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2233445566778899001122 /* CollectionTreeNode.swift */; };
+		BB2001000000000000000001 /* TOTPCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2001000000000000000001 /* TOTPCode.swift */; };
+		BB2002000000000000000002 /* TOTPCodeGeneratorImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2002000000000000000002 /* TOTPCodeGeneratorImpl.swift */; };
 		C290678FFC8F4FDDB215C261 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257FAE34CC064783806B6A5C /* LoginUseCase.swift */; };
 		C2ACEC2617F14F5A80A7FCED /* DeleteFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D05DB7E6EC4A74802AEE58 /* DeleteFolderUseCase.swift */; };
 		C3D2E3F400A1B05B50607080 /* SecureNoteEditForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E3F400A1B2C06C60708090 /* SecureNoteEditForm.swift */; };
@@ -274,6 +277,8 @@
 		AA1016000000000000000016 /* AttachmentsSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentsSectionView.swift; sourceTree = "<group>"; };
 		AA1017000000000000000017 /* AttachmentRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentRowView.swift; sourceTree = "<group>"; };
 		AA1018000000000000000018 /* AttachmentTempFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentTempFileManager.swift; sourceTree = "<group>"; };
+		AA2001000000000000000001 /* TOTPCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPCode.swift; sourceTree = "<group>"; };
+		AA2002000000000000000002 /* TOTPCodeGeneratorImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPCodeGeneratorImpl.swift; sourceTree = "<group>"; };
 		B2C1D2E3F400A04A40506070 /* IdentityEditForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityEditForm.swift; sourceTree = "<group>"; };
 		B2D3E4F506172839A4B5C6D7 /* DraftVaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftVaultItem.swift; sourceTree = "<group>"; };
 		B465482A0CFB4710AD4727CB /* CreateVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
@@ -281,6 +286,7 @@
 		B65E7D6288C347DCA88A20DF /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
 		BB2233445566778899001122 /* OptionKeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionKeyMonitor.swift; sourceTree = "<group>"; };
 		BB22CC33DD4455EE66FF7700 /* AccessibilityIdentifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityIdentifiers.swift; sourceTree = "<group>"; };
+		BB4455667788990011223344 /* SearchableSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableSelect.swift; sourceTree = "<group>"; };
 		BC80EA5DC69F429697492932 /* DeleteFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteFolderUseCaseImpl.swift; sourceTree = "<group>"; };
 		BE3F012437604C4281E27DC2 /* MoveItemToFolderUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveItemToFolderUseCaseImpl.swift; sourceTree = "<group>"; };
 		C2D3E4F5A6B74892C3D4E5F6 /* GetLastSyncDateUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastSyncDateUseCase.swift; sourceTree = "<group>"; };
@@ -407,6 +413,7 @@
 				AA1001000000000000000001 /* Attachment.swift */,
 				CF2F621523214454973153CC /* Organization.swift */,
 				070C477B0E134C1EAFFA842D /* OrgCollection.swift */,
+				AA2001000000000000000001 /* TOTPCode.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -473,6 +480,7 @@
 				3FBB82A6241244DD890E615C /* EncString.swift */,
 				D8D710BEABBB4ADD9ADFCD1F /* PrizmCryptoService.swift */,
 				AA1007000000000000000007 /* AttachmentCrypto.swift */,
+				AA2002000000000000000002 /* TOTPCodeGeneratorImpl.swift */,
 			);
 			path = Crypto;
 			sourceTree = "<group>";
@@ -604,6 +612,7 @@
 			children = (
 				F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */,
 				BB2233445566778899001122 /* OptionKeyMonitor.swift */,
+				BB4455667788990011223344 /* SearchableSelect.swift */,
 				3E105187F1E54E0E91E82B14 /* FieldRowView.swift */,
 				87629CFF5CFE4B4FA41EFC3C /* FaviconView.swift */,
 				D4C3B2A1F6E54789D4C3B2A1 /* VerticalLabeledContentStyle.swift */,
@@ -897,6 +906,7 @@
 				AB64508ED7804841AAC551A0 /* KdfParams.swift in Sources */,
 				D034C4EF37844E88A91555A1 /* VaultItem.swift in Sources */,
 				3E04D7AC0223458CB329663C /* CustomField.swift in Sources */,
+				BB2001000000000000000001 /* TOTPCode.swift in Sources */,
 				FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */,
 				2489593B92144CA7A107D531 /* AuthRepository.swift in Sources */,
 				87D4D13FF5F24C46B3588820 /* VaultRepository.swift in Sources */,
@@ -932,6 +942,7 @@
 				C8951B673C224D76A33775A1 /* UnlockViewModel.swift in Sources */,
 				FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */,
 				AA1122334455667788990011 /* OptionKeyMonitor.swift in Sources */,
+				AA3344556677889900112233 /* SearchableSelect.swift in Sources */,
 				B11759DE56D34E4199773C2D /* FieldRowView.swift in Sources */,
 				98E8E51C9AD5496C88E0ABD3 /* FaviconView.swift in Sources */,
 				A1B2C3D4E5F64789A1B2C3D4 /* VerticalLabeledContentStyle.swift in Sources */,
@@ -953,6 +964,7 @@
 				2A776694FA53418CB2002486 /* OrgKeyCache.swift in Sources */,
 				B2C3D4E5F6A748B9C0D1E2F3 /* EncString.swift in Sources */,
 				C3D4E5F6A7B849C0D1E2F3A4 /* PrizmCryptoService.swift in Sources */,
+				BB2002000000000000000002 /* TOTPCodeGeneratorImpl.swift in Sources */,
 				D4E5F6A7B8C94AD1E2F3A4B5 /* RawCipher.swift in Sources */,
 				E5F6A7B8C9D04BE2F3A4B5C6 /* SyncResponse.swift in Sources */,
 				F6A7B8C9D0E14CF3A4B5C6D7 /* CipherMapper.swift in Sources */,
@@ -1222,10 +1234,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Prizm/Prizm.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = QQLP5WK88A;
+				DEVELOPMENT_TEAM = U69Z9W5CK5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -1256,6 +1269,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.3;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.jrk.prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1280,10 +1294,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Prizm/Prizm.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = QQLP5WK88A;
+				DEVELOPMENT_TEAM = U69Z9W5CK5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -1315,6 +1330,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.3;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.jrk.prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;

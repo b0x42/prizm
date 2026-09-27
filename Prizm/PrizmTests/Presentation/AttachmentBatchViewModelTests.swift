@@ -41,7 +41,7 @@ final class AttachmentBatchViewModelTests: XCTestCase {
     func test_loadItems_allTooLarge_disablesConfirm() throws {
         let url = try makeTempFile(bytes: 100)
         let sut = makeSUT()
-        // Override the real file sizes by loading URLs that map to > 500MB — we can't
+        // Override the real file sizes by loading URLs that map to > 500MB - we can't
         // actually create a 500MB file in a unit test, so we test by checking the
         // validation path: a file within the limit is marked .valid
         sut.loadItems(from: [url])

@@ -1,7 +1,7 @@
 import XCTest
 @testable import Prizm
 
-/// Tests for `Date.syncStatusLabel(relativeTo:calendar:)` — the relative-label formatter
+/// Tests for `Date.syncStatusLabel(relativeTo:calendar:)` - the relative-label formatter
 /// used by the vault browser sidebar's sync status view.
 ///
 /// Tier evaluation order (calendar day first, then elapsed time for same-day syncs):
@@ -49,7 +49,7 @@ final class SyncLabelFormatterTests: XCTestCase {
     // MARK: - Previous calendar year
 
     func testPreviousYear_includesYear() {
-        // 2025-03-26 — different year from now (2026)
+        // 2025-03-26 - different year from now (2026)
         var comps = DateComponents()
         comps.year = 2025; comps.month = 3; comps.day = 26
         comps.hour = 10; comps.timeZone = TimeZone(identifier: "UTC")
@@ -63,7 +63,7 @@ final class SyncLabelFormatterTests: XCTestCase {
     // MARK: - 2+ calendar days ago, same year
 
     func testTwoDaysAgo_showsMonthDay_noYear() {
-        // 2026-03-26 — two days before now (2026-03-28)
+        // 2026-03-26 - two days before now (2026-03-28)
         var comps = DateComponents()
         comps.year = 2026; comps.month = 3; comps.day = 26
         comps.hour = 10; comps.timeZone = TimeZone(identifier: "UTC")
@@ -77,7 +77,7 @@ final class SyncLabelFormatterTests: XCTestCase {
     // MARK: - Previous calendar day ("yesterday")
 
     func testYesterday_returnsYesterday() {
-        // 2026-03-27 23:58 — yesterday by calendar, but only 2 minutes elapsed
+        // 2026-03-27 23:58 - yesterday by calendar, but only 2 minutes elapsed
         var comps = DateComponents()
         comps.year = 2026; comps.month = 3; comps.day = 27
         comps.hour = 23; comps.minute = 58; comps.timeZone = TimeZone(identifier: "UTC")
@@ -128,7 +128,7 @@ final class SyncLabelFormatterTests: XCTestCase {
     }
 
     func test3Hours_sameDayCheck() {
-        // 2026-03-28 11:00 — 3 hours before now (14:00), same calendar day
+        // 2026-03-28 11:00 - 3 hours before now (14:00), same calendar day
         var comps = DateComponents()
         comps.year = 2026; comps.month = 3; comps.day = 28
         comps.hour = 11; comps.timeZone = TimeZone(identifier: "UTC")
@@ -141,7 +141,7 @@ final class SyncLabelFormatterTests: XCTestCase {
     /// rather than "yesterday". This is the critical boundary: the calendar-day check must
     /// correctly identify both the sync and the reference time as the same day.
     func test22Hours_sameDayCalendarCheck() {
-        // now = 2026-03-28 23:58, sync = 2026-03-28 00:30 — 23h28m elapsed, same calendar day
+        // now = 2026-03-28 23:58, sync = 2026-03-28 00:30 - 23h28m elapsed, same calendar day
         var nowComps = DateComponents()
         nowComps.year = 2026; nowComps.month = 3; nowComps.day = 28
         nowComps.hour = 23; nowComps.minute = 58; nowComps.timeZone = TimeZone(identifier: "UTC")

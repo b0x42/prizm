@@ -1,7 +1,7 @@
 import Foundation
 @testable import Prizm
 
-/// Test double for `AuthRepository` — used by `LoginUseCaseTests`.
+/// Test double for `AuthRepository` - used by `LoginUseCaseTests`.
 final class MockAuthRepository: AuthRepository {
 
     // MARK: - State observations
@@ -77,9 +77,30 @@ final class MockAuthRepository: AuthRepository {
     }
 
     func storedAccount() -> Account? { stubbedStoredAccount }
+    func activeAccount() -> Account? { stubbedStoredAccount }
+    func storedAccounts() -> [Account] {
+        stubbedStoredAccounts ?? stubbedStoredAccount.map { [$0] } ?? []
+    }
+
+    func activateAccount(profileId: UUID) async throws {
+        if let account = storedAccounts().first(where: { $0.profileId == profileId }) {
+            stubbedStoredAccount = account
+        } else {
+            throw AuthError.invalidCredentials
+        }
+    }
+
+    func removeAccount(profileId: UUID) async throws {
+        let remaining = storedAccounts().filter { $0.profileId != profileId }
+        stubbedStoredAccounts = remaining
+        if stubbedStoredAccount?.profileId == profileId {
+            stubbedStoredAccount = remaining.first
+        }
+    }
 
     /// Stub for `storedAccount()`. Defaults to nil.
     var stubbedStoredAccount: Account?
+    var stubbedStoredAccounts: [Account]?
 
     func signOut() async throws {
         signOutCalled = true
@@ -93,6 +114,7 @@ final class MockAuthRepository: AuthRepository {
 
     var stubbedDeviceBiometricCapable: Bool = false
     var stubbedBiometricUnlockAvailable: Bool = false
+    var biometricEnrollmentPromptShown: Bool = false
     private(set) var enableBiometricUnlockCalled: Bool = false
     private(set) var disableBiometricUnlockCalled: Bool = false
     private(set) var unlockWithBiometricsCalled: Bool = false
@@ -102,6 +124,10 @@ final class MockAuthRepository: AuthRepository {
 
     var deviceBiometricCapable: Bool { stubbedDeviceBiometricCapable }
     var biometricUnlockAvailable: Bool { stubbedBiometricUnlockAvailable }
+
+    func setBiometricEnrollmentPromptShown(_ shown: Bool) {
+        biometricEnrollmentPromptShown = shown
+    }
 
     func enableBiometricUnlock() async throws {
         enableBiometricUnlockCalled = true

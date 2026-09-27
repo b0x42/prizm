@@ -3,7 +3,7 @@ import XCTest
 
 // MARK: - CollectionUseCaseTests (task 4.0)
 
-/// RED tests written before implementation (Constitution §IV — Red first).
+/// RED tests written before implementation (Constitution §IV - Red first).
 ///
 /// Covers:
 ///   - VaultRepository `.collection(id)` filtering returns only matching items
@@ -85,7 +85,7 @@ final class CollectionUseCaseTests: XCTestCase {
         let inOther  = makeLogin(name: "InOther", collectionIds: ["col-other"])
         let personal = makeLogin(name: "Personal", collectionIds: [])
 
-        // organizations: [] intentionally — org membership derived solely from collectionStore.
+        // organizations: [] intentionally - org membership derived solely from collectionStore.
         await sut.populate(items: [inColA, inColB, inOther, personal],
                            folders: [], organizations: [],
                            collections: [colA, colB, colOther], syncedAt: Date())
@@ -231,7 +231,7 @@ final class CollectionUseCaseTests: XCTestCase {
 
     func testCreateCollection_missingOrgKey_throws() async throws {
         let sut = VaultRepositoryImpl(apiClient: MockPrizmAPIClient(), crypto: MockPrizmCryptoService())
-        // OrgKeyCache is empty — org key not present.
+        // OrgKeyCache is empty - org key not present.
         await XCTAssertThrowsErrorAsync(
             try await sut.createCollection(name: "Test", organizationId: "org-99")
         ) { error in

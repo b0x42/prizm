@@ -1,7 +1,7 @@
 import Foundation
 
 /// Pure-Swift password and passphrase generator.
-/// Receives randomness via `RandomnessProvider` injection — no Security.framework dependency.
+/// Receives randomness via `RandomnessProvider` injection - no Security.framework dependency.
 struct PasswordGenerator {
 
     // MARK: - Character sets

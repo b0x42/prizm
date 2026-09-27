@@ -80,7 +80,7 @@ final class LoginViewModelTests: XCTestCase {
     func testSignIn_emptyPassword_doesNotCallUseCase() {
         sut.serverURL = "https://vault.example.com"
         sut.email     = "alice@example.com"
-        sut.password  = ""   // empty — guarded before Task is spawned
+        sut.password  = ""   // empty - guarded before Task is spawned
 
         sut.signIn()
 

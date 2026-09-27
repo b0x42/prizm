@@ -22,7 +22,7 @@ nonisolated struct DraftLoginURI: Equatable, Identifiable {
         self.matchType = source.matchType
     }
 
-    // Exclude `id` from equality — two drafts with the same content are equal regardless of identity.
+    // Exclude `id` from equality - two drafts with the same content are equal regardless of identity.
     static func == (lhs: DraftLoginURI, rhs: DraftLoginURI) -> Bool {
         lhs.uri == rhs.uri && lhs.matchType == rhs.matchType
     }
@@ -32,23 +32,41 @@ nonisolated struct DraftLoginURI: Equatable, Identifiable {
 
 /// Mutable mirror of `CustomField` used exclusively within the edit flow.
 ///
-/// Field `name` and `type` are intentionally kept as `let` because renaming a custom field or
-/// changing its type is out of scope for v1 editing (structural changes are deferred). Only
-/// `value` can be mutated by the user.
-nonisolated struct DraftCustomField: Equatable {
-    /// Read-only: field names are structural and not editable in v1.
-    let name: String
+/// The name, value, and linked-field target are mutable so fields can be created, renamed,
+/// edited, and removed from an item. The wire type remains stable after creation.
+nonisolated struct DraftCustomField: Equatable, Identifiable {
+    let id = UUID()
+    var name: String
     var value: String?
-    /// Read-only: field type changes are out of scope for v1 editing.
     let type: CustomFieldType
     /// Non-nil only when `type == .linked`.
-    let linkedId: LinkedFieldId?
+    var linkedId: LinkedFieldId?
+
+    init(
+        name: String = "",
+        value: String? = nil,
+        type: CustomFieldType = .text,
+        linkedId: LinkedFieldId? = nil
+    ) {
+        self.name = name
+        self.value = value
+        self.type = type
+        self.linkedId = linkedId
+    }
 
     init(_ source: CustomField) {
         self.name = source.name
         self.value = source.value
         self.type = source.type
         self.linkedId = source.linkedId
+    }
+
+    // UI identity is intentionally excluded so independently-created drafts compare by content.
+    static func == (lhs: DraftCustomField, rhs: DraftCustomField) -> Bool {
+        lhs.name == rhs.name
+            && lhs.value == rhs.value
+            && lhs.type == rhs.type
+            && lhs.linkedId == rhs.linkedId
     }
 }
 
@@ -61,10 +79,10 @@ nonisolated struct DraftLoginContent: Equatable {
     var username: String?
     var password: String?
     var uris: [DraftLoginURI]
-    /// TOTP seed is not editable in v1.
-    let totp: String?
+    /// Bitwarden-compatible Base32 secret or otpauth URI.
+    var totp: String?
     var notes: String?
-    /// Custom field values are editable; adding/removing/reordering is out of scope.
+    /// Custom fields can be created, renamed, edited, and removed.
     var customFields: [DraftCustomField]
 
     init(_ source: LoginContent) {
@@ -167,7 +185,7 @@ nonisolated struct DraftSecureNoteContent: Equatable {
 /// Mutable mirror of `SSHKeyContent` used exclusively within the edit flow.
 ///
 /// `keyFingerprint` is excluded because it is auto-derived from the private key and is
-/// not sent to the API — showing it as editable would be misleading.
+/// not sent to the API - showing it as editable would be misleading.
 nonisolated struct DraftSSHKeyContent: Equatable {
     var privateKey: String?
     var publicKey: String?
@@ -219,7 +237,7 @@ nonisolated enum DraftItemContent: Equatable {
 /// 3. Passed to `EditVaultItemUseCase.execute(draft:)` on save.
 /// 4. Cleared from memory when the sheet is dismissed (Constitution §III plaintext minimisation).
 nonisolated struct DraftVaultItem: Equatable {
-    /// Immutable — item identity cannot change during an edit.
+    /// Immutable - item identity cannot change during an edit.
     let id: String
     var folderId: String?
     var name: String
@@ -230,7 +248,7 @@ nonisolated struct DraftVaultItem: Equatable {
     let creationDate: Date
     let revisionDate: Date
     var content: DraftItemContent
-    /// Re-prompt setting from `VaultItem.reprompt` — carried through unchanged so PUT
+    /// Re-prompt setting from `VaultItem.reprompt` - carried through unchanged so PUT
     /// round-trips it correctly. Not user-editable in v1.
     let reprompt: Int
     /// Non-nil when this draft is being created/edited within a Bitwarden organization.
@@ -322,7 +340,7 @@ extension VaultItem {
         self.reprompt = draft.reprompt
         self.organizationId = draft.organizationId
         self.collectionIds = draft.collectionIds
-        // Drafts do not carry attachment state — attachments are managed via
+        // Drafts do not carry attachment state - attachments are managed via
         // AttachmentRepository and written back through the server response, not through
         // the edit draft. Preserve an empty list here; the actual attachments come from
         // the fresh VaultItem returned by PUT /ciphers/{id}.
@@ -397,5 +415,109 @@ extension VaultItem {
                 ))
             }
         }()
+    }
+}
+
+// MARK: - Item transfer
+
+/// A destination supported by item move and duplicate operations.
+///
+/// Personal items may have a folder. Organization items may have one selected
+/// collection; `nil` means the organization's default collection.
+nonisolated enum VaultItemDestination: Equatable, Hashable {
+    case personal(folderId: String?)
+    case organization(id: String, collectionId: String?)
+}
+
+nonisolated extension DraftVaultItem {
+    /// Creates a new draft containing the source item's decrypted fields at a new destination.
+    ///
+    /// Attachments are intentionally excluded: they are copied independently so each file is
+    /// decrypted with the source cipher key and re-encrypted with the destination cipher key.
+    static func duplicate(
+        of item: VaultItem,
+        name: String,
+        destination: VaultItemDestination
+    ) -> DraftVaultItem {
+        let source = DraftVaultItem(item)
+        let now = Date()
+        let folderId: String?
+        let organizationId: String?
+        let collectionIds: [String]
+
+        switch destination {
+        case .personal(let destinationFolderId):
+            folderId = destinationFolderId
+            organizationId = nil
+            collectionIds = []
+        case .organization(let id, let collectionId):
+            folderId = nil
+            organizationId = id
+            collectionIds = collectionId.map { [$0] } ?? []
+        }
+
+        return DraftVaultItem(
+            id: UUID().uuidString,
+            folderId: folderId,
+            name: name,
+            isFavorite: source.isFavorite,
+            isDeleted: false,
+            creationDate: now,
+            revisionDate: now,
+            content: source.content,
+            reprompt: source.reprompt,
+            organizationId: organizationId,
+            collectionIds: collectionIds
+        )
+    }
+}
+
+protocol DuplicateVaultItemUseCase {
+    func execute(
+        item: VaultItem,
+        name: String,
+        destination: VaultItemDestination,
+        includeAttachments: Bool
+    ) async throws -> VaultItem
+
+    func execute(
+        items: [VaultItem],
+        destination: VaultItemDestination,
+        includeAttachments: Bool,
+        progress: @escaping @MainActor @Sendable (Int) -> Void
+    ) async -> VaultItemBulkTransferResult
+}
+
+protocol MoveVaultItemUseCase {
+    func execute(item: VaultItem, destination: VaultItemDestination) async throws -> VaultItem
+    func execute(
+        items: [VaultItem],
+        destination: VaultItemDestination,
+        progress: @escaping @MainActor @Sendable (Int) -> Void
+    ) async -> VaultItemBulkTransferResult
+}
+
+nonisolated struct VaultItemTransferFailure: Identifiable, Equatable {
+    let id: String
+    let itemName: String
+    let message: String
+}
+
+nonisolated struct VaultItemBulkTransferResult: Equatable {
+    let succeeded: [VaultItem]
+    let failures: [VaultItemTransferFailure]
+}
+
+nonisolated enum VaultItemTransferError: Error, LocalizedError {
+    case copyFailed(String)
+    case copySucceededOriginalNotDeleted
+
+    var errorDescription: String? {
+        switch self {
+        case .copyFailed(let detail):
+            return "The copy could not be completed. The original item was not changed. \(detail)"
+        case .copySucceededOriginalNotDeleted:
+            return "The copy was created, but the original could not be moved to Trash."
+        }
     }
 }

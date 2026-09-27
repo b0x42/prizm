@@ -171,7 +171,7 @@ final class DraftVaultItemTests: XCTestCase {
             draft.content = .secureNote(noteContent)
         }
 
-        // Original VaultItem is a value type — it must not change
+        // Original VaultItem is a value type - it must not change
         XCTAssertEqual(item.name, "Test")
         if case .secureNote(let c) = item.content {
             XCTAssertEqual(c.notes, "original")
@@ -187,7 +187,7 @@ final class DraftVaultItemTests: XCTestCase {
         var draftField = DraftCustomField(field)
         draftField.value = "new-val"
 
-        // name and type are let — verifying they round-trip unchanged
+        // name and type are let - verifying they round-trip unchanged
         XCTAssertEqual(draftField.name, "token")
         XCTAssertEqual(draftField.type, .hidden)
         XCTAssertEqual(draftField.value, "new-val")

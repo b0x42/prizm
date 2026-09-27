@@ -2,7 +2,7 @@ import Foundation
 
 /// In-memory vault store: write side used by `SyncRepositoryImpl`, read side used by use cases.
 /// Implemented by `VaultRepositoryImpl` (a dedicated `actor`) in the Data layer.
-/// All methods are `async` — callers must `await` them regardless of their own isolation context.
+/// All methods are `async` - callers must `await` them regardless of their own isolation context.
 protocol VaultRepository: AnyObject, Sendable {
 
     /// All non-deleted vault items, sorted alphabetically by name (case-insensitive).
@@ -20,11 +20,11 @@ protocol VaultRepository: AnyObject, Sendable {
     /// - SSHKey:     name
     func searchItems(query: String, in selection: SidebarSelection) async throws -> [VaultItem]
 
-    /// Cached item counts keyed by `SidebarSelection`. O(1) — served from a pre-built index.
+    /// Cached item counts keyed by `SidebarSelection`. O(1) - served from a pre-built index.
     func itemCounts() async throws -> [SidebarSelection: Int]
 
     /// Returns the fully-decrypted detail for a single item.
-    /// Not cached — re-decrypts on every call (decrypt on demand, per spec).
+    /// Not cached - re-decrypts on every call (decrypt on demand, per spec).
     func itemDetail(id: String) async throws -> VaultItem
 
     /// Replaces the in-memory vault store and rebuilds all read indexes.

@@ -3,6 +3,12 @@ import Combine
 import Foundation
 import os.log
 
+enum VaultNavigationContext: Hashable {
+    case allVaults
+    case personal
+    case organization(String)
+}
+
 // MARK: - VaultBrowserViewModel
 
 /// ViewModel for the three-pane vault browser (User Story 3).
@@ -22,18 +28,48 @@ final class VaultBrowserViewModel: ObservableObject {
         didSet {
             if oldValue != sidebarSelection {
                 if isGlobalSearch { deactivateGlobalSearch(restoreSelection: false) }
-                Task { @MainActor [weak self] in
-                    self?.itemSelection = nil
-                    self?.refreshItems()
-                }
+                itemSelection = nil
+                refreshItems(showLoadingIndicator: true)
             }
         }
     }
 
-    @Published var itemSelection: VaultItem?
-    @Published var searchQuery:   String = "" {
-        didSet { Task { @MainActor in refreshItems() } }
+    @Published var itemSelection: VaultItem? {
+        didSet {
+            guard let itemSelection else {
+                selectedItemIDs = []
+                return
+            }
+            if !selectedItemIDs.contains(itemSelection.id) {
+                selectedItemIDs = [itemSelection.id]
+            }
+        }
     }
+    @Published private(set) var selectedItemIDs: Set<String> = []
+    @Published var navigationContext: VaultNavigationContext = .allVaults {
+        didSet {
+            guard oldValue != navigationContext else { return }
+            if isGlobalSearch {
+                deactivateGlobalSearch(restoreSelection: false)
+            }
+            itemSelection = nil
+            if sidebarSelection == .allItems {
+                refreshItems(showLoadingIndicator: true)
+            } else {
+                sidebarSelection = .allItems
+            }
+            refreshCounts()
+        }
+    }
+    @Published var searchQuery:   String = "" {
+        didSet {
+            if !searchQuery.isEmpty, oldValue != searchQuery {
+                itemSelection = nil
+            }
+            Task { @MainActor in refreshItems() }
+        }
+    }
+    @Published private(set) var searchSuggestions: [VaultItem] = []
 
     /// When true, search queries are scoped to `.allItems` regardless of sidebar selection.
     @Published private(set) var isGlobalSearch: Bool = false
@@ -42,6 +78,7 @@ final class VaultBrowserViewModel: ObservableObject {
     private(set) var previousSelection: SidebarSelection?
 
     @Published private(set) var displayedItems: [VaultItem] = []
+    @Published private(set) var isLoadingItems = false
     @Published private(set) var itemCounts: [SidebarSelection: Int] = [:]
     @Published private(set) var folders: [Folder] = []
     @Published private(set) var organizations: [Organization] = []
@@ -60,9 +97,9 @@ final class VaultBrowserViewModel: ObservableObject {
     }
     @Published private(set) var lastSyncedAt: Date?
     @Published var syncErrorMessage: String? = nil
-    /// Reflects whether the edit sheet is currently open. Used by `MenuBarViewModel`
+    /// Reflects whether an inline item form is currently open. Used by `MenuBarViewModel`
     /// to enable/disable the Edit and Save menu bar actions.
-    @Published private(set) var editSheetOpen: Bool = false
+    @Published private(set) var isEditingItem: Bool = false
 
     // MARK: - Published state (trash actions)
 
@@ -70,7 +107,7 @@ final class VaultBrowserViewModel: ObservableObject {
     /// The Presentation layer surfaces this as an alert.
     @Published var actionError: String? = nil
 
-    /// Set to a non-nil `ItemType` to present the create sheet for that type.
+    /// Set to a non-nil `ItemType` to present the inline creation form for that type.
     /// Automatically cleared if the user switches to Trash.
     @Published var createItemType: ItemType? = nil {
         didSet {
@@ -94,6 +131,7 @@ final class VaultBrowserViewModel: ObservableObject {
     private let deleteCollectionUseCase:  any DeleteCollectionUseCase
     private var syncTimestamp:          any SyncTimestampRepository
     private var getLastSyncDate:        any GetLastSyncDateUseCase
+    private var itemRefreshGeneration = 0
     private let logger = Logger(subsystem: "com.prizm", category: "VaultBrowserViewModel")
 
     // MARK: - Menu bar action relay
@@ -109,7 +147,28 @@ final class VaultBrowserViewModel: ObservableObject {
     @Published private(set) var saveTrigger: Int = 0
 
     func triggerEdit() { editTrigger += 1 }
+    func triggerEdit(item: VaultItem) {
+        itemSelection = item
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            self?.editTrigger += 1
+        }
+    }
     func triggerSave() { saveTrigger += 1 }
+
+    func updateItemSelection(_ ids: Set<String>) {
+        let addedIDs = ids.subtracting(selectedItemIDs)
+        selectedItemIDs = ids
+        guard !ids.isEmpty else {
+            itemSelection = nil
+            return
+        }
+        if let added = displayedItems.last(where: { addedIDs.contains($0.id) }) {
+            itemSelection = added
+        } else if itemSelection.map({ ids.contains($0.id) }) != true {
+            itemSelection = displayedItems.first(where: { ids.contains($0.id) })
+        }
+    }
 
     // MARK: - Sync label refresh timer
 
@@ -125,6 +184,8 @@ final class VaultBrowserViewModel: ObservableObject {
     // MARK: - Clipboard auto-clear
 
     private var clipboardClearTask: Task<Void, Never>?
+    private var searchSuggestionTask: Task<Void, Never>?
+    private var searchSuggestionGeneration = 0
 
     // MARK: - Init
 
@@ -170,6 +231,7 @@ final class VaultBrowserViewModel: ObservableObject {
     deinit {
         labelRefreshTimer?.invalidate()
         clipboardClearTask?.cancel()
+        searchSuggestionTask?.cancel()
     }
 
     // MARK: - Timer
@@ -212,6 +274,43 @@ final class VaultBrowserViewModel: ObservableObject {
         searchQuery = ""
     }
 
+    func updateSearchSuggestions(query: String) {
+        searchSuggestionTask?.cancel()
+        searchSuggestionGeneration += 1
+        let generation = searchSuggestionGeneration
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            searchSuggestions = []
+            return
+        }
+        let requestedContext = navigationContext
+        searchSuggestionTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let results = try await search.execute(query: trimmed, in: .allItems)
+                try Task.checkCancellation()
+                guard generation == searchSuggestionGeneration,
+                      requestedContext == navigationContext else { return }
+                searchSuggestions = results.filter {
+                    isInNavigationContext($0, context: requestedContext)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                guard generation == searchSuggestionGeneration,
+                      requestedContext == navigationContext else { return }
+                logger.error("Search suggestions failed: \(error.localizedDescription, privacy: .public)")
+                searchSuggestions = []
+            }
+        }
+    }
+
+    func openSearchSuggestion(_ item: VaultItem) {
+        selectedItemIDs = [item.id]
+        itemSelection = item
+        searchSuggestions = []
+    }
+
     /// Copies `value` to the pasteboard and schedules a 30-second auto-clear (FR-011).
     func copy(_ value: String) {
         let pasteboard = NSPasteboard.general
@@ -229,7 +328,7 @@ final class VaultBrowserViewModel: ObservableObject {
                     logger.debug("Clipboard auto-cleared after 30 s")
                 }
             } catch {
-                // Task cancelled (e.g. new copy) — do nothing.
+                // Task cancelled (e.g. new copy) - do nothing.
             }
         }
     }
@@ -239,13 +338,56 @@ final class VaultBrowserViewModel: ObservableObject {
         syncErrorMessage = nil
     }
 
+    /// Clears all account-bound presentation state before another profile is selected.
+    func resetForAccountChange() {
+        itemRefreshGeneration += 1
+        searchSuggestionGeneration += 1
+        searchSuggestionTask?.cancel()
+        clipboardClearTask?.cancel()
+        NSPasteboard.general.clearContents()
+
+        isGlobalSearch = false
+        previousSelection = nil
+        navigationContext = .allVaults
+        sidebarSelection = .allItems
+        searchQuery = ""
+        searchSuggestions = []
+        itemSelection = nil
+        selectedItemIDs = []
+        displayedItems = []
+        itemCounts = [:]
+        folders = []
+        organizations = []
+        collections = []
+        lastSyncedAt = nil
+        syncStatusLabel = "Never synced"
+        syncErrorMessage = nil
+        actionError = nil
+        createItemType = nil
+        isEditingItem = false
+        isLoadingItems = false
+    }
+
     // MARK: - Refresh
 
     /// Refreshes `displayedItems` from the vault store based on current selection + search query.
     /// Executes the vault read on the actor executor via a fire-and-forget `Task`.
-    func refreshItems() {
+    func refreshItems(showLoadingIndicator: Bool = false) {
+        itemRefreshGeneration += 1
+        let generation = itemRefreshGeneration
+        let requestedQuery = searchQuery
+        if showLoadingIndicator {
+            isLoadingItems = true
+        }
+
         Task { [weak self] in
             guard let self else { return }
+            let requestedContext = navigationContext
+            defer {
+                if generation == itemRefreshGeneration {
+                    isLoadingItems = false
+                }
+            }
             do {
                 let scope: SidebarSelection
                 if isGlobalSearch {
@@ -254,8 +396,22 @@ final class VaultBrowserViewModel: ObservableObject {
                 } else {
                     scope = sidebarSelection
                 }
-                displayedItems = try await search.execute(query: searchQuery, in: scope)
+                let results = try await search.execute(query: requestedQuery, in: scope)
+                guard generation == itemRefreshGeneration,
+                      requestedContext == navigationContext else { return }
+                displayedItems = results.filter { isInNavigationContext($0, context: requestedContext) }
+                let visibleSelection = selectedItemIDs.intersection(displayedItems.map(\.id))
+                if visibleSelection != selectedItemIDs {
+                    updateItemSelection(visibleSelection)
+                }
+                if !requestedQuery.isEmpty,
+                   selectedItemIDs.isEmpty,
+                   let firstItem = displayedItems.first {
+                    updateItemSelection([firstItem.id])
+                }
             } catch {
+                guard generation == itemRefreshGeneration,
+                      requestedContext == navigationContext else { return }
                 logger.error("Failed to load vault items: \(error.localizedDescription, privacy: .public)")
                 displayedItems = []
             }
@@ -265,7 +421,7 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Re-reads the currently selected item from the vault store and updates `itemSelection`.
     ///
     /// Called after a successful attachment upload so the detail pane reflects the new
-    /// attachment list without requiring a full vault sync. Safe to call on cancel — if
+    /// attachment list without requiring a full vault sync. Safe to call on cancel - if
     /// the item hasn't changed the assignment is a no-op.
     func refreshItemSelection() {
         guard let currentId = itemSelection?.id else { return }
@@ -280,8 +436,42 @@ final class VaultBrowserViewModel: ObservableObject {
     func refreshCounts() {
         Task { [weak self] in
             guard let self else { return }
+            let requestedContext = navigationContext
             do {
-                itemCounts = try await vault.itemCounts()
+                var counts = try await vault.itemCounts()
+                guard requestedContext != .allVaults else {
+                    guard requestedContext == navigationContext else { return }
+                    itemCounts = counts
+                    return
+                }
+
+                let activeItems = try await vault.items(for: .allItems)
+                    .filter { isInNavigationContext($0, context: requestedContext) }
+                let deletedItems = try await vault.items(for: .trash)
+                    .filter { isInNavigationContext($0, context: requestedContext) }
+
+                counts[.allItems] = activeItems.count
+                counts[.favorites] = activeItems.filter(\.isFavorite).count
+                counts[.trash] = deletedItems.count
+
+                for type in ItemType.allCases {
+                    counts[.type(type)] = activeItems.filter {
+                        $0.content.matchesItemType(type)
+                    }.count
+                }
+                for folder in folders {
+                    counts[.folder(folder.id)] = activeItems.filter {
+                        $0.folderId == folder.id
+                    }.count
+                }
+                for collection in collections {
+                    counts[.collection(collection.id)] = activeItems.filter {
+                        $0.collectionIds.contains(collection.id)
+                    }.count
+                }
+
+                guard requestedContext == navigationContext else { return }
+                itemCounts = counts
             } catch {
                 logger.error("Failed to load item counts: \(error.localizedDescription, privacy: .public)")
             }
@@ -291,7 +481,7 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Re-scopes the sync timestamp repository to a newly resolved account email.
     ///
     /// Called by `RootViewModel` immediately after a login or unlock transition to `.vault`,
-    /// before `handleSyncCompleted` — ensures the timestamp is written to and read from
+    /// before `handleSyncCompleted` - ensures the timestamp is written to and read from
     /// the correct per-account UserDefaults key even on first launch (when the email was
     /// not yet known at `AppContainer.init()` time).
     func updateSyncTimestamp(
@@ -308,7 +498,7 @@ final class VaultBrowserViewModel: ObservableObject {
     /// Called after a successful sync to update counts, items, and timestamp.
     ///
     /// Also persists the timestamp via `SyncTimestampRepository` so it survives app restarts.
-    /// Error paths MUST NOT call this method — the stored timestamp reflects the last *successful* sync.
+    /// Error paths MUST NOT call this method - the stored timestamp reflects the last *successful* sync.
     func handleSyncCompleted(syncedAt: Date) {
         lastSyncedAt = syncedAt
         syncStatusLabel = syncedAt.syncStatusLabel()
@@ -331,9 +521,9 @@ final class VaultBrowserViewModel: ObservableObject {
         syncErrorMessage = message
     }
 
-    /// Called by `ItemDetailView` when the edit sheet opens or closes.
-    func handleEditSheetState(_ open: Bool) {
-        editSheetOpen = open
+    /// Called by `ItemDetailView` when in-place item editing starts or ends.
+    func setItemEditing(_ isEditing: Bool) {
+        isEditingItem = isEditing
     }
 
     /// Called after a successful item edit save to refresh the list pane and detail pane.
@@ -342,6 +532,16 @@ final class VaultBrowserViewModel: ObservableObject {
     /// refreshes the item list and sidebar counts so any name change appears immediately.
     func handleItemSaved(_ updatedItem: VaultItem) {
         itemSelection = updatedItem
+        refreshItems()
+        refreshCounts()
+    }
+
+    func handleTransferFinished(_ transferredItems: [VaultItem]) {
+        if transferredItems.count == 1, let transferredItem = transferredItems.first {
+            itemSelection = transferredItem
+        } else if transferredItems.count > 1 {
+            itemSelection = nil
+        }
         refreshItems()
         refreshCounts()
     }
@@ -358,6 +558,48 @@ final class VaultBrowserViewModel: ObservableObject {
             } catch {
                 logger.error("Toggle favorite failed: \(error.localizedDescription, privacy: .public)")
             }
+        }
+    }
+
+    func addToFavorites(items: [VaultItem]) {
+        Task {
+            var failedNames: [String] = []
+            for item in items where !item.isFavorite {
+                var draft = DraftVaultItem(item)
+                draft.isFavorite = true
+                do {
+                    _ = try await vault.update(draft)
+                } catch {
+                    failedNames.append(item.name)
+                    logger.error("Bulk favorite failed for \(item.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            refreshItems()
+            refreshCounts()
+            if !failedNames.isEmpty {
+                actionError = "Could not add to Favorites: \(failedNames.joined(separator: ", "))."
+            }
+        }
+    }
+
+    func performSoftDelete(items: [VaultItem]) async {
+        var failedNames: [String] = []
+        let ids = Set(items.map(\.id))
+        for item in items {
+            do {
+                try await deleteUseCase.execute(id: item.id)
+            } catch {
+                failedNames.append(item.name)
+                logger.error("Bulk delete failed for \(item.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        if itemSelection.map({ ids.contains($0.id) }) == true {
+            itemSelection = nil
+        }
+        refreshItems()
+        refreshCounts()
+        if !failedNames.isEmpty {
+            actionError = "Could not move to Trash: \(failedNames.joined(separator: ", "))."
         }
     }
 
@@ -510,9 +752,38 @@ final class VaultBrowserViewModel: ObservableObject {
             do {
                 organizations = try await vault.organizations()
                 collections   = try await vault.collections()
+                if case .organization(let selectedId) = navigationContext,
+                   !organizations.contains(where: { $0.id == selectedId }) {
+                    navigationContext = .allVaults
+                } else {
+                    refreshItems()
+                    refreshCounts()
+                }
             } catch {
                 logger.error("Failed to load organizations: \(error.localizedDescription, privacy: .public)")
             }
+        }
+    }
+
+    private func isInNavigationContext(
+        _ item: VaultItem,
+        context: VaultNavigationContext
+    ) -> Bool {
+        switch context {
+        case .allVaults:
+            return true
+        case .personal:
+            let organizationCollectionIds = Set(collections.map(\.id))
+            return item.organizationId == nil
+                && item.collectionIds.allSatisfy { !organizationCollectionIds.contains($0) }
+        case .organization(let organizationId):
+            if item.organizationId == organizationId { return true }
+            let collectionIds = Set(
+                collections
+                    .filter { $0.organizationId == organizationId }
+                    .map(\.id)
+            )
+            return item.collectionIds.contains { collectionIds.contains($0) }
         }
     }
 

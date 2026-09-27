@@ -10,7 +10,7 @@ nonisolated enum AttachmentCryptoError: Error, Equatable {
     /// The encrypted blob is too short to contain a valid IV + HMAC header.
     /// Minimum valid length = 16 (IV) + 1 (ciphertext) + 32 (HMAC) = 49 bytes.
     case blobTooShort
-    /// HMAC-SHA256 verification failed — blob may have been tampered with.
+    /// HMAC-SHA256 verification failed - blob may have been tampered with.
     case macMismatch
     /// AES-256-CBC decryption failed.
     case decryptionFailed
@@ -22,6 +22,25 @@ nonisolated enum AttachmentCryptoError: Error, Equatable {
     case invalidKeyLength
 }
 
+extension AttachmentCryptoError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .blobTooShort:
+            return "The downloaded attachment data is incomplete."
+        case .macMismatch:
+            return "The attachment’s integrity check failed. The file may be corrupt or encrypted with a different key."
+        case .decryptionFailed:
+            return "The attachment could not be decrypted."
+        case .encryptionFailed:
+            return "The attachment could not be encrypted."
+        case .keyGenerationFailed:
+            return "A secure attachment key could not be generated."
+        case .invalidKeyLength:
+            return "The attachment uses an invalid encryption key."
+        }
+    }
+}
+
 // MARK: - Attachment crypto extension on PrizmCryptoServiceImpl
 
 /// Concrete implementations of the six attachment-crypto requirements declared on
@@ -30,7 +49,7 @@ nonisolated enum AttachmentCryptoError: Error, Equatable {
 /// (`aesCbcEncrypt`/`aesCbcDecrypt`) are private methods on the concrete type.
 ///
 /// All new methods are `nonisolated` so they can be called from any concurrency context
-/// without hopping onto the actor — they access no actor-isolated state.
+/// without hopping onto the actor - they access no actor-isolated state.
 ///
 /// Binary blob format (tasks 2.2 / 2.3):
 ///   `IV (16 bytes) ‖ ciphertext (variable) ‖ HMAC-SHA256 (32 bytes)`
@@ -52,7 +71,7 @@ extension PrizmCryptoServiceImpl {
     ///   (key isolation per Bitwarden Security Whitepaper §4).
     /// - Algorithm: 64 bytes from `SecRandomCopyBytes` (backed by `/dev/urandom`).
     ///   First 32 bytes = AES-256-CBC encryption key; last 32 bytes = HMAC-SHA256 MAC key.
-    /// - Spec: Bitwarden Security Whitepaper §4 — "Attachment Key Generation".
+    /// - Spec: Bitwarden Security Whitepaper §4 - "Attachment Key Generation".
     ///
     /// - Returns: 64-byte random key Data.
     /// - Throws: `AttachmentCryptoError.keyGenerationFailed` if `SecRandomCopyBytes` fails.
@@ -93,7 +112,7 @@ extension PrizmCryptoServiceImpl {
         let encKey = attachmentKey[0..<32]
         let macKey = attachmentKey[32..<64]
 
-        // Random IV — 16 bytes per AES-CBC block size (NIST SP 800-38A).
+        // Random IV - 16 bytes per AES-CBC block size (NIST SP 800-38A).
         var ivBytes = [UInt8](repeating: 0, count: 16)
         guard SecRandomCopyBytes(kSecRandomDefault, 16, &ivBytes) == errSecSuccess else {
             throw AttachmentCryptoError.encryptionFailed
@@ -149,7 +168,7 @@ extension PrizmCryptoServiceImpl {
 
         // Verify HMAC over IV ‖ ciphertext before decrypting (Encrypt-then-MAC).
         guard CryptoKeys.verifyHmacSHA256(key: macKey, data: iv + ciphertext, expected: mac) else {
-            Self.logger.error("Attachment blob MAC verification failed — blob may be corrupt or tampered")
+            Self.logger.error("Attachment blob MAC verification failed - blob may be corrupt or tampered")
             throw AttachmentCryptoError.macMismatch
         }
 

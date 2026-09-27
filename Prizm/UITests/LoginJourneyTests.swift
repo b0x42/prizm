@@ -6,7 +6,7 @@ import XCTest
 /// credential submission, optional TOTP 2FA, vault sync, and arrival at the vault browser.
 ///
 /// **Prerequisites**: The app must launch with no stored session (clean state).
-/// **Success Criteria**: SC-001 — full login-to-vault ≤60s.
+/// **Success Criteria**: SC-001 - full login-to-vault ≤60s.
 ///
 /// - Note: These tests require a running Vaultwarden instance or a mock server.
 ///   Configure the server URL via the `BW_TEST_SERVER_URL`, `BW_TEST_EMAIL`,
@@ -50,7 +50,7 @@ final class LoginJourneyTests: XCTestCase {
         XCTAssertTrue(signIn.waitForExistence(timeout: 5))
         XCTAssertFalse(signIn.isEnabled, "Sign In should be disabled with empty fields")
 
-        // Fill only server URL — still disabled.
+        // Fill only server URL - still disabled.
         let serverURL = app.textFields["login.serverURL"]
         serverURL.click()
         serverURL.typeText("https://vault.example.com")
@@ -110,9 +110,9 @@ final class LoginJourneyTests: XCTestCase {
         // If TOTP is required, the TOTP prompt appears.
         let totpField = app.textFields["totp.code"]
         if totpField.waitForExistence(timeout: 10) {
-            // TOTP required — test cannot proceed without a valid code.
+            // TOTP required - test cannot proceed without a valid code.
             // Skip with a message; the TOTP-specific test handles this.
-            throw XCTSkip("TOTP required — use testLoginWithTOTPReachesVaultBrowser instead")
+            throw XCTSkip("TOTP required - use testLoginWithTOTPReachesVaultBrowser instead")
         }
 
         // Wait for sync progress to complete and vault browser to appear.
@@ -165,9 +165,9 @@ final class LoginJourneyTests: XCTestCase {
 
         // The sync progress message should appear during the sync phase.
         let progressMsg = app.staticTexts["sync.progressMessage"]
-        // This may be transient — use a short timeout.
+        // This may be transient - use a short timeout.
         if progressMsg.waitForExistence(timeout: 15) {
-            // Progress message appeared — sync is in progress. Good.
+            // Progress message appeared - sync is in progress. Good.
             XCTAssertFalse(progressMsg.label.isEmpty, "Sync progress should display a message")
         }
         // Either way, vault should eventually appear.

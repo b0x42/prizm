@@ -55,7 +55,7 @@ struct IdentityDetailView: View {
                             ("SSN",             identity.ssn),
                             ("Passport Number", identity.passportNumber),
                             ("License Number",  identity.licenseNumber),
-                        ])
+                        ], isMasked: true)
                     }
                 }
 
@@ -101,13 +101,22 @@ struct IdentityDetailView: View {
 
     /// Renders a sequence of optional field rows with dividers between present fields.
     @ViewBuilder
-    private func fieldRows(_ pairs: [(String, String?)]) -> some View {
+    private func fieldRows(
+        _ pairs: [(String, String?)],
+        isMasked: Bool = false
+    ) -> some View {
         // Filter to only present values first so dividers are placed correctly.
         let present = pairs.filter { $0.1 != nil }
         ForEach(present.indices, id: \.self) { index in
             let (label, value) = present[index]
             if index > 0 { Divider() }
-            FieldRowView(label: label, value: value!, itemId: item.id, onCopy: onCopy)
+            FieldRowView(
+                label: label,
+                value: value!,
+                itemId: item.id,
+                isMasked: isMasked,
+                onCopy: onCopy
+            )
         }
     }
 }

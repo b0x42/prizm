@@ -2,16 +2,16 @@ import XCTest
 import Security
 @testable import Prizm
 
-/// Known-Answer Tests (KATs) for org key crypto — task 3.0.
-/// These tests are RED until tasks 3.1–3.4 are implemented (Constitution §IV — Red first).
+/// Known-Answer Tests (KATs) for org key crypto - task 3.0.
+/// These tests are RED until tasks 3.1–3.4 are implemented (Constitution §IV - Red first).
 ///
 /// Test vector source: constructed from a known Bitwarden-format test fixture.
 /// The RSA key pair, org key, and cipher are generated offline with deterministic seeds
 /// to provide stable expected values across runs.
 ///
 /// Algorithm references:
-/// - RSA-OAEP-SHA1: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping"
-/// - AES-256-CBC + HMAC-SHA256: Bitwarden Security Whitepaper §4 — "Cipher Encryption"
+/// - RSA-OAEP-SHA1: Bitwarden Security Whitepaper §4 - "Organization Key Wrapping"
+/// - AES-256-CBC + HMAC-SHA256: Bitwarden Security Whitepaper §4 - "Cipher Encryption"
 final class OrgKeyCryptoKATTests: XCTestCase {
 
     // MARK: - OrgKeyCache
@@ -112,7 +112,7 @@ final class OrgKeyCryptoKATTests: XCTestCase {
         let orgKey = try XCTUnwrap(CryptoKeys(data: Data(repeating: 0xCC, count: 64)))
 
         // Build a cipher encrypted with the org key (we'll use a trivial EncString that the
-        // mapper would decrypt — in practice the mapper decrypts; here we test the routing).
+        // mapper would decrypt - in practice the mapper decrypts; here we test the routing).
         let raw = RawCipher(
             id:             "cipher-org",
             organizationId: "org1",
@@ -143,7 +143,7 @@ final class OrgKeyCryptoKATTests: XCTestCase {
         // It will throw for a different reason (bad EncString) but NOT organisationCipherSkipped.
         let orgKeys: [String: CryptoKeys] = ["org1": orgKey]
         XCTAssertThrowsError(try mapper.map(raw: raw, vaultKeys: personalKey, orgKeys: orgKeys)) { error in
-            // Must NOT be organisationCipherSkipped — org key was found.
+            // Must NOT be organisationCipherSkipped - org key was found.
             if let mapperError = error as? CipherMapperError {
                 XCTAssertNotEqual(mapperError, .organisationCipherSkipped,
                     "Should not skip org cipher when org key is available")
@@ -180,7 +180,7 @@ final class OrgKeyCryptoKATTests: XCTestCase {
         )
 
         let personalKey = try XCTUnwrap(CryptoKeys(data: Data(repeating: 0x11, count: 64)))
-        // Empty orgKeys snapshot — org1 key is absent.
+        // Empty orgKeys snapshot - org1 key is absent.
         let orgKeys: [String: CryptoKeys] = [:]
         XCTAssertThrowsError(try mapper.map(raw: raw, vaultKeys: personalKey, orgKeys: orgKeys)) { error in
             XCTAssertEqual(error as? CipherMapperError, .organisationCipherSkipped)
@@ -190,7 +190,7 @@ final class OrgKeyCryptoKATTests: XCTestCase {
     // MARK: - Test fixtures (offline-generated)
 
     /// RSA-2048 private key in PKCS#8 DER format, base64-encoded.
-    /// Generated offline for test purposes only — NOT a production key.
+    /// Generated offline for test purposes only - NOT a production key.
     /// Provenance: `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048`
     private static let testRSAPrivateKeyPKCS8Base64 = """
     MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCy4YrRzWfVSQ/i2N90kp2aU4AG\

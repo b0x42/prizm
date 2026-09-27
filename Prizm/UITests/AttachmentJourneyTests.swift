@@ -105,8 +105,8 @@ final class AttachmentJourneyTests: XCTestCase {
             XCTAssertFalse(errorLabel.exists,
                 "Open action should complete without an error message")
         } else {
-            // Open button may not be visible without hovering — skip this assertion in automation
-            XCTSkip("Open button requires hover to become visible — not reliably automatable in XCUITest")
+            // Open button may not be visible without hovering - skip this assertion in automation
+            XCTSkip("Open button requires hover to become visible - not reliably automatable in XCUITest")
         }
     }
 
@@ -136,10 +136,10 @@ final class AttachmentJourneyTests: XCTestCase {
                 XCTAssertFalse(fileNameLabel.waitForExistence(timeout: 5),
                     "Attachment row should disappear after delete is confirmed")
             } else {
-                XCTSkip("Delete confirmation alert not found — may require hover interaction")
+                XCTSkip("Delete confirmation alert not found - may require hover interaction")
             }
         } else {
-            XCTSkip("Delete button requires hover to become visible — not reliably automatable in XCUITest")
+            XCTSkip("Delete button requires hover to become visible - not reliably automatable in XCUITest")
         }
     }
 }
@@ -180,7 +180,7 @@ final class AttachmentBatchJourneyTests: XCTestCase {
         XCTAssertTrue(section.waitForExistence(timeout: 5),
             "Attachments section card (drop target) must be visible in the detail pane")
 
-        // The onDrop modifier is applied to this element — structural presence validates
+        // The onDrop modifier is applied to this element - structural presence validates
         // the drop target is wired. Full drag automation is not practical in XCUITest.
         XCTAssertTrue(section.isHittable,
             "Attachments section card must be hittable (required for drop target)")
@@ -188,7 +188,7 @@ final class AttachmentBatchJourneyTests: XCTestCase {
 }
 
 // MARK: - AccessibilityID helpers (for test target)
-// Mirrored from the main target — XCUITest cannot import @testable modules.
+// Mirrored from the main target - XCUITest cannot import @testable modules.
 
 private enum AccessibilityID {
     enum Vault { static let navigationSplit = "vault.navigationSplit" }

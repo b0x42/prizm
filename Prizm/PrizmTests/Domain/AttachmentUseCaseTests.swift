@@ -60,7 +60,7 @@ final class UploadAttachmentUseCaseTests: XCTestCase {
     }
 
     func test_execute_doesNotExposeKeyInSignature() async throws {
-        // The execute signature has no cipherKey parameter — this is a compile-time guarantee.
+        // The execute signature has no cipherKey parameter - this is a compile-time guarantee.
         // This test verifies the successful path works end-to-end.
         let result = try await sut.execute(cipherId: "c-1", fileName: "doc.pdf", data: Data("content".utf8))
         XCTAssertEqual(result.id, "att-1")
@@ -153,7 +153,7 @@ final class DeleteAttachmentUseCaseTests: XCTestCase {
     override func setUp() async throws {
         mockRepo = MockAttachmentRepository()
         sut      = DeleteAttachmentUseCaseImpl(repository: mockRepo)
-        // Note: no VaultKeyService — delete requires no key material (Constitution §VI)
+        // Note: no VaultKeyService - delete requires no key material (Constitution §VI)
     }
 
     func test_execute_callsRepositoryDelete() async throws {
@@ -173,7 +173,7 @@ final class DeleteAttachmentUseCaseTests: XCTestCase {
 
     func test_delete_doesNotUseVaultKeyService() {
         // Structural: DeleteAttachmentUseCaseImpl has no VaultKeyService property.
-        // This is a compile-time guarantee enforced by the type system — if a developer
+        // This is a compile-time guarantee enforced by the type system - if a developer
         // adds VaultKeyService to the init, this test will fail to compile with the
         // existing init signature, making the violation visible at build time.
         let _impl = DeleteAttachmentUseCaseImpl(repository: mockRepo)

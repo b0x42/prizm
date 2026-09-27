@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// Pinned outside the scrollable list so it remains visible regardless of scroll position.
 /// Uses `Typography.listSubtitle` to stay visually unobtrusive.
-/// The view is only rendered when the vault browser is active — the parent screen state
+/// The view is only rendered when the vault browser is active - the parent screen state
 /// machine (RootViewModel) hides the entire vault browser when locked, satisfying the
 /// "hidden when vault is locked" requirement without additional logic here.
 struct SyncStatusView: View {

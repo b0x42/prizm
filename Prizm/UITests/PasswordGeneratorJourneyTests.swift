@@ -48,7 +48,7 @@ final class PasswordGeneratorJourneyTests: XCTestCase {
         XCTAssertTrue(generatorButton.waitForExistence(timeout: 3), "Generator button should be visible")
         generatorButton.click()
 
-        // Verify the popover opened — preview should exist.
+        // Verify the popover opened - preview should exist.
         let preview = app.staticTexts["generator.preview"]
         XCTAssertTrue(preview.waitForExistence(timeout: 3), "Generator popover should be open")
         let initialPreview = preview.label

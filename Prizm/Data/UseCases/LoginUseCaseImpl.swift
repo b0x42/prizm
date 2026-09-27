@@ -7,7 +7,7 @@ import os.log
 ///   1. Validate + set server URL.
 ///   2. Call `AuthRepository.loginWithPassword`.
 ///   3. If `.success`: call `SyncRepository.sync` to populate the vault.
-///   4. If `.requiresTwoFactor`: return immediately — sync is deferred to after TOTP.
+///   4. If `.requiresTwoFactor`: return immediately - sync is deferred to after TOTP.
 ///
 /// `SyncRepository.sync` is called here (not inside `AuthRepository`) to keep the
 /// Domain layer orchestration visible and testable at the use-case level.
@@ -43,8 +43,8 @@ final class LoginUseCaseImpl: LoginUseCase {
             // Sync is best-effort: if the server is temporarily unreachable the user
             // still lands in the vault browser showing items from the last sync.
             // Failing the entire login on a sync error would lock users out even when
-            // the server is degraded — unacceptable for a password manager.
-            logger.info("Login succeeded — starting vault sync")
+            // the server is degraded - unacceptable for a password manager.
+            logger.info("Login succeeded - starting vault sync")
             do {
                 _ = try await sync.sync(progress: { _ in })
             } catch {
@@ -64,7 +64,7 @@ final class LoginUseCaseImpl: LoginUseCase {
     func completeTOTP(code: String, rememberDevice: Bool) async throws -> Account {
         logger.info("Completing TOTP")
         let account = try await auth.loginWithTOTP(code: code, rememberDevice: rememberDevice)
-        // Sync failure is non-fatal — show vault with whatever was synced (FR-049).
+        // Sync failure is non-fatal - show vault with whatever was synced (FR-049).
         do {
             _ = try await sync.sync(progress: { _ in })
         } catch {

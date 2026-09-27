@@ -11,7 +11,7 @@ import XCTest
 @MainActor
 final class AboutViewModelTests: XCTestCase {
 
-    // Shared instance built with explicit values — no Bundle.main access needed.
+    // Shared instance built with explicit values - no Bundle.main access needed.
     private var sut: AboutViewModel!
 
     override func setUp() async throws {
@@ -22,8 +22,8 @@ final class AboutViewModelTests: XCTestCase {
             tagline:  "Your secrets. Your server. Our user interface.",
             gitHubURL: URL(string: "https://github.com/b0x42/prizm")!,
             acknowledgements: [
-                "Vaultwarden & Bitwarden — server API and vault format",
-                "Argon2Swift — Argon2id key derivation (RFC 9106)",
+                "Vaultwarden & Bitwarden - server API and vault format",
+                "Argon2Swift - Argon2id key derivation (RFC 9106)",
             ]
         )
     }

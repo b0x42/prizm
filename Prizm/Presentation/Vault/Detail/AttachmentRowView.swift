@@ -4,98 +4,150 @@ import SwiftUI
 
 /// A single row in the Attachments section card displaying an attachment's name and size.
 ///
-/// When `attachment.isUploadIncomplete` is true the row shows an "Upload incomplete" warning
-/// and a Retry button instead of the normal Open / Save to Disk actions. Normal action buttons
-/// (Open, Save to Disk, Delete) are added by `AttachmentRowViewModel` in task 7.
+/// Read mode offers Quick Look preview and download. Edit mode exposes mutation controls.
 struct AttachmentRowView: View {
 
     let attachment: Attachment
+    var isEditing = false
 
-    // Action callbacks — wired by the parent view.
+    // Action callbacks - wired by the parent view.
     // Default no-ops keep task-5 callers (no ViewModel yet) compiling.
-    var onOpen:       () -> Void = {}
+    var onPreview:    () -> Void = {}
     var onSaveToDisk: () -> Void = {}
     var onDelete:     () -> Void = {}
     var onRetry:      () -> Void = {}
 
     @State private var isHovered = false
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.isHoverSuppressed) private var isHoverSuppressed
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            // File icon + name + size
-            Label {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(attachment.fileName)
-                        .font(Typography.fieldValue)
-                        .lineLimit(1)
-                        .foregroundStyle(.primary)
-                    Text(attachment.sizeName)
-                        .font(Typography.listSubtitle)
-                        .foregroundStyle(.secondary)
-                }
-            } icon: {
-                Image(systemName: "doc")
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if attachment.isUploadIncomplete {
-                incompleteActions
-            } else if isHovered {
-                normalActions
+        Group {
+            if !isEditing && !attachment.isUploadIncomplete {
+                viewingRow
+            } else {
+                managementRow
             }
         }
         .padding(.vertical, Spacing.rowVertical)
         .padding(.horizontal, Spacing.rowHorizontal)
+        .background {
+            Rectangle()
+                .fill(
+                    isHovered && !isEditing && !attachment.isUploadIncomplete
+                        ? Color.primary.opacity(Opacity.fieldHover(contrast))
+                        : Color.clear
+                )
+        }
         .contentShape(Rectangle())
         .onHover { hovering in
             optionalAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
+                isHovered = hovering && !isHoverSuppressed
             }
+        }
+        .onChange(of: isHoverSuppressed) { _, suppressed in
+            if suppressed { isHovered = false }
         }
         .accessibilityIdentifier(AccessibilityID.Attachment.row(attachment.id))
     }
 
-    // MARK: - Normal actions (hover-activated)
+    // MARK: - Rows
 
     @ViewBuilder
-    private var normalActions: some View {
-        HStack(spacing: 8) {
-            Button { onOpen() } label: {
-                Text("open")
-                    .font(.headline)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Color.accentColor)
+    private var viewingRow: some View {
+        HStack(spacing: Spacing.fieldActionGap) {
+            Button {
+                onPreview()
+            } label: {
+                HStack(spacing: Spacing.headerGap) {
+                    attachmentLabel
+                    Spacer()
+                    if isHovered {
+                        Text("Preview")
+                            .font(Typography.utility.weight(.semibold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(Color.accentColor)
+                            .transition(.opacity)
+                    }
+                }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open")
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel("Preview attachment")
             .accessibilityIdentifier(AccessibilityID.Attachment.openButton(attachment.id))
 
-            Button { onSaveToDisk() } label: {
-                Text("save")
-                    .font(.headline)
-                    .textCase(.uppercase)
+            Menu {
+                Button {
+                    onSaveToDisk()
+                } label: {
+                    Label("Download", systemImage: "arrow.down.circle")
+                        .labelStyle(.titleAndIcon)
+                }
+                .accessibilityIdentifier(AccessibilityID.Attachment.saveButton(attachment.id))
+            } label: {
+                Image(systemName: "chevron.down")
+                    .imageScale(.small)
                     .foregroundStyle(Color.accentColor)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Save to Disk")
-            .accessibilityHint("Saves file to your chosen location")
-            .accessibilityIdentifier(AccessibilityID.Attachment.saveButton(attachment.id))
-
-            Button { onDelete() } label: {
-                Image(systemName: "trash")
-                    .imageScale(.medium)
-                    .foregroundStyle(Color.red)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Delete")
-            .accessibilityIdentifier(AccessibilityID.Attachment.deleteButton(attachment.id))
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .accessibilityLabel("Attachment actions")
         }
-        .transition(.opacity)
+    }
+
+    private var managementRow: some View {
+        HStack(alignment: .center, spacing: Spacing.headerGap) {
+            attachmentLabel
+            Spacer()
+            if attachment.isUploadIncomplete {
+                if isEditing {
+                    incompleteActions
+                } else {
+                    incompleteIndicator
+                }
+            } else {
+                deleteButton
+            }
+        }
+    }
+
+    private var attachmentLabel: some View {
+        Label {
+            VStack(alignment: .leading, spacing: Spacing.fieldContentGap) {
+                Text(attachment.fileName)
+                    .font(Typography.fieldValue)
+                    .lineLimit(1)
+                    .foregroundStyle(.primary)
+                Text(attachment.sizeName)
+                    .font(Typography.listSubtitle)
+                    .foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: "doc")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var deleteButton: some View {
+        Button { onDelete() } label: {
+            Image(systemName: "trash")
+                .imageScale(.medium)
+                .foregroundStyle(Color.red)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove attachment")
+        .accessibilityIdentifier(AccessibilityID.Attachment.deleteButton(attachment.id))
     }
 
     // MARK: - Upload-incomplete indicator (task 6d.1)
+
+    private var incompleteIndicator: some View {
+        Label("Upload incomplete", systemImage: "exclamationmark.triangle")
+            .font(Typography.utility)
+            .foregroundStyle(.orange)
+    }
 
     @ViewBuilder
     private var incompleteActions: some View {

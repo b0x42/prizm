@@ -20,7 +20,7 @@ struct SSHKeyDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
 
                 DetailSectionCard("Key") {
-                    // Public key — visible
+                    // Public key - visible
                     if let publicKey = sshKey.publicKey {
                         FieldRowView(
                             label:  "Public Key",
@@ -31,7 +31,7 @@ struct SSHKeyDetailView: View {
                         Divider()
                     }
 
-                    // Fingerprint — visible; "[No fingerprint]" placeholder (FR-047)
+                    // Fingerprint - visible; "[No fingerprint]" placeholder (FR-047)
                     let hasFingerprint = sshKey.keyFingerprint?.isEmpty == false
                     let fingerprint = hasFingerprint ? sshKey.keyFingerprint! : "[No fingerprint]"
                     FieldRowView(
@@ -41,7 +41,7 @@ struct SSHKeyDetailView: View {
                         onCopy: hasFingerprint ? onCopy : { _ in }
                     )
 
-                    // Private key — masked by default.
+                    // Private key - masked by default.
                     // Security goal: the SSH private key is long-lived credentials material;
                     // masking prevents accidental shoulder-surfing and screen-capture exposure.
                     // The user must explicitly tap the reveal button to view the raw key.

@@ -2,7 +2,7 @@ import AppKit
 import Combine
 import Foundation
 
-/// Dependency injection container — wires together all Data-layer implementations
+/// Dependency injection container - wires together all Data-layer implementations
 /// and exposes the Domain-layer protocols used by the Presentation layer.
 ///
 /// Created once at app launch and passed down via `@StateObject` / environment.
@@ -14,6 +14,7 @@ final class AppContainer: ObservableObject {
 
     let apiClient:     PrizmAPIClientImpl
     let crypto:        PrizmCryptoServiceImpl
+    let totpCodeGenerator: TOTPCodeGeneratorImpl
     let keychain:      KeychainServiceImpl
     let biometricKeychain: BiometricKeychainServiceImpl
     let vaultStore:    VaultRepositoryImpl
@@ -57,10 +58,11 @@ final class AppContainer: ObservableObject {
     let uploadAttachmentUseCase:   UploadAttachmentUseCaseImpl
     let downloadAttachmentUseCase: DownloadAttachmentUseCaseImpl
     let deleteAttachmentUseCase:   DeleteAttachmentUseCaseImpl
+    let itemTransferUseCase:       VaultItemTransferUseCaseImpl
 
     // MARK: - Temp file lifecycle
 
-    /// Singleton temp-file manager — injected into `AttachmentRowViewModel` via the
+    /// Singleton temp-file manager - injected into `AttachmentRowViewModel` via the
     /// `TempFileManaging` protocol to keep Presentation decoupled from AppKit (Constitution §II).
     let tempFileManager: AttachmentTempFileManager
 
@@ -69,11 +71,17 @@ final class AppContainer: ObservableObject {
     init() {
         let api           = PrizmAPIClientImpl()
         let crypto        = PrizmCryptoServiceImpl()
+        let totpCodeGenerator = TOTPCodeGeneratorImpl()
         let keychain      = KeychainServiceImpl()
         let biometricKeychain = BiometricKeychainServiceImpl()
         let keyCache      = VaultKeyCache()
         let orgKeyCache   = OrgKeyCache()
-        let vault         = VaultRepositoryImpl(apiClient: api, crypto: crypto, orgKeyCache: orgKeyCache)
+        let vault         = VaultRepositoryImpl(
+            apiClient: api,
+            crypto: crypto,
+            orgKeyCache: orgKeyCache,
+            vaultKeyCache: keyCache
+        )
         let vaultKeyService = VaultKeyServiceImpl(cache: keyCache, crypto: crypto)
 
         let auth = AuthRepositoryImpl(
@@ -99,15 +107,19 @@ final class AppContainer: ObservableObject {
         // Resolve the stored account email for per-account timestamp scoping.
         // Falls back to an empty string if no account is stored yet (first launch before login);
         // the timestamp will be recorded under the correct key after login completes.
-        let accountEmail = auth.storedAccount()?.email ?? ""
-        let syncTimestamp = SyncTimestampRepositoryImpl(email: accountEmail)
+        let accountProfileId = auth.activeAccount()?.profileId ?? UUID()
+        let syncTimestamp = SyncTimestampRepositoryImpl(profileId: accountProfileId)
 
         self.apiClient       = api
         self.crypto          = crypto
+        self.totpCodeGenerator = totpCodeGenerator
         self.keychain        = keychain
         self.biometricKeychain = biometricKeychain
         self.vaultStore      = vault
-        self.faviconLoader   = FaviconLoader()
+        self.faviconLoader   = FaviconLoader(
+            iconsBase: auth.activeAccount()?.serverEnvironment.iconsURL
+                ?? URL(string: "https://icons.bitwarden.net")!
+        )
         self.vaultKeyCache   = keyCache
         self.orgKeyCache     = orgKeyCache
         self.authRepository  = auth
@@ -130,24 +142,31 @@ final class AppContainer: ObservableObject {
         self.deleteCollectionUseCase         = DeleteCollectionUseCaseImpl(repository: vault)
         self.syncTimestampRepository         = syncTimestamp
         self.getLastSyncDateUseCase          = GetLastSyncDateUseCaseImpl(repository: syncTimestamp)
-        // Attachment use cases — Upload and Download inject VaultKeyService;
+        // Attachment use cases - Upload and Download inject VaultKeyService;
         // Delete does NOT (no key material required, Constitution §VI).
-        self.uploadAttachmentUseCase   = UploadAttachmentUseCaseImpl(repository: attachmentRepo, vaultKeyService: vaultKeyService)
-        self.downloadAttachmentUseCase = DownloadAttachmentUseCaseImpl(repository: attachmentRepo, vaultKeyService: vaultKeyService)
+        let uploadAttachment = UploadAttachmentUseCaseImpl(repository: attachmentRepo, vaultKeyService: vaultKeyService)
+        let downloadAttachment = DownloadAttachmentUseCaseImpl(repository: attachmentRepo, vaultKeyService: vaultKeyService)
+        self.uploadAttachmentUseCase   = uploadAttachment
+        self.downloadAttachmentUseCase = downloadAttachment
         self.deleteAttachmentUseCase   = DeleteAttachmentUseCaseImpl(repository: attachmentRepo)
+        self.itemTransferUseCase = VaultItemTransferUseCaseImpl(
+            repository: vault,
+            downloadAttachment: downloadAttachment,
+            uploadAttachment: uploadAttachment
+        )
         self.tempFileManager           = AttachmentTempFileManager()
     }
 
     // MARK: - Factories
 
     /// Returns a fresh `SyncTimestampRepository` and matching `GetLastSyncDateUseCase`
-    /// scoped to the given account email.
+    /// scoped to the given local account profile.
     ///
     /// Called by `RootViewModel` after a successful login or unlock to ensure the
-    /// `VaultBrowserViewModel` is always scoped to the correct account — not the
+    /// `VaultBrowserViewModel` is always scoped to the correct account - not the
     /// fallback empty-email instance created before any account was known.
-    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
-        let repo = SyncTimestampRepositoryImpl(email: email)
+    func makeSyncTimestampDependencies(for profileId: UUID) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
+        let repo = SyncTimestampRepositoryImpl(profileId: profileId)
         return (repo, GetLastSyncDateUseCaseImpl(repository: repo))
     }
 
@@ -184,13 +203,16 @@ final class AppContainer: ObservableObject {
     /// Creates an `ItemEditViewModel` for the given item, wired with the live edit use case.
     /// The caller is responsible for setting `onSaveSuccess` to update the UI after a save.
     /// Pass the cached `folders`, `organizations`, and `collections` from `VaultBrowserViewModel`
-    /// — these are pre-fetched on the actor so no additional async call is needed here.
+    /// - these are pre-fetched on the actor so no additional async call is needed here.
     func makeItemEditViewModel(for item: VaultItem,
                                folders: [Folder] = [],
                                organizations: [Organization] = [],
                                collections: [OrgCollection] = []) -> ItemEditViewModel {
         ItemEditViewModel(item: item, useCase: editVaultItemUseCase,
-                          folders: folders, organizations: organizations, collections: collections)
+                          folders: folders, organizations: organizations, collections: collections,
+                          uploadAttachmentUseCase: uploadAttachmentUseCase,
+                          deleteAttachmentUseCase: deleteAttachmentUseCase,
+                          attachmentFilePicker: Self.defaultNSOpenPanel)
     }
 
     /// Creates an `ItemEditViewModel` in create mode for the given item type.
@@ -216,7 +238,27 @@ final class AppContainer: ObservableObject {
         )
     }
 
-    // MARK: - AppKit panel defaults (App layer — Constitution §II)
+    func makeItemTransferViewModel(
+        operation: ItemTransferViewModel.Operation,
+        items: [VaultItem],
+        folders: [Folder],
+        organizations: [Organization],
+        collections: [OrgCollection],
+        onFinished: @escaping ([VaultItem]) -> Void
+    ) -> ItemTransferViewModel {
+        ItemTransferViewModel(
+            operation: operation,
+            items: items,
+            folders: folders,
+            organizations: organizations,
+            collections: collections,
+            moveUseCase: itemTransferUseCase,
+            duplicateUseCase: itemTransferUseCase,
+            onFinished: onFinished
+        )
+    }
+
+    // MARK: - AppKit panel defaults (App layer - Constitution §II)
     //
     // These closures wrap AppKit classes (NSOpenPanel, NSSavePanel, NSWorkspace) and are
     // injected into Presentation-layer ViewModels so the Presentation layer never imports

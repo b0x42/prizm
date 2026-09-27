@@ -157,7 +157,7 @@ final class KeyboardNavigationTests: XCTestCase {
 
     // MARK: - SC-007 Scenario 8: Full keyboard-only journey
 
-    /// Smoke test: Navigates the vault browser using only keyboard — no mouse clicks.
+    /// Smoke test: Navigates the vault browser using only keyboard - no mouse clicks.
     func testFullKeyboardOnlyJourney() {
         // Tab to sidebar.
         app.typeKey(.tab, modifierFlags: [])

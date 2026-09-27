@@ -1,7 +1,7 @@
 import XCTest
 @testable import Prizm
 
-/// T063: Unit tests for search — per-type field matching (FR-012),
+/// T063: Unit tests for search - per-type field matching (FR-012),
 /// category scoping, empty results, term preservation.
 @MainActor
 final class SearchVaultTests: XCTestCase {

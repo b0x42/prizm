@@ -12,7 +12,7 @@ final class AttachmentEntityTests: XCTestCase {
             size: 1024, sizeName: "1 KB", url: "https://example.com/file", isUploadIncomplete: false
         )
         let copy = a
-        // VaultItem is nonisolated struct — changes to 'a' must not affect 'copy'
+        // VaultItem is nonisolated struct - changes to 'a' must not affect 'copy'
         // (can't mutate let-bound fields, but we can verify they are independent values)
         XCTAssertEqual(a.id, copy.id)
         XCTAssertEqual(a.fileName, copy.fileName)
@@ -96,7 +96,7 @@ final class AttachmentEntityTests: XCTestCase {
             id: "v-2", name: "Card", isFavorite: false, isDeleted: false,
             creationDate: Date(), revisionDate: Date(),
             content: .secureNote(SecureNoteContent(notes: nil, customFields: []))
-            // attachments omitted — verifies default value is []
+            // attachments omitted - verifies default value is []
         )
         XCTAssertEqual(item.attachments, [])
     }

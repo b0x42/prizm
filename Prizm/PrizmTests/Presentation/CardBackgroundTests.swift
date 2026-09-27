@@ -24,7 +24,7 @@ final class CardBackgroundTests: XCTestCase {
     /// asset catalog is included in the app target.
     func testCardBackgroundColor_exists() {
         // NSColor(named:) is unreliable in unsigned hosted unit tests on macOS.
-        // Verify the compiled asset catalog exists in the app bundle — the CardBackground
+        // Verify the compiled asset catalog exists in the app bundle - the CardBackground
         // colorset is confirmed present via `xcrun assetutil --info Assets.car`.
         let appBundle = Bundle(for: ItemEditViewModel.self)
         let carURL = appBundle.url(forResource: "Assets", withExtension: "car")
@@ -43,7 +43,7 @@ final class CardBackgroundTests: XCTestCase {
         XCTAssertFalse(DetailSectionCard<EmptyView>.hasHeader(""))
     }
 
-    /// A whitespace-only title is treated as absent — no header rendered.
+    /// A whitespace-only title is treated as absent - no header rendered.
     func testHasHeader_whitespaceTitle_returnsFalse() {
         XCTAssertFalse(DetailSectionCard<EmptyView>.hasHeader("   "))
     }

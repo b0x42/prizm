@@ -7,7 +7,7 @@ import SwiftUI
 /// Displays the file name, formatted size, any advisory or error messages,
 /// a progress indicator during upload, and Confirm / Cancel buttons.
 ///
-/// Wired to `AttachmentAddViewModel` — all state flows from the ViewModel.
+/// Wired to `AttachmentAddViewModel` - all state flows from the ViewModel.
 /// The sheet dismisses itself when `viewModel.isDismissed` becomes true.
 struct AttachmentConfirmSheet: View {
 

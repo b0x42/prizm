@@ -100,7 +100,7 @@ final class LoginUseCaseTests: XCTestCase {
         XCTAssertFalse(mockSync.syncCalled, "Sync must not be called on failed login")
     }
 
-    /// A sync failure after successful login is non-fatal — result is still .success (FR-049).
+    /// A sync failure after successful login is non-fatal - result is still .success (FR-049).
     func testExecute_syncFailure_throws() async throws {
         mockAuth.stubbedLoginResult = .success(makeAccount())
         mockSync.syncShouldThrow    = SyncError.networkUnavailable
@@ -119,7 +119,7 @@ final class LoginUseCaseTests: XCTestCase {
 
     // MARK: - cancelTOTP
 
-    /// cancelTOTP delegates to auth.cancelTwoFactor() — clears pending in-memory key material.
+    /// cancelTOTP delegates to auth.cancelTwoFactor() - clears pending in-memory key material.
     func testCancelTOTP_callsCancelTwoFactor() async throws {
         mockAuth.stubbedLoginResult = .requiresTwoFactor(.authenticatorApp)
         _ = try await sut.execute(

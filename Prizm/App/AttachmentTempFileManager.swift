@@ -38,7 +38,7 @@ final class AttachmentTempFileManager: TempFileManaging, @unchecked Sendable {
 
     init() {
         // Register for foreground notification to trigger cleanup whenever the app
-        // comes to the front — catches the common case where the user switches back
+        // comes to the front - catches the common case where the user switches back
         // to Prizm after opening an attachment in another app.
         NotificationCenter.default.addObserver(
             self,
@@ -61,7 +61,7 @@ final class AttachmentTempFileManager: TempFileManaging, @unchecked Sendable {
 
     /// Records `url` with a custom deletion deadline.
     ///
-    /// Exposed for testing — allows tests to register a file with a deadline in the past
+    /// Exposed for testing - allows tests to register a file with a deadline in the past
     /// without sleeping 30 seconds (Constitution §VI, YAGNI: no separate Clock injection).
     func register(url: URL, deleteAfter: Date) {
         lock.lock()
@@ -86,6 +86,17 @@ final class AttachmentTempFileManager: TempFileManaging, @unchecked Sendable {
         lock.unlock()
 
         for entry in expired {
+            zeroAndDelete(entry.url)
+        }
+    }
+
+    func cleanupAll() {
+        lock.lock()
+        let allEntries = entries
+        entries.removeAll()
+        lock.unlock()
+
+        for entry in allEntries {
             zeroAndDelete(entry.url)
         }
     }

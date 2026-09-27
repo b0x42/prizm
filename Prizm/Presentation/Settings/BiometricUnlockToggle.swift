@@ -9,9 +9,14 @@ struct BiometricUnlockToggle: View {
 
     let authRepository: any AuthRepository
 
-    @State private var isEnabled: Bool = UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
+    @State private var isEnabled: Bool
     @State private var isProcessing = false
     @State private var showVaultLockedHint = false
+
+    init(authRepository: any AuthRepository) {
+        self.authRepository = authRepository
+        _isEnabled = State(initialValue: authRepository.biometricUnlockAvailable)
+    }
 
     private var biometryName: String {
         switch LAContext().biometryType {

@@ -106,7 +106,7 @@ final class PasswordGeneratorTests: XCTestCase {
     }
 
     func testPassword_lastSetLock_preventsEmptyPool() async throws {
-        // All sets disabled — generator should fall back to lowercase.
+        // All sets disabled - generator should fall back to lowercase.
         var config = PasswordGeneratorConfig()
         config.includeUppercase = false
         config.includeLowercase = false

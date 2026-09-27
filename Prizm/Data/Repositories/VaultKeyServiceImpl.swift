@@ -8,9 +8,9 @@ import os.log
 /// Returns the effective 64-byte cipher key (encryptionKey ‖ macKey) for a given
 /// vault item. Key resolution order:
 ///
-/// 1. **Cache hit** — If `VaultKeyCache` has a per-item key for the cipher ID
+/// 1. **Cache hit** - If `VaultKeyCache` has a per-item key for the cipher ID
 ///    (populated at sync time by `SyncRepositoryImpl`), return it directly.
-/// 2. **Cache miss** — If the cache has no entry for the cipher ID, fall back to the
+/// 2. **Cache miss** - If the cache has no entry for the cipher ID, fall back to the
 ///    vault-level key: call `crypto.currentKeys()` and concatenate
 ///    `keys.encryptionKey + keys.macKey` → 64-byte `Data`. This handles:
 ///    - Ciphers with no per-item key (use vault-level key directly, per Bitwarden spec).
@@ -46,21 +46,21 @@ final class VaultKeyServiceImpl: VaultKeyService {
             return cachedKey
         }
 
-        // 2. Cache miss — fall back to the vault-level key.
+        // 2. Cache miss - fall back to the vault-level key.
         // A missing cache entry is NOT a sign of a locked vault; it means the cipher
         // either has no per-item key, or was created after the last sync.
-        logger.debug("VaultKeyServiceImpl: no per-item key for cipher \(cipherId, privacy: .public) — using vault key")
+        logger.debug("VaultKeyServiceImpl: no per-item key for cipher \(cipherId, privacy: .public) - using vault key")
 
         let keys: CryptoKeys
         do {
             keys = try await crypto.currentKeys()
         } catch PrizmCryptoServiceError.vaultLocked {
-            logger.error("VaultKeyServiceImpl: vault is locked — cannot resolve cipher key")
+            logger.error("VaultKeyServiceImpl: vault is locked - cannot resolve cipher key")
             throw VaultError.vaultLocked
         }
 
         // Concatenate encryptionKey ‖ macKey to form the 64-byte effective cipher key.
-        // Both fields are 32 bytes each (Constitution §II — CryptoKeys struct).
+        // Both fields are 32 bytes each (Constitution §II - CryptoKeys struct).
         return keys.encryptionKey + keys.macKey
     }
 }

@@ -5,11 +5,11 @@ import SwiftUI
 /// Custom About window for Prizm (replaces the default `NSApp.orderFrontStandardAboutPanel`).
 ///
 /// Surfaces app version, tagline, GitHub link, "Built with" summary, and
-/// acknowledgements — letting users verify the full dependency chain without
+/// acknowledgements - letting users verify the full dependency chain without
 /// digging into source code. Required by CONSTITUTION §VII (Radical Transparency).
 struct AboutView: View {
 
-    // Initialized lazily from Bundle.main — safe here because View.body is @MainActor.
+    // Initialized lazily from Bundle.main - safe here because View.body is @MainActor.
     @State private var viewModel = AboutViewModel.forCurrentApp()
 
     var body: some View {
@@ -80,7 +80,7 @@ struct AboutView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("Swift 6.2 + SwiftUI")
-                Text("Open source — all crypto is publicly auditable")
+                Text("Open source - all crypto is publicly auditable")
                     .foregroundStyle(.secondary)
             }
             .font(.caption)

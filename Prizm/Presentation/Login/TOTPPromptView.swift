@@ -49,7 +49,7 @@ struct TOTPPromptView: View {
                     .onSubmit { submitIfReady() }
             }
 
-            // MARK: Remember device — FR-050
+            // MARK: Remember device - FR-050
             Toggle("Remember this device", isOn: $rememberDevice)
                 .frame(width: 200, alignment: .leading)
                 .accessibilityIdentifier(AccessibilityID.TOTP.rememberToggle)

@@ -1,3 +1,4 @@
+import QuickLook
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -5,30 +6,25 @@ import UniformTypeIdentifiers
 
 /// Attachments section card in the vault item detail pane.
 ///
-/// Always visible regardless of attachment count — shows an empty state message and
-/// the "Add Attachment" button even when the item has no attachments (task 5.1).
+/// In read mode it exposes only Preview and Download. Mutation controls and file drops
+/// are enabled explicitly for edit flows.
 ///
-/// Supports:
-/// - Single-file add via `NSOpenPanel` triggered by the "Add Attachment" button (task 5.3).
-/// - Drag-and-drop of one or more files onto the card, highlighted with a border while
-///   a file is dragged over (task 5.4).
-///
-/// Action closures (`onAddTapped`, `onDropFiles`, per-row `onOpen`/`onSaveToDisk`/`onDelete`/
-/// `onRetry`) are wired by the parent view. The defaults are no-ops so task-5 callers compile
-/// before the ViewModels from tasks 6 and 7 are wired up.
+/// Action closures are wired by the parent view. Defaults remain no-ops for lightweight
+/// previews and callers that do not provide attachment infrastructure.
 struct AttachmentsSectionView: View {
 
     let attachments: [Attachment]
+    var isEditing = false
 
     // Section-level callbacks
     var onAddTapped:  () -> Void       = {}
     var onDropFiles:  ([URL]) -> Void  = { _ in }
 
-    /// `true` while `NSOpenPanel` is blocking — disables the "Add Attachment" button
+    /// `true` while `NSOpenPanel` is blocking - disables the "Add Attachment" button
     /// and shows a small spinner so the UI doesn't appear frozen.
     var isPicking: Bool = false
 
-    /// Factory for `AttachmentRowViewModel` — injected from AppContainer so the
+    /// Factory for `AttachmentRowViewModel` - injected from AppContainer so the
     /// section view never imports Data layer types directly (Constitution §II).
     /// When nil (e.g. in task-5 callers before ViewModels are wired), row actions no-op.
     var makeRowViewModel: ((Attachment) -> AttachmentRowViewModel)? = nil
@@ -44,12 +40,19 @@ struct AttachmentsSectionView: View {
                     attachmentRows
                 }
 
-                Divider()
-                addButton
+                if isEditing {
+                    Divider()
+                    addButton
+                }
             }
         }
-        .overlay(dragBorder)
-        .onDrop(of: [.fileURL], isTargeted: $isDragTargeted) { providers in
+        .overlay {
+            if isEditing {
+                dragBorder
+            }
+        }
+        .onDrop(of: isEditing ? [.fileURL] : [], isTargeted: $isDragTargeted) { providers in
+            guard isEditing else { return false }
             extractURLs(from: providers)
             return true
         }
@@ -75,9 +78,13 @@ struct AttachmentsSectionView: View {
         ForEach(attachments) { attachment in
             if attachment.id != attachments.first?.id { Divider() }
             if let factory = makeRowViewModel {
-                AttachmentRowViewWithViewModel(attachment: attachment, factory: factory)
+                AttachmentRowViewWithViewModel(
+                    attachment: attachment,
+                    isEditing: isEditing,
+                    factory: factory
+                )
             } else {
-                AttachmentRowView(attachment: attachment)
+                AttachmentRowView(attachment: attachment, isEditing: isEditing)
             }
         }
     }
@@ -131,12 +138,19 @@ struct AttachmentsSectionView: View {
 private struct AttachmentRowViewWithViewModel: View {
 
     let attachment: Attachment
+    let isEditing: Bool
 
     @State private var viewModel: AttachmentRowViewModel
     @State private var showDeleteAlert = false
+    @Environment(\.colorSchemeContrast) private var contrast
 
-    init(attachment: Attachment, factory: (Attachment) -> AttachmentRowViewModel) {
+    init(
+        attachment: Attachment,
+        isEditing: Bool,
+        factory: (Attachment) -> AttachmentRowViewModel
+    ) {
         self.attachment = attachment
+        self.isEditing = isEditing
         // State(initialValue:) stores the value only on the first insertion into the
         // view hierarchy; subsequent re-renders preserve the existing state value, so
         // the factory is not called more than once per logical row lifetime.
@@ -144,26 +158,56 @@ private struct AttachmentRowViewWithViewModel: View {
     }
 
     var body: some View {
-        AttachmentRowView(
-            attachment:   viewModel.attachment,
-            onOpen:       { viewModel.open() },
-            onSaveToDisk: { viewModel.saveToDisk() },
-            onDelete:     { showDeleteAlert = true },
-            onRetry:      { viewModel.retryUpload() }
-        )
+        VStack(spacing: 0) {
+            AttachmentRowView(
+                attachment:   viewModel.attachment,
+                isEditing:    isEditing,
+                onPreview:    { viewModel.preview() },
+                onSaveToDisk: { viewModel.saveToDisk() },
+                onDelete:     { showDeleteAlert = true },
+                onRetry:      { viewModel.retryUpload() }
+            )
+
+            if let error = viewModel.actionError ?? viewModel.retryError {
+                HStack(alignment: .top, spacing: Spacing.headerGap) {
+                    Image(systemName: "eye.slash.fill")
+                        .foregroundStyle(.red)
+                        .accessibilityHidden(true)
+
+                    VStack(alignment: .leading, spacing: Spacing.fieldContentGap) {
+                        Text(viewModel.actionErrorTitle ?? "Attachment unavailable")
+                            .font(Typography.fieldValue.weight(.semibold))
+                        Text(error)
+                            .font(Typography.listSubtitle)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, Spacing.rowHorizontal)
+                .padding(.vertical, Spacing.bannerVertical)
+                .background(
+                    Color.red.opacity(Opacity.errorBanner(contrast)),
+                    in: RoundedRectangle(cornerRadius: Spacing.itemIconCornerRadius)
+                )
+                .padding(.horizontal, Spacing.rowHorizontal)
+                .padding(.top, Spacing.rowVertical)
+                .padding(.bottom, Spacing.rowVertical)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .quickLookPreview($viewModel.previewURL)
         .alert("Delete Attachment", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) { viewModel.delete() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(verbatim: "\u{201C}" + viewModel.attachment.fileName + "\u{201D} will be permanently deleted.")
         }
-        .overlay(alignment: .bottom) {
-            if let error = viewModel.actionError ?? viewModel.retryError {
-                Text(error)
-                    .font(Typography.utility)
-                    .foregroundStyle(.red)
-                    .padding(.horizontal, Spacing.rowHorizontal)
-                    .transition(.opacity)
+        .onChange(of: viewModel.actionError) { _, error in
+            if let error {
+                AccessibilityNotification.Announcement(error).post()
             }
         }
     }

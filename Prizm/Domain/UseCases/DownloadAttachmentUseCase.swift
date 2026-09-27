@@ -4,7 +4,7 @@ import Foundation
 
 /// Downloads and decrypts a file attachment from the Bitwarden server.
 ///
-/// The cipher key is resolved internally via `VaultKeyService` — it is NEVER a
+/// The cipher key is resolved internally via `VaultKeyService` - it is NEVER a
 /// parameter on `execute(...)`. This keeps key material out of the Presentation layer
 /// and enforces the decryption boundary at the Data layer (Constitution §II/§III).
 ///

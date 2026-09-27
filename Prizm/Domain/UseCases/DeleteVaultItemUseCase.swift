@@ -3,7 +3,7 @@ import Foundation
 /// Soft-deletes a vault item by moving it to the Bitwarden Trash.
 ///
 /// The item remains on the server (recoverable via `RestoreVaultItemUseCase`) until
-/// it is permanently deleted. This operation never erases data irrecoverably — use
+/// it is permanently deleted. This operation never erases data irrecoverably - use
 /// `PermanentDeleteVaultItemUseCase` to permanently remove a trashed item.
 ///
 /// Implemented by `DeleteVaultItemUseCaseImpl` in the Data layer.

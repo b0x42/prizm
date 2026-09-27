@@ -11,7 +11,7 @@ import os.log
 /// cache consistent without waiting for the next sync.
 ///
 /// Thread safety: this type is a Swift `actor`. All mutations and reads execute on the
-/// actor's cooperative-thread-pool executor — never on the main thread.
+/// actor's cooperative-thread-pool executor - never on the main thread.
 actor VaultRepositoryImpl: VaultRepository {
 
     private let logger = Logger(subsystem: "com.prizm", category: "VaultRepository")
@@ -24,6 +24,7 @@ actor VaultRepositoryImpl: VaultRepository {
     // allows the actor init to be called from @MainActor without an actor hop.
     nonisolated private let mapper: CipherMapper
     private let orgKeyCache: OrgKeyCache
+    private let vaultKeyCache: VaultKeyCache
 
     // MARK: - Raw stores
 
@@ -55,12 +56,14 @@ actor VaultRepositoryImpl: VaultRepository {
         apiClient:   any PrizmAPIClientProtocol,
         crypto:      any PrizmCryptoService,
         mapper:      CipherMapper = CipherMapper(),
-        orgKeyCache: OrgKeyCache = OrgKeyCache()
+        orgKeyCache: OrgKeyCache = OrgKeyCache(),
+        vaultKeyCache: VaultKeyCache = VaultKeyCache()
     ) {
         self.apiClient         = apiClient
         self.crypto            = crypto
         self.mapper            = mapper
         self.orgKeyCache       = orgKeyCache
+        self.vaultKeyCache     = vaultKeyCache
 
         // Pre-populate static keys with zero counts so itemCounts() returns 0 (not nil)
         // before the first populate() / buildIndexes() call (e.g. empty-vault tests).
@@ -107,7 +110,7 @@ actor VaultRepositoryImpl: VaultRepository {
     // MARK: - Index builder
 
     private func buildIndexes() {
-        // Local staging variable — not stored; _bySelection[.allItems] serves the same role.
+        // Local staging variable - not stored; _bySelection[.allItems] serves the same role.
         let active = items.filter { !$0.isDeleted }
 
         // Build org-collection map first: used by both _bySelection and _counts.
@@ -131,7 +134,7 @@ actor VaultRepositoryImpl: VaultRepository {
                 $0.organizationId == nil && $0.folderId == folder.id
             })
         }
-        // Index by collection — cover all collectionIds referenced in items, not just those
+        // Index by collection - cover all collectionIds referenced in items, not just those
         // present in collectionStore. Items may reference collections that haven't been fetched
         // yet (e.g. before the first full sync), so we union both sources.
         var allCollectionIds = Set(collectionStore.map(\.id))
@@ -141,7 +144,7 @@ actor VaultRepositoryImpl: VaultRepository {
                 $0.collectionIds.contains(colId)
             })
         }
-        // Index by organization — derive from collectionStore's organizationIds as well as
+        // Index by organization - derive from collectionStore's organizationIds as well as
         // organizationStore, so org filtering works even when organizations: [] is passed to
         // populate() but collections carry orgId metadata.
         var allOrgIds = Set(organizationStore.map(\.id))
@@ -155,7 +158,7 @@ actor VaultRepositoryImpl: VaultRepository {
         }
         _bySelection = bySelection
 
-        // Derive _counts from _bySelection — no second filtering pass over items.
+        // Derive _counts from _bySelection - no second filtering pass over items.
         var counts: [SidebarSelection: Int] = [:]
         counts[.allItems]  = bySelection[.allItems]?.count  ?? 0
         counts[.favorites] = bySelection[.favorites]?.count ?? 0
@@ -223,25 +226,25 @@ actor VaultRepositoryImpl: VaultRepository {
         return item
     }
 
-    // MARK: - Update (write path — called by EditVaultItemUseCaseImpl)
+    // MARK: - Update (write path - called by EditVaultItemUseCaseImpl)
 
     /// Re-encrypts `draft`, calls `PUT /api/ciphers/{id}`, splices the server-confirmed
     /// item into the in-memory cache, and returns it.
     ///
     /// - Security goal: the vault's symmetric keys are used to re-encrypt every sensitive
     ///   field before the request leaves the device. The re-encryption boundary is the call
-    ///   to `CipherMapper.toRawCipher` — after that point only EncString ciphertext exists
+    ///   to `CipherMapper.toRawCipher` - after that point only EncString ciphertext exists
     ///   in the `RawCipher` struct. Plaintext is never serialised into the JSON body.
     ///   Algorithm: EncString type-2 (AES-256-CBC + HMAC-SHA256); see `CipherMapper.toRawCipher`
     ///   for the full algorithm reference and security notes.
     ///
     /// - Data flow (re-encryption boundary):
-    ///   1. Obtain current symmetric keys from `PrizmCryptoService` — throws immediately
+    ///   1. Obtain current symmetric keys from `PrizmCryptoService` - throws immediately
     ///      if the vault is locked, preventing writes from a locked state.
     ///   2. `CipherMapper.toRawCipher` encrypts every sensitive field with the vault key.
     ///      No plaintext value crosses this call boundary in the outbound direction.
     ///   3. The encrypted `RawCipher` is sent via `PUT /api/ciphers/{id}`.
-    ///   4. The server response is decoded and re-mapped to a `VaultItem` — we use the
+    ///   4. The server response is decoded and re-mapped to a `VaultItem` - we use the
     ///      *response* (not the draft) so the server's revision date and any server-side
     ///      normalisation are captured correctly.
     ///   5. The in-memory cache is patched in-place so the UI reflects the latest state
@@ -256,7 +259,7 @@ actor VaultRepositoryImpl: VaultRepository {
     /// - Throws: `APIError` on network or HTTP failure.
     /// - Throws: `CipherMapperError` if the reverse mapper or response mapper fails.
     func update(_ draft: DraftVaultItem) async throws -> VaultItem {
-        // TODO: Require biometric re-auth before encrypting and sending — deferred pending
+        // TODO: Require biometric re-auth before encrypting and sending - deferred pending
         // SecureEnclave entitlement approval.
 
         let vaultKeys: CryptoKeys
@@ -276,7 +279,7 @@ actor VaultRepositoryImpl: VaultRepository {
 
         let rawCipher = try mapper.toRawCipher(draft, encryptedWith: encryptionKeys)
 
-        // TODO: Queue encrypted rawCipher for offline persistence (deferred — requires WAL).
+        // TODO: Queue encrypted rawCipher for offline persistence (deferred - requires WAL).
         let updatedRaw = try await apiClient.updateCipher(id: draft.id, cipher: rawCipher)
 
         if draft.organizationId != nil {
@@ -334,8 +337,14 @@ actor VaultRepositoryImpl: VaultRepository {
             createdRaw = try await apiClient.createCipher(cipher: rawCipher)
         }
 
-        // Discard cipherKey — newly created items are picked up by the next sync.
-        let (createdItem, _) = try mapper.map(raw: createdRaw, vaultKeys: vaultKeys, orgKeys: orgKeysSnapshot)
+        let (createdItem, cipherKey) = try mapper.map(
+            raw: createdRaw,
+            vaultKeys: vaultKeys,
+            orgKeys: orgKeysSnapshot
+        )
+        // Keep the effective key available until the next sync so attachments can be
+        // uploaded immediately, including to newly created organization items.
+        await vaultKeyCache.store(key: cipherKey, for: createdItem.id)
         items.append(createdItem)
         buildIndexes()
         logger.info("Vault item created: \(createdItem.id, privacy: .public)")
@@ -346,9 +355,9 @@ actor VaultRepositoryImpl: VaultRepository {
 
     /// Soft-deletes the active item with `id` by calling `PUT /ciphers/{id}/delete`.
     ///
-    /// - Security goal: no vault key material is needed — only the cipher ID is sent.
+    /// - Security goal: no vault key material is needed - only the cipher ID is sent.
     ///   The access token (held by `PrizmAPIClientImpl`) authorises the operation.
-    /// - Bitwarden endpoint: `PUT /api/ciphers/{id}/delete` — moves the cipher to Trash.
+    /// - Bitwarden endpoint: `PUT /api/ciphers/{id}/delete` - moves the cipher to Trash.
     func deleteItem(id: String) async throws {
         guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
         try await apiClient.softDeleteCipher(id: id)
@@ -365,8 +374,8 @@ actor VaultRepositoryImpl: VaultRepository {
 
     /// Permanently deletes the trashed item with `id` by calling `DELETE /ciphers/{id}`.
     ///
-    /// - Security goal: same as `deleteItem` — only the cipher ID is sent; no key material.
-    /// - Bitwarden endpoint: `DELETE /api/ciphers/{id}` — permanently removes the cipher.
+    /// - Security goal: same as `deleteItem` - only the cipher ID is sent; no key material.
+    /// - Bitwarden endpoint: `DELETE /api/ciphers/{id}` - permanently removes the cipher.
     func permanentDeleteItem(id: String) async throws {
         guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
         try await apiClient.permanentDeleteCipher(id: id)
@@ -377,7 +386,7 @@ actor VaultRepositoryImpl: VaultRepository {
 
     /// Restores the trashed item with `id` by calling `PUT /api/ciphers/{id}/restore`.
     ///
-    /// - Security goal: same as `deleteItem` — only the cipher ID is sent; no key material.
+    /// - Security goal: same as `deleteItem` - only the cipher ID is sent; no key material.
     func restoreItem(id: String) async throws {
         guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
         try await apiClient.restoreCipher(id: id)
@@ -398,7 +407,7 @@ actor VaultRepositoryImpl: VaultRepository {
     /// in-memory store without triggering a full re-sync.
     func updateAttachments(_ attachments: [Attachment], for cipherId: String) async {
         guard let idx = items.firstIndex(where: { $0.id == cipherId }) else {
-            logger.error("updateAttachments: cipher not found in cache — id=\(cipherId, privacy: .public)")
+            logger.error("updateAttachments: cipher not found in cache - id=\(cipherId, privacy: .public)")
             return
         }
         let old = items[idx]
@@ -462,7 +471,7 @@ actor VaultRepositoryImpl: VaultRepository {
     ///
     /// - Security goal: collection names are encrypted with the *org* symmetric key
     ///   (not the vault key) so that all members of the organization can decrypt them.
-    ///   Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+    ///   Reference: Bitwarden Security Whitepaper §4 - "Organization Key Wrapping".
     func createCollection(name: String, organizationId: String) async throws -> OrgCollection {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw VaultError.decryptionFailed("empty collection name") }
@@ -494,7 +503,7 @@ actor VaultRepositoryImpl: VaultRepository {
 
     /// Deletes a collection from an organization and removes it from the local cache.
     ///
-    /// Items that were in the collection are NOT deleted — they remain in the vault
+    /// Items that were in the collection are NOT deleted - they remain in the vault
     /// with stale `collectionIds` entries that no longer match a known collection.
     func deleteCollection(id: String, organizationId: String) async throws {
         try await apiClient.deleteCollection(id: id, organizationId: organizationId)
@@ -558,7 +567,7 @@ actor VaultRepositoryImpl: VaultRepository {
     /// Encrypts a plaintext collection name using the organization's symmetric key.
     ///
     /// - Security goal: collection names are org-key-encrypted so any org member
-    ///   can read them. The vault key is NOT used — it is per-user, not per-org.
+    ///   can read them. The vault key is NOT used - it is per-user, not per-org.
     ///   Algorithm: EncString type-2 (AES-256-CBC + HMAC-SHA256).
     private func encryptCollectionName(_ name: String, organizationId: String) async throws -> String {
         let orgSnapshot = await orgKeyCache.snapshot()
@@ -569,21 +578,6 @@ actor VaultRepositoryImpl: VaultRepository {
             throw VaultError.decryptionFailed("utf8-encode")
         }
         return try EncString.encrypt(data: data, keys: orgKey).toString()
-    }
-}
-
-// MARK: - ItemContent search / type matching
-
-nonisolated private extension ItemContent {
-    func matchesItemType(_ type: ItemType) -> Bool {
-        switch (self, type) {
-        case (.login,      .login):      return true
-        case (.card,       .card):       return true
-        case (.identity,   .identity):   return true
-        case (.secureNote, .secureNote): return true
-        case (.sshKey,     .sshKey):     return true
-        default:                         return false
-        }
     }
 }
 

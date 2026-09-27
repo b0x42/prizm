@@ -64,7 +64,7 @@ final class EditItemJourneyTests: XCTestCase {
                       "Detail pane should show updated name")
     }
 
-    // MARK: - Task 10.2: Discard with changes — confirm prompt
+    // MARK: - Task 10.2: Discard with changes - confirm prompt
 
     /// Opens the edit sheet, makes a change, clicks Discard, confirms in the prompt,
     /// and verifies the item retains its original values.
@@ -175,7 +175,7 @@ final class EditItemJourneyTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["edit.button.save"].waitForExistence(timeout: 3))
 
-        // Press Esc — no changes made, so should dismiss immediately.
+        // Press Esc - no changes made, so should dismiss immediately.
         app.typeKey(.escape, modifierFlags: [])
 
         XCTAssertFalse(app.buttons["Discard Changes"].waitForExistence(timeout: 1),
@@ -216,7 +216,7 @@ final class EditItemJourneyTests: XCTestCase {
         XCTAssertTrue(editButton.waitForExistence(timeout: 3))
 
         // No Delete button should exist in the toolbar for active items.
-        // Use a short timeout — we're asserting absence.
+        // Use a short timeout - we're asserting absence.
         let deleteToolbarButton = app.buttons.matching(NSPredicate(format: "label == 'Delete'")).firstMatch
         XCTAssertFalse(deleteToolbarButton.waitForExistence(timeout: 1),
                        "Detail toolbar must not contain a Delete button for active items")

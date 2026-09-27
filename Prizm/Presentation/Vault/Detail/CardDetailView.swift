@@ -17,7 +17,7 @@ struct CardDetailView: View {
 
                 DetailSectionCard("Card Details") {
                     // Each Divider is guarded by whether any field above it is
-                    // present — preventing a dangling separator at the card top
+                    // present - preventing a dangling separator at the card top
                     // when cardholderName is nil.
                     if let name = card.cardholderName {
                         FieldRowView(label: "Cardholder Name", value: name, itemId: item.id, onCopy: onCopy)

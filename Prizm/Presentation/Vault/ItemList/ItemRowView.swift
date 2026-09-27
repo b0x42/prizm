@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// FR-021: type-specific subtitle
 ///   - Login:       username
-///   - Card:        `*` + last 4 digits of card number
+///   - Card:        first 4 digits + `****` + last 4 digits of card number
 ///   - Identity:    first + last name; falls back to email; then blank (FR-046)
 ///   - Secure Note: first 30 chars of note body truncated with `…`
 ///   - SSH Key:     key fingerprint, or "[No fingerprint]" if absent (FR-047)
@@ -20,6 +20,7 @@ struct ItemRowView: View {
     var searchQuery:   String? = nil
     /// Org name shown as a small badge when the item belongs to an organization (FR task 6.1).
     var orgName:       String? = nil
+    var isEmphasized:  Bool = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -27,31 +28,52 @@ struct ItemRowView: View {
                 domain:    primaryDomain(for: item),
                 itemType:  itemType(for: item),
                 loader:    faviconLoader,
-                size:      26
+                size:      26,
+                fallbackColor: isEmphasized
+                    ? DesignColor.selectedContentForeground
+                    : .secondary
             )
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(styledName)
                     .font(.headline)
+                    .foregroundStyle(
+                        isEmphasized ? DesignColor.selectedContentForeground : Color.primary
+                    )
                     .lineLimit(1)
                 if let subtitle = subtitle(for: item) {
                     Text(styledSubtitle(subtitle))
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(
+                            isEmphasized
+                                ? DesignColor.selectedContentForeground.opacity(0.85)
+                                : Color.secondary
+                        )
                         .lineLimit(1)
                 }
                 if let org = orgName {
                     Text(org)
                         .font(Typography.listSubtitle)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(
+                            isEmphasized
+                                ? DesignColor.selectedContentForeground
+                                : Color.secondary
+                        )
                         .lineLimit(1)
                         .padding(.horizontal, Spacing.badgeHorizontal)
                         .padding(.vertical, Spacing.badgeVertical)
-                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: Spacing.badgeCornerRadius))
+                        .background(
+                            isEmphasized
+                                ? DesignColor.selectedContentForeground.opacity(0.16)
+                                : Color.accentColor.opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: Spacing.badgeCornerRadius)
+                        )
                 }
             }
         }
         .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Highlighted text helpers
@@ -89,8 +111,8 @@ struct ItemRowView: View {
             return l.username
 
         case .card(let c):
-            if let number = c.number, number.count >= 4 {
-                return "*" + String(number.suffix(4))
+            if let number = c.number, number.count >= 8 {
+                return "\(number.prefix(4)) **** \(number.suffix(4))"
             }
             return nil
 

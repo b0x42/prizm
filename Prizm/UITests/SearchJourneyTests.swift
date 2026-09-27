@@ -7,7 +7,7 @@ import XCTest
 /// and empty state on no match.
 ///
 /// **Prerequisites**: App must be launched with a populated vault.
-/// **Success Criteria**: SC-008 — <100ms per keystroke for 1,000 items.
+/// **Success Criteria**: SC-008 - <100ms per keystroke for 1,000 items.
 final class SearchJourneyTests: XCTestCase {
 
     private var app: XCUIApplication!
@@ -51,7 +51,7 @@ final class SearchJourneyTests: XCTestCase {
         let itemsBefore = app.descendants(matching: .any).matching(itemPredicate).count
 
         guard itemsBefore > 0 else {
-            throw XCTSkip("No items in test vault — cannot test search filtering")
+            throw XCTSkip("No items in test vault - cannot test search filtering")
             return
         }
 

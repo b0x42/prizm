@@ -16,7 +16,7 @@ import os.log
 ///   upload completion (success or failure). Both paths zero the buffer immediately after
 ///   the upload call returns (Constitution §III).
 ///
-/// - File bytes are NOT read at selection time — they are read at the moment the user
+/// - File bytes are NOT read at selection time - they are read at the moment the user
 ///   presses Confirm, minimising how long sensitive data is resident in memory.
 ///
 /// - Testability: The `filePicker` closure is injectable so unit tests can bypass
@@ -36,7 +36,7 @@ final class AttachmentAddViewModel: Identifiable {
     /// Injectable file-picker closure.
     /// Returns all selected `(url, bytes)` pairs; empty array means the user cancelled.
     /// Multiple results trigger the batch sheet; a single result triggers the confirm sheet.
-    /// `@MainActor` — AppKit panel classes require main-actor isolation on macOS 26.
+    /// `@MainActor` - AppKit panel classes require main-actor isolation on macOS 26.
     private let filePicker: @MainActor () -> [(url: URL, bytes: Int)]
 
     private let logger = Logger(subsystem: "com.prizm", category: "attachments")
@@ -49,7 +49,7 @@ final class AttachmentAddViewModel: Identifiable {
     /// Display name for the selected file (derived from `selectedFileURL`).
     private(set) var fileName: String = ""
 
-    /// Byte count of the selected file (read at selection time for size validation only —
+    /// Byte count of the selected file (read at selection time for size validation only -
     /// bytes are NOT loaded into memory until Confirm).
     private(set) var fileSizeBytes: Int = 0
 
@@ -73,7 +73,7 @@ final class AttachmentAddViewModel: Identifiable {
     /// `true` when the sheet should be dismissed (set by `cancel()` or upload success).
     private(set) var isDismissed: Bool = false
 
-    /// Non-empty when the user selected multiple files — the caller should route to the
+    /// Non-empty when the user selected multiple files - the caller should route to the
     /// batch sheet instead of the single-file confirm sheet.
     private(set) var pickedURLs: [URL] = []
 

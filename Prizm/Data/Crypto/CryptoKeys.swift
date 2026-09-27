@@ -8,7 +8,7 @@ import CommonCrypto
 /// password via PBKDF2 or Argon2id followed by HKDF expansion.
 ///
 /// The two-key construction follows the Bitwarden Security Whitepaper §4:
-/// "Key Derivation" — the 256-bit stretched master key is split into a 256-bit
+/// "Key Derivation" - the 256-bit stretched master key is split into a 256-bit
 /// encryption key and a 256-bit MAC key so that the keys used for encryption and
 /// authentication are independent (per NIST SP 800-107 §5.3).
 nonisolated struct CryptoKeys {
@@ -59,7 +59,7 @@ nonisolated extension CryptoKeys {
     /// Performs a constant-time comparison of two HMAC-SHA256 MACs.
     ///
     /// Uses `HMAC<SHA256>.isValidAuthenticationCode(_:authenticating:using:)` which
-    /// performs a constant-time comparison to prevent timing side-channel attacks —
+    /// performs a constant-time comparison to prevent timing side-channel attacks -
     /// an attacker who can measure verification time must not be able to infer how
     /// many bytes of a forged MAC matched before rejection (NIST SP 800-107 §5.3.1).
     ///

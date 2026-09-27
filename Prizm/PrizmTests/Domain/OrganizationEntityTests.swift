@@ -3,9 +3,9 @@ import XCTest
 
 /// Unit tests for `Organization.canManageCollections` role gate.
 ///
-/// Spec: org-collections/spec.md — "canManageCollections reflects role"
+/// Spec: org-collections/spec.md - "canManageCollections reflects role"
 /// Covers every `OrgRole` case including `.custom` (deny-by-default, §4 of Bitwarden
-/// Security Whitepaper — custom-role permission flags are not present in the sync response).
+/// Security Whitepaper - custom-role permission flags are not present in the sync response).
 @MainActor
 final class OrganizationEntityTests: XCTestCase {
 
@@ -32,7 +32,7 @@ final class OrganizationEntityTests: XCTestCase {
     }
 
     func testCustomRoleCannotManageCollections() {
-        // Custom role defaults to false — server-side permission flags for custom roles
+        // Custom role defaults to false - server-side permission flags for custom roles
         // are not available in the sync `type` integer (Bitwarden Security Whitepaper §4).
         let org = Organization(id: "1", name: "Test", role: .custom)
         XCTAssertFalse(org.canManageCollections)

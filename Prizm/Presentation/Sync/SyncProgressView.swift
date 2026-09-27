@@ -5,7 +5,7 @@ import SwiftUI
 /// Shown while the vault is being fetched and decrypted after login.
 /// Displays the current progress message from `SyncUseCase.execute(progress:)`.
 ///
-/// This view is purely informational — there are no user actions.
+/// This view is purely informational - there are no user actions.
 /// It transitions automatically to the vault browser once syncing completes
 /// (state transition driven by `LoginViewModel`).
 struct SyncProgressView: View {

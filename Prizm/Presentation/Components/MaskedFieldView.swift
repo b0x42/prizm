@@ -1,4 +1,28 @@
+import Observation
 import SwiftUI
+
+// MARK: - SecretVisibilityState
+
+/// Shared reveal state for the currently selected vault item.
+///
+/// A revision counter lets every masked field adopt the same value after a global
+/// toggle, including fields that had previously been revealed individually.
+@Observable
+@MainActor
+final class SecretVisibilityState {
+    private(set) var revealsAll = false
+    private(set) var revision = 0
+
+    func toggleAll() {
+        revealsAll.toggle()
+        revision += 1
+    }
+
+    func concealAll() {
+        revealsAll = false
+        revision += 1
+    }
+}
 
 // MARK: - MaskedFieldState
 
@@ -49,7 +73,12 @@ struct MaskedFieldState {
 ///
 /// Usage:
 /// ```swift
-/// MaskedFieldView(label: "Password", value: item.password, itemId: item.id)
+/// MaskedFieldView(
+///     label: "Password",
+///     value: item.password,
+///     itemId: item.id,
+///     isRevealed: $isRevealed
+/// )
 /// ```
 struct MaskedFieldView: View {
 
@@ -58,46 +87,50 @@ struct MaskedFieldView: View {
     /// A stable identifier for the current item; changing this resets the reveal state.
     let itemId: String
 
-    @State private var state: MaskedFieldState
+    @Binding var isRevealed: Bool
     @Environment(OptionKeyMonitor.self) private var optionKeyMonitor
-
-    init(label: String, value: String?, itemId: String) {
-        self.label  = label
-        self.value  = value
-        self.itemId = itemId
-        _state = State(initialValue: MaskedFieldState(value: value ?? ""))
-    }
+    @Environment(SecretVisibilityState.self) private var secretVisibility
 
     /// Plaintext when revealed via toggle OR Option-key peek.
     private var effectiveDisplayValue: String {
-        state.displayValue(peeking: optionKeyMonitor.isOptionHeld)
+        MaskedFieldState(value: value ?? "", isRevealed: isRevealed)
+            .displayValue(peeking: optionKeyMonitor.isOptionHeld || secretVisibility.revealsAll)
+    }
+
+    private var isEffectivelyRevealed: Bool {
+        isRevealed || secretVisibility.revealsAll
     }
 
     var body: some View {
         HStack {
-            Text(effectiveDisplayValue)
-                .font(Typography.fieldValue.monospaced())
-                .textSelection(.enabled)
-                .accessibilityIdentifier(AccessibilityID.Masked.value(label))
             Button {
-                state = state.toggled()
+                if secretVisibility.revealsAll {
+                    secretVisibility.concealAll()
+                } else {
+                    isRevealed.toggle()
+                }
             } label: {
-                Image(systemName: state.isRevealed ? "eye.slash" : "eye")
+                Image(systemName: isEffectivelyRevealed ? "eye.slash" : "eye")
                     .imageScale(.medium)
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
-            .help(state.isRevealed ? "Hide" : "Reveal")
-            .accessibilityLabel(state.isRevealed ? "Hide \(label)" : "Reveal \(label)")
+            .help(isEffectivelyRevealed ? "Hide" : "Reveal")
+            .accessibilityLabel(isEffectivelyRevealed ? "Hide \(label)" : "Reveal \(label)")
+            .accessibilityValue(isEffectivelyRevealed ? "Revealed" : "Hidden")
             .accessibilityIdentifier(AccessibilityID.Masked.toggle(label))
+
+            Text(effectiveDisplayValue)
+                .font(Typography.fieldValue.monospaced())
+                .textSelection(.enabled)
+                .accessibilityIdentifier(AccessibilityID.Masked.value(label))
+        }
+        .onChange(of: secretVisibility.revision) {
+            isRevealed = secretVisibility.revealsAll
         }
         // Reset to masked whenever the parent item changes (FR-027).
         .onChange(of: itemId) { _, _ in
-            state = state.resetForNewItem(value: value ?? "")
-        }
-        // Keep value in sync if the item itself changes while the same itemId is reused.
-        .onChange(of: value) { _, newValue in
-            state = MaskedFieldState(value: newValue ?? "", isRevealed: state.isRevealed)
+            isRevealed = false
         }
     }
 }

@@ -1,7 +1,7 @@
 import XCTest
 @testable import Prizm
 
-/// Tests for `VaultKeyServiceImpl` — key resolution order and vault-lock handling.
+/// Tests for `VaultKeyServiceImpl` - key resolution order and vault-lock handling.
 @MainActor
 final class VaultKeyServiceImplTests: XCTestCase {
 
@@ -32,7 +32,7 @@ final class VaultKeyServiceImplTests: XCTestCase {
         XCTAssertEqual(result, perItemKey)
     }
 
-    // MARK: - Cache miss — no per-item key
+    // MARK: - Cache miss - no per-item key
 
     func test_fallsBack_toVaultKey_whenCacheEntryIsNil() async throws {
         // Cipher has no per-item key (none in cache).
@@ -58,7 +58,7 @@ final class VaultKeyServiceImplTests: XCTestCase {
     // MARK: - Vault locked
 
     func test_throwsVaultLocked_whenCryptoServiceIsLocked() async {
-        // Vault is locked — currentKeys() will throw vaultLocked.
+        // Vault is locked - currentKeys() will throw vaultLocked.
         mockCrypto._isUnlocked = false
 
         do {
@@ -72,7 +72,7 @@ final class VaultKeyServiceImplTests: XCTestCase {
     }
 
     func test_doesNotThrowVaultLocked_whenCacheHasEntry_andVaultIsLocked() async throws {
-        // Cache has an entry for the cipher — no need to call crypto at all.
+        // Cache has an entry for the cipher - no need to call crypto at all.
         // Even if the vault is locked, the cache can serve the key.
         let perItemKey = Data(repeating: 0xCC, count: 64)
         await cache.populate(keys: ["cipher-1": perItemKey])
@@ -84,7 +84,7 @@ final class VaultKeyServiceImplTests: XCTestCase {
     }
 
     func test_emptyCache_doesNotInferVaultLocked() async {
-        // An absent cache entry is NOT a vault-locked signal — only currentKeys() throwing
+        // An absent cache entry is NOT a vault-locked signal - only currentKeys() throwing
         // vaultLocked indicates that condition.
         mockCrypto._isUnlocked = false
 
@@ -92,7 +92,7 @@ final class VaultKeyServiceImplTests: XCTestCase {
             _ = try await sut.cipherKey(for: "cipher-absent")
             XCTFail("Expected VaultError.vaultLocked from crypto, not from missing cache entry")
         } catch VaultError.vaultLocked {
-            // Expected — the error comes from currentKeys() throwing, not from the empty cache.
+            // Expected - the error comes from currentKeys() throwing, not from the empty cache.
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

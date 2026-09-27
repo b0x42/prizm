@@ -1,7 +1,7 @@
 import XCTest
 @testable import Prizm
 
-/// Tests for `VaultKeyCache` actor — populate/lookup/clear lifecycle.
+/// Tests for `VaultKeyCache` actor - populate/lookup/clear lifecycle.
 final class VaultKeyCacheTests: XCTestCase {
 
     private var sut: VaultKeyCache!

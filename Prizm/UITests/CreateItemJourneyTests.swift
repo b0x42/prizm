@@ -4,7 +4,7 @@ import XCTest
 ///
 /// Validates that the "+" button is permanently anchored in the content column toolbar,
 /// is hidden only while Trash is selected, and reappears in the correct position when
-/// the user leaves Trash — regardless of which category was visited before Trash.
+/// the user leaves Trash - regardless of which category was visited before Trash.
 ///
 /// Prerequisites: App launched with `--ui-testing`, `--inject-session`, `--inject-vault`,
 /// `--skip-sync` so a pre-populated vault is available without a network round-trip.
@@ -40,7 +40,7 @@ final class CreateItemJourneyTests: XCTestCase {
 
     /// Verifies the "+" button is not rendered while Trash is selected.
     /// The button is in the view body (not a toolbar item), so it is simply absent
-    /// from the else-branch when Trash is active — no frame, no icon, no chrome.
+    /// from the else-branch when Trash is active - no frame, no icon, no chrome.
     func testNewItemButton_hiddenInTrash() throws {
         let trashRow = app.buttons["sidebar.trash"]
         XCTAssertTrue(trashRow.waitForExistence(timeout: 5))
@@ -136,7 +136,7 @@ final class CreateItemJourneyTests: XCTestCase {
     }
 
     /// Presses ⌘N, navigates down once with ↓ to select Card, then confirms with Enter.
-    /// Verifies the Card edit sheet opens — covering the arrow-key navigation scenario.
+    /// Verifies the Card edit sheet opens - covering the arrow-key navigation scenario.
     func testCmdN_arrowDown_thenEnter_opensCardSheet() throws {
         app.typeKey("n", modifierFlags: .command)
 
@@ -150,7 +150,7 @@ final class CreateItemJourneyTests: XCTestCase {
         // Confirm Card with Enter.
         app.typeKey(.return, modifierFlags: [])
 
-        // The edit sheet must open — Card form is identified by the Save button.
+        // The edit sheet must open - Card form is identified by the Save button.
         let saveButton = app.buttons["edit.button.save"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 3), "Card edit sheet must open after ⌘N + ↓ + Enter")
 

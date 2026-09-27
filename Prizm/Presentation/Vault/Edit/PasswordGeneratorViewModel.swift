@@ -93,7 +93,7 @@ final class PasswordGeneratorViewModel: ObservableObject {
                     pasteboard.clearContents()
                 }
             } catch {
-                // Task cancelled — do nothing.
+                // Task cancelled - do nothing.
             }
         }
     }

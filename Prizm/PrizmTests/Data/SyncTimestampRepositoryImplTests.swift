@@ -6,7 +6,7 @@ final class SyncTimestampRepositoryImplTests: XCTestCase {
 
     // Use an isolated UserDefaults suite so tests don't pollute the real defaults.
     private var defaults: UserDefaults!
-    private let email = "alice@example.com"
+    private let profileId = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -21,8 +21,8 @@ final class SyncTimestampRepositoryImplTests: XCTestCase {
         try await super.tearDown()
     }
 
-    private func makeSUT(email: String = "alice@example.com") -> SyncTimestampRepositoryImpl {
-        SyncTimestampRepositoryImpl(email: email, defaults: defaults)
+    private func makeSUT(profileId: UUID? = nil) -> SyncTimestampRepositoryImpl {
+        SyncTimestampRepositoryImpl(profileId: profileId ?? self.profileId, defaults: defaults)
     }
 
     // MARK: - 1. Nil before first write
@@ -61,11 +61,11 @@ final class SyncTimestampRepositoryImplTests: XCTestCase {
         )
     }
 
-    // MARK: - 4. Isolation between different account emails
+    // MARK: - 4. Isolation between local profiles
 
-    func testLastSyncDate_isIsolatedByEmail() {
-        let sut1 = makeSUT(email: "alice@example.com")
-        let sut2 = makeSUT(email: "bob@example.com")
+    func testLastSyncDate_isIsolatedByProfile() {
+        let sut1 = makeSUT()
+        let sut2 = makeSUT(profileId: UUID())
 
         sut1.recordSuccessfulSync()
 

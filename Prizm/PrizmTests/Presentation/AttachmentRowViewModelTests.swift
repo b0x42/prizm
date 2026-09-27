@@ -253,4 +253,5 @@ private final class MockTempFileManager: TempFileManaging, @unchecked Sendable {
 
     func register(url: URL) { registerCalled = true }
     func cleanup()           { cleanupCalled  = true }
+    func cleanupAll()        { cleanupCalled  = true }
 }

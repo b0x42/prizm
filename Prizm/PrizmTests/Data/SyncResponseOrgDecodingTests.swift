@@ -1,9 +1,9 @@
 import XCTest
 @testable import Prizm
 
-/// RED tests for task 2.0 — SyncResponse decoding of organizations and collections.
+/// RED tests for task 2.0 - SyncResponse decoding of organizations and collections.
 /// These tests FAIL until tasks 2.1–2.4 (RawOrganization, RawCollection, SyncResponse extension,
-/// RawCipher.collectionIds) are implemented (Constitution §IV — Red first).
+/// RawCipher.collectionIds) are implemented (Constitution §IV - Red first).
 final class SyncResponseOrgDecodingTests: XCTestCase {
 
     // MARK: - Helpers
@@ -12,7 +12,7 @@ final class SyncResponseOrgDecodingTests: XCTestCase {
 
     /// Minimal valid SyncResponse JSON with organizations and collections.
     ///
-    /// Organizations are nested inside `Profile.Organizations` — this matches the actual
+    /// Organizations are nested inside `Profile.Organizations` - this matches the actual
     /// Bitwarden/Vaultwarden API shape. `Collections` is a separate top-level key.
     private let jsonWithOrgsAndCollections = """
     {

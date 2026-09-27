@@ -60,7 +60,7 @@ struct OptionalEditFieldRow: View {
 
 // MARK: - MaskedEditFieldRow
 
-/// An editable field that masks its content by default with a reveal toggle.
+/// An editable field that reveals its content only while it has keyboard focus.
 ///
 /// Used for the Login password and SSH Key private key fields, consistent with
 /// the app-wide treatment of sensitive values (spec §4.9, Constitution §III).
@@ -68,19 +68,13 @@ struct MaskedEditFieldRow: View {
 
     let label: String
     @Binding var value: String?
-    /// When non-nil, a generator wand button is shown that opens the password generator popover.
+    /// When non-nil, a generation button is shown that opens the password generator popover.
     /// The binding receives the generated value when the user taps "Use".
     var generatorBinding: Binding<String?>?
 
-    @State private var isRevealed = false
-    /// Background task that auto-masks after the sensitive-field timeout.
-    @State private var maskTask: Task<Void, Never>?
     @State private var showGenerator = false
     @State private var generatorVM: PasswordGeneratorViewModel?
-
-    // TODO: make the timeout app-wide configurable (UserDefaults pref) — deferred to v2.
-    // Using 30 s as a sensible default, matching the clipboard auto-clear interval.
-    private let revealTimeout: Duration = .seconds(30)
+    @FocusState private var isFieldFocused: Bool
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -89,27 +83,20 @@ struct MaskedEditFieldRow: View {
                     .font(Typography.fieldLabel)
                     .foregroundStyle(.secondary)
 
-                if isRevealed {
-                    TextField(
-                        label,
-                        text: Binding(
-                            get:  { value ?? "" },
-                            set:  { value = $0.isEmpty ? nil : $0 }
-                        )
-                    )
+                TextField(label, text: valueBinding)
                     .font(Typography.fieldValue.monospaced())
                     .textFieldStyle(.plain)
-                } else {
-                    SecureField(
-                        label,
-                        text: Binding(
-                            get:  { value ?? "" },
-                            set:  { value = $0.isEmpty ? nil : $0 }
-                        )
-                    )
-                    .font(Typography.fieldValue.monospaced())
-                    .textFieldStyle(.plain)
-                }
+                    .focused($isFieldFocused)
+                    .foregroundStyle(isFieldFocused ? Color.primary : Color.clear)
+                    .overlay(alignment: .leading) {
+                        if !isFieldFocused, value?.isEmpty == false {
+                            Text(MaskedFieldState.maskedPlaceholder)
+                                .font(Typography.fieldValue.monospaced())
+                                .foregroundStyle(.primary)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .accessibilityValue(isFieldFocused ? value ?? "" : "Hidden")
             }
             Spacer()
 
@@ -120,7 +107,7 @@ struct MaskedEditFieldRow: View {
                     }
                     showGenerator.toggle()
                 } label: {
-                    Image(systemName: "wand.and.stars")
+                    Image(systemName: "dice.fill")
                         .imageScale(.small)
                 }
                 .buttonStyle(.plain)
@@ -138,40 +125,23 @@ struct MaskedEditFieldRow: View {
             }
 
             Button {
-                if isRevealed {
-                    maskNow()
-                } else {
-                    reveal()
-                }
+                isFieldFocused.toggle()
             } label: {
-                Image(systemName: isRevealed ? "eye.slash" : "eye")
+                Image(systemName: isFieldFocused ? "eye.slash" : "eye")
                     .imageScale(.small)
             }
             .buttonStyle(.plain)
-            .help(isRevealed ? "Hide" : "Reveal")
-            .accessibilityLabel(isRevealed ? "Hide \(label)" : "Reveal \(label)")
+            .help(isFieldFocused ? "Hide" : "Edit")
+            .accessibilityLabel(isFieldFocused ? "Hide \(label)" : "Edit \(label)")
         }
         .padding(.vertical, Spacing.rowVertical)
         .padding(.horizontal, Spacing.rowHorizontal)
     }
 
-    private func reveal() {
-        isRevealed = true
-        // Cancel any outstanding mask task before scheduling a new one.
-        maskTask?.cancel()
-        maskTask = Task { @MainActor in
-            do {
-                try await Task.sleep(for: revealTimeout)
-                maskNow()
-            } catch {
-                // Task cancelled (e.g., user manually re-hid) — do nothing.
-            }
-        }
-    }
-
-    private func maskNow() {
-        isRevealed = false
-        maskTask?.cancel()
-        maskTask = nil
+    private var valueBinding: Binding<String> {
+        Binding(
+            get: { value ?? "" },
+            set: { value = $0.isEmpty ? nil : $0 }
+        )
     }
 }

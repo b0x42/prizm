@@ -15,7 +15,7 @@ import os.log
 /// ensuring the item is not accessible to other apps or processes
 /// (Constitution Security Requirement property 3).
 ///
-/// `kSecAttrSynchronizable` is never set — the item is device-only, never backed up
+/// `kSecAttrSynchronizable` is never set - the item is device-only, never backed up
 /// or synced to iCloud (Constitution Security Requirement property 1).
 ///
 /// Standards: design Decision 2 (`.biometryCurrentSet`), Decision 3 (separate service).
@@ -106,7 +106,7 @@ final class BiometricKeychainServiceImpl: BiometricKeychainService {
             // Evaluate biometric policy in-process before reading the Keychain item.
             // Without this, SecItemCopyMatching delegates auth to the security-agent
             // subprocess which shows a modal dialog. Calling evaluatePolicy() here
-            // triggers the inline Touch ID prompt (badge on sensor, no modal) — the
+            // triggers the inline Touch ID prompt (badge on sensor, no modal) - the
             // same behaviour as Passwords.app. The evaluated context is then passed to
             // SecItemCopyMatching so it does not re-authenticate.
             let context = LAContext()
@@ -142,7 +142,7 @@ final class BiometricKeychainServiceImpl: BiometricKeychainService {
     func readBiometric(key: String, context: LAContext) async throws -> Data {
         // Evaluate biometric policy on the provided context. If LAAuthenticationView
         // was paired with this context before the call, the UI appears inline in the
-        // app window — no system modal dialog (see EmbeddedTouchIDView).
+        // app window - no system modal dialog (see EmbeddedTouchIDView).
         if useDataProtectionKeychain {
             try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
                 context.evaluatePolicy(

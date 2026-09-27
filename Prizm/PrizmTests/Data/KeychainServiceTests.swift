@@ -4,7 +4,7 @@ import XCTest
 /// Tests for KeychainServiceImpl exercising the real macOS Keychain (integration-level).
 ///
 /// These tests hit the actual Keychain, which makes them the authoritative verification
-/// that `kSecUseDataProtectionKeychain` is wired correctly — unit tests using
+/// that `kSecUseDataProtectionKeychain` is wired correctly - unit tests using
 /// MockKeychainService cannot exercise real Security.framework attributes.
 @MainActor
 final class KeychainServiceTests: XCTestCase {
@@ -65,7 +65,7 @@ final class KeychainServiceTests: XCTestCase {
     // MARK: - Entitlement probe (#60)
 
     /// Regression test for the unsigned-build fallback (#60): an instance created with
-    /// the auto-probe must be able to complete a write immediately after init — this is
+    /// the auto-probe must be able to complete a write immediately after init - this is
     /// the operation that gates sign-in (device identifier storage).
     ///
     /// On runners without the `keychain-access-groups` entitlement (CI, Homebrew,

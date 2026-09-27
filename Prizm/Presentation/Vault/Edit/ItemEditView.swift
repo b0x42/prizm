@@ -1,12 +1,12 @@
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - ItemEditView
 
-/// Modal sheet container for editing a vault item.
+/// Form used inline for existing items and item creation.
 ///
-/// Owns the Save and Discard toolbar buttons, the per-type edit form, and the inline
-/// error banner shown on save failure. Sheet presentation is managed by the caller
-/// (`ItemDetailView`) which toggles `isPresented` based on `viewModel.isDismissed`.
+/// The header exposes Cancel/Discard and Save actions inside the detail pane.
 ///
 /// Keyboard shortcuts:
 /// - ⌘S: Save (wired via `.keyboardShortcut` on the Save button)
@@ -16,21 +16,20 @@ struct ItemEditView: View {
 
     @ObservedObject var viewModel: ItemEditViewModel
 
-    /// Drives sheet dismissal from the parent.
-    @Binding var isPresented: Bool
-
-    /// Called when the user confirms deletion from the edit sheet.
-    var onDelete: ((String) async -> Void)? = nil
+    /// Called after save, discard, or vault lock asks the enclosing presentation to close.
+    let onClose: () -> Void
+    var closeTrigger: Int = 0
+    var onCloseRequestCancelled: (() -> Void)? = nil
 
     /// Whether the discard confirmation alert is currently showing.
     @State private var showingDiscardAlert = false
-    /// Whether the delete confirmation alert is currently showing.
-    @State private var showingDeleteAlert = false
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         VStack(spacing: 0) {
-            // Error banner — shown when a save fails; dismisses on retry.
+            formHeader
+
+            // Error banner - shown when a save fails; dismisses on retry.
             if let error = viewModel.saveError {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -44,7 +43,7 @@ struct ItemEditView: View {
                 .accessibilityIdentifier(AccessibilityID.Edit.errorBanner)
             }
 
-            // Name field — always the first editable field regardless of item type (spec §3.1).
+            // Name field - always the first editable field regardless of item type (spec §3.1).
             VStack(alignment: .leading, spacing: 4) {
                 TextField("Name", text: $viewModel.draft.name)
                     .font(Typography.pageTitle)
@@ -63,8 +62,8 @@ struct ItemEditView: View {
             }
             .padding(.bottom, Spacing.pageHeaderBottom)
 
-            // Collection picker — shown for org items (replaces folder picker).
-            // Folder picker — shown for personal items when folders exist.
+            // Collection picker - shown for org items (replaces folder picker).
+            // Folder picker - shown for personal items when folders exist.
             if viewModel.draft.organizationId != nil {
                 // Org item: collection picker
                 let orgCollections = viewModel.collections.filter {
@@ -75,26 +74,26 @@ struct ItemEditView: View {
                     // multiple collections, extra collection IDs (outside this org) are
                     // preserved on save; only the selected collection within this org changes.
                     let orgCollectionIds = Set(orgCollections.map(\.id))
+                    let selectedCollection = Binding<String?>(
+                        get: {
+                            viewModel.draft.collectionIds.first { orgCollectionIds.contains($0) }
+                        },
+                        set: { newId in
+                            // Replace only the collection IDs that belong to this org;
+                            // preserve any IDs from other orgs (should not exist in practice
+                            // but guards against cross-org data loss).
+                            let otherIds = viewModel.draft.collectionIds.filter { !orgCollectionIds.contains($0) }
+                            viewModel.draft.collectionIds = otherIds + (newId.map { [$0] } ?? [])
+                        }
+                    )
                     DetailSectionCard("Collection") {
                         HStack {
-                            Picker(selection: Binding(
-                                get: {
-                                    viewModel.draft.collectionIds.first { orgCollectionIds.contains($0) }
-                                },
-                                set: { newId in
-                                    // Replace only the collection IDs that belong to this org;
-                                    // preserve any IDs from other orgs (should not exist in practice
-                                    // but guards against cross-org data loss).
-                                    let otherIds = viewModel.draft.collectionIds.filter { !orgCollectionIds.contains($0) }
-                                    viewModel.draft.collectionIds = otherIds + (newId.map { [$0] } ?? [])
-                                }
-                            )) {
-                                Text("None").tag(String?.none)
-                                ForEach(orgCollections) { col in
-                                    Text(col.name).tag(Optional(col.id))
-                                }
-                            } label: { EmptyView() }
-                            .pickerStyle(.menu)
+                            SearchableSelect(
+                                title: "Collection",
+                                selection: selectedCollection,
+                                options: collectionOptions(orgCollections),
+                                displaysLabel: false
+                            )
                             Spacer()
                         }
                         .padding(.vertical, Spacing.rowVertical)
@@ -104,13 +103,12 @@ struct ItemEditView: View {
             } else if !viewModel.folders.isEmpty {
                 DetailSectionCard("Folder") {
                     HStack {
-                        Picker(selection: $viewModel.draft.folderId) {
-                            Text("None").tag(String?.none)
-                            ForEach(viewModel.folders) { folder in
-                                Text(folder.name).tag(Optional(folder.id))
-                            }
-                        } label: { EmptyView() }
-                        .pickerStyle(.menu)
+                        SearchableSelect(
+                            title: "Folder",
+                            selection: $viewModel.draft.folderId,
+                            options: folderOptions,
+                            displaysLabel: false
+                        )
                         Spacer()
                     }
                     .padding(.vertical, Spacing.rowVertical)
@@ -118,74 +116,149 @@ struct ItemEditView: View {
                 }
             }
 
-            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Per-type edit form.
+                    typeEditForm
 
-            // Per-type edit form.
-            typeEditForm
+                    if viewModel.isEditing {
+                        EditableAttachmentsSection(
+                            attachments: viewModel.attachments,
+                            pendingAttachments: viewModel.pendingAttachments,
+                            onAdd: { viewModel.selectAttachments() },
+                            onRemoveAttachment: { viewModel.removeAttachment($0) },
+                            onRemovePendingAttachment: { viewModel.removePendingAttachment(id: $0) },
+                            onDropFiles: { viewModel.stageAttachments($0) }
+                        )
+                    }
 
-            // Delete button — shown only when editing an existing item (not during creation).
-            if viewModel.isEditing, onDelete != nil {
-                Button("Delete Item") {
-                    showingDeleteAlert = true
+                    customFieldsEditForm
                 }
-                .foregroundStyle(.red)
-                .padding(.vertical, Spacing.cardTop)
-                .padding(.horizontal, Spacing.pageMargin)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .accessibilityIdentifier(AccessibilityID.Edit.deleteButton)
+            }
+            .background {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        dismissFieldFocus()
+                    }
             }
         }
-        .frame(minWidth: 480, minHeight: 400)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Discard") {
-                    handleDiscard()
+        .background {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    dismissFieldFocus()
                 }
-                .disabled(viewModel.isSaving)
-                .help("Discard changes (Esc)")
-                .accessibilityIdentifier(AccessibilityID.Edit.discardButton)
-            }
-
-            ToolbarItem(placement: .confirmationAction) {
-                Button(viewModel.isSaving ? "Saving…" : "Save") {
-                    viewModel.save()
-                }
-                .disabled(!viewModel.canSave)
-                // ⌘S triggers save while this sheet is open and the form is valid (spec §6.1).
-                .keyboardShortcut("s", modifiers: .command)
-                .accessibilityIdentifier(AccessibilityID.Edit.saveButton)
-            }
         }
         // Esc key invokes the same discard logic as the Discard button (spec §8.3).
         .onExitCommand {
             handleDiscard()
         }
         // Discard confirmation alert (spec §8.3).
-        .alert("Discard Changes?", isPresented: $showingDiscardAlert) {
+        .alert("Discard Your Changes?", isPresented: $showingDiscardAlert) {
             Button("Discard Changes", role: .destructive) {
                 viewModel.discard()
             }
-            Button("Keep Editing", role: .cancel) { }
-        } message: {
-            Text("Your unsaved changes will be lost.")
-        }
-        // Delete confirmation alert — dismiss sheet then execute soft-delete.
-        .alert("Move to Trash?", isPresented: $showingDeleteAlert) {
-            Button("Move to Trash", role: .destructive) {
-                let itemId = viewModel.draft.id
-                viewModel.discard()
-                if let onDelete {
-                    Task { await onDelete(itemId) }
-                }
+            Button("Continue Editing", role: .cancel) {
+                onCloseRequestCancelled?()
             }
-            Button("Cancel", role: .cancel) { }
         } message: {
-            Text("\"\(viewModel.draft.name)\" will be moved to Trash.")
+            Text("You'll lose the changes you've made to this item. Continue editing to go back and save.")
         }
-        // Dismiss the sheet when the ViewModel signals it (save success or discard).
+        // Close the active inline or sheet presentation after save/discard/vault lock.
         .onChange(of: viewModel.isDismissed) { _, dismissed in
-            if dismissed { isPresented = false }
+            if dismissed { onClose() }
         }
+        .onChange(of: closeTrigger) {
+            handleDiscard()
+        }
+    }
+
+    private var folderOptions: [SearchableSelectOption<String?>] {
+        [
+            SearchableSelectOption(value: nil, title: "None", systemImage: "tray")
+        ] + viewModel.folders.map { folder in
+            SearchableSelectOption(
+                value: Optional(folder.id),
+                title: folder.name,
+                systemImage: "folder"
+            )
+        }
+    }
+
+    private func collectionOptions(
+        _ collections: [OrgCollection]
+    ) -> [SearchableSelectOption<String?>] {
+        [
+            SearchableSelectOption(value: nil, title: "None", systemImage: "tray")
+        ] + collections.map { collection in
+            SearchableSelectOption(
+                value: Optional(collection.id),
+                title: collection.name,
+                systemImage: "square.stack"
+            )
+        }
+    }
+
+    private var formHeader: some View {
+        HStack(spacing: Spacing.headerGap) {
+            ItemLocationBreadcrumb(
+                vaultName: viewModel.draft.organizationId.map { organizationID in
+                    viewModel.organizations.first {
+                        $0.id == organizationID
+                    }?.name ?? "Organization"
+                } ?? "My Vault",
+                isPersonalVault: viewModel.draft.organizationId == nil,
+                folderName: viewModel.folders.first {
+                    $0.id == viewModel.draft.folderId
+                }?.name,
+                itemType: itemType
+            )
+
+            Spacer()
+
+            Label(
+                viewModel.isEditing ? "Editing" : "New Item",
+                systemImage: viewModel.isEditing ? "pencil" : "plus"
+            )
+                .font(Typography.progressLabel)
+                .accessibilityAddTraits(.isHeader)
+            discardButton
+            saveButton
+        }
+        .padding(.horizontal, Spacing.pageMargin)
+        .padding(.vertical, Spacing.bannerVertical)
+        .background(Color.accentColor.opacity(Opacity.editingBanner(contrast)))
+    }
+
+    private var itemType: ItemType {
+        switch viewModel.draft.content {
+        case .login:      return .login
+        case .card:       return .card
+        case .identity:   return .identity
+        case .secureNote: return .secureNote
+        case .sshKey:     return .sshKey
+        }
+    }
+
+    private var discardButton: some View {
+        Button(viewModel.isEditing ? "Cancel" : "Discard") {
+            handleDiscard()
+        }
+        .disabled(viewModel.isSaving)
+        .keyboardShortcut(.cancelAction)
+        .help("Discard changes (Esc)")
+        .accessibilityIdentifier(AccessibilityID.Edit.discardButton)
+    }
+
+    private var saveButton: some View {
+        Button(viewModel.isSaving ? "Saving…" : "Save") {
+            viewModel.save()
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(!viewModel.canSave)
+        .keyboardShortcut("s", modifiers: .command)
+        .accessibilityIdentifier(AccessibilityID.Edit.saveButton)
     }
 
     // MARK: - Per-type dispatch
@@ -195,13 +268,15 @@ struct ItemEditView: View {
         switch viewModel.draft.content {
         case .login(let content):
             // Use a local binding projected from the draft's associated value.
-            LoginEditForm(draft: Binding(
-                get:  {
-                    guard case .login(let c) = viewModel.draft.content else { return content }
-                    return c
-                },
-                set:  { newContent in viewModel.draft.content = .login(newContent) }
-            ))
+            LoginEditForm(
+                draft: Binding(
+                    get:  {
+                        guard case .login(let c) = viewModel.draft.content else { return content }
+                        return c
+                    },
+                    set:  { newContent in viewModel.draft.content = .login(newContent) }
+                )
+            )
 
         case .card(let content):
             CardEditForm(draft: Binding(
@@ -241,6 +316,36 @@ struct ItemEditView: View {
         }
     }
 
+    private var customFieldsEditForm: some View {
+        CustomFieldsEditSection(fields: Binding(
+            get: { viewModel.draft.content.customFields },
+            set: { viewModel.draft.content.customFields = $0 }
+        ), linkedFieldOptions: linkedFieldOptions)
+    }
+
+    private var linkedFieldOptions: [LinkedFieldId] {
+        switch viewModel.draft.content {
+        case .login:
+            [.loginUsername, .loginPassword]
+        case .card:
+            [
+                .cardCardholderName, .cardExpMonth, .cardExpYear, .cardCode,
+                .cardBrand, .cardNumber
+            ]
+        case .identity:
+            [
+                .identityTitle, .identityMiddleName, .identityAddress1,
+                .identityAddress2, .identityAddress3, .identityCity,
+                .identityState, .identityPostalCode, .identityCountry,
+                .identityCompany, .identityEmail, .identityPhone, .identitySsn,
+                .identityUsername, .identityPassportNumber, .identityLicenseNumber,
+                .identityFirstName, .identityLastName, .identityFullName
+            ]
+        case .secureNote, .sshKey:
+            []
+        }
+    }
+
     // MARK: - Discard logic
 
     /// Handles both the Discard button press and the Esc key.
@@ -252,6 +357,181 @@ struct ItemEditView: View {
             showingDiscardAlert = true
         } else {
             viewModel.discard()
+        }
+    }
+
+    /// SwiftUI on macOS keeps a TextField as first responder after background clicks.
+    /// AppKit is used narrowly here because SwiftUI has no parent-level action that can
+    /// clear focus owned by independent descendant `FocusState` values.
+    private func dismissFieldFocus() {
+        NSApp.keyWindow?.makeFirstResponder(nil)
+    }
+}
+
+private extension DraftItemContent {
+    var customFields: [DraftCustomField] {
+        get {
+            switch self {
+            case .login(let content): content.customFields
+            case .card(let content): content.customFields
+            case .identity(let content): content.customFields
+            case .secureNote(let content): content.customFields
+            case .sshKey(let content): content.customFields
+            }
+        }
+        set {
+            switch self {
+            case .login(var content):
+                content.customFields = newValue
+                self = .login(content)
+            case .card(var content):
+                content.customFields = newValue
+                self = .card(content)
+            case .identity(var content):
+                content.customFields = newValue
+                self = .identity(content)
+            case .secureNote(var content):
+                content.customFields = newValue
+                self = .secureNote(content)
+            case .sshKey(var content):
+                content.customFields = newValue
+                self = .sshKey(content)
+            }
+        }
+    }
+}
+
+private struct EditableAttachmentsSection: View {
+    let attachments: [Attachment]
+    let pendingAttachments: [ItemEditViewModel.PendingAttachment]
+    let onAdd: () -> Void
+    let onRemoveAttachment: (Attachment) -> Void
+    let onRemovePendingAttachment: (UUID) -> Void
+    let onDropFiles: ([URL]) -> Void
+
+    @State private var isDropTargeted = false
+
+    var body: some View {
+        DetailSectionCard("Attachments") {
+            VStack(spacing: 0) {
+                if attachments.isEmpty && pendingAttachments.isEmpty {
+                    Text("No attachments")
+                        .font(Typography.fieldLabel)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, Spacing.rowHorizontal)
+                        .padding(.vertical, Spacing.rowVertical)
+                } else {
+                    ForEach(attachments) { attachment in
+                        attachmentRow(
+                            fileName: attachment.fileName,
+                            sizeName: attachment.sizeName,
+                            status: nil
+                        ) {
+                            onRemoveAttachment(attachment)
+                        }
+                        if attachment.id != attachments.last?.id || !pendingAttachments.isEmpty {
+                            Divider()
+                        }
+                    }
+
+                    ForEach(pendingAttachments) { pending in
+                        attachmentRow(
+                            fileName: pending.fileName,
+                            sizeName: pending.sizeName,
+                            status: "Pending upload"
+                        ) {
+                            onRemovePendingAttachment(pending.id)
+                        }
+                        if pending.id != pendingAttachments.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+
+                Divider()
+
+                Button(action: onAdd) {
+                    Label("Add Attachment", systemImage: "paperclip")
+                        .font(Typography.fieldValue)
+                        .foregroundStyle(.tint)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, Spacing.rowHorizontal)
+                .padding(.vertical, Spacing.rowVertical)
+                .accessibilityLabel("Add Attachment")
+                .accessibilityIdentifier(AccessibilityID.Attachment.addButton)
+            }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: Spacing.contextPickerCornerRadius)
+                .stroke(Color.accentColor, lineWidth: 2)
+                .opacity(isDropTargeted ? 1 : 0)
+        }
+        .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+            extractURLs(from: providers)
+            return true
+        }
+    }
+
+    private func attachmentRow(
+        fileName: String,
+        sizeName: String,
+        status: String?,
+        onRemove: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: Spacing.headerGap) {
+            Image(systemName: "doc")
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: Spacing.fieldContentGap) {
+                Text(fileName)
+                    .font(Typography.fieldValue)
+                    .lineLimit(1)
+                HStack(spacing: Spacing.fieldActionGap) {
+                    Text(sizeName)
+                    if let status {
+                        Text(status)
+                            .foregroundStyle(.tint)
+                    }
+                }
+                .font(Typography.listSubtitle)
+                .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button(action: onRemove) {
+                Image(systemName: "trash")
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove \(fileName)")
+        }
+        .padding(.horizontal, Spacing.rowHorizontal)
+        .padding(.vertical, Spacing.rowVertical)
+    }
+
+    private func extractURLs(from providers: [NSItemProvider]) {
+        Task {
+            var urls: [URL] = []
+            for provider in providers
+                where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                let url = await withCheckedContinuation { continuation in
+                    provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) { item, _ in
+                        if let data = item as? Data {
+                            continuation.resume(
+                                returning: URL(dataRepresentation: data, relativeTo: nil)
+                            )
+                        } else {
+                            continuation.resume(returning: item as? URL)
+                        }
+                    }
+                }
+                if let url { urls.append(url) }
+            }
+            if !urls.isEmpty { onDropFiles(urls) }
         }
     }
 }

@@ -6,7 +6,7 @@ import XCTest
 /// Uses real `PrizmCryptoServiceImpl` (actual AES-CBC + HMAC-SHA256), a mock API client,
 /// and a mock vault repository to verify the full upload/download/delete lifecycles.
 ///
-/// "Integration" here means: real crypto + mock network + mock storage — the same level as
+/// "Integration" here means: real crypto + mock network + mock storage - the same level as
 /// `AttachmentCryptoTests`, but exercised through the repository boundary with the full two-layer
 /// key scheme (attachment key encrypted with cipher key, blob encrypted with attachment key).
 @MainActor
@@ -88,7 +88,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
 
         XCTAssertEqual(attachment.id, attachmentId)
         XCTAssertEqual(attachment.fileName, plainFileName)
-        // url must be nil — the v2 response URL is the signed upload URL, not a download URL
+        // url must be nil - the v2 response URL is the signed upload URL, not a download URL
         XCTAssertNil(attachment.url,
             "url must be nil: v2 response URL is the signed upload URL, not a permanent download URL")
         XCTAssertFalse(attachment.isUploadIncomplete)
@@ -183,7 +183,7 @@ final class AttachmentRepositoryImplTests: XCTestCase {
 
         XCTAssertEqual(attachment.id, attachmentId)
         XCTAssertNil(attachment.url,
-            "url must be nil even for Azure path — upload URL ≠ download URL")
+            "url must be nil even for Azure path - upload URL ≠ download URL")
         XCTAssertFalse(attachment.isUploadIncomplete)
     }
 

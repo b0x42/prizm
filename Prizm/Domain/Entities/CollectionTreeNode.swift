@@ -2,7 +2,7 @@ import Foundation
 
 /// A node in the collection tree for one organization, built by parsing `/`-delimited names.
 ///
-/// Mirrors `FolderTreeNode` — Bitwarden uses the same `/` convention for collection hierarchy
+/// Mirrors `FolderTreeNode` - Bitwarden uses the same `/` convention for collection hierarchy
 /// (e.g. "Engineering/Backend" nests "Backend" under "Engineering").
 nonisolated struct CollectionTreeNode: Identifiable {
     let id: String
@@ -34,7 +34,7 @@ nonisolated struct CollectionTreeNode: Identifiable {
                     // Promote virtual placeholder to real collection, preserving any children.
                     nodes[idx] = CollectionTreeNode(id: collection.id, name: first, collection: collection, children: nodes[idx].children)
                 } else {
-                    // A real collection with this name already exists — append as a separate
+                    // A real collection with this name already exists - append as a separate
                     // sibling so both are reachable. (Bitwarden allows duplicate names.)
                     nodes.append(CollectionTreeNode(id: collection.id, name: first, collection: collection, children: []))
                 }

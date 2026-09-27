@@ -26,7 +26,7 @@ nonisolated enum BatchItemState: Equatable {
 
 /// Model for a single file in the batch upload sheet.
 ///
-/// - `fileURL` is the local Finder URL from the drop — distinct from `Attachment.url`
+/// - `fileURL` is the local Finder URL from the drop - distinct from `Attachment.url`
 ///   which is a server download URL.
 /// - File bytes are NOT read here; they are read at confirm time per §III.
 nonisolated struct AttachmentBatchItem: Identifiable {
@@ -54,11 +54,11 @@ nonisolated struct AttachmentBatchItem: Identifiable {
 /// Lifecycle:
 /// 1. Created with `cipherId` when files are dropped onto the Attachments section.
 /// 2. `loadItems(from urls:)` reads file sizes (not bytes) to populate the item list.
-/// 3. `confirm()` launches concurrent upload Tasks — one per valid item.
+/// 3. `confirm()` launches concurrent upload Tasks - one per valid item.
 /// 4. `cancel()` cancels all in-flight tasks and zeroes buffered bytes.
 ///
 /// - Security goal: file bytes are held in memory only during each individual upload.
-///   Each Task reads its file, uploads it, then zeroes the buffer immediately — regardless
+///   Each Task reads its file, uploads it, then zeroes the buffer immediately - regardless
 ///   of success or failure (Constitution §III). Files already partially uploaded appear as
 ///   "Upload incomplete" on the next sync.
 @Observable
@@ -94,7 +94,7 @@ final class AttachmentBatchViewModel: Identifiable {
 
     // MARK: - Private
 
-    /// One Task per valid item — held so `cancel()` can cancel them.
+    /// One Task per valid item - held so `cancel()` can cancel them.
     private var uploadTasks: [Task<Void, Never>] = []
 
     // MARK: - Init
@@ -203,7 +203,7 @@ final class AttachmentBatchViewModel: Identifiable {
 
     /// Cancels all tasks when the vault is locked during a batch upload.
     ///
-    /// Identical to `cancel()` — both zero all in-flight buffers and dismiss.
+    /// Identical to `cancel()` - both zero all in-flight buffers and dismiss.
     func handleVaultLock() {
         cancel()
     }
@@ -230,12 +230,12 @@ final class AttachmentBatchViewModel: Identifiable {
             logger.info("batch upload succeeded: \(item.fileName, privacy: .public)")
         } catch is CancellationError {
             fileData.resetBytes(in: 0..<fileData.count)
-            // State stays .uploading — will be cleaned up by cancel()
+            // State stays .uploading - will be cleaned up by cancel()
         } catch {
             fileData.resetBytes(in: 0..<fileData.count)
             let msg = error.localizedDescription
             items[index].state = .failed(msg)
-            logger.error("batch upload failed: \(item.fileName, privacy: .public) — \(msg, privacy: .public)")
+            logger.error("batch upload failed: \(item.fileName, privacy: .public) - \(msg, privacy: .public)")
         }
     }
 }

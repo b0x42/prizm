@@ -40,7 +40,7 @@ extension Date {
         relativeTo now: Date = Date(),
         calendar: Calendar = .current
     ) -> String {
-        // Tier 1: future timestamp — clamp to "just now" (clock skew guard)
+        // Tier 1: future timestamp - clamp to "just now" (clock skew guard)
         guard self <= now else { return "Synced just now" }
 
         // Compare start-of-day values so daysDiff counts calendar days (midnight-to-midnight),
@@ -69,7 +69,7 @@ extension Date {
             return "Synced yesterday"
         }
 
-        // Same calendar day — use elapsed seconds for tiers 5–7.
+        // Same calendar day - use elapsed seconds for tiers 5–7.
         let elapsed = Int(now.timeIntervalSince(self))
 
         // Tier 5: 0–59 seconds
@@ -89,7 +89,7 @@ extension Date {
     // MARK: - Private formatting helpers
 
     private func formatted(style: Date.FormatStyle, calendar: Calendar) -> String {
-        // Date.FormatStyle is zero-allocation — no DateFormatter constructed per call.
+        // Date.FormatStyle is zero-allocation - no DateFormatter constructed per call.
         // Available macOS 12+; the project targets macOS 26.
         // Property assignment is required: FormatStyle exposes `calendar` as a stored var,
         // so chaining `.calendar(x)` is parsed as calling the Calendar value as a function.

@@ -94,7 +94,7 @@ final class EncStringTests: XCTestCase {
         XCTAssertTrue(try enc.verifyMac(keys: keys))
     }
 
-    /// Tampered MAC must fail verification (not throw — returns false).
+    /// Tampered MAC must fail verification (not throw - returns false).
     func testMacVerificationFailsWithWrongMac() throws {
         let macKey = Data(repeating: 0xFF, count: 32)
         let encKey = Data(repeating: 0xAB, count: 32)

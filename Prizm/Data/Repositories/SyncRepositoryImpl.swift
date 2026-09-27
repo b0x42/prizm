@@ -14,7 +14,7 @@ import os.log
 /// the unwrapped keys are stored in `OrgKeyCache` for the duration of the session.
 /// Org ciphers are then decrypted using the org key rather than the personal vault key.
 ///
-/// Individual cipher decryption failures are non-fatal — they are counted and logged
+/// Individual cipher decryption failures are non-fatal - they are counted and logged
 /// but the remaining ciphers are still stored.
 ///
 /// Concurrent calls: the second caller receives `SyncError.syncInProgress`.
@@ -83,7 +83,7 @@ actor SyncRepositoryImpl: SyncRepository {
 
         if DebugConfig.isEnabled {
             // Log counts by cipher type to help diagnose sync issues (e.g. unexpected
-            // type integers from a non-standard server). Values are type ints only —
+            // type integers from a non-standard server). Values are type ints only -
             // no cipher names, URLs, or other vault content is logged.
             let typeCounts = syncResponse.ciphers.reduce(into: [Int: Int]()) { acc, c in
                 acc[c.type, default: 0] += 1
@@ -103,12 +103,13 @@ actor SyncRepositoryImpl: SyncRepository {
         var (items, failedCount, cipherKeyMap) = try await crypto.decryptList(ciphers: syncResponse.ciphers)
         logger.info("Decrypted \(items.count) cipher(s); \(failedCount) failure(s)")
         if DebugConfig.isEnabled && failedCount > 0 {
-            logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt — check PrizmCryptoService logs for per-cipher errors")
+            logger.debug("[debug] \(failedCount, privacy: .public) cipher(s) failed to decrypt - check PrizmCryptoService logs for per-cipher errors")
         }
 
         // Phase 2b: Populate the per-cipher key cache from keys collected during decryptList.
         // Only ciphers with a per-item key are included; vault-key-only ciphers are handled
         // by VaultKeyServiceImpl's fallback path.
+        try Task.checkCancellation()
         await vaultKeyCache.populate(keys: cipherKeyMap)
         logger.info("VaultKeyCache populated with \(cipherKeyMap.count, privacy: .public) per-item key(s)")
 
@@ -126,7 +127,7 @@ actor SyncRepositoryImpl: SyncRepository {
         // without org support will have an empty `organizations` array and skip this block.
         //
         // Security: the decrypted RSA private key bytes are zeroed immediately after use.
-        // Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+        // Reference: Bitwarden Security Whitepaper §4 - "Organization Key Wrapping".
         var organizations: [Organization] = []
         var collections: [OrgCollection] = []
 
@@ -147,6 +148,7 @@ actor SyncRepositoryImpl: SyncRepository {
 
                 // Unwrap each org key into OrgKeyCache.
                 // Failure for a single org is logged and skipped; other orgs proceed.
+                try Task.checkCancellation()
                 await orgKeyCache.clear()  // Fresh slate for this sync.
                 for rawOrg in syncResponse.organizations {
                     do {
@@ -154,9 +156,12 @@ actor SyncRepositoryImpl: SyncRepository {
                             encOrgKey: rawOrg.key,
                             rsaPrivateKey: rsaPrivateKeyBytes
                         )
+                        try Task.checkCancellation()
                         await orgKeyCache.store(key: orgKeys, for: rawOrg.id)
+                    } catch is CancellationError {
+                        throw CancellationError()
                     } catch {
-                        logger.fault("Failed to unwrap org key for org \(rawOrg.id.prefix(8), privacy: .public)… — org ciphers will be skipped: \(error, privacy: .public)")
+                        logger.fault("Failed to unwrap org key for org \(rawOrg.id.prefix(8), privacy: .public)… - org ciphers will be skipped: \(error, privacy: .public)")
                     }
                 }
 
@@ -207,10 +212,10 @@ actor SyncRepositoryImpl: SyncRepository {
                         items.append(item)
                         if cipher.key != nil { cipherKeyMap[cipher.id] = cipherKey }
                     } catch CipherMapperError.organisationCipherSkipped {
-                        // Org key not in snapshot — org key unwrap failed for this org.
+                        // Org key not in snapshot - org key unwrap failed for this org.
                         orgCipherFailedCount += 1
                         if DebugConfig.isEnabled {
-                            logger.debug("[debug] org cipher[\(index, privacy: .public)] skipped — org key unavailable")
+                            logger.debug("[debug] org cipher[\(index, privacy: .public)] skipped - org key unavailable")
                         }
                     } catch {
                         orgCipherFailedCount += 1
@@ -218,16 +223,20 @@ actor SyncRepositoryImpl: SyncRepository {
                     }
                 }
                 // Refresh the VaultKeyCache to include per-item keys from org ciphers.
+                try Task.checkCancellation()
                 await vaultKeyCache.populate(keys: cipherKeyMap)
 
                 logger.info("Org sync: \(organizations.count) org(s), \(collections.count) collection(s), \(orgCipherFailedCount, privacy: .public) org cipher(s) skipped")
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
-                logger.error("Org key sync failed — org ciphers unavailable this session: \(error, privacy: .public)")
+                logger.error("Org key sync failed - org ciphers unavailable this session: \(error, privacy: .public)")
                 // Non-fatal: personal items still work without org support.
             }
         }
 
         // Phase 3: Populate the in-memory vault store.
+        try Task.checkCancellation()
         let syncedAt = Date()
         await vaultRepository.populate(
             items:         items,

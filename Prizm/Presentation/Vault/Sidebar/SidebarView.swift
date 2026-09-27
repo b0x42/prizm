@@ -8,19 +8,21 @@ import SwiftUI
 /// The sidebar is always visible, even when a category is empty.
 struct SidebarView: View {
     @Binding var selection: SidebarSelection?
+    @Binding var navigationContext: VaultNavigationContext
     @State private var sidebarSections: [SidebarSection] = [.menu, .types, .folders, .organizations, .trash]
+    let organizationExplorerLayout: OrganizationExplorerLayout
     let itemCounts: [SidebarSelection: Int]
     let folders: [Folder]
     var organizations: [Organization] = []
     var collections: [OrgCollection] = []
 
-    // Folder actions — provided by VaultBrowserViewModel
+    // Folder actions - provided by VaultBrowserViewModel
     var onCreateFolder: ((String) -> Void)?
     var onRenameFolder: ((String, String) -> Void)?  // (id, newName)
     var onDeleteFolder: ((Folder) -> Void)?
     var onDropItems: (([String], String) -> Void)?   // (itemIds, folderId)
 
-    // Collection actions — provided by VaultBrowserViewModel
+    // Collection actions - provided by VaultBrowserViewModel
     var onCreateCollection: ((String, String) -> Void)?  // (name, organizationId)
     var onRenameCollection: ((String, String, String) -> Void)?  // (id, orgId, newName)
     var onDeleteCollection: ((String, String) -> Void)?  // (id, orgId)
@@ -52,24 +54,44 @@ struct SidebarView: View {
     // Tree collapse state (per-session)
     @State private var expandedFolderIds: Set<String> = []
     @State private var expandedOrgIds: Set<String> = []
+    @State private var isContextPickerPresented = false
 
     private var folderTree: [FolderTreeNode] {
         FolderTreeNode.buildTree(from: folders)
     }
 
+    private var selectedOrganization: Organization? {
+        guard case .organization(let id) = navigationContext else { return nil }
+        return organizations.first { $0.id == id }
+    }
+
+    private var selectedOrganizationCollections: [OrgCollection] {
+        guard let selectedOrganization else { return [] }
+        return collections.filter { $0.organizationId == selectedOrganization.id }
+    }
+
     var body: some View {
-        List(selection: $selection) {
-            ForEach(sidebarSections, id: \.self) { section in
-                // Hide the organizations section when the user has no org memberships.
-                if section == .organizations && organizations.isEmpty { EmptyView() }
-                else {
-                    Section(header: sectionHeader(for: section)) {
-                        renderRows(for: section)
+        VStack(spacing: 0) {
+            if organizationExplorerLayout == .dropdown {
+                contextPicker
+                Divider()
+                    .overlay(DesignColor.paneDivider)
+                Color.clear
+                    .frame(height: Spacing.cardTop)
+                    .accessibilityHidden(true)
+            }
+
+            List(selection: $selection) {
+                ForEach(sidebarSections, id: \.self) { section in
+                    if shouldShow(section) {
+                        Section(header: sectionHeader(for: section)) {
+                            renderRows(for: section)
+                        }
                     }
                 }
-            }
-            .onMove { from, to in
-                sidebarSections.move(fromOffsets: from, toOffset: to)
+                .onMove { from, to in
+                    sidebarSections.move(fromOffsets: from, toOffset: to)
+                }
             }
         }
         .navigationTitle("Prizm")
@@ -81,6 +103,119 @@ struct SidebarView: View {
             Button("Cancel", role: .cancel) {}
         } message: { col in
             Text("\u{201C}\(col.name)\u{201D} will be permanently deleted. Items in this collection will remain in the vault.")
+        }
+    }
+
+    private var contextPicker: some View {
+        VStack(spacing: 0) {
+            Button {
+                isContextPickerPresented.toggle()
+            } label: {
+                HStack(spacing: Spacing.headerGap) {
+                    Image(systemName: navigationContextIcon)
+                        .font(Typography.contextDropdownIcon)
+                        .foregroundStyle(DesignColor.selectedContentForeground)
+                        .padding(Spacing.contextPickerIconPadding)
+                        .background(
+                            Color.accentColor.gradient,
+                            in: RoundedRectangle(cornerRadius: Spacing.badgeCornerRadius)
+                        )
+                        .accessibilityHidden(true)
+
+                    Text(navigationContextName)
+                        .font(Typography.contextDropdownLabel)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.leading)
+
+                    Spacer(minLength: Spacing.headerGap)
+
+                    Image(systemName: "chevron.down")
+                        .font(Typography.utility)
+                        .foregroundStyle(.primary)
+                        .accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Spacing.contextPickerHorizontal)
+                .padding(.vertical, Spacing.rowVertical)
+                .contentShape(Rectangle())
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Vault Context")
+            .accessibilityValue(navigationContextName)
+            .popover(isPresented: $isContextPickerPresented, arrowEdge: .bottom) {
+                SearchableSelectPopover(
+                    title: "vaults",
+                    selection: $navigationContext,
+                    options: contextOptions
+                ) {
+                    isContextPickerPresented = false
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.contextPickerOuterHorizontal)
+        .padding(.top, Spacing.sidebarContextTop)
+        .padding(.bottom, Spacing.sidebarContextBottom)
+    }
+
+    private var contextOptions: [SearchableSelectOption<VaultNavigationContext>] {
+        [
+            SearchableSelectOption(
+                value: .allVaults,
+                title: "All Vaults",
+                systemImage: "square.stack.3d.up"
+            ),
+            SearchableSelectOption(
+                value: .personal,
+                title: "My Vault",
+                systemImage: "person.crop.circle"
+            )
+        ] + organizations.map { organization in
+            SearchableSelectOption(
+                value: .organization(organization.id),
+                title: organization.name,
+                systemImage: "building.2"
+            )
+        }
+    }
+
+    private var navigationContextIcon: String {
+        switch navigationContext {
+        case .allVaults:
+            "square.stack.3d.up"
+        case .personal:
+            "person.crop.circle"
+        case .organization:
+            "building.2"
+        }
+    }
+
+    private var navigationContextName: String {
+        switch navigationContext {
+        case .allVaults:
+            "All Vaults"
+        case .personal:
+            "My Vault"
+        case .organization(let id):
+            organizations.first(where: { $0.id == id })?.name ?? "Organization"
+        }
+    }
+
+    private func shouldShow(_ section: SidebarSection) -> Bool {
+        guard organizationExplorerLayout == .dropdown else {
+            return section != .organizations || !organizations.isEmpty
+        }
+
+        switch (section, navigationContext) {
+        case (.folders, .organization):
+            return false
+        case (.organizations, .personal):
+            return false
+        case (.organizations, _):
+            return !organizations.isEmpty
+        default:
+            return true
         }
     }
 
@@ -116,7 +251,31 @@ struct SidebarView: View {
         case .trash:
             EmptyView()
         case .organizations:
-            Text(section.title)
+            if organizationExplorerLayout == .dropdown,
+               let organization = selectedOrganization {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Collections")
+                    Spacer()
+                    if organization.canManageCollections {
+                        Button {
+                            newCollectionName = ""
+                            creatingCollectionInOrg = organization.id
+                            isNewCollectionFocused = true
+                        } label: {
+                            Image(systemName: "plus.circle")
+                                .font(Typography.sectionHeader)
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(.primary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("New Collection")
+                        .accessibilityLabel("New Collection")
+                        .padding(.trailing, Spacing.rowHorizontal)
+                    }
+                }
+            } else {
+                Text(section.title)
+            }
         default:
             Text(section.title)
         }
@@ -128,8 +287,8 @@ struct SidebarView: View {
     private func renderRows(for section: SidebarSection) -> some View {
         switch section {
         case .menu:
-            SidebarRowView(title: "All Items", systemImage: "square.grid.2x2", selection: .allItems, count: itemCounts[.allItems] ?? 0)
-            SidebarRowView(title: "Favorites", systemImage: "star", selection: .favorites, count: itemCounts[.favorites] ?? 0)
+            SidebarRowView(title: "All Items", systemImage: "square.grid.2x2", selection: .allItems, currentSelection: selection, count: itemCounts[.allItems] ?? 0)
+            SidebarRowView(title: "Favorites", systemImage: "star", selection: .favorites, currentSelection: selection, count: itemCounts[.favorites] ?? 0)
         case .folders:
             if isCreatingFolder {
                 TextField("Name or Parent/Name", text: $newFolderName, onCommit: {
@@ -147,6 +306,7 @@ struct SidebarView: View {
                 FolderTreeRow(
                     node: node,
                     itemCounts: itemCounts,
+                    currentSelection: selection,
                     expandedIds: $expandedFolderIds,
                     renamingFolderId: $renamingFolderId,
                     renameText: $renameText,
@@ -164,36 +324,85 @@ struct SidebarView: View {
             }
         case .types:
             ForEach(ItemType.allCases, id: \.self) { type in
-                SidebarRowView(title: type.displayName, systemImage: type.sfSymbol, selection: .type(type), count: itemCounts[.type(type)] ?? 0)
+                SidebarRowView(title: type.displayName, systemImage: type.sfSymbol, selection: .type(type), currentSelection: selection, count: itemCounts[.type(type)] ?? 0)
             }
         case .organizations:
-            ForEach(organizations) { org in
-                let orgCollections = collections.filter { $0.organizationId == org.id }
-                OrgDisclosureRow(
-                    org: org,
-                    collections: orgCollections,
-                    itemCounts: itemCounts,
-                    isExpanded: Binding(
-                        get: { expandedOrgIds.contains(org.id) },
-                        set: { if $0 { expandedOrgIds.insert(org.id) } else { expandedOrgIds.remove(org.id) } }
-                    ),
-                    creatingCollectionInOrg: $creatingCollectionInOrg,
-                    newCollectionName: $newCollectionName,
-                    isNewCollectionFocused: $isNewCollectionFocused,
-                    renamingCollectionId: $renamingCollectionId,
-                    renamingCollectionOrgId: $renamingCollectionOrgId,
-                    collectionRenameText: $collectionRenameText,
-                    isCollectionRenameFocused: $isCollectionRenameFocused,
-                    onCreateCollection: { name in onCreateCollection?(name, org.id) },
-                    onRenameCollection: { colId, name in onRenameCollection?(colId, org.id, name) },
-                    onDeleteCollection: { col in
-                        collectionToDelete = col
-                        showDeleteCollectionAlert = true
-                    }
-                )
+            if organizationExplorerLayout == .dropdown,
+               let organization = selectedOrganization {
+                selectedOrganizationRows(organization)
+            } else {
+                ForEach(organizations) { org in
+                    let orgCollections = collections.filter { $0.organizationId == org.id }
+                    OrgDisclosureRow(
+                        org: org,
+                        collections: orgCollections,
+                        itemCounts: itemCounts,
+                        currentSelection: selection,
+                        isExpanded: Binding(
+                            get: { expandedOrgIds.contains(org.id) },
+                            set: { if $0 { expandedOrgIds.insert(org.id) } else { expandedOrgIds.remove(org.id) } }
+                        ),
+                        creatingCollectionInOrg: $creatingCollectionInOrg,
+                        newCollectionName: $newCollectionName,
+                        isNewCollectionFocused: $isNewCollectionFocused,
+                        renamingCollectionId: $renamingCollectionId,
+                        renamingCollectionOrgId: $renamingCollectionOrgId,
+                        collectionRenameText: $collectionRenameText,
+                        isCollectionRenameFocused: $isCollectionRenameFocused,
+                        onCreateCollection: { name in onCreateCollection?(name, org.id) },
+                        onRenameCollection: { colId, name in onRenameCollection?(colId, org.id, name) },
+                        onDeleteCollection: { col in
+                            collectionToDelete = col
+                            showDeleteCollectionAlert = true
+                        }
+                    )
+                }
             }
         case .trash:
-            SidebarRowView(title: "Trash", systemImage: "trash", selection: .trash, count: itemCounts[.trash] ?? 0)
+            SidebarRowView(title: "Trash", systemImage: "trash", selection: .trash, currentSelection: selection, count: itemCounts[.trash] ?? 0)
+        }
+    }
+
+    @ViewBuilder
+    private func selectedOrganizationRows(_ organization: Organization) -> some View {
+        if creatingCollectionInOrg == organization.id {
+            TextField("Collection name", text: $newCollectionName, onCommit: {
+                commitCreateCollection(in: organization.id)
+            })
+            .focused($isNewCollectionFocused)
+            .tag(SidebarSelection.newCollection(organizationId: organization.id))
+            .onExitCommand {
+                creatingCollectionInOrg = nil
+                newCollectionName = ""
+            }
+        }
+
+        ForEach(CollectionTreeNode.buildTree(from: selectedOrganizationCollections)) { node in
+            CollectionTreeRow(
+                node: node,
+                org: organization,
+                itemCounts: itemCounts,
+                currentSelection: selection,
+                renamingCollectionId: $renamingCollectionId,
+                renamingCollectionOrgId: $renamingCollectionOrgId,
+                collectionRenameText: $collectionRenameText,
+                isCollectionRenameFocused: $isCollectionRenameFocused,
+                onRenameCollection: { id, name in
+                    onRenameCollection?(id, organization.id, name)
+                },
+                onDeleteCollection: { collection in
+                    collectionToDelete = collection
+                    showDeleteCollectionAlert = true
+                }
+            )
+        }
+
+        if selectedOrganizationCollections.isEmpty
+            && creatingCollectionInOrg != organization.id {
+            Text("No collections")
+                .font(Typography.listSubtitle)
+                .foregroundStyle(.secondary)
+                .tag(SidebarSelection?.none)
         }
     }
 
@@ -204,6 +413,14 @@ struct SidebarView: View {
         guard !trimmed.isEmpty else { return }
         onCreateFolder?(trimmed)
     }
+
+    private func commitCreateCollection(in organizationId: String) {
+        let trimmed = newCollectionName.trimmingCharacters(in: .whitespacesAndNewlines)
+        creatingCollectionInOrg = nil
+        newCollectionName = ""
+        guard !trimmed.isEmpty else { return }
+        onCreateCollection?(trimmed, organizationId)
+    }
 }
 
 // MARK: - FolderTreeRow
@@ -213,6 +430,7 @@ struct SidebarView: View {
 private struct FolderTreeRow: View {
     let node: FolderTreeNode
     let itemCounts: [SidebarSelection: Int]
+    let currentSelection: SidebarSelection?
     @Binding var expandedIds: Set<String>
     @Binding var renamingFolderId: String?
     @Binding var renameText: String
@@ -234,6 +452,7 @@ private struct FolderTreeRow: View {
                     FolderTreeRow(
                         node: child,
                         itemCounts: itemCounts,
+                        currentSelection: currentSelection,
                         expandedIds: $expandedIds,
                         renamingFolderId: $renamingFolderId,
                         renameText: $renameText,
@@ -274,11 +493,12 @@ private struct FolderTreeRow: View {
                 isRenameFocused = false
             }
         } else if let folder = node.folder {
-            // Real folder — selectable, droppable
+            // Real folder - selectable, droppable
             FolderRowLabel(
                 folder: folder,
                 displayName: node.name,
                 count: itemCounts[.folder(folder.id)] ?? 0,
+                isSelected: currentSelection == .folder(folder.id),
                 onRename: {
                     renameText = node.name
                     renamingFolderId = folder.id
@@ -288,7 +508,7 @@ private struct FolderTreeRow: View {
                 onDrop: { ids in onDropItems(ids, folder.id) }
             )
         } else {
-            // Virtual parent — not selectable, no drop, no context menu
+            // Virtual parent - not selectable, no drop, no context menu
             Label(node.name, systemImage: "folder")
                 .foregroundStyle(.secondary)
         }
@@ -303,19 +523,31 @@ private struct FolderRowLabel: View {
     let folder: Folder
     var displayName: String? = nil
     let count: Int
+    let isSelected: Bool
     var onRename: () -> Void
     var onDelete: () -> Void
     var onDrop: ([String]) -> Void
 
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var isDropTargeted = false
+    @State private var isHovered = false
 
     var body: some View {
         Label(displayName ?? folder.name, systemImage: "folder")
             .font(Typography.sidebarRow)
             .badge(count)
             .tag(SidebarSelection.folder(folder.id))
-            .listRowBackground(isDropTargeted ? Color.accentColor.opacity(Opacity.dropTarget(contrast)) : Color.clear)
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: Spacing.contextPickerCornerRadius)
+                    .fill(
+                        isDropTargeted
+                            ? Color.accentColor.opacity(Opacity.dropTarget(contrast))
+                            : isHovered && !isSelected
+                                ? Color.primary.opacity(Opacity.itemRowHover(contrast))
+                                : Color.clear
+                    )
+                    .padding(.horizontal, Spacing.itemHighlightHorizontalMargin)
+            )
             .contextMenu {
                 Button("Rename") { onRename() }
                 Divider()
@@ -327,6 +559,11 @@ private struct FolderRowLabel: View {
                 return true
             } isTargeted: { targeted in
                 isDropTargeted = targeted
+            }
+            .onHover { hovering in
+                optionalAnimation(.easeInOut(duration: 0.15)) {
+                    isHovered = hovering
+                }
             }
     }
 }
@@ -346,6 +583,7 @@ private struct OrgDisclosureRow: View {
     let org: Organization
     let collections: [OrgCollection]
     let itemCounts: [SidebarSelection: Int]
+    let currentSelection: SidebarSelection?
     @Binding var isExpanded: Bool
 
     // Inline collection create state
@@ -387,6 +625,7 @@ private struct OrgDisclosureRow: View {
                     node: node,
                     org: org,
                     itemCounts: itemCounts,
+                    currentSelection: currentSelection,
                     renamingCollectionId: $renamingCollectionId,
                     renamingCollectionOrgId: $renamingCollectionOrgId,
                     collectionRenameText: $collectionRenameText,
@@ -406,6 +645,7 @@ private struct OrgDisclosureRow: View {
             orgHeader
         }
         .tag(SidebarSelection.organization(org.id))
+        .modifier(SidebarRowHoverModifier(isSelected: currentSelection == .organization(org.id)))
     }
 
     @ViewBuilder
@@ -453,6 +693,7 @@ private struct CollectionTreeRow: View {
     let node: CollectionTreeNode
     let org: Organization
     let itemCounts: [SidebarSelection: Int]
+    let currentSelection: SidebarSelection?
     @Binding var renamingCollectionId: String?
     @Binding var renamingCollectionOrgId: String?
     @Binding var collectionRenameText: String
@@ -470,6 +711,7 @@ private struct CollectionTreeRow: View {
                         node: child,
                         org: org,
                         itemCounts: itemCounts,
+                        currentSelection: currentSelection,
                         renamingCollectionId: $renamingCollectionId,
                         renamingCollectionOrgId: $renamingCollectionOrgId,
                         collectionRenameText: $collectionRenameText,
@@ -510,6 +752,7 @@ private struct CollectionTreeRow: View {
                 .font(Typography.sidebarRow)
                 .badge(itemCounts[.collection(col.id)] ?? 0)
                 .tag(SidebarSelection.collection(col.id))
+                .modifier(SidebarRowHoverModifier(isSelected: currentSelection == .collection(col.id)))
                 .contextMenu {
                     if org.canManageCollections {
                         Button("Rename") {
@@ -525,7 +768,7 @@ private struct CollectionTreeRow: View {
                     }
                 }
         } else {
-            // Virtual parent node — not selectable, no context menu
+            // Virtual parent node - not selectable, no context menu
             Label(node.name, systemImage: "tray.2")
                 .foregroundStyle(.secondary)
         }
@@ -538,6 +781,7 @@ private struct SidebarRowView: View {
     let title:       String
     let systemImage: String
     let selection:   SidebarSelection
+    let currentSelection: SidebarSelection?
     let count:       Int
 
     var body: some View {
@@ -545,5 +789,31 @@ private struct SidebarRowView: View {
             .font(Typography.sidebarRow)
             .badge(count)
             .tag(selection)
+            .modifier(SidebarRowHoverModifier(isSelected: currentSelection == selection))
+    }
+}
+
+private struct SidebarRowHoverModifier: ViewModifier {
+    let isSelected: Bool
+
+    @Environment(\.colorSchemeContrast) private var contrast
+    @State private var isHovered = false
+
+    func body(content: Content) -> some View {
+        content
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: Spacing.contextPickerCornerRadius)
+                    .fill(
+                        isHovered && !isSelected
+                            ? Color.primary.opacity(Opacity.itemRowHover(contrast))
+                            : Color.clear
+                    )
+                    .padding(.horizontal, Spacing.itemHighlightHorizontalMargin)
+            )
+            .onHover { hovering in
+                optionalAnimation(.easeInOut(duration: 0.15)) {
+                    isHovered = hovering
+                }
+            }
     }
 }

@@ -18,7 +18,7 @@ struct AboutViewModel {
     /// Third-party libraries and protocols that Prizm relies on.
     ///
     /// These appear in the About window's Acknowledgements section so users
-    /// can audit the full dependency chain — required by CONSTITUTION §VII
+    /// can audit the full dependency chain - required by CONSTITUTION §VII
     /// (Radical Transparency).
     let acknowledgements: [String]
 
@@ -36,8 +36,8 @@ struct AboutViewModel {
             tagline: "Your secrets. Your server. Our user interface.",
             gitHubURL: URL(string: "https://github.com/b0x42/prizm")!,
             acknowledgements: [
-                "Vaultwarden & Bitwarden — server API and vault format",
-                "Argon2Swift — Argon2id key derivation (RFC 9106)",
+                "Vaultwarden & Bitwarden - server API and vault format",
+                "Argon2Swift - Argon2id key derivation (RFC 9106)",
             ]
         )
     }

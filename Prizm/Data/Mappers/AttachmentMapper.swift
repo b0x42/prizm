@@ -16,7 +16,7 @@ nonisolated enum AttachmentMapperError: Error, Equatable {
 /// Maps an `AttachmentDTO` (wire format, partially encrypted) to an `Attachment`
 /// (domain, decrypted) using the cipher's effective `CryptoKeys`.
 ///
-/// **Security goal**: only `fileName` is decrypted here — `key` (the per-attachment
+/// **Security goal**: only `fileName` is decrypted here - `key` (the per-attachment
 /// symmetric key) is preserved as an EncString and decrypted on demand inside
 /// `AttachmentRepositoryImpl` when a file operation is performed. This minimises the
 /// window during which attachment key material lives in memory.
@@ -28,7 +28,7 @@ nonisolated enum AttachmentMapperError: Error, Equatable {
 ///
 /// **Deviations**: none. The decryption algorithm and key usage match the Bitwarden
 /// reference implementation.
-// `Sendable`: no mutable instance state — only a static logger.
+// `Sendable`: no mutable instance state - only a static logger.
 nonisolated final class AttachmentMapper: Sendable {
 
     private static let logger = Logger(subsystem: "com.prizm", category: "attachments")
@@ -38,14 +38,14 @@ nonisolated final class AttachmentMapper: Sendable {
     /// - Parameters:
     ///   - dto:       Wire-format attachment record from the sync response.
     ///   - cipherKey: The cipher's effective `CryptoKeys`. Provided by `CipherMapper`
-    ///                which already holds `CryptoKeys` at call time — avoids re-splitting
+    ///                which already holds `CryptoKeys` at call time - avoids re-splitting
     ///                a 64-byte Data blob unnecessarily.
     /// - Returns: A decrypted `Attachment` ready for use in the domain layer.
     /// - Throws: `AttachmentMapperError.fileNameDecryptionFailed` if fileName cannot be decrypted.
     /// - Throws: `AttachmentMapperError.invalidSize` if the `size` string is not a valid integer.
     func map(_ dto: AttachmentDTO, cipherKey: CryptoKeys) throws -> Attachment {
         // Decrypt the file name (EncString → plaintext).
-        // The attachment key (dto.key) is NOT decrypted here — it is preserved verbatim
+        // The attachment key (dto.key) is NOT decrypted here - it is preserved verbatim
         // as encryptedKey and decrypted on demand during download (Constitution §III).
         let plainFileName: String
         do {
@@ -71,10 +71,10 @@ nonisolated final class AttachmentMapper: Sendable {
         return Attachment(
             id:                 dto.id,
             fileName:           plainFileName,
-            encryptedKey:       dto.key,       // verbatim — not decrypted here
+            encryptedKey:       dto.key,       // verbatim - not decrypted here
             size:               sizeInt,
-            sizeName:           dto.sizeName,  // verbatim — not reformatted
-            url:                dto.url,        // verbatim — may be nil
+            sizeName:           dto.sizeName,  // verbatim - not reformatted
+            url:                dto.url,        // verbatim - may be nil
             isUploadIncomplete: dto.url == nil  // nil url → blob never received
         )
     }

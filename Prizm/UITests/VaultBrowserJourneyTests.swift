@@ -54,7 +54,7 @@ final class VaultBrowserJourneyTests: XCTestCase {
 
         // Select All Items.
         allItems.click()
-        // The item list should show items (or an empty state — depends on test data).
+        // The item list should show items (or an empty state - depends on test data).
 
         // Select Favorites.
         XCTAssertTrue(favorites.exists)
@@ -87,7 +87,7 @@ final class VaultBrowserJourneyTests: XCTestCase {
                 "Detail pane should show selected item name"
             )
         } else {
-            // No items in vault — empty state should be shown.
+            // No items in vault - empty state should be shown.
             XCTAssertTrue(
                 emptyState.waitForExistence(timeout: 5),
                 "Empty state should show when no items exist"
@@ -120,7 +120,7 @@ final class VaultBrowserJourneyTests: XCTestCase {
         // Navigate to a login item.
         let loginType = app.descendants(matching: .any)["sidebar.type.Login"]
         guard loginType.waitForExistence(timeout: 5) else {
-            throw XCTSkip("No Login type in sidebar — test vault may be empty")
+            throw XCTSkip("No Login type in sidebar - test vault may be empty")
             return
         }
         loginType.click()
@@ -164,11 +164,11 @@ final class VaultBrowserJourneyTests: XCTestCase {
         // Initially masked.
         XCTAssertEqual(maskedValue.label, "••••••••")
 
-        // Click reveal — should show plaintext.
+        // Click reveal - should show plaintext.
         revealBtn.click()
         XCTAssertNotEqual(maskedValue.label, "••••••••", "Value should be revealed after toggle")
 
-        // Click again — should re-mask.
+        // Click again - should re-mask.
         revealBtn.click()
         XCTAssertEqual(maskedValue.label, "••••••••", "Value should be masked after second toggle")
     }
@@ -195,7 +195,7 @@ final class VaultBrowserJourneyTests: XCTestCase {
             revealBtn.click()
         }
 
-        // Navigate to second item — mask should reset.
+        // Navigate to second item - mask should reset.
         items.element(boundBy: 1).click()
         let maskedValue = app.staticTexts["masked.Password.value"]
         if maskedValue.waitForExistence(timeout: 5) {

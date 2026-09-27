@@ -22,7 +22,7 @@ nonisolated struct RawCipher: Codable {
     let notes:          String?         // EncString
     let favorite:       Bool
     /// Master-password re-prompt setting. 0 = disabled, 1 = require master password.
-    /// Must be round-tripped unchanged on PUT — omitting it silently resets re-prompt
+    /// Must be round-tripped unchanged on PUT - omitting it silently resets re-prompt
     /// protection for items that have it enabled.
     /// Reference: Bitwarden server `CipherRepromptType` enum (0 = None, 1 = Password).
     let reprompt:       Int?
@@ -37,7 +37,7 @@ nonisolated struct RawCipher: Codable {
     let fields:         [RawField]?
     /// Per-cipher symmetric key wrapped as an EncString. When present, this key encrypts
     /// the cipher's fields instead of the vault-level key. When nil, the vault-level key
-    /// is used directly (Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping").
+    /// is used directly (Bitwarden Security Whitepaper §4 - "Cipher Key Wrapping").
     let key:            String?         // EncString, optional
     /// Collections this cipher is assigned to within its organization.
     /// Defaults to `[]` when absent (personal items, or servers that omit the key).
@@ -46,7 +46,7 @@ nonisolated struct RawCipher: Codable {
     /// attachments or omits the field entirely; treated as `[]` by `CipherMapper`.
     let attachments:    [AttachmentDTO]?
 
-    /// Custom decoder — all fields use standard decoding except `collectionIds`, which
+    /// Custom decoder - all fields use standard decoding except `collectionIds`, which
     /// defaults to `[]` when the key is absent so that personal-item ciphers (which the
     /// server omits the key for) decode without error.
     init(from decoder: Decoder) throws {

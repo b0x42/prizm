@@ -77,7 +77,7 @@ final class VaultBrowserViewModelGlobalSearchTests: XCTestCase {
         await Task.yield()
         await Task.yield()
 
-        // Visa is a Card, not a Login — should still appear in global search
+        // Visa is a Card, not a Login - should still appear in global search
         XCTAssertTrue(sut.displayedItems.contains(where: { $0.name == "Visa" }))
     }
 

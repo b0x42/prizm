@@ -59,7 +59,7 @@ final class UnlockUseCaseTests: XCTestCase {
         }
     }
 
-    /// Vault lock is NOT called on wrong password — the session stays intact (FR-039).
+    /// Vault lock is NOT called on wrong password - the session stays intact (FR-039).
     func testExecute_wrongPassword_doesNotLockVault() async throws {
         mockAuth.unlockWithPasswordError   = AuthError.invalidCredentials
         mockAuth.lockVaultCalledCount      = 0
@@ -67,7 +67,7 @@ final class UnlockUseCaseTests: XCTestCase {
         _ = try? await sut.execute(masterPassword: Data("wrong!".utf8))
 
         XCTAssertEqual(mockAuth.lockVaultCalledCount, 0,
-                       "lockVault must not be called on wrong password — session stays intact")
+                       "lockVault must not be called on wrong password - session stays intact")
     }
 
     // MARK: - Helpers

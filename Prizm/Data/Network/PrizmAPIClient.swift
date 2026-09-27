@@ -22,19 +22,25 @@ protocol PrizmAPIClientProtocol: Actor {
     /// Stores the access token used for subsequent authenticated requests.
     func setAccessToken(_ token: String)
 
+    /// Atomically selects the endpoint and bearer token for one account session.
+    func activateSession(baseURL: URL, accessToken: String?)
+
     /// Clears the in-memory access token.
     ///
     /// - Security goal: removes the bearer token from memory on sign-out so it cannot
     ///   be read from a heap dump after the session ends (Constitution §III).
     func clearAccessToken()
 
-    /// POST `/accounts/prelogin` — returns KDF parameters for the given email.
+    /// Invalidates in-flight work and clears all account-bound network state.
+    func invalidateSession()
+
+    /// POST `/accounts/prelogin` - returns KDF parameters for the given email.
     /// Used to derive the master key before posting credentials to `/connect/token`.
     ///
     /// No authentication required; sends only the email address.
     func preLogin(email: String) async throws -> PreLoginResponse
 
-    /// POST `/connect/token` — exchanges a hashed password (or TOTP code) for tokens.
+    /// POST `/connect/token` - exchanges a hashed password (or TOTP code) for tokens.
     ///
     /// The request is `application/x-www-form-urlencoded` as required by the OAuth2 spec.
     /// On a 2FA challenge the server returns HTTP 400 with `TwoFactorProviders` in the body;
@@ -56,20 +62,20 @@ protocol PrizmAPIClientProtocol: Actor {
         twoFactorRemember:  Bool
     ) async throws -> TokenResponse
 
-    /// GET `/sync?excludeDomains=true` — returns the full encrypted vault.
+    /// GET `/sync?excludeDomains=true` - returns the full encrypted vault.
     ///
     /// Requires a valid `Authorization: Bearer <accessToken>` header.
     /// Throws `SyncError.unauthorized` on HTTP 401.
     func fetchSync() async throws -> SyncResponse
 
-    /// POST `/identity/connect/token` with `grant_type=refresh_token` — exchanges a refresh token
+    /// POST `/identity/connect/token` with `grant_type=refresh_token` - exchanges a refresh token
     /// for a new access token. Updates the stored access token on success.
     ///
     /// - Returns: A tuple of (newAccessToken, newRefreshToken). The refresh token may be nil
     ///   if the server does not rotate it.
     func refreshAccessToken(refreshToken: String) async throws -> (accessToken: String, refreshToken: String?)
 
-    /// PUT `/api/ciphers/{id}` — updates an existing cipher with re-encrypted field values.
+    /// PUT `/api/ciphers/{id}` - updates an existing cipher with re-encrypted field values.
     ///
     /// Requires a valid `Authorization: Bearer <accessToken>` header.
     /// The request body is a JSON-encoded `RawCipher` with all sensitive fields re-encrypted
@@ -79,28 +85,28 @@ protocol PrizmAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}
     func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher
 
-    /// PUT `/api/ciphers/{id}/collections` — updates the collection membership of an org cipher.
+    /// PUT `/api/ciphers/{id}/collections` - updates the collection membership of an org cipher.
     ///
-    /// `PUT /api/ciphers/{id}` does not change collection assignments — this endpoint must be
+    /// `PUT /api/ciphers/{id}` does not change collection assignments - this endpoint must be
     /// called separately whenever `collectionIds` changes. Passing an empty array moves the
     /// item to the org's Default collection.
     ///
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/collections
     func updateCipherCollections(id: String, collectionIds: [String]) async throws
 
-    /// PUT `/api/ciphers/{id}/delete` — soft-deletes a cipher by moving it to Trash.
+    /// PUT `/api/ciphers/{id}/delete` - soft-deletes a cipher by moving it to Trash.
     ///
     /// Sets `deletedDate` on the server. The item remains in the user's vault data and
     /// can be restored. Bitwarden cloud auto-purges trashed items after 30 days server-side;
     /// self-hosted Vaultwarden only auto-purges if `TRASH_AUTO_DELETE_DAYS` is configured.
     ///
-    /// Note: `DELETE /api/ciphers/{id}` is the *permanent* delete endpoint — do NOT use it
+    /// Note: `DELETE /api/ciphers/{id}` is the *permanent* delete endpoint - do NOT use it
     /// for soft-delete. The soft-delete endpoint is `PUT /api/ciphers/{id}/delete`.
     ///
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/delete
     func softDeleteCipher(id: String) async throws
 
-    /// DELETE `/api/ciphers/{id}` — permanently deletes a cipher.
+    /// DELETE `/api/ciphers/{id}` - permanently deletes a cipher.
     ///
     /// **Irreversible.** Removes the cipher from the server entirely.
     /// Used only when deleting an item that is already in Trash.
@@ -108,21 +114,21 @@ protocol PrizmAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API DELETE /api/ciphers/{id}
     func permanentDeleteCipher(id: String) async throws
 
-    /// PUT `/api/ciphers/{id}/restore` — restores a trashed cipher to the active vault.
+    /// PUT `/api/ciphers/{id}/restore` - restores a trashed cipher to the active vault.
     ///
     /// Clears `deletedDate` on the server. The item becomes visible in the active vault again.
     ///
     /// Reference: Bitwarden Server API PUT /api/ciphers/{id}/restore
     func restoreCipher(id: String) async throws
 
-    /// POST `/api/ciphers` — creates a new cipher with encrypted field values.
+    /// POST `/api/ciphers` - creates a new cipher with encrypted field values.
     ///
     /// Requires a valid `Authorization: Bearer <accessToken>` header.
     /// The request body is a JSON-encoded `RawCipher`. The server assigns the ID and timestamps.
     /// On success the server returns the created cipher, decoded back into `RawCipher`.
     func createCipher(cipher: RawCipher) async throws -> RawCipher
 
-    /// POST `/api/ciphers/create` — creates an org-scoped cipher.
+    /// POST `/api/ciphers/create` - creates an org-scoped cipher.
     ///
     /// Used for items belonging to an organization (when `cipher.organizationId != nil`).
     /// The body must include `collectionIds[]` so the server assigns the item to the
@@ -133,7 +139,7 @@ protocol PrizmAPIClientProtocol: Actor {
 
     // MARK: - Attachment endpoints
 
-    /// POST `/api/ciphers/{cipherId}/attachment/v2` — creates attachment metadata on the server.
+    /// POST `/api/ciphers/{cipherId}/attachment/v2` - creates attachment metadata on the server.
     ///
     /// Returns the attachment ID, a signed upload URL (or Bitwarden-hosted URL for fileUploadType 0),
     /// and the file upload type (0 = Bitwarden-hosted, 1 = Azure blob storage).
@@ -141,28 +147,28 @@ protocol PrizmAPIClientProtocol: Actor {
     /// Reference: Bitwarden Server API POST /api/ciphers/{id}/attachment/v2
     func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse
 
-    /// POST `/api/ciphers/{cipherId}/attachment/{attachmentId}` — uploads a file blob via multipart.
+    /// POST `/api/ciphers/{cipherId}/attachment/{attachmentId}` - uploads a file blob via multipart.
     ///
     /// Used when `fileUploadType == 0` (Bitwarden-hosted storage).
     /// The encrypted blob is sent as the `data` field of a multipart/form-data body.
     func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws
 
-    /// PUT `<signedURL>` with `x-ms-blob-type: BlockBlob` — uploads to Azure Blob Storage.
+    /// PUT `<signedURL>` with `x-ms-blob-type: BlockBlob` - uploads to Azure Blob Storage.
     ///
     /// Used when `fileUploadType == 1` (Azure). The signed URL is provided by the v2 metadata response.
     /// The request body is the raw encrypted blob with the Azure-required header.
     func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws
 
-    /// GET `/api/ciphers/{cipherId}/attachment/{attachmentId}` — fetches a fresh signed download URL.
+    /// GET `/api/ciphers/{cipherId}/attachment/{attachmentId}` - fetches a fresh signed download URL.
     ///
     /// Returns an `AttachmentDownloadResponse` containing the signed URL valid for a limited time.
     /// Called when `Attachment.url` is nil or returns HTTP 403.
     func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse
 
-    /// DELETE `/api/ciphers/{cipherId}/attachment/{attachmentId}` — deletes an attachment.
+    /// DELETE `/api/ciphers/{cipherId}/attachment/{attachmentId}` - deletes an attachment.
     func deleteAttachment(cipherId: String, attachmentId: String) async throws
 
-    /// GET `<signedURL>` — downloads the raw encrypted blob from a signed URL.
+    /// GET `<signedURL>` - downloads the raw encrypted blob from a signed URL.
     ///
     /// Used by `AttachmentRepositoryImpl` to fetch attachment blobs. Routed through the
     /// API client (rather than `URLSession.shared`) so tests can mock the download path
@@ -171,37 +177,37 @@ protocol PrizmAPIClientProtocol: Actor {
 
     // MARK: - Folder CRUD
 
-    /// POST `/api/folders` — creates a new folder with an encrypted name.
+    /// POST `/api/folders` - creates a new folder with an encrypted name.
     func createFolder(encryptedName: String) async throws -> RawFolder
 
-    /// PUT `/api/folders/{id}` — renames a folder with an encrypted name.
+    /// PUT `/api/folders/{id}` - renames a folder with an encrypted name.
     func updateFolder(id: String, encryptedName: String) async throws -> RawFolder
 
-    /// DELETE `/api/folders/{id}` — permanently deletes a folder.
+    /// DELETE `/api/folders/{id}` - permanently deletes a folder.
     /// Items in the folder are unfoldered, not deleted.
     func deleteFolder(id: String) async throws
 
     // MARK: - Cipher partial / move
 
-    /// PUT `/ciphers/{id}/partial` — updates folderId and favorite without re-encrypting.
+    /// PUT `/ciphers/{id}/partial` - updates folderId and favorite without re-encrypting.
     func updateCipherPartial(id: String, folderId: String?, favorite: Bool) async throws
 
-    /// PUT `/ciphers/move` — bulk-moves ciphers to a folder.
+    /// PUT `/ciphers/move` - bulk-moves ciphers to a folder.
     func moveCiphersToFolder(ids: [String], folderId: String?) async throws
 
     // MARK: - Collection CRUD
 
-    /// POST `/api/organizations/{orgId}/collections` — creates a new collection.
+    /// POST `/api/organizations/{orgId}/collections` - creates a new collection.
     ///
     /// - Parameters:
     ///   - organizationId: The org the collection belongs to.
     ///   - encryptedName: The collection name encrypted with the org's symmetric key.
     func createCollection(organizationId: String, encryptedName: String) async throws -> RawCollection
 
-    /// PUT `/api/organizations/{orgId}/collections/{id}` — renames an existing collection.
+    /// PUT `/api/organizations/{orgId}/collections/{id}` - renames an existing collection.
     func renameCollection(id: String, organizationId: String, encryptedName: String) async throws -> RawCollection
 
-    /// DELETE `/api/organizations/{orgId}/collections/{id}` — deletes a collection.
+    /// DELETE `/api/organizations/{orgId}/collections/{id}` - deletes a collection.
     func deleteCollection(id: String, organizationId: String) async throws
 
 }
@@ -228,7 +234,7 @@ nonisolated struct PreLoginResponse: Codable {
     }
 
     // Vaultwarden/Bitwarden returns camelCase keys matching the property names,
-    // so no custom CodingKeys needed — synthesized conformance handles it.
+    // so no custom CodingKeys needed - synthesized conformance handles it.
 }
 
 /// Response from POST `/connect/token`.
@@ -304,6 +310,8 @@ nonisolated enum APIError: Error, Equatable {
     case decodingFailed
     /// `setBaseURL` was never called before making a request.
     case baseURLNotSet
+    /// The account changed while this request was in flight.
+    case sessionInvalidated
 }
 
 extension APIError: LocalizedError {
@@ -315,6 +323,8 @@ extension APIError: LocalizedError {
             return "The server response could not be read. Please try again."
         case .baseURLNotSet:
             return "No server URL is configured."
+        case .sessionInvalidated:
+            return "The account changed before the request completed."
         }
     }
 }
@@ -329,11 +339,11 @@ extension APIError: LocalizedError {
 /// Reference: Bitwarden Server API POST /api/ciphers/{id}/attachment/v2
 nonisolated struct AttachmentMetadataRequest: Encodable {
     let fileName:     String    // EncString
-    let key:          String    // EncString — per-attachment key wrapped with cipher key
+    let key:          String    // EncString - per-attachment key wrapped with cipher key
     let fileSize:     Int
     let adminRequest: Bool      // always false for personal vault
 
-    // Server expects camelCase — synthesized Encodable matches.
+    // Server expects camelCase - synthesized Encodable matches.
 }
 
 /// Response from POST `/api/ciphers/{id}/attachment/v2`.
@@ -374,6 +384,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     private(set) var baseURL: URL?
     private var accessToken: String?
+    private var sessionGeneration: UInt64 = 0
 
     private let session:   URLSession
     private let logger:    Logger = Logger(
@@ -402,6 +413,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - Configuration
 
     func setBaseURL(_ url: URL) {
+        sessionGeneration &+= 1
         baseURL = url
     }
 
@@ -409,7 +421,19 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         accessToken = token
     }
 
+    func activateSession(baseURL: URL, accessToken: String?) {
+        sessionGeneration &+= 1
+        self.baseURL = baseURL
+        self.accessToken = accessToken
+    }
+
     func clearAccessToken() {
+        accessToken = nil
+    }
+
+    func invalidateSession() {
+        sessionGeneration &+= 1
+        baseURL = nil
         accessToken = nil
     }
 
@@ -470,7 +494,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if twoFactorRemember                { params["twoFactorRemember"] = "true" }
 
         if DebugConfig.isEnabled {
-            // Log all params except password (server hash) — scrubbed for security.
+            // Log all params except password (server hash) - scrubbed for security.
             let scrubbed = params.filter { $0.key != "password" }
                 .sorted(by: { $0.key < $1.key })
                 .map { "\($0.key)=\($0.value)" }
@@ -491,7 +515,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     /// Specialized perform for the identity token endpoint.
     ///
-    /// The Bitwarden identity service overloads HTTP 400 for three distinct outcomes —
+    /// The Bitwarden identity service overloads HTTP 400 for three distinct outcomes -
     /// disambiguation requires inspecting the response body:
     ///   1. 2FA challenge (occurs on first password attempt when 2FA is enabled):
     ///      body contains `"TwoFactorProviders2"` key → throw `.twoFactorRequired`
@@ -502,7 +526,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     /// Cases 2 and 3 use the same fallthrough path because they produce the same
     /// user-facing error: re-enter your password / code.
     private func performIdentityToken(request: URLRequest) async throws -> TokenResponse {
+        let generation = sessionGeneration
         let (data, response) = try await session.data(for: request)
+        guard generation == sessionGeneration else { throw APIError.sessionInvalidated }
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "")
@@ -567,7 +593,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         do {
             let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: data)
             if DebugConfig.isEnabled {
-                // Log which fields are present — never log token values.
+                // Log which fields are present - never log token values.
                 let hasKey         = tokenResponse.key != nil
                 let hasKdf         = tokenResponse.kdf != nil
                 let hasUserId      = tokenResponse.userId != nil
@@ -629,7 +655,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         }
 
         // Encode the re-encrypted RawCipher as the request body.
-        // Field values are already EncStrings — no plaintext leaves the device.
+        // Field values are already EncStrings - no plaintext leaves the device.
         request.httpBody = try JSONEncoder().encode(cipher)
 
         let updated: RawCipher = try await perform(request: request)
@@ -659,7 +685,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func softDeleteCipher(id: String) async throws {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
-        // PUT /api/ciphers/{id}/delete — soft-delete (moves to Trash, sets deletedDate).
+        // PUT /api/ciphers/{id}/delete - soft-delete (moves to Trash, sets deletedDate).
         // Do NOT use DELETE /api/ciphers/{id} here; that endpoint permanently removes the cipher.
         let url = base.appendingPathComponent("api/ciphers/\(id)/delete")
 
@@ -716,7 +742,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        // No body — the server identifies the cipher by URL path only.
+        // No body - the server identifies the cipher by URL path only.
         // Sending Content-Type: application/json with a body causes Vaultwarden to return 400.
 
         try await performEmpty(request: request)
@@ -771,7 +797,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         request.setValue("BlockBlob", forHTTPHeaderField: "x-ms-blob-type")
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
         request.httpBody = encryptedBlob
+        let generation = sessionGeneration
         let (_, response) = try await session.data(for: request)
+        guard generation == sessionGeneration else { throw APIError.sessionInvalidated }
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
             throw APIError.httpError(statusCode: code, body: "Azure upload failed")
@@ -804,7 +832,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - downloadBlob
 
     func downloadBlob(from url: URL) async throws -> Data {
+        let generation = sessionGeneration
         let (data, response) = try await session.data(from: url)
+        guard generation == sessionGeneration else { throw APIError.sessionInvalidated }
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "Invalid response")
         }
@@ -843,7 +873,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - createOrgCipher
 
-    /// Wrapper body for `POST /api/ciphers/create` — Bitwarden expects `{ "cipher": ..., "collectionIds": [...] }`.
+    /// Wrapper body for `POST /api/ciphers/create` - Bitwarden expects `{ "cipher": ..., "collectionIds": [...] }`.
     private struct OrgCipherCreateRequest: Encodable {
         let cipher: RawCipher
         let collectionIds: [String]
@@ -914,7 +944,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - Collection CRUD
 
-    /// Bitwarden collection body for create/rename — `groups` and `users` default to empty.
+    /// Bitwarden collection body for create/rename - `groups` and `users` default to empty.
     private struct CollectionBody: Encodable {
         let name: String
         let groups: [String]
@@ -1034,7 +1064,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     ///
     /// - Throws: `APIError.httpError` on non-2xx status codes; `APIError.decodingFailed` on JSON errors.
     private func perform<T: Decodable>(request: URLRequest) async throws -> T {
+        let generation = sessionGeneration
         let (data, response) = try await session.data(for: request)
+        guard generation == sessionGeneration else { throw APIError.sessionInvalidated }
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "")
@@ -1088,7 +1120,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     /// Used for endpoints that return 200/204 with no meaningful response body
     /// (soft-delete, restore, purge). Throws `APIError.httpError` on non-2xx responses.
     private func performEmpty(request: URLRequest) async throws {
+        let generation = sessionGeneration
         let (data, response) = try await session.data(for: request)
+        guard generation == sessionGeneration else { throw APIError.sessionInvalidated }
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "")
@@ -1108,7 +1142,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     /// Must be RFC 3986 unreserved characters only: `A-Z a-z 0-9 - _ . ~`
     /// `.urlQueryAllowed` is intentionally NOT used here because it permits `+`, `=`, and `&`,
     /// which are field separators in form encoding.  In particular, a `+` in a value is decoded
-    /// as a space by all HTTP servers — this would silently corrupt a base64 password hash that
+    /// as a space by all HTTP servers - this would silently corrupt a base64 password hash that
     /// contains `+` or ends with `=` padding.
     private static let formValueAllowed: CharacterSet = {
         var cs = CharacterSet.alphanumerics

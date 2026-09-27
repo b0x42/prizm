@@ -6,7 +6,7 @@ import XCTest
 /// Unit tests for `DeleteVaultItemUseCaseImpl`, `PermanentDeleteVaultItemUseCaseImpl`,
 /// and `RestoreVaultItemUseCaseImpl`.
 ///
-/// Each use case is a thin delegate — tests verify correct delegation to the
+/// Each use case is a thin delegate - tests verify correct delegation to the
 /// repository and that errors propagate correctly.
 @MainActor
 final class DeleteRestoreVaultItemUseCaseTests: XCTestCase {

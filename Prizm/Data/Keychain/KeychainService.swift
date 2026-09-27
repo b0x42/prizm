@@ -41,16 +41,16 @@ protocol KeychainService {
 /// **data protection keychain** (`kSecUseDataProtectionKeychain: true`), which uses
 /// entitlement-based access control instead of per-binary code-signature ACLs.
 /// This means any build signed with the same Team ID and the `keychain-access-groups`
-/// entitlement can read existing items — eliminating the keychain password prompts
+/// entitlement can read existing items - eliminating the keychain password prompts
 /// that appear on every new debug build when using the legacy login keychain.
 ///
 /// Each item carries:
-/// - `kSecAttrService`: `"com.prizm"` — scopes items to this app.
-/// - `kSecAttrAccount`: caller-provided `key` — allows multiple distinct items.
-/// - `kSecAttrAccessible`: `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — secrets
+/// - `kSecAttrService`: `"com.prizm"` - scopes items to this app.
+/// - `kSecAttrAccount`: caller-provided `key` - allows multiple distinct items.
+/// - `kSecAttrAccessible`: `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` - secrets
 ///   are available only while the device is unlocked and are not backed up to iCloud
 ///   or migrated to new devices (per Bitwarden Security Whitepaper §5: Keychain Storage).
-/// - `kSecUseDataProtectionKeychain`: `true` — opts into the modern keychain stack;
+/// - `kSecUseDataProtectionKeychain`: `true` - opts into the modern keychain stack;
 ///   the access group is inferred from the first entry in the `keychain-access-groups`
 ///   entitlement (`$(AppIdentifierPrefix)com.prizm`).
 final class KeychainServiceImpl: KeychainService {
@@ -72,14 +72,14 @@ final class KeychainServiceImpl: KeychainService {
         }
         // Probe whether the data protection keychain is *writable*. Unsigned builds
         // (Homebrew, teamless local builds) lack the `keychain-access-groups`
-        // entitlement and must fall back to the legacy login keychain — #60.
+        // entitlement and must fall back to the legacy login keychain - #60.
         //
         // The probe must be a write, not a read: as of macOS 26.5,
         // SecItemCopyMatching no longer enforces the entitlement and returns
         // errSecItemNotFound where SecItemAdd fails with -34018
         // (errSecMissingEntitlement). A read probe therefore arms the
-        // data-protection path on unsigned builds and the first real write —
-        // storing the device identifier during sign-in — fails with the exact
+        // data-protection path on unsigned builds and the first real write -
+        // storing the device identifier during sign-in - fails with the exact
         // error #60 was meant to prevent.
         //
         // The probe item mirrors the attributes of real writes (same service and
@@ -108,14 +108,14 @@ final class KeychainServiceImpl: KeychainService {
                 logger.error("Failed to delete entitlement probe item: status \(deleteStatus)")
             }
         } else {
-            logger.info("Data protection keychain unavailable (status \(status)) — falling back to login keychain")
+            logger.info("Data protection keychain unavailable (status \(status)) - falling back to login keychain")
         }
     }
 
     /// Returns the base Keychain query dictionary for `key`.
     ///
     /// `kSecUseDataProtectionKeychain: true` routes all queries to the modern data
-    /// protection keychain. The access group is not set explicitly — for sandboxed apps,
+    /// protection keychain. The access group is not set explicitly - for sandboxed apps,
     /// Security.framework automatically uses the first entry in the `keychain-access-groups`
     /// entitlement (`$(AppIdentifierPrefix)com.prizm`). Setting it explicitly here
     /// would require embedding the resolved Team ID in source code.
@@ -202,7 +202,7 @@ final class KeychainServiceImpl: KeychainService {
     // MARK: Delete
 
     /// Deletes the item for `key`.  If the item does not exist (`errSecItemNotFound`),
-    /// this method returns silently — callers do not need to check existence first.
+    /// this method returns silently - callers do not need to check existence first.
     func delete(key: String) throws {
         let status = SecItemDelete(baseQuery(for: key) as CFDictionary)
         switch status {

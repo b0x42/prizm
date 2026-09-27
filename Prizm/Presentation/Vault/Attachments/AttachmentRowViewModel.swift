@@ -6,7 +6,7 @@ import os.log
 
 /// ViewModel for a single attachment row in the vault item detail pane (task 7.1).
 ///
-/// Manages Open, Save to Disk, Delete, and Retry Upload actions for one attachment.
+/// Manages Quick Look preview, Save to Disk, Delete, and Retry Upload actions.
 ///
 /// - Security goal: plaintext file bytes are written to a temp file for Open, and to a
 ///   user-chosen path for Save. The temp file is zeroed and deleted after 30 seconds
@@ -47,9 +47,11 @@ final class AttachmentRowViewModel {
     // MARK: - State (observable)
 
     private(set) var isLoading:   Bool    = false
+    private(set) var actionErrorTitle: String? = nil
     private(set) var actionError: String? = nil
     private(set) var isRetrying:  Bool    = false
     private(set) var retryError:  String? = nil
+    var previewURL: URL?
 
     // MARK: - Init
 
@@ -77,9 +79,43 @@ final class AttachmentRowViewModel {
 
     // MARK: - Open (task 7.2b)
 
+    func preview() {
+        guard !isLoading else { return }
+        isLoading = true
+        actionErrorTitle = nil
+        actionError = nil
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                var data = try await self.downloadUseCase.execute(
+                    cipherId: self.cipherId,
+                    attachment: self.attachment
+                )
+                let tmpURL = try self.writeTempFile(data: data)
+                data.resetBytes(in: 0..<data.count)
+                self.tempFileManager.register(url: tmpURL)
+                self.previewURL = tmpURL
+
+                Task {
+                    try? await Task.sleep(for: .seconds(30))
+                    self.tempFileManager.cleanup()
+                }
+
+                self.logger.info("preview: prepared \(self.attachment.id, privacy: .public)")
+            } catch {
+                self.actionErrorTitle = "Preview unavailable"
+                self.actionError = error.localizedDescription
+                self.logger.error("preview failed: \(error.localizedDescription, privacy: .public)")
+            }
+            self.isLoading = false
+        }
+    }
+
     func open() {
         guard !isLoading else { return }
         isLoading   = true
+        actionErrorTitle = nil
         actionError = nil
 
         Task { [weak self] in
@@ -101,6 +137,7 @@ final class AttachmentRowViewModel {
 
                 self.logger.info("open: opened \(self.attachment.id, privacy: .public)")
             } catch {
+                self.actionErrorTitle = "Couldn’t open attachment"
                 self.actionError = "Could not open file: \(error.localizedDescription)"
                 self.logger.error("open failed: \(error.localizedDescription, privacy: .public)")
             }
@@ -113,6 +150,7 @@ final class AttachmentRowViewModel {
     func saveToDisk() {
         guard !isLoading else { return }
         isLoading   = true
+        actionErrorTitle = nil
         actionError = nil
 
         Task { @MainActor [weak self] in
@@ -130,6 +168,7 @@ final class AttachmentRowViewModel {
                 data.resetBytes(in: 0..<data.count)
                 self.logger.info("saveToDisk: saved \(self.attachment.id, privacy: .public)")
             } catch {
+                self.actionErrorTitle = "Download failed"
                 self.actionError = "Could not save file: \(error.localizedDescription)"
                 self.logger.error("saveToDisk failed: \(error.localizedDescription, privacy: .public)")
             }
@@ -142,6 +181,7 @@ final class AttachmentRowViewModel {
     func delete() {
         guard !isLoading else { return }
         isLoading   = true
+        actionErrorTitle = nil
         actionError = nil
 
         Task { [weak self] in
@@ -154,6 +194,7 @@ final class AttachmentRowViewModel {
                 self.logger.info("delete: removed \(self.attachment.id, privacy: .public)")
                 self.onAttachmentChanged?()
             } catch {
+                self.actionErrorTitle = "Couldn’t delete attachment"
                 self.actionError = "Could not delete attachment: \(error.localizedDescription)"
                 self.logger.error("delete failed: \(error.localizedDescription, privacy: .public)")
             }

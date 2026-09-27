@@ -40,7 +40,7 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertNoThrow(try sut.validateServerURL("https://vault.example.com/"))
     }
 
-    /// validateServerURL rejects http:// — HTTPS only (Constitution §III).
+    /// validateServerURL rejects http:// - HTTPS only (Constitution §III).
     func testValidateServerURL_httpURL_throws() throws {
         XCTAssertThrowsError(try sut.validateServerURL("http://192.168.1.100")) { error in
             XCTAssertEqual(error as? AuthError, .invalidURL)
@@ -130,7 +130,7 @@ final class AuthRepositoryImplTests: XCTestCase {
         mockAPI.preLoginResponse = PreLoginResponse(
             kdf: 0, kdfIterations: 600_000, kdfMemory: nil, kdfParallelism: nil
         )
-        mockAPI.tokenTwoFactorProviders = [3]   // Duo — not supported in v1
+        mockAPI.tokenTwoFactorProviders = [3]   // Duo - not supported in v1
         mockCrypto.stubbedServerHash = "hash=="
 
         let result = try await sut.loginWithPassword(
@@ -247,6 +247,142 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertEqual(account?.userId, "user-001")
     }
 
+    // MARK: - Multi-account profiles
+
+    func testLogin_sameRemoteUserOnDifferentInstances_keepsDistinctProfiles() async throws {
+        mockAPI.preLoginResponse = PreLoginResponse(
+            kdf: 0, kdfIterations: 600_000, kdfMemory: nil, kdfParallelism: nil
+        )
+        mockCrypto.stubbedServerHash = "hash=="
+
+        for host in ["one.example.com", "two.example.com"] {
+            try await sut.setServerEnvironment(
+                ServerEnvironment(base: URL(string: "https://\(host)")!, overrides: nil)
+            )
+            mockAPI.tokenResponse = TokenResponse(
+                accessToken: "access-\(host)", refreshToken: "refresh-\(host)",
+                tokenType: "Bearer", expiresIn: 3600, key: "2.encUserKey==",
+                privateKey: nil, kdf: 0, kdfIterations: 600_000,
+                kdfMemory: nil, kdfParallelism: nil, twoFactorToken: nil,
+                twoFactorProviders: nil, userId: "same-remote-user",
+                email: "alice@example.com", name: "Alice"
+            )
+            _ = try await sut.loginWithPassword(
+                email: "alice@example.com",
+                masterPassword: Data("password".utf8)
+            )
+        }
+
+        let accounts = sut.storedAccounts()
+        XCTAssertEqual(accounts.count, 2)
+        XCTAssertEqual(Set(accounts.map(\.profileId)).count, 2)
+        XCTAssertEqual(
+            Set(accounts.compactMap { $0.serverEnvironment.base.host }),
+            ["one.example.com", "two.example.com"]
+        )
+    }
+
+    func testActivateAccount_switchesWithoutDeletingOtherProfile() async throws {
+        let first = try await loginProfile(host: "one.example.com", remoteUserId: "user-1")
+        let second = try await loginProfile(host: "two.example.com", remoteUserId: "user-2")
+
+        try await sut.activateAccount(profileId: first.profileId)
+
+        XCTAssertEqual(sut.activeAccount()?.profileId, first.profileId)
+        XCTAssertEqual(Set(sut.storedAccounts().map(\.profileId)), [first.profileId, second.profileId])
+        XCTAssertNil(mockAPI.baseURL, "Selecting a locked profile must not activate networking")
+    }
+
+    func testStoredAccounts_migratesLegacyAccountOnce() throws {
+        let env = ServerEnvironment(base: URL(string: "https://legacy.example.com")!, overrides: nil)
+        mockKeychain.seed(key: "bw.macos:activeUserId", value: "legacy-user")
+        mockKeychain.seed(key: "bw.macos:legacy-user:email", value: "legacy@example.com")
+        mockKeychain.seed(
+            key: "bw.macos:legacy-user:serverEnvironment",
+            data: try JSONEncoder().encode(env)
+        )
+
+        let firstRead = sut.storedAccounts()
+        let secondRead = sut.storedAccounts()
+
+        XCTAssertEqual(firstRead.count, 1)
+        XCTAssertEqual(secondRead, firstRead)
+        XCTAssertNotNil(sut.activeAccount())
+        XCTAssertTrue(mockKeychain.writtenKeys.contains("bw.macos:accountsIndex"))
+        XCTAssertTrue(mockKeychain.writtenKeys.contains("bw.macos:activeProfileId"))
+    }
+
+    func testStoredAccounts_recoversInterruptedMigrationMissingActiveProfile() throws {
+        let account = Account(
+            userId: "user-1",
+            email: "alice@example.com",
+            name: nil,
+            serverEnvironment: ServerEnvironment(
+                base: URL(string: "https://vault.example.com")!,
+                overrides: nil
+            )
+        )
+        mockKeychain.seed(
+            key: "bw.macos:accountsIndex",
+            data: try JSONEncoder().encode([account])
+        )
+
+        XCTAssertEqual(sut.storedAccounts(), [account])
+        XCTAssertEqual(sut.activeAccount(), account)
+        XCTAssertTrue(mockKeychain.writtenKeys.contains("bw.macos:activeProfileId"))
+    }
+
+    func testStoredAccounts_retriesInterruptedLegacyCredentialCleanup() throws {
+        let account = Account(
+            userId: "legacy-user",
+            email: "alice@example.com",
+            name: nil,
+            serverEnvironment: ServerEnvironment(
+                base: URL(string: "https://vault.example.com")!,
+                overrides: nil
+            )
+        )
+        mockKeychain.seed(key: "bw.macos:accountsIndex", data: try JSONEncoder().encode([account]))
+        mockKeychain.seed(key: "bw.macos:activeProfileId", value: account.profileId.uuidString)
+        mockKeychain.seed(key: "bw.macos:activeUserId", value: "legacy-user")
+        let legacyRefreshKey = "bw.macos:legacy-user:refreshToken"
+        mockKeychain.seed(key: legacyRefreshKey, value: "legacy-refresh")
+        mockKeychain.deleteErrors[legacyRefreshKey] = KeychainError.invalidData
+
+        _ = sut.storedAccounts()
+        XCTAssertNoThrow(try mockKeychain.read(key: "bw.macos:activeUserId"))
+
+        mockKeychain.deleteErrors.removeValue(forKey: legacyRefreshKey)
+        _ = sut.storedAccounts()
+        XCTAssertThrowsError(try mockKeychain.read(key: "bw.macos:activeUserId"))
+        XCTAssertTrue(mockKeychain.deletedKeys.contains(legacyRefreshKey))
+    }
+
+    private func loginProfile(host: String, remoteUserId: String) async throws -> Account {
+        try await sut.setServerEnvironment(
+            ServerEnvironment(base: URL(string: "https://\(host)")!, overrides: nil)
+        )
+        mockAPI.preLoginResponse = PreLoginResponse(
+            kdf: 0, kdfIterations: 600_000, kdfMemory: nil, kdfParallelism: nil
+        )
+        mockAPI.tokenResponse = TokenResponse(
+            accessToken: "access-\(host)", refreshToken: "refresh-\(host)",
+            tokenType: "Bearer", expiresIn: 3600, key: "2.encUserKey==",
+            privateKey: nil, kdf: 0, kdfIterations: 600_000,
+            kdfMemory: nil, kdfParallelism: nil, twoFactorToken: nil,
+            twoFactorProviders: nil, userId: remoteUserId,
+            email: "\(remoteUserId)@example.com", name: nil
+        )
+        let result = try await sut.loginWithPassword(
+            email: "\(remoteUserId)@example.com",
+            masterPassword: Data("password".utf8)
+        )
+        guard case .success(let account) = result else {
+            throw AuthError.invalidCredentials
+        }
+        return account
+    }
+
     // MARK: - T037: unlockWithPassword
 
     /// unlockWithPassword derives master key locally, decrypts vault key, unlocks crypto service.
@@ -271,7 +407,7 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertTrue(isUnlocked, "Crypto service should be unlocked after successful unlock")
     }
 
-    /// unlockWithPassword reads the email key exactly once — not once directly and again
+    /// unlockWithPassword reads the email key exactly once - not once directly and again
     /// inside account(for:). Duplicate reads produce extra keychain prompts on every build.
     func testUnlockWithPassword_emailReadExactlyOnce() async throws {
         let userId = "user-001"
@@ -303,33 +439,58 @@ final class AuthRepositoryImplTests: XCTestCase {
         }
     }
 
-    // MARK: - T038: signOut (comprehensive)
+    func testUnlockCanceledByLock_cannotReactivatePreviousProfile() async throws {
+        let userId = "user-001"
+        let env = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
+        let kdf = KdfParams(type: .pbkdf2, iterations: 600_000, memory: nil, parallelism: nil)
+        mockKeychain.seed(key: "bw.macos:activeUserId", value: userId)
+        mockKeychain.seed(key: "bw.macos:\(userId):email", value: "alice@example.com")
+        mockKeychain.seed(key: "bw.macos:\(userId):encUserKey", value: "2.encKey==")
+        mockKeychain.seed(
+            key: "bw.macos:\(userId):kdfParams",
+            data: try JSONEncoder().encode(kdf)
+        )
+        mockKeychain.seed(
+            key: "bw.macos:\(userId):serverEnvironment",
+            data: try JSONEncoder().encode(env)
+        )
+        mockCrypto.masterKeyDelay = 0.1
 
-    /// signOut clears all per-user Keychain keys and the global activeUserId.
-    func testSignOut_clearsKeychain() async throws {
-        try await sut.signOut()
-        XCTAssertTrue(mockKeychain.deletedKeys.contains("bw.macos:activeUserId"))
+        let unlock = Task {
+            try await sut.unlockWithPassword(Data("password".utf8))
+        }
+        try await Task.sleep(for: .milliseconds(10))
+        await sut.lockVault()
+
+        await XCTAssertThrowsErrorAsync(try await unlock.value) { error in
+            XCTAssertEqual(error as? APIError, .sessionInvalidated)
+        }
+        XCTAssertFalse(mockCrypto.isUnlocked)
+        XCTAssertNil(mockAPI.baseURL)
     }
 
-    /// signOut clears all seven per-user keys when a session exists.
+    // MARK: - T038: signOut (comprehensive)
+
+    /// signOut is a safe no-op when no profile is active.
+    func testSignOut_withoutActiveProfile_isSafe() async throws {
+        try await sut.signOut()
+        XCTAssertNil(sut.activeAccount())
+    }
+
+    /// signOut migrates then removes an active legacy profile and all of its local keys.
     func testSignOut_withActiveSession_clearsAllUserKeys() async throws {
         let userId = "user-001"
+        let env = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
         mockKeychain.seed(key: "bw.macos:activeUserId", value: userId)
-        for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
-                       "email", "name", "serverEnvironment"] {
-            mockKeychain.seed(key: "bw.macos:\(userId):\(suffix)", value: "value")
-        }
+        mockKeychain.seed(key: "bw.macos:\(userId):email", value: "alice@example.com")
+        mockKeychain.seed(key: "bw.macos:\(userId):serverEnvironment", data: try JSONEncoder().encode(env))
+        mockKeychain.seed(key: "bw.macos:\(userId):accessToken", value: "token")
 
         try await sut.signOut()
 
-        for suffix in ["accessToken", "refreshToken", "encUserKey", "kdfParams",
-                       "email", "name", "serverEnvironment"] {
-            XCTAssertTrue(
-                mockKeychain.deletedKeys.contains("bw.macos:\(userId):\(suffix)"),
-                "Expected key bw.macos:\(userId):\(suffix) to be deleted on signOut"
-            )
-        }
         XCTAssertTrue(mockKeychain.deletedKeys.contains("bw.macos:activeUserId"))
+        XCTAssertTrue(sut.storedAccounts().isEmpty)
+        XCTAssertNil(sut.activeAccount())
     }
 
     /// After signOut, storedAccount() returns nil.

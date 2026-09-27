@@ -2,11 +2,12 @@ import SwiftUI
 
 // MARK: - ItemDetailView
 
-/// Detail pane: type-specific content, metadata footer, edit sheet.
+/// Detail pane: type-specific read view and in-place edit mode.
 struct ItemDetailView: View {
 
     let item:              VaultItem?
     let faviconLoader:     FaviconLoader
+    let totpCodeGenerator: any TOTPCodeGenerating
     let folders:           [Folder]
     var organizations:     [Organization] = []
     let onCopy:            (String) -> Void
@@ -16,25 +17,26 @@ struct ItemDetailView: View {
     var makeAddAttachmentViewModel: ((String) -> AttachmentAddViewModel)? = nil
     /// Factory that creates an `AttachmentBatchViewModel` for a drag-and-drop upload.
     var makeBatchAttachmentViewModel: ((String) -> AttachmentBatchViewModel)? = nil
-    /// Factory for `AttachmentRowViewModel` — passed to `AttachmentsSectionView` so each
+    /// Factory for `AttachmentRowViewModel` - passed to `AttachmentsSectionView` so each
     /// row gets its own ViewModel instance (Constitution §II decoupling).
     var makeAttachmentRowViewModel: ((String, Attachment) -> AttachmentRowViewModel)? = nil
     /// Called when an attachment upload sheet is dismissed, whether the upload
     /// succeeded or was cancelled. The parent view uses this to refresh `itemSelection`
     /// so the attachment list in the detail pane reflects the new server state.
     var onAttachmentsChanged: (() -> Void)? = nil
-    var onEditSheetChanged: ((Bool) -> Void)? = nil
+    var onEditModeChanged: ((Bool) -> Void)? = nil
     var onSoftDelete: ((String) async -> Void)? = nil
     var onRestore: ((String) async -> Void)? = nil
     var onPermanentDelete: ((String) async -> Void)? = nil
     var editTrigger: Int = 0
     var saveTrigger: Int = 0
+    var editCloseTrigger: Int = 0
+    var onEditCloseRequestCancelled: (() -> Void)? = nil
 
-    @State private var isEditSheetPresented = false
     @State private var editViewModel: ItemEditViewModel?
 
     // Both add-attachment and batch sheets use .sheet(item:) so SwiftUI receives the
-    // ViewModel directly — eliminating the race where the sheet body evaluated before
+    // ViewModel directly - eliminating the race where the sheet body evaluated before
     // the optional ViewModel state was committed, producing a blank sheet window.
     @State private var addAttachmentViewModel: AttachmentAddViewModel?
     @State private var isPickingAttachment = false   // drives spinner while NSOpenPanel blocks
@@ -44,49 +46,58 @@ struct ItemDetailView: View {
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
-        if let item {
-            ScrollView {
-                VStack(spacing: 0) {
-                    if item.isDeleted { trashBanner(for: item) }
+        Group {
+            if let editViewModel {
+                ItemEditView(
+                    viewModel: editViewModel,
+                    onClose: closeEditor,
+                    closeTrigger: editCloseTrigger,
+                    onCloseRequestCancelled: onEditCloseRequestCancelled
+                )
+            } else if let item {
+                detailContent(for: item)
+            } else {
+                ContentUnavailableView(
+                    "No Item Selected",
+                    systemImage: "square.dashed",
+                    description: Text("Select an item from the list.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .accessibilityIdentifier(AccessibilityID.Detail.emptyState)
+            }
+        }
+        .sheet(item: $addAttachmentViewModel, onDismiss: {
+            onAttachmentsChanged?()
+        }) { vm in
+            AttachmentConfirmSheet(viewModel: vm)
+        }
+        .sheet(item: $batchAttachmentViewModel, onDismiss: {
+            onAttachmentsChanged?()
+        }) { vm in
+            AttachmentBatchSheet(viewModel: vm)
+        }
+        .onChange(of: editTrigger) {
+            if let item, !item.isDeleted {
+                openEditor(for: item)
+            }
+        }
+        .onChange(of: saveTrigger) {
+            editViewModel?.save()
+        }
+    }
 
-                    itemHeader(for: item)
-                    typeDetailView(for: item)
-                    attachmentsSection(for: item)
-                    organizationRow(for: item)
-                    folderRow(for: item)
+    private func detailContent(for item: VaultItem) -> some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                if item.isDeleted { trashBanner(for: item) }
 
-                    Spacer(minLength: 20)
-                    metadataFooter(for: item)
-                }
+                itemHeader(for: item)
+                typeDetailView(for: item)
+                attachmentsSection(for: item)
+
+                Spacer(minLength: 20)
+                metadataFooter(for: item)
             }
-            .sheet(isPresented: $isEditSheetPresented, onDismiss: {
-                editViewModel = nil
-                onEditSheetChanged?(false)
-            }) {
-                if let vm = editViewModel {
-                    ItemEditView(viewModel: vm, isPresented: $isEditSheetPresented,
-                                 onDelete: onSoftDelete)
-                }
-            }
-            .sheet(item: $addAttachmentViewModel, onDismiss: {
-                onAttachmentsChanged?()
-            }) { vm in
-                AttachmentConfirmSheet(viewModel: vm)
-            }
-            .sheet(item: $batchAttachmentViewModel, onDismiss: {
-                onAttachmentsChanged?()
-            }) { vm in
-                AttachmentBatchSheet(viewModel: vm)
-            }
-            .onChange(of: editTrigger) { if !item.isDeleted { openEditSheet(for: item) } }
-            .onChange(of: saveTrigger) { editViewModel?.save() }
-        } else {
-            ContentUnavailableView(
-                "No Item Selected",
-                systemImage: "square.dashed",
-                description: Text("Select an item from the list.")
-            )
-            .accessibilityIdentifier(AccessibilityID.Detail.emptyState)
         }
     }
 
@@ -109,26 +120,6 @@ struct ItemDetailView: View {
         .padding(.top, Spacing.pageTop)
         .padding(.horizontal, Spacing.pageMargin)
         .padding(.bottom, Spacing.pageHeaderBottom)
-    }
-
-    @ViewBuilder
-    private func organizationRow(for item: VaultItem) -> some View {
-        if let orgId = item.organizationId,
-           let org = organizations.first(where: { $0.id == orgId }) {
-            DetailSectionCard("Organization") {
-                FieldRowView(label: "", value: org.name, itemId: item.id)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func folderRow(for item: VaultItem) -> some View {
-        if let folderId = item.folderId,
-           let folder = folders.first(where: { $0.id == folderId }) {
-            DetailSectionCard("Folder") {
-                FieldRowView(label: "", value: folder.name, itemId: item.id)
-            }
-        }
     }
 
     private func metadataFooter(for item: VaultItem) -> some View {
@@ -165,13 +156,17 @@ struct ItemDetailView: View {
         .accessibilityIdentifier(AccessibilityID.Trash.statusBanner)
     }
 
-    // MARK: - Edit sheet
+    // MARK: - In-place editing
 
-    private func openEditSheet(for item: VaultItem) {
-        guard !isEditSheetPresented else { return }
+    private func openEditor(for item: VaultItem) {
+        guard editViewModel == nil else { return }
         editViewModel = makeEditViewModel(item)
-        isEditSheetPresented = true
-        onEditSheetChanged?(true)
+        onEditModeChanged?(true)
+    }
+
+    private func closeEditor() {
+        editViewModel = nil
+        onEditModeChanged?(false)
     }
 
     // MARK: - Helpers
@@ -216,7 +211,7 @@ struct ItemDetailView: View {
         let vm = factory(item.id)
         // isPickingAttachment drives the spinner independently of the ViewModel reference.
         // addAttachmentViewModel is only set atomically with isAddAttachmentSheetPresented so
-        // the sheet body always evaluates with non-nil data on its first render pass —
+        // the sheet body always evaluates with non-nil data on its first render pass -
         // eliminating the blank-sheet flash that occurred when the two writes were separated
         // by the NSOpenPanel session.
         isPickingAttachment = true
@@ -224,10 +219,10 @@ struct ItemDetailView: View {
             await vm.selectFile()
             isPickingAttachment = false
             if vm.isConfirming {
-                // Single file — show the per-file confirm sheet.
+                // Single file - show the per-file confirm sheet.
                 addAttachmentViewModel = vm
             } else if !vm.pickedURLs.isEmpty, let batchFactory = makeBatchAttachmentViewModel {
-                // Multiple files — route to the batch sheet that already handles N files.
+                // Multiple files - route to the batch sheet that already handles N files.
                 let batchVM = batchFactory(item.id)
                 batchVM.loadItems(from: vm.pickedURLs)
                 batchAttachmentViewModel = batchVM
@@ -248,7 +243,13 @@ struct ItemDetailView: View {
     @ViewBuilder
     private func typeDetailView(for item: VaultItem) -> some View {
         switch item.content {
-        case .login(let l):      LoginDetailView(item: item, login: l, onCopy: onCopy)
+        case .login(let l):
+            LoginDetailView(
+                item: item,
+                login: l,
+                totpCodeGenerator: totpCodeGenerator,
+                onCopy: onCopy
+            )
         case .card(let c):       CardDetailView(item: item, card: c, onCopy: onCopy)
         case .identity(let i):   IdentityDetailView(item: item, identity: i, onCopy: onCopy)
         case .secureNote(let n): SecureNoteDetailView(item: item, secureNote: n, onCopy: onCopy)

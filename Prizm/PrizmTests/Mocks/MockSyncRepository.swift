@@ -1,11 +1,11 @@
 import Foundation
 @testable import Prizm
 
-/// Test double for `SyncRepository` — used by `LoginUseCaseTests`.
+/// Test double for `SyncRepository` - used by `LoginUseCaseTests`.
 actor MockSyncRepository: SyncRepository {
 
     // MARK: - State observations
-    // nonisolated(unsafe) allows tests to read/write without await — safe in single-threaded tests.
+    // nonisolated(unsafe) allows tests to read/write without await - safe in single-threaded tests.
 
     nonisolated(unsafe) var syncCalled: Bool = false
     nonisolated(unsafe) var progressMessages: [String] = []

@@ -180,7 +180,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
     func test_isPickingFile_trueWhilePickerIsRunning() async {
         // `selectFile()` sets isPickingFile = true then suspends at Task.yield() before
         // calling filePicker(). By launching selectFile() in a child Task and yielding once
-        // from the test, we can observe isPickingFile between those two suspension points —
+        // from the test, we can observe isPickingFile between those two suspension points -
         // avoiding the [weak sut] nil-capture problem that occurs when the closure is created
         // before the init assigns sut.
         let sut = AttachmentAddViewModel(
@@ -207,7 +207,7 @@ final class AttachmentAddViewModelTests: XCTestCase {
     }
 
     func test_isPickingFile_falseAfterCancel() async {
-        // Picker returns [] (cancelled) — verify isPickingFile is false after selectFile() returns.
+        // Picker returns [] (cancelled) - verify isPickingFile is false after selectFile() returns.
         let sut = AttachmentAddViewModel(
             cipherId:      "cipher-1",
             uploadUseCase: MockUploadUseCase(result: .success(
@@ -238,10 +238,10 @@ private final class MockUploadUseCase: UploadAttachmentUseCase {
     }
 }
 
-/// A mock that never resolves — used to test cancellation.
+/// A mock that never resolves - used to test cancellation.
 private final class SlowMockUploadUseCase: UploadAttachmentUseCase {
     func execute(cipherId: String, fileName: String, data: Data) async throws -> Attachment {
-        // Sleep for 60 seconds — effectively infinite from a test's perspective.
+        // Sleep for 60 seconds - effectively infinite from a test's perspective.
         // The test cancels the Task before this ever completes.
         try await Task.sleep(for: .seconds(60))
         throw CancellationError()

@@ -13,7 +13,7 @@ import Foundation
 nonisolated struct AttachmentDTO: Codable {
     /// Server-assigned attachment ID.
     let id:       String
-    /// Encrypted file name — type-2 EncString (`2.<iv>|<ct>|<mac>`).
+    /// Encrypted file name - type-2 EncString (`2.<iv>|<ct>|<mac>`).
     /// Decrypted by `AttachmentMapper` using the cipher's effective key.
     let fileName: String          // EncString
     /// Per-attachment symmetric key wrapped as a type-2 EncString using the cipher's
@@ -24,9 +24,9 @@ nonisolated struct AttachmentDTO: Codable {
     /// Parsed to `Int` by `AttachmentMapper`; throws on non-numeric values.
     let size:     String
     /// Human-readable size string computed by the server (e.g. "1 MB").
-    /// Mapped verbatim to `Attachment.sizeName` — not reformatted by the client.
+    /// Mapped verbatim to `Attachment.sizeName` - not reformatted by the client.
     let sizeName: String
     /// Signed download URL. `nil` (or absent in the JSON) means the file blob was
-    /// never successfully uploaded — the attachment is "upload incomplete".
+    /// never successfully uploaded - the attachment is "upload incomplete".
     let url:      String?
 }

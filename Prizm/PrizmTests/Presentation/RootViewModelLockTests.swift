@@ -7,6 +7,7 @@ final class RootViewModelLockTests: XCTestCase {
 
     private var mockAuth: MockAuthRepository!
     private var mockVault: MockVaultRepository!
+    private var dependencies: MockRootDependencies!
     private var sut: RootViewModel!
 
     private let stubAccount = Account(
@@ -23,8 +24,8 @@ final class RootViewModelLockTests: XCTestCase {
         try await super.setUp()
         mockAuth = MockAuthRepository()
         mockVault = MockVaultRepository()
-        let deps = MockRootDependencies(auth: mockAuth, vault: mockVault)
-        sut = RootViewModel(container: deps)
+        dependencies = MockRootDependencies(auth: mockAuth, vault: mockVault)
+        sut = RootViewModel(container: dependencies)
     }
 
     /// Yields to the main actor run loop until `condition` returns true or timeout.
@@ -59,7 +60,7 @@ final class RootViewModelLockTests: XCTestCase {
     func testLockVault_noOpWhenLogin() async throws {
         sut.screen = .login
         sut.lockVault()
-        // Fixed sleep (not polling) because this is a no-op test — there is no positive
+        // Fixed sleep (not polling) because this is a no-op test - there is no positive
         // state change to poll for. 50ms is enough for the guard-return fast path.
         try await Task.sleep(for: .milliseconds(50))
 
@@ -71,7 +72,7 @@ final class RootViewModelLockTests: XCTestCase {
     func testLockVault_noOpWhenUnlock() async throws {
         sut.screen = .unlock
         sut.lockVault()
-        // Fixed sleep (not polling) because this is a no-op test — there is no positive
+        // Fixed sleep (not polling) because this is a no-op test - there is no positive
         // state change to poll for. 50ms is enough for the guard-return fast path.
         try await Task.sleep(for: .milliseconds(50))
 
@@ -132,6 +133,34 @@ final class RootViewModelLockTests: XCTestCase {
             return XCTFail("Expected .unlock, got \(sut.screen)")
         }
     }
+
+    func testSwitchAccount_clearsOldSessionAndActivatesTargetLocked() async throws {
+        let target = Account(
+            userId: "user-002",
+            email: "bob@example.com",
+            name: nil,
+            serverEnvironment: ServerEnvironment(
+                base: URL(string: "https://other.example.com")!,
+                overrides: nil
+            )
+        )
+        mockAuth.stubbedStoredAccount = stubAccount
+        mockAuth.stubbedStoredAccounts = [stubAccount, target]
+        sut.screen = .vault
+
+        sut.switchAccount(to: target.profileId)
+        try await waitUntil {
+            self.mockAuth.stubbedStoredAccount?.profileId == target.profileId
+                && self.dependencies.clearAccountArtifactsCalled
+        }
+
+        XCTAssertTrue(mockVault.clearVaultCalled)
+        XCTAssertTrue(dependencies.clearAccountArtifactsCalled)
+        XCTAssertEqual(mockAuth.stubbedStoredAccount?.profileId, target.profileId)
+        guard case .unlock = sut.screen else {
+            return XCTFail("Target account must remain locked after switching")
+        }
+    }
 }
 
 // MARK: - Mock Dependencies
@@ -146,6 +175,7 @@ private final class MockRootDependencies: RootViewModelDependencies {
     private let mockLoginUseCase = MockLoginUseCase()
     private let mockSyncUseCase = MockSyncUseCase()
     private let mockVault: MockVaultRepository
+    private(set) var clearAccountArtifactsCalled = false
 
     init(auth: MockAuthRepository, vault: MockVaultRepository) {
         self.authRepo = auth
@@ -181,10 +211,13 @@ private final class MockRootDependencies: RootViewModelDependencies {
         )
     }
 
-    func makeSyncTimestampDependencies(for email: String) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
+    func makeSyncTimestampDependencies(for profileId: UUID) -> (repository: any SyncTimestampRepository, useCase: any GetLastSyncDateUseCase) {
         let repo = MockSyncTimestampRepository(storedDate: nil)
         return (repo, GetLastSyncDateUseCaseImpl(repository: repo))
     }
+
+    func clearAccountArtifacts() async { clearAccountArtifactsCalled = true }
+    func configureAccountArtifacts(for account: Account) async {}
 }
 
 // Minimal stubs for VaultBrowserViewModel dependencies.

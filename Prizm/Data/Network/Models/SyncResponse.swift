@@ -16,7 +16,7 @@ nonisolated struct SyncResponse: Decodable {
     let folders: [RawFolder]
     /// Organizations the user belongs to, sourced from `profile.organizations`.
     /// In both Vaultwarden and the official Bitwarden server, org membership is nested
-    /// inside the Profile object — not a separate top-level key.
+    /// inside the Profile object - not a separate top-level key.
     let organizations: [RawOrganization]
     /// Collections across all organizations. Defaults to `[]` when absent.
     let collections: [RawCollection]
@@ -42,7 +42,7 @@ nonisolated struct SyncResponse: Decodable {
                ?? (try? container.decode([RawFolder].self, forKey: FlexKeys("Folders")))
                ?? []
         // Organizations are nested inside the Profile object in both Vaultwarden and the
-        // official Bitwarden server — there is no top-level `organizations` key.
+        // official Bitwarden server - there is no top-level `organizations` key.
         organizations = profile.organizations
         collections = (try? container.decode([RawCollection].self, forKey: FlexKeys("collections")))
                ?? (try? container.decode([RawCollection].self, forKey: FlexKeys("Collections")))
@@ -65,10 +65,10 @@ nonisolated struct SyncResponse: Decodable {
 ///
 /// `key` is the organization's symmetric key (64 bytes), RSA-OAEP-SHA1 encrypted with
 /// the user's RSA-2048 public key. Unwrapped at sync time into `OrgKeyCache`.
-/// Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+/// Reference: Bitwarden Security Whitepaper §4 - "Organization Key Wrapping".
 ///
 /// Custom decoding handles both camelCase (Bitwarden server / Vaultwarden) and PascalCase
-/// variants — the Bitwarden API uses ASP.NET camelCase serialisation, but some server
+/// variants - the Bitwarden API uses ASP.NET camelCase serialisation, but some server
 /// forks or versions emit PascalCase for org objects.
 nonisolated struct RawOrganization: Codable, Equatable {
     let id:   String
@@ -156,7 +156,7 @@ nonisolated struct RawProfile: Codable {
     /// Organizations the user belongs to.
     ///
     /// In both Vaultwarden and the official Bitwarden server the org membership list
-    /// is nested **inside** the Profile object — there is no separate top-level
+    /// is nested **inside** the Profile object - there is no separate top-level
     /// `organizations` key in the sync response. Defaults to `[]` when absent.
     let organizations:       [RawOrganization]
     // Note: KDF params are NOT included in the Vaultwarden sync profile response.

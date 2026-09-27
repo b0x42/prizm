@@ -67,6 +67,7 @@ struct TrashView: View {
             systemImage: "trash",
             description: Text("Items you delete will appear here.")
         )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .accessibilityIdentifier(AccessibilityID.Trash.emptyState)
     }
 }

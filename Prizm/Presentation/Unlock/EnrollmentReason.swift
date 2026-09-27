@@ -3,6 +3,6 @@
 enum EnrollmentReason {
     /// First time the user is offered biometric unlock.
     case firstTime
-    /// Biometric enrollment changed — re-offer after invalidation.
+    /// Biometric enrollment changed - re-offer after invalidation.
     case reEnrollAfterInvalidation
 }

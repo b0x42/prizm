@@ -15,6 +15,7 @@ struct UnlockView: View {
     @ObservedObject var viewModel: UnlockViewModel
 
     @FocusState private var passwordFocused: Bool
+    @State private var isPasswordVisible = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,7 +27,7 @@ struct UnlockView: View {
                     .resizable()
                     .frame(width: 80, height: 80)
 
-                // Inline Touch ID badge — LAAuthenticationView routes auth through
+                // Inline Touch ID badge - LAAuthenticationView routes auth through
                 // the app's own view hierarchy so no system modal dialog appears.
                 // Re-armed via .id(biometricContextVersion) after each attempt.
                 if viewModel.biometricUnlockAvailable {
@@ -45,7 +46,7 @@ struct UnlockView: View {
                 .accessibilityIdentifier(AccessibilityID.Unlock.headerTitle)
                 .padding(.bottom, 6)
 
-            // MARK: Subtitle — includes email so no separate field is needed (FR-003)
+            // MARK: Subtitle - includes email so no separate field is needed (FR-003)
             Text(subtitleText)
                 .font(Typography.screenBody)
                 .foregroundStyle(.secondary)
@@ -70,12 +71,43 @@ struct UnlockView: View {
                 }
                 .frame(width: 200)
             default:
-                SecureField("Enter password", text: $viewModel.password)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 200)
+                HStack(spacing: Spacing.fieldActionGap) {
+                    Group {
+                        if isPasswordVisible {
+                            TextField("Enter password", text: $viewModel.password)
+                        } else {
+                            SecureField("Enter password", text: $viewModel.password)
+                        }
+                    }
+                    .textFieldStyle(.plain)
                     .focused($passwordFocused)
                     .onSubmit { unlockIfReady() }
                     .accessibilityIdentifier(AccessibilityID.Unlock.passwordField)
+
+                    Button {
+                        isPasswordVisible.toggle()
+                        passwordFocused = true
+                    } label: {
+                        Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(isPasswordVisible ? "Hide password" : "Show password")
+                    .accessibilityValue(isPasswordVisible ? "Password visible" : "Password hidden")
+                }
+                .padding(.horizontal, Spacing.rowHorizontal)
+                .frame(width: 400, height: LayoutMetrics.authenticationInputHeight)
+                .background(
+                    Color(nsColor: .textBackgroundColor),
+                    in: RoundedRectangle(cornerRadius: Spacing.itemIconCornerRadius)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: Spacing.itemIconCornerRadius)
+                        .stroke(
+                            passwordFocused ? Color.accentColor : Color(nsColor: .separatorColor),
+                            lineWidth: passwordFocused ? 2 : 1
+                        )
+                }
             }
 
             // MARK: Error message
@@ -92,7 +124,7 @@ struct UnlockView: View {
 
             Spacer()
 
-            // MARK: Sign in with a different account — FR-039
+            // MARK: Sign in with a different account - FR-039
             Button("Sign in with a different account") {
                 viewModel.signInWithDifferentAccount()
             }
@@ -106,7 +138,7 @@ struct UnlockView: View {
         .onAppear { passwordFocused = true }
         // .task(id:) re-fires whenever biometricContextVersion changes (re-arm).
         // By the time the task runs, SwiftUI has re-rendered EmbeddedTouchIDView
-        // with the new LAContext — so evaluatePolicy routes inline, not to a modal.
+        // with the new LAContext - so evaluatePolicy routes inline, not to a modal.
         .task(id: viewModel.biometricContextVersion) {
             viewModel.triggerEmbeddedBiometricIfAvailable()
         }

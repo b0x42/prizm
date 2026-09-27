@@ -2,14 +2,14 @@ import Foundation
 
 // MARK: - AttachmentRepository
 
-/// Domain repository for file attachment operations — upload, download, and delete.
+/// Domain repository for file attachment operations - upload, download, and delete.
 ///
 /// All methods accept a raw 64-byte `cipherKey: Data` (encryptionKey ‖ macKey).
 /// The Data layer implementation splits this into `CryptoKeys` at the boundary
 /// and passes the components to `PrizmCryptoService` methods.
 ///
 /// The caller (use case) is responsible for obtaining the cipher key via
-/// `VaultKeyService.cipherKey(for:)` — it is NEVER a parameter on the
+/// `VaultKeyService.cipherKey(for:)` - it is NEVER a parameter on the
 /// use-case `execute(...)` signatures (Constitution §II/§III).
 ///
 /// Implemented by `AttachmentRepositoryImpl` in the Data layer.

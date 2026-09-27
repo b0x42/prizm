@@ -199,7 +199,7 @@ final class CipherMapperReverseTests: XCTestCase {
         XCTAssertEqual(res.publicKey, orig.publicKey)
         XCTAssertEqual(res.notes, orig.notes)
         // keyFingerprint is not sent to the API; the forward-mapped result will have nil.
-        // This is expected — the server returns the authoritative fingerprint post-save.
+        // This is expected - the server returns the authoritative fingerprint post-save.
         XCTAssertNil(res.keyFingerprint)
     }
 

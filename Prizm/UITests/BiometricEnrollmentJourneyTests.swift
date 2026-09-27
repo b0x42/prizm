@@ -7,7 +7,7 @@ import XCTest
 /// simulate biometric availability without real hardware.
 ///
 /// The prompt is rendered inline on the unlock screen (not a sheet) via
-/// `UnlockFlowState.enrollmentPrompt` — see design Decision 3.
+/// `UnlockFlowState.enrollmentPrompt` - see design Decision 3.
 final class BiometricEnrollmentJourneyTests: XCTestCase {
 
     private var app: XCUIApplication!
@@ -37,7 +37,7 @@ final class BiometricEnrollmentJourneyTests: XCTestCase {
         passwordField.typeText("TestPassword1!")
         app.buttons["unlock.unlock"].click()
 
-        // Enrollment prompt renders inline — query via its container accessibility ID.
+        // Enrollment prompt renders inline - query via its container accessibility ID.
         let prompt = app.otherElements["unlock.enrollmentPrompt"].firstMatch
         XCTAssertTrue(prompt.waitForExistence(timeout: 5))
         XCTAssertTrue(prompt.staticTexts.matching(NSPredicate(format: "label CONTAINS 'unlock faster'")).firstMatch.exists)

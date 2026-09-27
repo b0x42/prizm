@@ -173,7 +173,7 @@ final class SyncRepositoryImplTests: XCTestCase {
                 id:             "cipher-\(i)",
                 organizationId: nil,
                 folderId:       nil,
-                type:           2,   // secureNote — simplest type
+                type:           2,   // secureNote - simplest type
                 name:           "2.name\(i)==",
                 notes:          nil,
                 favorite:       false,

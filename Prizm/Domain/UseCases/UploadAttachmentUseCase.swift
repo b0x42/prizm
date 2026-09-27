@@ -4,7 +4,7 @@ import Foundation
 
 /// Encrypts and uploads a file as a new attachment to a vault cipher.
 ///
-/// The cipher key is resolved internally via `VaultKeyService` — it is NEVER a
+/// The cipher key is resolved internally via `VaultKeyService` - it is NEVER a
 /// parameter on `execute(...)`. This keeps key material out of the Presentation layer
 /// and enforces the encryption boundary at the Data layer (Constitution §II/§III).
 ///

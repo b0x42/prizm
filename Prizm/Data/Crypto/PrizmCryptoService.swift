@@ -17,7 +17,7 @@ nonisolated enum PrizmCryptoServiceError: Error, Equatable {
     case invalidEncUserKey
     /// The decrypted user key is not 64 bytes (encKey + macKey).
     case invalidSymmetricKeyLength
-    /// The vault is locked — no key material is available.
+    /// The vault is locked - no key material is available.
     case vaultLocked
 }
 
@@ -54,7 +54,7 @@ protocol PrizmCryptoService: Actor {
     /// Stretches a 32-byte master key into a 64-byte `CryptoKeys` pair using HKDF
     /// (RFC 5869) with independent "enc" and "mac" info labels.
     ///
-    /// Per the Bitwarden Security Whitepaper §4: "Key Stretching" — the stretched
+    /// Per the Bitwarden Security Whitepaper §4: "Key Stretching" - the stretched
     /// key provides independent encryption and MAC keys so that the two operations
     /// are cryptographically separated (NIST SP 800-107 §5.3).
     ///
@@ -149,14 +149,14 @@ protocol PrizmCryptoService: Actor {
     ///   SHA-1 is used here because it is the Bitwarden protocol requirement (Security Whitepaper §4),
     ///   not a free choice. RSA-OAEP with SHA-1 remains secure for key transport when used as
     ///   specified; the weakness of standalone SHA-1 collision resistance does not apply here.
-    ///   Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+    ///   Reference: Bitwarden Security Whitepaper §4 - "Organization Key Wrapping".
     ///
     /// - PKCS#8 stripping: Bitwarden stores the RSA private key as a PKCS#8-wrapped DER blob.
     ///   `SecKeyCreateWithData` requires the raw RSA key material without the PKCS#8 header.
     ///   The header is stripped by skipping the outer SEQUENCE → SEQUENCE (AlgorithmIdentifier)
     ///   → BITSTRING wrapper to reach the raw PKCS#1 RSAPrivateKey DER bytes.
     ///
-    /// - What is NOT done: This function does not cache the RSA private key — callers must
+    /// - What is NOT done: This function does not cache the RSA private key - callers must
     ///   pass the already-decrypted key bytes and zero them immediately after use.
     ///
     /// - Parameters:
@@ -169,7 +169,7 @@ protocol PrizmCryptoService: Actor {
     // MARK: - Attachment crypto (vault-document-storage)
     //
     // Declared `nonisolated` so they can be called synchronously from any concurrency
-    // context — they access no actor-isolated state and can therefore be tested via
+    // context - they access no actor-isolated state and can therefore be tested via
     // `any PrizmCryptoService` without requiring `await`.
 
     /// Generates a cryptographically random 64-byte per-attachment key.
@@ -228,16 +228,18 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
 
     func lockVault() {
         // Zero both key buffers in the actor's stored property before releasing.
-        // `self.keys` is the primary reference — zeroing it reduces the window during
+        // `self.keys` is the primary reference - zeroing it reduces the window during
         // which key material exists in a heap dump (Constitution §III). Any Data copies
         // passed to in-flight decryption tasks retain their own CoW buffers until those
         // tasks complete; those copies cannot be zeroed here.
-        if keys != nil {
-            keys!.encryptionKey.resetBytes(in: 0..<keys!.encryptionKey.count)
-            keys!.macKey.resetBytes(in: 0..<keys!.macKey.count)
+        if var vaultKeys = keys {
+            // Release actor storage first, then mutate the local buffers. Nested
+            // mutation through Optional's _modify accessor can corrupt Data CoW storage.
+            keys = nil
+            vaultKeys.encryptionKey.resetBytes(in: vaultKeys.encryptionKey.indices)
+            vaultKeys.macKey.resetBytes(in: vaultKeys.macKey.indices)
         }
-        keys = nil
-        logger.info("Vault locked — key material zeroed")
+        logger.info("Vault locked - key material zeroed")
     }
 
     func currentKeys() throws -> CryptoKeys {
@@ -261,7 +263,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
         for (index, cipher) in ciphers.enumerated() {
             if cipher.organizationId != nil {
                 if DebugConfig.isEnabled {
-                    logger.debug("[debug] cipher[\(index, privacy: .public)] skipped — organizationId present")
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] skipped - organizationId present")
                 }
                 continue
             }
@@ -276,17 +278,17 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
                 if DebugConfig.isEnabled {
                     let rawAttachmentCount = cipher.attachments?.count ?? 0
                     let mappedAttachmentCount = item.attachments.count
-                    logger.debug("[debug] cipher[\(index, privacy: .public)] OK — type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private) rawAttachments=\(rawAttachmentCount, privacy: .public) mappedAttachments=\(mappedAttachmentCount, privacy: .public)")
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] OK - type=\(cipher.type, privacy: .public) id=\(cipher.id, privacy: .private) rawAttachments=\(rawAttachmentCount, privacy: .public) mappedAttachments=\(mappedAttachmentCount, privacy: .public)")
                 }
             } catch {
                 failedCount += 1
                 logger.error("decryptList: Cipher decryption failed at index \(index, privacy: .public)")
                 if DebugConfig.isEnabled {
-                    logger.debug("[debug] cipher[\(index, privacy: .public)] FAILED — type=\(cipher.type, privacy: .public) error=\(error, privacy: .public)")
+                    logger.debug("[debug] cipher[\(index, privacy: .public)] FAILED - type=\(cipher.type, privacy: .public) error=\(error, privacy: .public)")
                 }
             }
         }
-        logger.info("decryptList: completed — \(items.count) succeeded, \(failedCount) failed")
+        logger.info("decryptList: completed - \(items.count) succeeded, \(failedCount) failed")
         return (items: items, failedCount: failedCount, cipherKeys: cipherKeyMap)
     }
 
@@ -355,7 +357,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
         //   encKey = HKDF-Expand(PRK=masterKey, info="enc", len=32)
         //   macKey = HKDF-Expand(PRK=masterKey, info="mac", len=32)
         //
-        // IMPORTANT: Bitwarden uses HKDF-Expand ONLY (RFC 5869 §2.3) — it skips the
+        // IMPORTANT: Bitwarden uses HKDF-Expand ONLY (RFC 5869 §2.3) - it skips the
         // Extract step and uses the 32-byte masterKey directly as the PRK.
         // CryptoKit's HKDF.deriveKey() performs full HKDF (Extract + Expand), which
         // produces different output and must NOT be used here.
@@ -427,7 +429,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
     ///
     /// - Security goal: the decrypted PKCS#8 DER bytes are returned to the caller who
     ///   must zero them immediately after passing to `unwrapOrgKey`. The bytes are NEVER
-    ///   logged (Constitution §III — "no secrets in logs").
+    ///   logged (Constitution §III - "no secrets in logs").
     ///
     /// - The `privateKey` field in the sync profile is a Type-2 EncString (AES-256-CBC +
     ///   HMAC-SHA256) encrypted with the vault symmetric key. Decrypting it yields the
@@ -451,11 +453,11 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
     /// Unwraps an organization's symmetric key using the user's RSA private key.
     ///
     /// - Algorithm: RSA-OAEP-SHA1 via `Security.framework`.
-    ///   `kSecKeyAlgorithmRSAEncryptionOAEPSHA1` — SHA-1 is used here because it is the
+    ///   `kSecKeyAlgorithmRSAEncryptionOAEPSHA1` - SHA-1 is used here because it is the
     ///   Bitwarden protocol requirement (Security Whitepaper §4), not a free choice.
     ///   RSA-OAEP with SHA-1 is secure for key transport; the SHA-1 collision weakness
     ///   applies only to digital signatures, not OAEP key wrapping.
-    ///   Reference: Bitwarden Security Whitepaper §4 — "Organization Key Wrapping".
+    ///   Reference: Bitwarden Security Whitepaper §4 - "Organization Key Wrapping".
     ///
     /// - PKCS#8 stripping: Bitwarden stores the RSA private key as a PKCS#8-wrapped blob.
     ///   `SecKeyCreateWithData` (kSecAttrKeyTypeRSA) requires the raw PKCS#1 RSAPrivateKey
@@ -469,7 +471,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
     ///   header bytes to reach the raw PKCS#1 content.
     ///
     /// - Type-4 EncString: org key EncStrings use type "4." followed by base64-encoded
-    ///   RSA ciphertext. There is no IV or MAC — the authentication is provided by the
+    ///   RSA ciphertext. There is no IV or MAC - the authentication is provided by the
     ///   RSA-OAEP padding scheme itself.
     func unwrapOrgKey(encOrgKey: String, rsaPrivateKey: Data) throws -> CryptoKeys {
         // Parse Type-4 EncString: "4.<base64-ciphertext>"
@@ -493,7 +495,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
         }
 
         // Decrypt org key bytes using RSA-OAEP-SHA1.
-        // SHA-1 is mandated by the Bitwarden protocol — not a free choice.
+        // SHA-1 is mandated by the Bitwarden protocol - not a free choice.
         var decryptError: Unmanaged<CFError>?
         guard let orgKeyData = SecKeyCreateDecryptedData(
             secKey,
@@ -520,7 +522,7 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
     /// Parses a Type-4 EncString ("4.<base64>") and returns the raw ciphertext bytes.
     ///
     /// Type-4 is used for RSA-encrypted payloads (org keys). Unlike Type-2 (AES-CBC),
-    /// it has no IV or MAC — the format is simply "4." followed by base64.
+    /// it has no IV or MAC - the format is simply "4." followed by base64.
     private func parseType4EncString(_ encString: String) throws -> Data {
         guard encString.hasPrefix("4.") else {
             logger.error("parseType4EncString: expected type-4 prefix, got \(String(encString.prefix(4)), privacy: .public)")
