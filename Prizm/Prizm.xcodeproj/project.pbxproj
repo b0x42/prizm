@@ -46,6 +46,7 @@
 		5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7429BBFA10E247D8AEACA59B /* LoginView.swift */; };
 		5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */; };
 		60067C5087C547F4B96C3493 /* Presentation/Settings/BiometricUnlockToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7BAEBAFBA84808BD80CA71 /* Presentation/Settings/BiometricUnlockToggle.swift */; };
+		5E059676E08B66F3DA10EA0E /* Presentation/Settings/BiometricUnlockToggleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C2A3F663C37BEDCE1DF8343 /* Presentation/Settings/BiometricUnlockToggleViewModel.swift */; };
 		68A370309477440DA143EB26 /* RawFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C2BEABB748471395CEC2C6 /* RawFolder.swift */; };
 		6A563BC5058D474D9C84561E /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = F557D7298207448A9FBFC676 /* Account.swift */; };
 		6B61A3E712A64FCDBF4C3D96 /* Data/Keychain/BiometricKeychainServiceImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16229ED9EF5043E1AC7EC30D /* Data/Keychain/BiometricKeychainServiceImpl.swift */; };
@@ -193,6 +194,7 @@
 		3A087E4D3AC14598A3CB7F00 /* SyncRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncRepository.swift; sourceTree = "<group>"; };
 		3A4050607080902CC3D4E5F6 /* ItemEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditView.swift; sourceTree = "<group>"; };
 		3D7BAEBAFBA84808BD80CA71 /* Presentation/Settings/BiometricUnlockToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation/Settings/BiometricUnlockToggle.swift; sourceTree = "<group>"; };
+		2C2A3F663C37BEDCE1DF8343 /* Presentation/Settings/BiometricUnlockToggleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation/Settings/BiometricUnlockToggleViewModel.swift; sourceTree = "<group>"; };
 		3E105187F1E54E0E91E82B14 /* FieldRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldRowView.swift; sourceTree = "<group>"; };
 		3FBB82A6241244DD890E615C /* EncString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncString.swift; sourceTree = "<group>"; };
 		40543834D81F44848D37A737 /* IdentityDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityDetailView.swift; sourceTree = "<group>"; };
@@ -647,6 +649,7 @@
 				88A47FABF899471394B5F56B /* Presentation/Unlock/EnrollmentReason.swift */,
 				644111ECFEEE4F96988BD8C7 /* Presentation/Settings/SettingsView.swift */,
 				3D7BAEBAFBA84808BD80CA71 /* Presentation/Settings/BiometricUnlockToggle.swift */,
+				2C2A3F663C37BEDCE1DF8343 /* Presentation/Settings/BiometricUnlockToggleViewModel.swift */,
 				F53A563DEF9F47329635DE6F /* Presentation/Unlock/BiometricEnrollmentPromptView.swift */,
 			);
 			name = "Recovered References";
@@ -1036,6 +1039,7 @@
 				839B201DD1B0447FABC35E38 /* Presentation/Unlock/EnrollmentReason.swift in Sources */,
 				2939BF1A524B44458BD40B01 /* Presentation/Settings/SettingsView.swift in Sources */,
 				60067C5087C547F4B96C3493 /* Presentation/Settings/BiometricUnlockToggle.swift in Sources */,
+				5E059676E08B66F3DA10EA0E /* Presentation/Settings/BiometricUnlockToggleViewModel.swift in Sources */,
 				DD1001000000000000000001 /* EmbeddedBiometricUnlock.swift in Sources */,
 				DD1002000000000000000002 /* EmbeddedTouchIDView.swift in Sources */,
 			);

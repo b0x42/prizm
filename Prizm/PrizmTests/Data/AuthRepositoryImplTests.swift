@@ -271,6 +271,32 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertTrue(isUnlocked, "Crypto service should be unlocked after successful unlock")
     }
 
+    /// unlockWithPassword posts .vaultDidUnlock exactly once on success, so
+    /// BiometricUnlockToggleViewModel can clear a stale vault-locked disabled state (#67).
+    func testUnlockWithPassword_success_postsVaultDidUnlock() async throws {
+        let userId = "user-001"
+        let env    = ServerEnvironment(base: URL(string: "https://vault.example.com")!, overrides: nil)
+        let kdf    = KdfParams(type: .pbkdf2, iterations: 600_000, memory: nil, parallelism: nil)
+
+        mockKeychain.seed(key: "bw.macos:activeUserId",                value: userId)
+        mockKeychain.seed(key: "bw.macos:\(userId):email",             value: "alice@example.com")
+        mockKeychain.seed(key: "bw.macos:\(userId):encUserKey",        value: "2.encKey==")
+        mockKeychain.seed(key: "bw.macos:\(userId):kdfParams",
+                          value: String(data: try JSONEncoder().encode(kdf), encoding: .utf8)!)
+        mockKeychain.seed(key: "bw.macos:\(userId):serverEnvironment",
+                          value: String(data: try JSONEncoder().encode(env), encoding: .utf8)!)
+
+        var postCount = 0
+        let observer = NotificationCenter.default.addObserver(forName: .vaultDidUnlock, object: nil, queue: nil) { _ in
+            postCount += 1
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        _ = try await sut.unlockWithPassword(Data("masterPassword1!".utf8))
+
+        XCTAssertEqual(postCount, 1, "unlockWithPassword should post .vaultDidUnlock exactly once")
+    }
+
     /// unlockWithPassword reads the email key exactly once — not once directly and again
     /// inside account(for:). Duplicate reads produce extra keychain prompts on every build.
     func testUnlockWithPassword_emailReadExactlyOnce() async throws {
