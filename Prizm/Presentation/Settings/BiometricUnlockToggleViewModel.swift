@@ -37,13 +37,26 @@ final class BiometricUnlockToggleViewModel {
     init(authRepository: any AuthRepository) {
         self.authRepository = authRepository
         self.isEnabled = UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
-        subscribeToVaultUnlock()
+        // Deliberately no side effects here beyond this. `BiometricUnlockToggle` constructs
+        // this type inside a `State(initialValue:)` expression, which SwiftUI can evaluate
+        // more than once per view identity (discarding all but the first result) — a
+        // side-effecting NotificationCenter registration here previously caused observer
+        // churn and a libmalloc heap-corruption crash around lock/unlock (#67 follow-up).
+        // The real subscription happens in `startObservingVaultUnlockIfNeeded()`, called
+        // from `.onAppear` on the rendered toggle — guaranteed to run once per identity.
     }
 
     deinit {
         if let obs = unlockObserver {
             NotificationCenter.default.removeObserver(obs)
         }
+    }
+
+    /// Idempotent — safe to call from `.onAppear`, which can fire more than once for the
+    /// same view identity (e.g. window hide/show).
+    func startObservingVaultUnlockIfNeeded() {
+        guard unlockObserver == nil else { return }
+        subscribeToVaultUnlock()
     }
 
     private func subscribeToVaultUnlock() {

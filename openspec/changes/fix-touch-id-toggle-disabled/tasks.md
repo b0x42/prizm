@@ -17,3 +17,9 @@
 
 - [x] 3.1 Run `openspec validate fix-touch-id-toggle-disabled --type change --strict` and confirm it passes.
 - [x] 3.2 Ran `xcodebuild test -project "Prizm/Prizm.xcodeproj" -scheme "Prizm" -destination "platform=macOS" -only-testing:PrizmTests` — **TEST SUCCEEDED**, full PrizmTests suite passes including the new `BiometricUnlockToggleViewModelTests` and `.vaultDidUnlock`-posting tests. (XCUITest journeys under `Prizm/UITests/` were not run — separate scheme target, unaffected by this change's files.)
+
+## 4. Manual verification (found and fixed a real crash)
+
+- [x] 4.1 Manually ran the built app: enabled Touch ID, locked vault, unlocked vault — reproduced two `libmalloc` heap-corruption crashes (`BUG IN CLIENT OF LIBMALLOC: memory corruption of free block`) around the lock/unlock cycle.
+- [x] 4.2 Root-caused to `BiometricUnlockToggle` constructing `BiometricUnlockToggleViewModel` (a side-effecting `NotificationCenter.addObserver`/`removeObserver` construction) inside a `State(initialValue:)` expression in the View's `init` — re-evaluated on every View struct init instead of once, causing observer-registration churn. Fixed by making `viewModel` optional `@State`, populated once in `.onAppear` (see design.md - Decisions).
+- [x] 4.3 Re-ran full `PrizmTests` suite after the fix — **TEST SUCCEEDED**. Re-built and manually re-ran the disable→lock→unlock repro — no crash.
