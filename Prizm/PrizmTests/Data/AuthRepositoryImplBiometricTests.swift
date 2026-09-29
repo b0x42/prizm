@@ -99,6 +99,26 @@ final class AuthRepositoryImplBiometricTests: XCTestCase {
         XCTAssertEqual(account.email, testEmail)
     }
 
+    /// unlockWithBiometrics posts .vaultDidUnlock exactly once on success, so
+    /// BiometricUnlockToggleViewModel can clear a stale vault-locked disabled state (#67).
+    func testUnlockWithBiometrics_success_postsVaultDidUnlock() async throws {
+        let keys = CryptoKeys(encryptionKey: Data(count: 32), macKey: Data(count: 32))
+        try mockBiometricKeychain.writeBiometric(
+            data: keys.toData(),
+            key: KeychainKey.biometricVaultKey(testUserId)
+        )
+
+        var postCount = 0
+        let observer = NotificationCenter.default.addObserver(forName: .vaultDidUnlock, object: nil, queue: nil) { _ in
+            postCount += 1
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        _ = try await sut.unlockWithBiometrics()
+
+        XCTAssertEqual(postCount, 1, "unlockWithBiometrics should post .vaultDidUnlock exactly once")
+    }
+
     func testUnlockWithBiometrics_itemNotFound_throwsBiometricItemNotFound() async {
         // No biometric key in keychain — externally deleted or never written.
         // Must throw .biometricItemNotFound (silent degradation), not .biometricInvalidated.

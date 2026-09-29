@@ -311,7 +311,7 @@ extension VaultItem {
     /// Only called after a successful `PUT /ciphers/{id}` response has been decoded into a
     /// server-confirmed `VaultItem` via `CipherMapper`. This path is provided for any
     /// post-save local patching if needed; normally the API response is used directly.
-    init(_ draft: DraftVaultItem) {
+    nonisolated init(_ draft: DraftVaultItem) {
         self.id = draft.id
         self.folderId = draft.folderId
         self.name = draft.name

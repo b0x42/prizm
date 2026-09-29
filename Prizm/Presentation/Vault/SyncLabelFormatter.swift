@@ -7,7 +7,7 @@ extension Optional where Wrapped == Date {
     ///
     /// Returns `"Never synced"` when the date is `nil`.
     /// See `Date.syncStatusLabel(relativeTo:calendar:)` for label tier documentation.
-    func syncStatusLabel(
+    nonisolated func syncStatusLabel(
         relativeTo now: Date = Date(),
         calendar: Calendar = .current
     ) -> String {
@@ -36,7 +36,7 @@ extension Date {
     ///
     /// Calendar day comparisons use the provided `calendar` (defaulting to `.current`)
     /// so the "yesterday" boundary respects the user's local timezone.
-    func syncStatusLabel(
+    nonisolated func syncStatusLabel(
         relativeTo now: Date = Date(),
         calendar: Calendar = .current
     ) -> String {
@@ -88,7 +88,7 @@ extension Date {
 
     // MARK: - Private formatting helpers
 
-    private func formatted(style: Date.FormatStyle, calendar: Calendar) -> String {
+    private nonisolated func formatted(style: Date.FormatStyle, calendar: Calendar) -> String {
         // Date.FormatStyle is zero-allocation — no DateFormatter constructed per call.
         // Available macOS 12+; the project targets macOS 26.
         // Property assignment is required: FormatStyle exposes `calendar` as a stored var,
