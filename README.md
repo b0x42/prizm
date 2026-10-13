@@ -51,6 +51,7 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 - **File attachments** — upload, download, open, and delete encrypted file attachments on any vault item; drag-and-drop batch upload; two-layer AES-256-CBC + HMAC-SHA256 encryption with per-attachment keys
 - **Password & passphrase generator** — configurable length, character sets, and word separators
 - **Touch ID / Face ID unlock** — unlock your vault with biometrics; auto-prompts on lock; graceful re-enrollment when fingerprints change
+- **Optional mTLS (prototype)** — import a `.p12`/`.pfx` client identity before login, bind it to an exact HTTPS server origin, and retain it in the app-isolated macOS Keychain. Identity storage requires a signed build; attachments on mTLS servers are currently unavailable.
 - **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
 - **Accessible** — VoiceOver labels and hints on all controls, keyboard navigable, respects Reduce Motion and Increase Contrast; targets WCAG 2.1 AA. See [ACCESSIBILITY.md](ACCESSIBILITY.md)
 

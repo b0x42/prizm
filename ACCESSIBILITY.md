@@ -91,3 +91,7 @@ Accessibility was tested with:
 ## Contact
 
 To report an accessibility issue, [open an issue](https://github.com/b0x42/prizm/issues) with the "accessibility" label.
+
+### Client certificate prototype
+
+The prelogin certificate controls use text labels and explicit accessibility labels for file selection, password entry, inspection, confirmation and removal. The import title is a heading; login errors are announced with `AccessibilityNotification.Announcement`. Certificate details and fingerprint are selectable text. VoiceOver/manual keyboard acceptance of the new import sheet is still pending alongside signed mTLS prototype acceptance.

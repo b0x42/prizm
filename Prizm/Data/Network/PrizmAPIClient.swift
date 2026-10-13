@@ -17,7 +17,7 @@ protocol PrizmAPIClientProtocol: Actor {
     var baseURL: URL? { get }
 
     /// Stores the base URL; sets up derived endpoint URLs.
-    func setBaseURL(_ url: URL)
+    func setBaseURL(_ url: URL) throws
 
     /// Stores the access token used for subsequent authenticated requests.
     func setAccessToken(_ token: String)
@@ -375,7 +375,12 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     private(set) var baseURL: URL?
     private var accessToken: String?
 
-    private let session:   URLSession
+    private var session: URLSession
+    private var externalSession: URLSession
+    private let injectedSession: URLSession?
+    private let sessionFactory: ServerSessionFactory
+    private var certificateID: UUID?
+    private var generation: UInt64 = 0
     private let logger:    Logger = Logger(
         subsystem: "com.prizm",
         category:  "PrizmAPIClient"
@@ -395,14 +400,39 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     // MARK: - Init
 
-    init(session: URLSession = .shared) {
-        self.session = session
+    init(session: URLSession? = nil,
+         sessionFactory: ServerSessionFactory = ServerSessionFactory(configuration: ClientCertificateConfiguration(), store: ClientCertificateStore())) {
+        self.injectedSession = session
+        self.sessionFactory = sessionFactory
+        self.session = session ?? ServerSessionFactory.makeExternalSession()
+        self.externalSession = session ?? ServerSessionFactory.makeExternalSession()
     }
 
     // MARK: - Configuration
 
-    func setBaseURL(_ url: URL) {
+    func setBaseURL(_ url: URL) throws {
+        invalidateServerSession()
+        if let injectedSession {
+            session = injectedSession
+        } else {
+            let snapshot = try sessionFactory.makeServerSession(url: url)
+            session = snapshot.session
+            certificateID = snapshot.certificateID
+            externalSession = ServerSessionFactory.makeExternalSession()
+        }
         baseURL = url
+    }
+
+    /// Cancel all old TLS connections before another server/certificate can be selected.
+    func invalidateServerSession() {
+        generation &+= 1
+        if injectedSession == nil {
+            session.invalidateAndCancel()
+            externalSession.invalidateAndCancel()
+        }
+        baseURL = nil
+        certificateID = nil
+        accessToken = nil
     }
 
     func setAccessToken(_ token: String) {
@@ -410,7 +440,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     }
 
     func clearAccessToken() {
-        accessToken = nil
+        invalidateServerSession()
     }
 
     // MARK: - preLogin
@@ -502,7 +532,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     /// Cases 2 and 3 use the same fallthrough path because they produce the same
     /// user-facing error: re-enter your password / code.
     private func performIdentityToken(request: URLRequest) async throws -> TokenResponse {
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await send(request)
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "")
@@ -728,6 +758,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - createAttachmentMetadata
 
     func createAttachmentMetadata(cipherId: String, body: AttachmentMetadataRequest) async throws -> AttachmentMetadataResponse {
+        guard certificateID == nil else { throw ClientCertificateError.attachmentsDeferred }
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment/v2")
         var request = baseRequest(url: url)
@@ -741,6 +772,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - uploadAttachmentBitwardenHosted
 
     func uploadAttachmentBitwardenHosted(cipherId: String, attachmentId: String, encryptedBlob: Data) async throws {
+        guard certificateID == nil else { throw ClientCertificateError.attachmentsDeferred }
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
 
@@ -764,6 +796,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - uploadAttachmentAzure
 
     func uploadAttachmentAzure(signedURL: URL, encryptedBlob: Data) async throws {
+        guard certificateID == nil else { throw ClientCertificateError.attachmentsDeferred }
         // Azure Blob Storage requires `x-ms-blob-type: BlockBlob` on PUT uploads.
         // Reference: https://learn.microsoft.com/en-us/rest/api/storageservices/put-blob
         var request = URLRequest(url: signedURL)
@@ -771,7 +804,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         request.setValue("BlockBlob", forHTTPHeaderField: "x-ms-blob-type")
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
         request.httpBody = encryptedBlob
-        let (_, response) = try await session.data(for: request)
+        let (_, response) = try await sendExternal(request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
             throw APIError.httpError(statusCode: code, body: "Azure upload failed")
@@ -781,6 +814,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - fetchAttachmentDownloadURL
 
     func fetchAttachmentDownloadURL(cipherId: String, attachmentId: String) async throws -> AttachmentDownloadResponse {
+        guard certificateID == nil else { throw ClientCertificateError.attachmentsDeferred }
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
         var request = baseRequest(url: url)
@@ -792,6 +826,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - deleteAttachment
 
     func deleteAttachment(cipherId: String, attachmentId: String) async throws {
+        guard certificateID == nil else { throw ClientCertificateError.attachmentsDeferred }
         guard let base = baseURL else { throw APIError.baseURLNotSet }
         let url = base.appendingPathComponent("api/ciphers").appendingPathComponent(cipherId).appendingPathComponent("attachment").appendingPathComponent(attachmentId)
         var request = baseRequest(url: url)
@@ -804,7 +839,8 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     // MARK: - downloadBlob
 
     func downloadBlob(from url: URL) async throws -> Data {
-        let (data, response) = try await session.data(from: url)
+        guard certificateID == nil else { throw ClientCertificateError.attachmentsDeferred }
+        let (data, response) = try await sendExternal(URLRequest(url: url))
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "Invalid response")
         }
@@ -1030,11 +1066,32 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         return req
     }
 
+    /// Capture session and generation before suspension; reject results from old environments.
+    private func send(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        guard let baseURL, let url = request.url,
+              try ServerOrigin(url: baseURL).contains(url) else { throw ClientCertificateError.invalidOrigin }
+        let expected = generation
+        let snapshot = session
+        let result = try await snapshot.data(for: request)
+        guard expected == generation else { throw CancellationError() }
+        return result
+    }
+
+    private func sendExternal(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        guard let url = request.url, (try? ServerOrigin(url: url)) != nil,
+              request.value(forHTTPHeaderField: "Authorization") == nil else { throw ClientCertificateError.invalidOrigin }
+        let expected = generation
+        let snapshot = externalSession
+        let result = try await snapshot.data(for: request)
+        guard expected == generation else { throw CancellationError() }
+        return result
+    }
+
     /// Sends `request`, checks the HTTP status code, and decodes the JSON response body.
     ///
     /// - Throws: `APIError.httpError` on non-2xx status codes; `APIError.decodingFailed` on JSON errors.
     private func perform<T: Decodable>(request: URLRequest) async throws -> T {
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await send(request)
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "")
@@ -1088,7 +1145,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
     /// Used for endpoints that return 200/204 with no meaningful response body
     /// (soft-delete, restore, purge). Throws `APIError.httpError` on non-2xx responses.
     private func performEmpty(request: URLRequest) async throws {
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await send(request)
 
         guard let http = response as? HTTPURLResponse else {
             throw APIError.httpError(statusCode: 0, body: "")

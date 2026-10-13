@@ -6,6 +6,7 @@ import XCTest
 /// Each test verifies that initialising a `DraftVaultItem` from a `VaultItem` and then
 /// reconstructing a `VaultItem` from the draft produces a value equal to the original.
 /// This guards against any field being accidentally dropped in either init.
+@MainActor
 final class DraftVaultItemTests: XCTestCase {
 
     // MARK: - Helpers

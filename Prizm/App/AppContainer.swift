@@ -12,6 +12,7 @@ final class AppContainer: ObservableObject {
 
     // MARK: - Data layer
 
+    let clientCertificates: any ClientCertificateManaging
     let apiClient:     PrizmAPIClientImpl
     let crypto:        PrizmCryptoServiceImpl
     let keychain:      KeychainServiceImpl
@@ -67,7 +68,10 @@ final class AppContainer: ObservableObject {
     // MARK: - Init
 
     init() {
-        let api           = PrizmAPIClientImpl()
+        let certificateConfiguration = ClientCertificateConfiguration()
+        let certificateStore = ClientCertificateStore()
+        let api = PrizmAPIClientImpl(sessionFactory: ServerSessionFactory(configuration: certificateConfiguration, store: certificateStore))
+        self.clientCertificates = ClientCertificateManager(store: certificateStore, configuration: certificateConfiguration, api: api)
         let crypto        = PrizmCryptoServiceImpl()
         let keychain      = KeychainServiceImpl()
         let biometricKeychain = BiometricKeychainServiceImpl()
@@ -153,7 +157,7 @@ final class AppContainer: ObservableObject {
 
     /// Creates a `LoginViewModel` pre-wired with the container's login use case.
     func makeLoginViewModel() -> LoginViewModel {
-        LoginViewModel(loginUseCase: loginUseCase)
+        LoginViewModel(loginUseCase: loginUseCase, clientCertificates: clientCertificates)
     }
 
     /// Creates an `UnlockViewModel` for a returning user with a stored session.

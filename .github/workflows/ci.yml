@@ -21,6 +21,11 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select --switch $(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer
 
+      - name: Install TLS test fixture dependency
+        run: |
+          brew install openssl@3
+          echo "TEST_RUNNER_PRIZM_TEST_OPENSSL=$(brew --prefix openssl@3)/bin/openssl" >> "$GITHUB_ENV"
+
       - name: Install xcpretty
         run: gem install xcpretty --no-document
 

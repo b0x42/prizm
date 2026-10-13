@@ -239,3 +239,13 @@ The app is built with App Sandbox and Hardened Runtime enabled:
 - [RFC 8018](https://tools.ietf.org/html/rfc8018) / [NIST SP 800-132](https://csrc.nist.gov/publications/detail/sp/800-132/final) — PBKDF2
 - [RFC 9106](https://tools.ietf.org/html/rfc9106) — Argon2id
 - [NIST SP 800-107](https://csrc.nist.gov/publications/detail/sp/800-107/rev-1/final) — HMAC
+
+## Optional mTLS prototype
+
+Client certificates add transport authentication to one explicit HTTPS origin (hostname and effective port). PKCS#12 inspection uses macOS `kSecImportToMemoryOnly`, preventing implicit login-Keychain import. Confirmation stores the key and leaf certificate only in the app-isolated data-protection Keychain, with `WhenUnlockedThisDeviceOnly` and synchronization disabled. An app-owned UUID record stores the public certificate chain and exact item references; deletion never searches by subject or fingerprint. The import password and PKCS#12 file are not persisted. Local preferences contain public display metadata and the origin assignment only.
+
+Identity persistence requires a signed app with the existing Keychain access-group entitlement. Unsigned builds fail confirmation visibly; client identities never fall back to unrestricted legacy storage. Signed persistence, duplicate rollback, exact removal and reload across distinct app processes were verified with temporary test identities; real Vaultwarden account acceptance is pending; see `openspec/changes/optional-mtls/validation.md`.
+
+Server certificate validation uses the normal macOS trust system. Importing a client CA does not install server trust. Each session owns a fixed credential snapshot; server/certificate changes and sign-out cancel old connections and reject old network responses. Vault locking preserves the transport assignment. Sign-out preserves it for subsequent prelogin; explicit Remove deletes the assignment and its unreferenced managed identity.
+
+External icon and attachment sessions reject client identity challenges and share no credential storage. Cross-origin redirects are rejected, including redirects carrying bearer headers. Attachments on mTLS servers are intentionally unavailable in the prototype. Master-password authentication, 2FA, key derivation and vault encryption are unchanged.

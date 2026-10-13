@@ -157,6 +157,13 @@
 		FD30240C189E483CBB5E2E3B /* SidebarSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7044163F8FD4199B4925DD2 /* SidebarSelection.swift */; };
 		FE3145A0627D44CABC58ADCE /* MaskedFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */; };
 		FF0FFCD0FDD849318EBBFF77 /* FaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50445584AD814B6EBD971FDA /* FaviconLoader.swift */; };
+		106C27F476AB4D25B23605D9 /* ClientCertificate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB31A022E8B4140B78B0A73; };
+		8DA433170B664800B89E0E59 /* ClientCertificateManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6696A2197C74ED6B6FC5A2C; };
+		0AF8B1FAC8A2443DBCCE2A9D /* ClientCertificateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0EDCA36888842F98820C5F5; };
+		A22F7A40C2CC49D6AC8ECA3F /* ClientCertificateConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A69B87A84564CD0B07FBBD9; };
+		F37EED6CF1484ECDA92A15AE /* ServerSessionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CA5F97DA2B4F55B2ED2890; };
+		FFFE06577F1846F284719D5D /* ClientCertificateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C5420F90104E05A541C344; };
+		258B9DAD85F14FC2A5313F34 /* ClientCertificateImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C01B290E524598B17BA856 /* ClientCertificateImportView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -322,6 +329,13 @@
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
 		FEE3CE5476C5402F9BC3FF76 /* OrgKeyCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrgKeyCache.swift; sourceTree = "<group>"; };
 		FF00112233445566778899AA /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		0DB31A022E8B4140B78B0A73 /* ClientCertificate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientCertificate.swift; sourceTree = "<group>"; };
+		B6696A2197C74ED6B6FC5A2C /* ClientCertificateManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientCertificateManaging.swift; sourceTree = "<group>"; };
+		A0EDCA36888842F98820C5F5 /* ClientCertificateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientCertificateStore.swift; sourceTree = "<group>"; };
+		4A69B87A84564CD0B07FBBD9 /* ClientCertificateConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientCertificateConfiguration.swift; sourceTree = "<group>"; };
+		E5CA5F97DA2B4F55B2ED2890 /* ServerSessionFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerSessionFactory.swift; sourceTree = "<group>"; };
+		A6C5420F90104E05A541C344 /* ClientCertificateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientCertificateManager.swift; sourceTree = "<group>"; };
+		D6C01B290E524598B17BA856 /* ClientCertificateImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientCertificateImportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -395,6 +409,7 @@
 		4309FCEC2F680AC80031C9F4 /* Entities */ = {
 			isa = PBXGroup;
 			children = (
+				0DB31A022E8B4140B78B0A73 /* ClientCertificate.swift */,
 				F557D7298207448A9FBFC676 /* Account.swift */,
 				E25C290F2D7A470EB4AB8698 /* KdfParams.swift */,
 				EF90E0F31DF248FB9D12F74D /* VaultItem.swift */,
@@ -427,6 +442,7 @@
 		4309FCEE2F680ADE0031C9F4 /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
+				B6696A2197C74ED6B6FC5A2C /* ClientCertificateManaging.swift */,
 				257FAE34CC064783806B6A5C /* LoginUseCase.swift */,
 				0FC64A993F0A48719EC3A078 /* UnlockUseCase.swift */,
 				5EBA517603CA448A8F9106AF /* SyncUseCase.swift */,
@@ -480,6 +496,8 @@
 		4309FCF12F680BD10031C9F4 /* Network */ = {
 			isa = PBXGroup;
 			children = (
+				E5CA5F97DA2B4F55B2ED2890 /* ServerSessionFactory.swift */,
+				4A69B87A84564CD0B07FBBD9 /* ClientCertificateConfiguration.swift */,
 				E819470C1E544509A3DDD52F /* PrizmAPIClient.swift */,
 				50445584AD814B6EBD971FDA /* FaviconLoader.swift */,
 				4309FCF22F680BDF0031C9F4 /* Models */,
@@ -501,6 +519,7 @@
 		4309FCF32F680BEA0031C9F4 /* Keychain */ = {
 			isa = PBXGroup;
 			children = (
+				A0EDCA36888842F98820C5F5 /* ClientCertificateStore.swift */,
 				7E8F9A0B1C2D3E4F5A6B7C8D /* KeychainService.swift */,
 			);
 			path = Keychain;
@@ -663,6 +682,7 @@
 		7D6DFC79E63B457284977CA8 /* Login */ = {
 			isa = PBXGroup;
 			children = (
+				D6C01B290E524598B17BA856 /* ClientCertificateImportView.swift */,
 				713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */,
 				7429BBFA10E247D8AEACA59B /* LoginView.swift */,
 				F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */,
@@ -746,6 +766,7 @@
 		FF2563714D2C473EA1DFE89E /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
+				A6C5420F90104E05A541C344 /* ClientCertificateManager.swift */,
 				226B2B19933B495DB3C4BD94 /* UnlockUseCaseImpl.swift */,
 				14DACA379C784C528EFA980F /* LoginUseCaseImpl.swift */,
 				8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */,
@@ -891,6 +912,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				258B9DAD85F14FC2A5313F34 /* ClientCertificateImportView.swift in Sources */,
+				FFFE06577F1846F284719D5D /* ClientCertificateManager.swift in Sources */,
+				F37EED6CF1484ECDA92A15AE /* ServerSessionFactory.swift in Sources */,
+				A22F7A40C2CC49D6AC8ECA3F /* ClientCertificateConfiguration.swift in Sources */,
+				0AF8B1FAC8A2443DBCCE2A9D /* ClientCertificateStore.swift in Sources */,
+				8DA433170B664800B89E0E59 /* ClientCertificateManaging.swift in Sources */,
+				106C27F476AB4D25B23605D9 /* ClientCertificate.swift in Sources */,
 				9B3412B1F4F648DEBC7BFC94 /* ContrastAwareOpacity.swift in Sources */,
 				967254DE6EE74766B9E011A5 /* OptionalAnimation.swift in Sources */,
 				6A563BC5058D474D9C84561E /* Account.swift in Sources */,
@@ -1054,6 +1082,7 @@
 /* Begin XCBuildConfiguration section */
 		4309FD132F68121F0031C9F4 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -1076,6 +1105,7 @@
 		};
 		4309FD142F68121F0031C9F4 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -1225,7 +1255,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = QQLP5WK88A;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -1256,6 +1285,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.3;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1283,7 +1313,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 12;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = QQLP5WK88A;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -1315,6 +1344,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.3;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.Prizm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;

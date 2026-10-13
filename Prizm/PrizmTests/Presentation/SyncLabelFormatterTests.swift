@@ -12,6 +12,7 @@ import XCTest
 ///   5. 0–59 seconds elapsed    → "Synced just now"
 ///   6. 60–3599 seconds elapsed → "Synced 1 minute ago" / "Synced X minutes ago"
 ///   7. 3600+ seconds, same day → "Synced 1 hour ago" / "Synced X hours ago"
+@MainActor
 final class SyncLabelFormatterTests: XCTestCase {
 
     // Fixed reference point: 2026-03-28 14:00:00 UTC, on a Saturday.
