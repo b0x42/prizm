@@ -1,3 +1,13 @@
+## Purpose
+
+Defines the biometric (Touch ID / Face ID) vault unlock path: enrollment, the lock-screen
+prompt flow, and graceful degradation when biometric state changes outside the app. The
+Settings window's biometric toggle control (visibility, on/off reflection, and disabled
+state while the vault is locked) is owned by `settings-screen`; see that spec's "Settings
+window contains the biometric unlock toggle" requirements for the control's UI behavior.
+
+## Requirements
+
 ### Requirement: User can unlock the vault with biometrics
 The system SHALL provide a biometric unlock path that re-opens the vault without requiring the master password, using the platform biometric authenticator (Touch ID on macOS, Face ID on iOS). The system SHALL store the derived vault symmetric key (`CryptoKeys`) in a Keychain item protected by `kSecAccessControl` with `.biometryCurrentSet`. The master password path SHALL always remain available as a fallback.
 
@@ -65,3 +75,25 @@ If the `biometricUnlockEnabled` UserDefaults flag is `true` but the biometric Ke
 - **WHEN** the vault locks and the biometric unlock is attempted
 - **THEN** the biometric unlock SHALL fail with an `.itemNotFound` error
 - **AND** the system SHALL set `biometricUnlockEnabled = false`, remove the Touch ID badge and update the subtitle to the password-only copy, and fall back to the password path without showing an error message to the user
+
+---
+
+### Requirement: Biometric availability check failures are logged
+When the platform biometric availability check (`LAContext.canEvaluatePolicy`) fails, the system SHALL log the underlying error via `os.Logger` at `.error` level instead of discarding it, so the reason biometrics are considered unavailable is diagnosable.
+
+#### Scenario: Biometric availability check fails transiently
+- **GIVEN** the platform biometric availability check (`LAContext.canEvaluatePolicy`) returns an error other than a missing enrollment (e.g. a transient `LAError` from the biometry daemon)
+- **WHEN** the check is performed
+- **THEN** the system SHALL log the underlying error via `os.Logger` at `.error` level
+- **AND** SHALL treat biometrics as unavailable for that check without crashing or silently discarding the failure reason
+
+---
+
+### Requirement: Concurrent biometric enable/disable requests are serialized
+While a biometric enable or disable request is in flight, the system SHALL prevent a second concurrent request from being started for the same user.
+
+#### Scenario: Second toggle attempt while one is already processing
+- **GIVEN** a biometric enable or disable request is currently in progress
+- **WHEN** the user attempts to toggle biometric unlock again before the first request completes
+- **THEN** the second attempt SHALL be ignored or queued until the first completes
+- **AND** SHALL NOT be able to leave the stored `biometricUnlockEnabled` flag and the Keychain item in inconsistent states relative to each other

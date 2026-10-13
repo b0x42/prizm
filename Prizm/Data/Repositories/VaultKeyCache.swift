@@ -54,13 +54,11 @@ actor VaultKeyCache {
     /// Zeroing before clearing reduces the window during which key bytes remain on the
     /// heap after the cache is discarded (Constitution §III).
     func clear() {
-        // Pre-capture count before starting the _modify accessor: accessing cache[key]
-        // inside the resetBytes argument while _modify already holds exclusive write
-        // access to cache[key] causes a simultaneous-access violation at runtime.
+        // Slices need their actual indices, not 0..<count. Capture the range
+        // before entering the dictionary's mutating accessor (Swift exclusivity).
         for key in cache.keys {
-            let count = cache[key]?.count ?? 0
-            if count > 0 {
-                cache[key]?.resetBytes(in: 0..<count)
+            if let range = cache[key]?.indices {
+                cache[key]?.resetBytes(in: range)
             }
         }
         cache.removeAll()

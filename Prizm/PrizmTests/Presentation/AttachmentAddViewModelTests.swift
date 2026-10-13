@@ -178,31 +178,30 @@ final class AttachmentAddViewModelTests: XCTestCase {
     // MARK: - isPickingFile (task 8b.6)
 
     func test_isPickingFile_trueWhilePickerIsRunning() async {
-        // `selectFile()` sets isPickingFile = true then suspends at Task.yield() before
-        // calling filePicker(). By launching selectFile() in a child Task and yielding once
-        // from the test, we can observe isPickingFile between those two suspension points —
-        // avoiding the [weak sut] nil-capture problem that occurs when the closure is created
-        // before the init assigns sut.
+        // Observe the flag from inside the picker closure: it only runs while
+        // `selectFile()` has isPickingFile == true, so no scheduler timing is involved.
+        // (A Task.yield()-based version raced under load.)
+        // The closure reads `sutRef` because it is created before init returns.
+        var sutRef: AttachmentAddViewModel?
+        var observedDuringPicker: Bool?
         let sut = AttachmentAddViewModel(
             cipherId:      "cipher-1",
             uploadUseCase: MockUploadUseCase(result: .success(
                 Attachment(id: "att-1", fileName: "doc.txt", encryptedKey: "2.a|b|c",
                            size: 22, sizeName: "22 B", url: nil, isUploadIncomplete: false)
             )),
-            filePicker: { [(url: self.tempFileURL, bytes: 22)] }
+            filePicker: {
+                observedDuringPicker = sutRef?.isPickingFile
+                return [(url: self.tempFileURL, bytes: 22)]
+            }
         )
+        sutRef = sut
 
         XCTAssertFalse(sut.isPickingFile, "isPickingFile should start false")
 
-        let task = Task { await sut.selectFile() }
-        // Yield once to let selectFile run up to its own Task.yield(), at which
-        // point isPickingFile has been set to true and selectFile is suspended.
-        await Task.yield()
+        await sut.selectFile()
 
-        XCTAssertTrue(sut.isPickingFile, "isPickingFile must be true while the picker is running")
-
-        await task.value
-
+        XCTAssertEqual(observedDuringPicker, true, "isPickingFile must be true while the picker is running")
         XCTAssertFalse(sut.isPickingFile, "isPickingFile must be false after picker returns")
     }
 

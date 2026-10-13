@@ -76,14 +76,14 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
 
         // Step 1: Generate per-attachment key (64 random bytes, Constitution §III).
         var attachmentKey = try crypto.generateAttachmentKey()
-        defer { attachmentKey.resetBytes(in: 0..<attachmentKey.count) }
+        defer { attachmentKey.resetBytes(in: attachmentKey.indices) }
 
         // Step 2: Encrypt file name.
         let encFileName = try crypto.encryptFileName(fileName, cipherKey: keys)
 
         // Step 3: Encrypt file blob.
         var encBlob = try crypto.encryptData(data, attachmentKey: attachmentKey)
-        defer { encBlob.resetBytes(in: 0..<encBlob.count) }
+        defer { encBlob.resetBytes(in: encBlob.indices) }
 
         // Step 4: Wrap attachment key as EncString.
         let encKey = try crypto.encryptAttachmentKey(attachmentKey, cipherKey: keys)
@@ -186,11 +186,11 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
                 throw AttachmentError.downloadFailed
             }
         }
-        defer { encBlob.resetBytes(in: 0..<encBlob.count) }
+        defer { encBlob.resetBytes(in: encBlob.indices) }
 
         // Decrypt the attachment key (EncString → raw 64 bytes).
         var attachmentKey = try crypto.decryptAttachmentKey(attachment.encryptedKey, cipherKey: keys)
-        defer { attachmentKey.resetBytes(in: 0..<attachmentKey.count) }
+        defer { attachmentKey.resetBytes(in: attachmentKey.indices) }
 
         // Decrypt the blob.
         let plaintext = try crypto.decryptData(encBlob, attachmentKey: attachmentKey)

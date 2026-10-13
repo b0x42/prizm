@@ -50,4 +50,16 @@ final class VaultKeyCacheTests: XCTestCase {
         let result = await sut.key(for: "cipher-1")
         XCTAssertNil(result)
     }
+    func test_clear_slicedKey_preservesOutstandingCopy() async {
+        let bytes = Data((0..<96).map { UInt8($0) })
+        let key = bytes[16..<80]
+        await sut.populate(keys: ["sliced": key])
+        let outstanding = await sut.key(for: "sliced")
+        await sut.clear()
+        await sut.clear()
+        let cleared = await sut.key(for: "sliced")
+        XCTAssertNil(cleared)
+        XCTAssertEqual(outstanding, key)
+    }
+
 }

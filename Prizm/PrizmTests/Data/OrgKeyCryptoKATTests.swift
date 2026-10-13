@@ -42,6 +42,22 @@ final class OrgKeyCryptoKATTests: XCTestCase {
         XCTAssertTrue(snapshot.isEmpty, "Cache should be empty after clear()")
     }
 
+    /// RSA-unwrapped MAC keys retain a nonzero Data startIndex. Lock must clear
+    /// these buffers without writing outside their storage (run with AddressSanitizer).
+    func testOrgKeyCache_clearSlicedKeys_preservesOutstandingSnapshot() async {
+        let cache = OrgKeyCache()
+        let bytes = Data((0..<96).map { UInt8($0) })
+        let keys = CryptoKeys(encryptionKey: bytes[16..<48], macKey: bytes[48..<80])
+        await cache.store(key: keys, for: "org-sliced")
+        let outstanding = await cache.snapshot()
+        await cache.clear()
+        await cache.clear()
+        let cleared = await cache.snapshot()
+        XCTAssertTrue(cleared.isEmpty)
+        XCTAssertEqual(outstanding["org-sliced"]?.encryptionKey, bytes[16..<48])
+        XCTAssertEqual(outstanding["org-sliced"]?.macKey, bytes[48..<80])
+    }
+
     // MARK: - RSA org key unwrap
 
     /// RSA-OAEP-SHA1 org key unwrap: decrypts a known RSA-encrypted 64-byte org key.

@@ -142,7 +142,7 @@ actor SyncRepositoryImpl: SyncRepository {
                 )
                 defer {
                     // Zero the private key bytes immediately after use (Constitution §III).
-                    rsaPrivateKeyBytes.resetBytes(in: 0..<rsaPrivateKeyBytes.count)
+                    rsaPrivateKeyBytes.resetBytes(in: rsaPrivateKeyBytes.indices)
                 }
 
                 // Unwrap each org key into OrgKeyCache.

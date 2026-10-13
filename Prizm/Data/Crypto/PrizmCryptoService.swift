@@ -232,9 +232,11 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
         // which key material exists in a heap dump (Constitution §III). Any Data copies
         // passed to in-flight decryption tasks retain their own CoW buffers until those
         // tasks complete; those copies cannot be zeroed here.
-        if keys != nil {
-            keys!.encryptionKey.resetBytes(in: 0..<keys!.encryptionKey.count)
-            keys!.macKey.resetBytes(in: 0..<keys!.macKey.count)
+        // Data slices retain nonzero indices; capture them before mutating keys.
+        if let encRange = keys?.encryptionKey.indices,
+           let macRange = keys?.macKey.indices {
+            keys!.encryptionKey.resetBytes(in: encRange)
+            keys!.macKey.resetBytes(in: macRange)
         }
         keys = nil
         logger.info("Vault locked — key material zeroed")

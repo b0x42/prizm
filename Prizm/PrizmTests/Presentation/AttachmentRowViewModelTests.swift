@@ -111,6 +111,38 @@ final class AttachmentRowViewModelTests: XCTestCase {
         XCTAssertNil(sut.actionError)
     }
 
+    /// Downloaded buffers can be Data slices (nonzero startIndex). Zeroing them with a
+    /// zero-based range writes out of bounds (run with AddressSanitizer).
+    private var slicedPlainData: Data {
+        Data([UInt8](repeating: 0xEE, count: 16) + plainData + [UInt8](repeating: 0xEE, count: 16))[16..<(16 + plainData.count)]
+    }
+
+    func test_open_slicedDownload_doesNotCrash() async throws {
+        mockDownload.result = .success(slicedPlainData)
+        let sut = makeSUT()
+
+        sut.open()
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertTrue(mockTempMgr.registerCalled)
+        XCTAssertNil(sut.actionError)
+    }
+
+    func test_saveToDisk_slicedDownload_writesFullContent() async throws {
+        let saveURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("prizm-save-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: saveURL) }
+
+        mockDownload.result = .success(slicedPlainData)
+        let sut = makeSUT(fileSaver: { _ in saveURL })
+
+        sut.saveToDisk()
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(try Data(contentsOf: saveURL), plainData)
+        XCTAssertNil(sut.actionError)
+    }
+
     func test_saveToDisk_downloadFailure_setsActionError() async throws {
         mockDownload.result = .failure(AttachmentError.downloadFailed)
         let saveURL = FileManager.default.temporaryDirectory

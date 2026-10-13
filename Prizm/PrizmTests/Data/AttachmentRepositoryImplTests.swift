@@ -388,4 +388,50 @@ final class AttachmentRepositoryImplTests: XCTestCase {
         XCTAssertEqual(remaining.count, 1)
         XCTAssertEqual(remaining.first?.id, "att-keep")
     }
+
+    // MARK: - Sliced buffers (zeroing must use Data.indices)
+
+    /// Mock crypto returning Data slices (nonzero startIndex), as RSA/KDF paths can.
+    /// Zeroing with `0..<count` would write out of bounds (run with AddressSanitizer).
+    private func makeSlicedSUT() -> (AttachmentRepositoryImpl, MockPrizmCryptoService) {
+        let mock = MockPrizmCryptoService()
+        let bytes = Data((0..<192).map { UInt8($0 & 0xFF) })
+        mock.stubbedAttachmentKey    = bytes[16..<80]
+        mock.stubbedDecAttachmentKey = bytes[16..<80]
+        mock.stubbedEncryptedData    = bytes[96..<160]
+        mock.stubbedDecryptedData    = plainData
+        let repo = AttachmentRepositoryImpl(apiClient: apiClient, crypto: mock, vaultRepository: vaultRepo)
+        return (repo, mock)
+    }
+
+    func test_upload_slicedKeyAndBlob_doesNotCrash() async throws {
+        let (repo, _) = makeSlicedSUT()
+        apiClient.createAttachmentMetadataResponse = AttachmentMetadataResponse(
+            attachmentId: attachmentId,
+            url:          "https://api.bitwarden.com/ciphers/\(cipherId)/attachment/\(attachmentId)",
+            fileUploadType: 0
+        )
+
+        let attachment = try await repo.upload(
+            cipherId: cipherId, fileName: plainFileName, data: plainData, cipherKey: cipherKey
+        )
+
+        XCTAssertEqual(attachment.id, attachmentId)
+    }
+
+    func test_download_slicedKeyAndBlob_doesNotCrash() async throws {
+        let (repo, _) = makeSlicedSUT()
+        apiClient.downloadBlobResult = Data((0..<192).map { UInt8($0 & 0xFF) })[96..<160]
+        let attachment = Attachment(
+            id: attachmentId, fileName: plainFileName, encryptedKey: "2.stubEncKey|stub|stub",
+            size: plainData.count, sizeName: "32 B",
+            url: "https://cdn.prizm-test.invalid/blob", isUploadIncomplete: false
+        )
+
+        let decrypted = try await repo.download(
+            cipherId: cipherId, attachment: attachment, cipherKey: cipherKey
+        )
+
+        XCTAssertEqual(decrypted, plainData)
+    }
 }

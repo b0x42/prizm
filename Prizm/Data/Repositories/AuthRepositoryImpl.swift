@@ -245,13 +245,11 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         // copy produced by `if let` — zeroing `pending` would only zero the copy's CoW
         // buffer, not the stored struct's. In-place mutation through `pendingTwoFactor!`
         // is safe here because we verified non-nil one line above.
-        if let pending = pendingTwoFactor {
-            pendingTwoFactor!.stretchedKeys.encryptionKey.resetBytes(
-                in: 0..<pending.stretchedKeys.encryptionKey.count
-            )
-            pendingTwoFactor!.stretchedKeys.macKey.resetBytes(
-                in: 0..<pending.stretchedKeys.macKey.count
-            )
+        // Data slices keep their original indices, so zero via `.indices`, not `0..<count`.
+        if let encRange = pendingTwoFactor?.stretchedKeys.encryptionKey.indices,
+           let macRange = pendingTwoFactor?.stretchedKeys.macKey.indices {
+            pendingTwoFactor!.stretchedKeys.encryptionKey.resetBytes(in: encRange)
+            pendingTwoFactor!.stretchedKeys.macKey.resetBytes(in: macRange)
         }
         pendingTwoFactor = nil
         logger.info("Pending 2FA state cleared — stretched keys zeroed")
@@ -362,6 +360,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         }
 
         logger.info("Unlock succeeded")
+        await MainActor.run {
+            NotificationCenter.default.post(name: .vaultDidUnlock, object: nil)
+        }
         return restoredAccount
     }
 
@@ -438,14 +439,37 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     // MARK: - Biometric unlock
 
     var deviceBiometricCapable: Bool {
-        LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+        var error: NSError?
+        let capable = LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+        logBiometricAvailabilityFailure(error)
+        return capable
     }
 
     var biometricUnlockAvailable: Bool {
         // Fast synchronous check for UI binding (design Decision 5).
         // Actual Keychain item existence is verified only inside unlockWithBiometrics().
-        UserDefaults.standard.bool(forKey: "biometricUnlockEnabled")
-            && LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+        guard UserDefaults.standard.bool(forKey: "biometricUnlockEnabled") else { return false }
+        var error: NSError?
+        let available = LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+        logBiometricAvailabilityFailure(error)
+        return available
+    }
+
+    /// Logs the `NSError` discarded by `canEvaluatePolicy` so the reason biometrics are
+    /// considered unavailable is diagnosable (#67), instead of collapsing it to a bare
+    /// `Bool`. Skips the routine device states (no hardware, no enrollment, no passcode
+    /// set) — those are normal, not failures, and would otherwise log on every render.
+    private func logBiometricAvailabilityFailure(_ error: NSError?) {
+        guard let error else { return }
+        if let laError = error as? LAError {
+            switch laError.code {
+            case .biometryNotAvailable, .biometryNotEnrolled, .passcodeNotSet:
+                return
+            default:
+                break
+            }
+        }
+        logger.error("Biometric availability check failed: \(error.localizedDescription, privacy: .public)")
     }
 
     func enableBiometricUnlock() async throws {
@@ -556,6 +580,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         }
 
         logger.info("Biometric unlock succeeded")
+        await MainActor.run {
+            NotificationCenter.default.post(name: .vaultDidUnlock, object: nil)
+        }
         return restoredAccount
     }
 
@@ -621,6 +648,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         }
 
         logger.info("Embedded biometric unlock succeeded")
+        await MainActor.run {
+            NotificationCenter.default.post(name: .vaultDidUnlock, object: nil)
+        }
         return restoredAccount
     }
 

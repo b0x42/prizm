@@ -126,4 +126,16 @@ final class PrizmCryptoServiceTests: XCTestCase {
         let isLockedAfter = await sut.isUnlocked
         XCTAssertFalse(isLockedAfter)
     }
+    func testLockVaultWithSlicedKeys_preservesOutstandingKeys() async throws {
+        let bytes = Data((0..<96).map { UInt8($0) })
+        let keys = CryptoKeys(encryptionKey: bytes[16..<48], macKey: bytes[48..<80])
+        await sut.unlockWith(keys: keys)
+        await sut.lockVault()
+        await sut.lockVault()
+        let unlocked = await sut.isUnlocked
+        XCTAssertFalse(unlocked)
+        XCTAssertEqual(keys.encryptionKey, bytes[16..<48])
+        XCTAssertEqual(keys.macKey, bytes[48..<80])
+    }
+
 }

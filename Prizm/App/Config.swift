@@ -14,6 +14,11 @@ extension Notification.Name {
     /// `ItemEditViewModel` subscribes to dismiss the edit sheet immediately, without a
     /// confirmation prompt, and clear the `DraftVaultItem` from memory (Constitution §III).
     static let vaultDidLock = Notification.Name("com.prizm.vaultDidLock")
+
+    /// Posted on the main thread whenever the vault is successfully unlocked (password
+    /// or biometric). `BiometricUnlockToggleViewModel` subscribes to clear a stale
+    /// vault-locked disabled state on the Settings biometric toggle — see #67.
+    static let vaultDidUnlock = Notification.Name("com.prizm.vaultDidUnlock")
 }
 
 // MARK: - App config
