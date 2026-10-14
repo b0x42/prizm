@@ -106,4 +106,23 @@ final class TOTPCodesViewModelTests: XCTestCase {
         XCTAssertNil(sut.copyValue(for: "b"))
         XCTAssertNil(sut.copyValue(for: "missing"))
     }
+
+    /// Plan goal (T050): one refresh pass for 100 seeds takes under 50 ms, using the real
+    /// use case and CryptoKit HMAC rather than the stub.
+    func test_refreshPass_for100Seeds_isUnder50ms() async {
+        let real = GenerateTOTPCodeUseCaseImpl(crypto: PrizmCryptoServiceImpl())
+        let box = clock
+        let tracker = TOTPCodesViewModel(generate: real, now: { box.now })
+        let seed = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+        let items = (0..<100).map { login(id: "item-\($0)", totp: seed) }
+
+        await tracker.refreshNow(items: items) // warm up
+        let start = ContinuousClock.now
+        await tracker.refreshNow(items: items)
+        let elapsed = ContinuousClock.now - start
+
+        XCTAssertEqual(tracker.states.count, 100)
+        XCTAssertLessThan(elapsed, .milliseconds(50), "One pass took \(elapsed)")
+        tracker.stop()
+    }
 }
