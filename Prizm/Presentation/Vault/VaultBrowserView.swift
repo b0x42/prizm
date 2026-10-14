@@ -66,7 +66,21 @@ struct VaultBrowserView: View {
     }
 
     /// The detail column. Extracted from `body` to keep the type checker fast.
+    @ViewBuilder
     private var itemDetail: some View {
+        if viewModel.sidebarSelection == .verificationCodes {
+            // The codes list has no selection; say what a click does instead of "No Item Selected".
+            ContentUnavailableView(
+                "Verification Codes",
+                systemImage: "clock",
+                description: Text("Click a code to copy it.")
+            )
+        } else {
+            itemDetailView
+        }
+    }
+
+    private var itemDetailView: some View {
         ItemDetailView(
             item:                           viewModel.itemSelection,
             faviconLoader:                  faviconLoader,
@@ -88,112 +102,83 @@ struct VaultBrowserView: View {
         )
     }
 
-    /// The sidebar column, shared by the two- and three-column layouts.
-    private var sidebarColumn: some View {
-        VStack(spacing: 0) {
-            SidebarView(
-                selection: Binding(
-                    get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
-                    set: { newValue in
-                        if let value = newValue {
-                            Task { @MainActor in viewModel.sidebarSelection = value }
-                        }
-                    }
-                ),
-                itemCounts: viewModel.itemCounts,
-                folders: viewModel.folders,
-                organizations: viewModel.organizations,
-                collections: viewModel.collections,
-                onCreateFolder: { name in viewModel.createFolder(name: name) },
-                onRenameFolder: { id, name in viewModel.renameFolder(id: id, name: name) },
-                onDeleteFolder: { folder in
-                    folderToDelete = folder
-                    showDeleteFolderAlert = true
-                },
-                onDropItems: { ids, folderId in viewModel.moveItemsToFolder(itemIds: ids, folderId: folderId) },
-                onCreateCollection: { name, orgId in viewModel.createCollection(name: name, organizationId: orgId) },
-                onRenameCollection: { id, orgId, name in viewModel.renameCollection(id: id, organizationId: orgId, name: name) },
-                onDeleteCollection: { id, orgId in viewModel.deleteCollection(id: id, organizationId: orgId) }
-            )
-            SyncStatusView(label: viewModel.syncStatusLabel)
-        }
-        .navigationSplitViewColumnWidth(min: 180, ideal: 210)
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                SettingsLink {
-                    Image(systemName: "gearshape")
-                }
-                .accessibilityLabel("Settings")
-                .accessibilityIdentifier(AccessibilityID.Vault.settingsButton)
-            }
-        }
-    }
-
-    /// The "+" New Item menu (and its ⌘N shortcut), shared by both layouts.
-    @ToolbarContentBuilder
-    private var newItemToolbar: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            Menu {
-                ForEach(ItemType.allCases) { type in
-                    Button {
-                        viewModel.createItemType = type
-                    } label: {
-                        Label(type.displayName, systemImage: type.sfSymbol)
-                    }
-                }
-            } label: {
-                Image(systemName: "plus")
-            }
-            .help("New Item (⌘N)")
-            .accessibilityLabel("New Item")
-            .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
-            .menuIndicator(.visible)
-            .background {
-                Button("") { viewModel.createItemType = .login }
-                    .keyboardShortcut("n", modifiers: .command)
-                    .frame(width: 0, height: 0)
-                    .opacity(0)
-            }
-        }
-    }
-
-    /// True when the Verification Codes list is showing. That list is the whole job (a click
-    /// copies the code), so it gets a two-column layout with no detail pane.
-    private var showsCodesOnly: Bool {
-        viewModel.sidebarSelection == .verificationCodes && makeCodesViewModel != nil
-    }
-
-    /// Sidebar + codes list, no detail pane. `NavigationSplitView` cannot hide only the detail
-    /// column of a three-column layout, so this uses the two-column form.
-    private var codesOnlySplitView: some View {
+    var body: some View {
         NavigationSplitView(
-            sidebar: { sidebarColumn },
-            detail: {
+            sidebar: {
                 VStack(spacing: 0) {
-                    syncErrorBanner
-                    itemListPane
+                    SidebarView(
+                        selection: Binding(
+                            get: { viewModel.isGlobalSearch ? nil : viewModel.sidebarSelection },
+                            set: { newValue in
+                                if let value = newValue {
+                                    Task { @MainActor in viewModel.sidebarSelection = value }
+                                }
+                            }
+                        ),
+                        itemCounts: viewModel.itemCounts,
+                        folders: viewModel.folders,
+                        organizations: viewModel.organizations,
+                        collections: viewModel.collections,
+                        onCreateFolder: { name in viewModel.createFolder(name: name) },
+                        onRenameFolder: { id, name in viewModel.renameFolder(id: id, name: name) },
+                        onDeleteFolder: { folder in
+                            folderToDelete = folder
+                            showDeleteFolderAlert = true
+                        },
+                        onDropItems: { ids, folderId in viewModel.moveItemsToFolder(itemIds: ids, folderId: folderId) },
+                        onCreateCollection: { name, orgId in viewModel.createCollection(name: name, organizationId: orgId) },
+                        onRenameCollection: { id, orgId, name in viewModel.renameCollection(id: id, organizationId: orgId, name: name) },
+                        onDeleteCollection: { id, orgId in viewModel.deleteCollection(id: id, organizationId: orgId) }
+                    )
+                    SyncStatusView(label: viewModel.syncStatusLabel)
                 }
-                .toolbar { newItemToolbar }
-                .searchable(
-                    text: $viewModel.searchQuery,
-                    isPresented: $isSearchFieldFocused,
-                    placement: .toolbar,
-                    prompt: "Search vault"
-                )
-            }
-        )
-    }
-
-    private var threeColumnSplitView: some View {
-        NavigationSplitView(
-            sidebar: { sidebarColumn },
+                .navigationSplitViewColumnWidth(min: 180, ideal: 210)
+                .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        SettingsLink {
+                            Image(systemName: "gearshape")
+                        }
+                        .accessibilityLabel("Settings")
+                        .accessibilityIdentifier(AccessibilityID.Vault.settingsButton)
+                    }
+                }
+            },
             content: {
                 VStack(spacing: 0) {
                     syncErrorBanner
                     itemListPane
                 }
-                .toolbar { newItemToolbar }
-                .navigationSplitViewColumnWidth(min: 220, ideal: 280)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            ForEach(ItemType.allCases) { type in
+                                Button {
+                                    viewModel.createItemType = type
+                                } label: {
+                                    Label(type.displayName, systemImage: type.sfSymbol)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .help("New Item (⌘N)")
+                        .accessibilityLabel("New Item")
+                        .accessibilityIdentifier(AccessibilityID.Create.newItemButton)
+                        .menuIndicator(.visible)
+                        .background {
+                            Button("") { viewModel.createItemType = .login }
+                                .keyboardShortcut("n", modifiers: .command)
+                                .frame(width: 0, height: 0)
+                                .opacity(0)
+                        }
+                    }
+                }
+                // The Verification Codes list shows name, code, countdown, and COPY on one line,
+                // so it needs a wider column than the regular item list.
+                .navigationSplitViewColumnWidth(
+                    min:   viewModel.sidebarSelection == .verificationCodes ? 360 : 220,
+                    ideal: viewModel.sidebarSelection == .verificationCodes ? 420 : 280
+                )
             },
             detail: {
                 itemDetail
@@ -244,16 +229,6 @@ struct VaultBrowserView: View {
                 )
             }
         )
-    }
-
-    var body: some View {
-        Group {
-            if showsCodesOnly {
-                codesOnlySplitView
-            } else {
-                threeColumnSplitView
-            }
-        }
         .navigationSplitViewStyle(.balanced)
         .alert("Action Failed", isPresented: Binding(
             get:  { viewModel.actionError != nil },
