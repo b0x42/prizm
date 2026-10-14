@@ -389,4 +389,68 @@ final class VaultRepositoryImplTests: XCTestCase {
             XCTAssertEqual(code, 500)
         }
     }
+
+    // MARK: - Verification codes index (specs/001-totp-verification-codes, data-model.md)
+
+    private func makeLogin(id: String, name: String, totp: String?, isDeleted: Bool = false) -> VaultItem {
+        VaultItem(
+            id: id, name: name, isFavorite: false, isDeleted: isDeleted,
+            creationDate: Date(), revisionDate: Date(),
+            content: .login(LoginContent(
+                username: "user-\(id)", password: nil, uris: [LoginURI(uri: "https://\(id).example.com", matchType: nil)],
+                totp: totp, notes: nil, customFields: []
+            ))
+        )
+    }
+
+    func testVerificationCodes_includesOnlyNonDeletedLoginsWithNonBlankSeed() async throws {
+        let card = makeCard(id: "card", name: "Visa")
+        await sut.populate(items: [
+            makeLogin(id: "a", name: "Zulu", totp: "JBSWY3DPEHPK3PXP"),
+            makeLogin(id: "b", name: "alpha", totp: "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP"),
+            makeLogin(id: "c", name: "NoSeed", totp: nil),
+            makeLogin(id: "d", name: "Blank", totp: "   "),
+            makeLogin(id: "e", name: "Trashed", totp: "JBSWY3DPEHPK3PXP", isDeleted: true),
+            makeLogin(id: "f", name: "Unusable", totp: "not-a-seed!"),
+            card,
+        ], folders: [], organizations: [], collections: [], syncedAt: Date())
+
+        let items = try await sut.items(for: .verificationCodes)
+        // Case-insensitive alphabetical; unusable seeds are still listed (shown as "unavailable").
+        XCTAssertEqual(items.map(\.id), ["b", "f", "a"])
+    }
+
+    func testVerificationCodes_countMatchesIndex() async throws {
+        await sut.populate(items: [
+            makeLogin(id: "a", name: "A", totp: "JBSWY3DPEHPK3PXP"),
+            makeLogin(id: "b", name: "B", totp: nil),
+        ], folders: [], organizations: [], collections: [], syncedAt: Date())
+
+        let counts = try await sut.itemCounts()
+        XCTAssertEqual(counts[.verificationCodes], 1)
+    }
+
+    func testVerificationCodes_searchUsesExistingMatchingRules() async throws {
+        await sut.populate(items: [
+            makeLogin(id: "bank", name: "Alpha Bank", totp: "JBSWY3DPEHPK3PXP"),
+            makeLogin(id: "mail", name: "Beta Mail", totp: "JBSWY3DPEHPK3PXP"),
+        ], folders: [], organizations: [], collections: [], syncedAt: Date())
+
+        let byName = try await sut.searchItems(query: "beta", in: .verificationCodes)
+        XCTAssertEqual(byName.map(\.id), ["mail"])
+        let byUser = try await sut.searchItems(query: "user-bank", in: .verificationCodes)
+        XCTAssertEqual(byUser.map(\.id), ["bank"])
+        let byWebsite = try await sut.searchItems(query: "mail.example.com", in: .verificationCodes)
+        XCTAssertEqual(byWebsite.map(\.id), ["mail"])
+    }
+
+    func testVerificationCodes_emptyAfterClearVault() async throws {
+        await sut.populate(items: [makeLogin(id: "a", name: "A", totp: "JBSWY3DPEHPK3PXP")],
+                           folders: [], organizations: [], collections: [], syncedAt: Date())
+        await sut.clearVault()
+        let items = try await sut.items(for: .verificationCodes)
+        XCTAssertTrue(items.isEmpty)
+        let counts = try await sut.itemCounts()
+        XCTAssertNil(counts[.verificationCodes])
+    }
 }

@@ -50,6 +50,8 @@ nonisolated enum SidebarSelection {
     case folder(String)
     /// Soft-deleted items awaiting permanent removal (Bitwarden Trash).
     case trash
+    /// Non-trashed Login items that carry a TOTP seed, shown with their current code.
+    case verificationCodes
     /// Transient state while the user is typing a new folder name inline.
     case newFolder
     /// All items across all collections in the given organization.
@@ -68,6 +70,7 @@ extension SidebarSelection {
         case .type(let type):                return type.displayName
         case .folder:                        return "Folder"
         case .trash:                         return "Trash"
+        case .verificationCodes:             return "Verification Codes"
         case .newFolder:                     return "New Folder"
         case .organization:                  return "Organization"
         case .collection:                    return "Collection"
@@ -84,6 +87,7 @@ nonisolated extension SidebarSelection: Hashable {
         case (.type(let a), .type(let b)):                               return a == b
         case (.folder(let a), .folder(let b)):                           return a == b
         case (.trash, .trash):                                           return true
+        case (.verificationCodes, .verificationCodes):                   return true
         case (.newFolder, .newFolder):                                   return true
         case (.organization(let a), .organization(let b)):               return a == b
         case (.collection(let a), .collection(let b)):                   return a == b
@@ -103,6 +107,7 @@ nonisolated extension SidebarSelection: Hashable {
         case .organization(let id):              hasher.combine(6); hasher.combine(id)
         case .collection(let id):                hasher.combine(7); hasher.combine(id)
         case .newCollection(let orgId):          hasher.combine(8); hasher.combine(orgId)
+        case .verificationCodes:                 hasher.combine(9)
         }
     }
 }

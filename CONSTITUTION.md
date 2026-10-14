@@ -13,7 +13,7 @@ Added sections: N/A
 Removed sections: N/A
 Templates requiring updates: none (no template references the UI auto-clear rule).
 Follow-up TODOs:
-  - Proposal issue for this amendment: [NEEDS ISSUE NUMBER — to be filed by the project owner]
+  - Proposal issue for this amendment: #72 (https://github.com/b0x42/prizm/issues/72)
   - Refresh the local, git-ignored .specify/memory/constitution.md from this file.
 Rationale: see specs/001-totp-verification-codes/plan.md (Complexity Tracking).
 -->

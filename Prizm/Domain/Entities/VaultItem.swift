@@ -146,3 +146,12 @@ nonisolated struct SSHKeyContent: Equatable, Hashable {
     let notes: String?
     let customFields: [CustomField]
 }
+
+nonisolated extension VaultItem {
+    /// True for a Login whose stored TOTP seed is not blank. This only says a seed *exists*;
+    /// whether it can produce a code is decided by `TOTPSeedParser`.
+    var hasTOTPSeed: Bool {
+        guard case .login(let login) = content, let seed = login.totp else { return false }
+        return !seed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}

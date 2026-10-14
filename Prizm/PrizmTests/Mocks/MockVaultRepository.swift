@@ -67,6 +67,11 @@ final class MockVaultRepository: VaultRepository {
             return populatedItems.filter { $0.folderId == folderId }
         case .trash:
             return populatedItems.filter(\.isDeleted)
+        case .verificationCodes:
+            return populatedItems.filter { item in
+                guard !item.isDeleted, case .login(let l) = item.content, let t = l.totp else { return false }
+                return !t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
         case .newFolder:
             return []
         case .organization(let orgId):

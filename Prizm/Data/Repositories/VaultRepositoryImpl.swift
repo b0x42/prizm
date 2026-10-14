@@ -122,6 +122,10 @@ actor VaultRepositoryImpl: VaultRepository {
         bySelection[.allItems]  = sorted(active)
         bySelection[.favorites] = sorted(active.filter(\.isFavorite))
         bySelection[.trash]     = sorted(items.filter(\.isDeleted))
+        // Verification Codes: every non-trashed Login with a non-blank seed. Whether the seed is
+        // *usable* is decided at display time, so items with bad seeds still appear (as
+        // "unavailable") and the user can see they exist.
+        bySelection[.verificationCodes] = sorted(active.filter(\.hasTOTPSeed))
 
         for type in ItemType.allCases {
             bySelection[.type(type)] = sorted(active.filter { $0.content.matchesItemType(type) })
@@ -160,6 +164,7 @@ actor VaultRepositoryImpl: VaultRepository {
         counts[.allItems]  = bySelection[.allItems]?.count  ?? 0
         counts[.favorites] = bySelection[.favorites]?.count ?? 0
         counts[.trash]     = bySelection[.trash]?.count     ?? 0
+        counts[.verificationCodes] = bySelection[.verificationCodes]?.count ?? 0
         for type in ItemType.allCases {
             counts[.type(type)] = bySelection[.type(type)]?.count ?? 0
         }

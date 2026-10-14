@@ -1,6 +1,6 @@
 # Prizm Development Guidelines
 
-**Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.5.0) — READ THIS FIRST.**
+**Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.6.0) — READ THIS FIRST.**
 The Constitution defines eight non-negotiable principles that govern every decision in this
 codebase: Native-First (SwiftUI only), Clean Architecture (strict layer boundaries), Security-First
 (vetted crypto only, no hand-rolled algorithms), TDD (Red→Green→Refactor, no exceptions),
