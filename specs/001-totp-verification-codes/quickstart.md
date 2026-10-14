@@ -22,6 +22,14 @@ xcodebuild test \
   -destination "platform=macOS"
 ```
 
+```bash
+# UI journeys (seeded in-memory vault, no server needed)
+xcodebuild test \
+  -project "Prizm/Prizm.xcodeproj" \
+  -scheme "PrizmUITests" \
+  -destination "platform=macOS"
+```
+
 Expected: all pass, including the RFC 6238 Appendix B vectors for SHA-1, SHA-256, and SHA-512, and the RFC 4226 truncation vectors.
 
 ## Manual scenarios

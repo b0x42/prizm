@@ -17,7 +17,7 @@ description: "Task list for TOTP Verification Codes"
 
 - **[P]**: Can run in parallel (different files, no dependency on an incomplete task)
 - **[Story]**: US1, US2, US3 (maps to spec.md)
-- Paths are relative to the repository root. `Prizm/PrizmTests/` is a file-system-synchronized group (new test files join the test target automatically), but app sources under `Prizm/Domain|Data|Presentation|App` are explicit project entries: add every new app file to the `Prizm` target with `ruby add_files.rb <path under Prizm/>` (uses the `xcodeproj` gem; script kept in the session scratchpad, recreate it if missing). The project has only the `Prizm` and `PrizmTests` targets: `Prizm/UITests/` is not part of any target, so XCUITest tasks (T019, T030, T040) cannot run until a UI test target is added.
+- Paths are relative to the repository root. `Prizm/PrizmTests/` is a file-system-synchronized group (new test files join the test target automatically), but app sources under `Prizm/Domain|Data|Presentation|App` are explicit project entries: add every new app file to the `Prizm` target with `ruby add_files.rb <path under Prizm/>` (uses the `xcodeproj` gem; script kept in the session scratchpad, recreate it if missing). UI tests live in the `PrizmUITests` target, run through the separate shared scheme `PrizmUITests` (`xcodebuild test -project Prizm/Prizm.xcodeproj -scheme PrizmUITests -destination 'platform=macOS'`) so a plain "run all tests" stays fast. The target contains only `Prizm/UITests/VerificationCodeJourneyTests.swift`; the 13 older files in that folder do not compile and rely on launch options the app never read, so they are not in the target. UI tests use the DEBUG-only `--ui-test-vault` seam (`Prizm/App/UITestFixtures.swift`).
 
 ## Path Conventions
 
@@ -81,7 +81,7 @@ description: "Task list for TOTP Verification Codes"
 ### Tests for US1 (write first, confirm Red)
 
 - [X] T018 [P] [US1] Write failing tests in `Prizm/PrizmTests/Presentation/RootViewModelCopyCodeTests.swift` (follow `RootViewModelLockTests.swift` for setup): `copySelectedField(.totp)` copies the generated code with no space, not the seed; `selectedFieldAvailable(.totp)` is true only when the selected Login's seed parses; false for no selection, no seed, unusable seed; no other `CopyableField` returns the seed.
-- [ ] T019 [P] [US1] Write failing XCUITest `Prizm/UITests/VerificationCodeJourneyTests.swift` (US1 part): open a Login with a seed, assert the "Verification Code" card shows a code matching `\d{3} \d{3}`, assert the copy button exists with label "Copy verification code for <name>", and assert an item without a seed shows no such card. Use a test vault fixture or mock mode consistent with `VaultBrowserJourneyTests.swift`.
+- [X] T019 [P] [US1] Write failing XCUITest `Prizm/UITests/VerificationCodeJourneyTests.swift` (US1 part): open a Login with a seed, assert the "Verification Code" card shows a code matching `\d{3} \d{3}`, assert the copy button exists with label "Copy verification code for <name>", and assert an item without a seed shows no such card. Use a test vault fixture or mock mode consistent with `VaultBrowserJourneyTests.swift`.
 
 ### Implementation for US1
 
@@ -108,7 +108,7 @@ description: "Task list for TOTP Verification Codes"
 - [ ] T027 [P] [US2] Write failing tests in `Prizm/PrizmTests/Domain/SidebarSelectionTests.swift`: `.verificationCodes` equals only itself, hashes distinctly from every other case, and `displayName == "Verification Codes"`.
 - [ ] T028 [P] [US2] Add failing tests to `Prizm/PrizmTests/Data/VaultRepositoryImplTests.swift` for the new index per `data-model.md` ("Index membership"): includes a non-deleted Login with a non-blank `totp`; excludes trashed items, non-Login items, nil totp, and whitespace-only totp; sorted case-insensitively by name; `itemCounts()[.verificationCodes]` equals the index size; `searchItems(query:in:)` filters it by name, username, and website; the index is empty after `clearVault()`.
 - [ ] T029 [P] [US2] Add failing tests to `Prizm/PrizmTests/Presentation/` (new file `VerificationCodesSelectionTests.swift`, modelled on `VaultBrowserViewModelGlobalSearchTests.swift`): selecting `.verificationCodes` fills `displayedItems` with only the indexed items; the search query filters them; leaving the selection keeps other lists unchanged.
-- [ ] T030 [P] [US2] Extend `Prizm/UITests/VerificationCodeJourneyTests.swift` (failing first): select the "Verification Codes" sidebar row, assert the expected rows appear in alphabetical order, assert a trashed item is absent, type in the search field and assert filtering, click a row and assert the detail pane opens the item, copy from a row, and assert the empty state text when no items have seeds.
+- [X] T030 [P] [US2] Extend `Prizm/UITests/VerificationCodeJourneyTests.swift` (failing first): select the "Verification Codes" sidebar row, assert the expected rows appear in alphabetical order, assert a trashed item is absent, type in the search field and assert filtering, click a row and assert the detail pane opens the item, copy from a row, and assert the empty state text when no items have seeds.
 
 ### Implementation for US2
 
@@ -134,7 +134,7 @@ description: "Task list for TOTP Verification Codes"
 
 - [ ] T038 [P] [US3] Add failing tests to `Prizm/PrizmTests/Presentation/TOTPCodesViewModelTests.swift`: `stop()` clears `states` and halts use-case calls (the hidden/minimized case reaches the view model only through `stop()`); `start` after `stop()` yields codes for the current clock time, not the stale ones; calling neither (focus change) leaves updates running. Hide/minimize and focus-change behavior is covered by the manual quickstart scenario 11 (T043, T049); T040 covers lock only.
 - [ ] T039 [P] [US3] Add a failing test to `Prizm/PrizmTests/Presentation/RootViewModelLockTests.swift`: after `lockVault()` completes, the vault browser view model (and its tracker) hold no codes and the repository index `.verificationCodes` is empty.
-- [ ] T040 [P] [US3] Add a failing XCUITest case to `Prizm/UITests/VerificationCodeJourneyTests.swift`: with codes visible, lock the vault via the existing lock action; assert no element with the code row identifiers exists on the unlock screen; unlock; assert codes are shown again.
+- [X] T040 [P] [US3] Add a failing XCUITest case to `Prizm/UITests/VerificationCodeJourneyTests.swift`: with codes visible, lock the vault via the existing lock action; assert no element with the code row identifiers exists on the unlock screen; unlock; assert codes are shown again.
 
 ### Implementation for US3
 

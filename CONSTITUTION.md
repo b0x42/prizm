@@ -1,17 +1,21 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.4.3 → 1.5.0
-Bump type: MINOR — New principle added (§VIII Accessibility).
-Modified sections: N/A
-Added sections:
-  - §VIII. Accessibility (NON-NEGOTIABLE): All interactive controls must be VoiceOver-
-    usable with accessibilityLabel. Decorative images hidden. Stateful controls expose
-    value. Section headers carry .isHeader trait. Transient errors announced. Project
-    must maintain ACCESSIBILITY.md conformance statement. PRs without labels are blocking.
+Version change: 1.5.0 → 1.6.0
+Bump type: MINOR — Materially expanded guidance (§III: narrow exception for TOTP codes).
+Modified sections:
+  - §III. Security-First / Zero-Trust: the rule that sensitive data shown in the UI MUST
+    auto-clear after a configurable timeout now carries one explicit exception — generated
+    TOTP verification codes, which are always visible like in other authenticator apps while
+    the vault is unlocked, the app is not hidden or minimized, and the code view is on
+    screen. Passwords, seeds, and every other secret remain subject to the timeout rule.
+Added sections: N/A
 Removed sections: N/A
-Templates requiring updates: N/A
-Follow-up TODOs: N/A
+Templates requiring updates: none (no template references the UI auto-clear rule).
+Follow-up TODOs:
+  - Proposal issue for this amendment: [NEEDS ISSUE NUMBER — to be filed by the project owner]
+  - Refresh the local, git-ignored .specify/memory/constitution.md from this file.
+Rationale: see specs/001-totp-verification-codes/plan.md (Complexity Tracking).
 -->
 
 # Prizm Constitution
@@ -71,6 +75,16 @@ This is a credential vault. Security is not a feature — it is the foundation.
 - Bitwarden API communication MUST use HTTPS/TLS only; certificate pinning SHOULD be
   evaluated per endpoint.
 - Sensitive data shown in the UI MUST auto-clear after a configurable timeout.
+  - **Exception — generated TOTP verification codes.** A one-time code derived from a
+    stored TOTP seed MAY stay visible without a hide timeout, like in other authenticator
+    apps, because it is useless after at most one validity period and is only useful as a
+    glanceable value. This exception is conditional and narrow:
+    - it applies to the generated code only, never to the seed, passwords, or any other secret;
+    - codes MUST be removed from the UI when the vault locks, when the app is hidden or all
+      its windows are minimized, and when no code view is on screen;
+    - codes MUST NOT be generated or refreshed while the vault is locked;
+    - copying a code to the clipboard still auto-clears within the clipboard limit below;
+    - the raw seed MUST NOT be displayed or copied.
 - Clipboard writes containing secrets MUST auto-clear after ≤30 seconds (configurable).
 
 ### IV. Test-First / TDD (NON-NEGOTIABLE)
@@ -304,4 +318,4 @@ Standards governing how features are built and shipped:
 
 ---
 
-**Version**: 1.5.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-04-10
+**Version**: 1.6.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-10-14

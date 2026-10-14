@@ -291,6 +291,20 @@ final class RootViewModel: ObservableObject {
         }
 
         subscribeToFlowStates()
+
+        #if DEBUG
+        // XCUITest seam: skip login and show a seeded in-memory vault (see UITestFixtures).
+        if UITestFixtures.isEnabled {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await container.vaultRepo.populate(
+                    items: UITestFixtures.items, folders: [], organizations: [],
+                    collections: [], syncedAt: Date()
+                )
+                self.transitionToVault(caller: "UITestFixtures")
+            }
+        }
+        #endif
     }
 
     deinit {

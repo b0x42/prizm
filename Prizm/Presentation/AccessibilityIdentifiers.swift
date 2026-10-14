@@ -85,7 +85,6 @@ nonisolated enum AccessibilityID {
         static let sidebarRow   = "sidebar.verificationCodes"
         static func row(_ id: String) -> String { "verificationCodes.row.\(id)" }
         static func code(_ id: String) -> String { "verificationCodes.code.\(id)" }
-        static func countdown(_ id: String) -> String { "verificationCodes.countdown.\(id)" }
         static func copyButton(_ id: String) -> String { "verificationCodes.copy.\(id)" }
     }
 

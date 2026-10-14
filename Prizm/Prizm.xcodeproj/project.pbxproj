@@ -46,6 +46,7 @@
 		56FB66DA11C44233B49CEB31 /* SyncUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8504983920144A92B0241CA9 /* SyncUseCaseImpl.swift */; };
 		599A7C867D6F4FA5A9B27BC2 /* Folder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC78A983744489DB1F8BCFB /* Folder.swift */; };
 		5D0EC041FE98478CA9C6601B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7429BBFA10E247D8AEACA59B /* LoginView.swift */; };
+		5D7ED3B7BCFCF1599BE1AC47 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8789F7099DA11BD44734751 /* Cocoa.framework */; };
 		5E059676E08B66F3DA10EA0E /* BiometricUnlockToggleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C2A3F663C37BEDCE1DF8343 /* BiometricUnlockToggleViewModel.swift */; };
 		5F3E8D2A1B9C47E6A0F5D2B8 /* PermanentDeleteVaultItemUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4F9E3B2C0D58F7B1A6E3C9 /* PermanentDeleteVaultItemUseCase.swift */; };
 		60067C5087C547F4B96C3493 /* BiometricUnlockToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7BAEBAFBA84808BD80CA71 /* BiometricUnlockToggle.swift */; };
@@ -61,6 +62,7 @@
 		7AE873E2FB0A4DC5BEE93B9A /* LoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F246F209ADA45F99C9B17DB /* LoginDetailView.swift */; };
 		7B5A0F4C3D1E69A8C2B7F4DA /* PermanentDeleteVaultItemUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6B1A5D4E2F70B9D3C8A5EB /* PermanentDeleteVaultItemUseCaseImpl.swift */; };
 		7F0FEAC3BB77445D9BCE9F99 /* CardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850DDD79F86D4651A98ADD0A /* CardDetailView.swift */; };
+		8146C3217048FFCA2F6C0DE7 /* VerificationCodeJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7B98A38676009D444D7092 /* VerificationCodeJourneyTests.swift */; };
 		81E68A60DF0441BE9D6487BF /* RenameCollectionUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C53A49FF8CB462DBB0E474A /* RenameCollectionUseCase.swift */; };
 		839B201DD1B0447FABC35E38 /* EnrollmentReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88A47FABF899471394B5F56B /* EnrollmentReason.swift */; };
 		87146F7FF9C64EEA974FE521 /* CreateFolderUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9EA3A6C1A304AAF9510682E /* CreateFolderUseCase.swift */; };
@@ -105,6 +107,7 @@
 		B2390AAAD10D4CE69AD6660C /* AuthRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */; };
 		B2C3D4E5F6A748B9C0D1E2F3 /* EncString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FBB82A6241244DD890E615C /* EncString.swift */; };
 		B7C8D9E0F1A24894B8C9D0E1 /* GetLastSyncDateUseCaseImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */; };
+		B829B2FAD4A10495AB2E6C9C /* UITestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD1F54F8440612D286DD3AE /* UITestFixtures.swift */; };
 		BB1001000000000000000001 /* Attachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1001000000000000000001 /* Attachment.swift */; };
 		BB1002000000000000000002 /* AttachmentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1002000000000000000002 /* AttachmentRepository.swift */; };
 		BB1003000000000000000003 /* VaultKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1003000000000000000003 /* VaultKeyService.swift */; };
@@ -176,6 +179,13 @@
 			remoteGlobalIDString = 434D9EB92F670B9C00052BCB;
 			remoteInfo = Prizm;
 		};
+		EF930C6166BDF777408CF942 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 434D9EB22F670B9C00052BCB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 434D9EB92F670B9C00052BCB;
+			remoteInfo = Prizm;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -235,6 +245,7 @@
 		6EDCDA57D3434985AC25FF5F /* DeleteCollectionUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCollectionUseCase.swift; sourceTree = "<group>"; };
 		713C4F352B6B4E8C92BB72B1 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		7429BBFA10E247D8AEACA59B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		7532D5A98726D59086E40477 /* PrizmUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrizmUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		75776838723C412E94327CDD /* RestoreVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		7A8A5A665870AF09BFD47C09 /* TOTPCodesViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TOTPCodesViewModel.swift; sourceTree = "<group>"; };
 		7AFBFFDE4FCE4BD28D3C8E9A /* UnlockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnlockViewModel.swift; sourceTree = "<group>"; };
@@ -253,6 +264,7 @@
 		95E5FF4D219144A18C2BC5AA /* RawCipher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawCipher.swift; sourceTree = "<group>"; };
 		97110A2C639680F83C39DE8E /* TOTPCode.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TOTPCode.swift; sourceTree = "<group>"; };
 		9AED13455B194BB48EDC3459 /* VaultRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultRepositoryImpl.swift; sourceTree = "<group>"; };
+		9DD1F54F8440612D286DD3AE /* UITestFixtures.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UITestFixtures.swift; sourceTree = "<group>"; };
 		A1B2C4D5E6F74891A2B3C4D5 /* SyncTimestampRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTimestampRepository.swift; sourceTree = "<group>"; };
 		A3AF8078B4F847EBACB42331 /* MoveItemToFolderUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveItemToFolderUseCase.swift; sourceTree = "<group>"; };
 		A6B7C8D9E0F14894A7B8C9D0 /* GetLastSyncDateUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastSyncDateUseCaseImpl.swift; sourceTree = "<group>"; };
@@ -323,6 +335,7 @@
 		E9EA3A6C1A304AAF9510682E /* CreateFolderUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFolderUseCase.swift; sourceTree = "<group>"; };
 		EDB0E4B753854AFF89FFFAA2 /* DeleteVaultItemUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteVaultItemUseCase.swift; sourceTree = "<group>"; };
 		EEBF74B2F57C4B2D9FAA790B /* AboutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = About/AboutViewModel.swift; sourceTree = "<group>"; };
+		EF7B98A38676009D444D7092 /* VerificationCodeJourneyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VerificationCodeJourneyTests.swift; sourceTree = "<group>"; };
 		EF90E0F31DF248FB9D12F74D /* VaultItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultItem.swift; sourceTree = "<group>"; };
 		F0DA2B1AD4924580BCE20BF3 /* AuthRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryImpl.swift; sourceTree = "<group>"; };
 		F0E5C8073B744BF79C30A5E1 /* CipherMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CipherMapper.swift; sourceTree = "<group>"; };
@@ -335,6 +348,7 @@
 		F607182930405A6CE8F90A1B /* EditVaultItemUseCaseImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVaultItemUseCaseImpl.swift; sourceTree = "<group>"; };
 		F641DA62DF364B3C9D896204 /* TOTPPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOTPPromptView.swift; sourceTree = "<group>"; };
 		F8197007AA7E412D96A52B14 /* MaskedFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskedFieldView.swift; sourceTree = "<group>"; };
+		F8789F7099DA11BD44734751 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		F95EFA050DE64617AC5076CD /* CustomFieldsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFieldsSection.swift; sourceTree = "<group>"; };
 		FB71BCE9E539B384ABBE6D69 /* TOTPCodeRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TOTPCodeRowView.swift; sourceTree = "<group>"; };
 		FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LocalConfig.xcconfig; sourceTree = SOURCE_ROOT; };
@@ -371,6 +385,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		0CE435612EC76488574DE8B8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5D7ED3B7BCFCF1599BE1AC47 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4309FD0A2F68121F0031C9F4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -397,6 +419,7 @@
 				4309FCE72F6809A40031C9F4 /* AppContainer.swift */,
 				4309FCE92F6809C10031C9F4 /* Config.swift */,
 				AA1018000000000000000018 /* AttachmentTempFileManager.swift */,
+				9DD1F54F8440612D286DD3AE /* UITestFixtures.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -652,6 +675,7 @@
 				EE1001000000000000000001 /* Frameworks */,
 				FC4A8B1C2F9D34E100123456 /* LocalConfig.xcconfig */,
 				43FFE9FC2F8AEAE700F70508 /* Recovered References */,
+				5BBB2EB38CB526317DB6D432 /* UITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -660,6 +684,7 @@
 			children = (
 				434D9EBA2F670B9C00052BCB /* Prizm.app */,
 				4309FD0D2F68121F0031C9F4 /* PrizmTests.xctest */,
+				7532D5A98726D59086E40477 /* PrizmUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -684,6 +709,15 @@
 				81DBDEAA0270497F84F76A29 /* SyncProgressView.swift */,
 			);
 			path = Sync;
+			sourceTree = "<group>";
+		};
+		5BBB2EB38CB526317DB6D432 /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				EF7B98A38676009D444D7092 /* VerificationCodeJourneyTests.swift */,
+			);
+			name = UITests;
+			path = UITests;
 			sourceTree = "<group>";
 		};
 		7919A3C5F0E19871021CDB66 /* VerificationCodes */ = {
@@ -775,8 +809,17 @@
 			isa = PBXGroup;
 			children = (
 				CC1003000000000000000003 /* LocalAuthenticationEmbeddedUI.framework */,
+				FE6C2517DB59183CEA114050 /* OS X */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FE6C2517DB59183CEA114050 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				F8789F7099DA11BD44734751 /* Cocoa.framework */,
+			);
+			name = "OS X";
 			sourceTree = "<group>";
 		};
 		FF2563714D2C473EA1DFE89E /* UseCases */ = {
@@ -854,6 +897,24 @@
 			productReference = 434D9EBA2F670B9C00052BCB /* Prizm.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F21E5A014FB64080DCADFFF4 /* PrizmUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A49A9527F1DBF5B48DAA4B75 /* Build configuration list for PBXNativeTarget "PrizmUITests" */;
+			buildPhases = (
+				A770BE3DF1E6A8560783A961 /* Sources */,
+				0CE435612EC76488574DE8B8 /* Frameworks */,
+				AFC4010AA81FD903C36F5DC6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F5E3D5B0CD3ECDE2CC07629A /* PBXTargetDependency */,
+			);
+			name = PrizmUITests;
+			productName = PrizmUITests;
+			productReference = 7532D5A98726D59086E40477 /* PrizmUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -870,6 +931,10 @@
 					};
 					434D9EB92F670B9C00052BCB = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					F21E5A014FB64080DCADFFF4 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 434D9EB92F670B9C00052BCB;
 					};
 				};
 			};
@@ -892,6 +957,7 @@
 			targets = (
 				434D9EB92F670B9C00052BCB /* Prizm */,
 				4309FD0C2F68121F0031C9F4 /* PrizmTests */,
+				F21E5A014FB64080DCADFFF4 /* PrizmUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -909,6 +975,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0001070000000700000007 /* eff-large-wordlist.txt in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFC4010AA81FD903C36F5DC6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1082,6 +1155,15 @@
 				258DC37C47B2217593ACC435 /* OneTimeCodeHMAC.swift in Sources */,
 				677A9343F8F61D0ADC9A113D /* TOTPCodesViewModel.swift in Sources */,
 				4A9486247F451D087DAA5B20 /* TOTPCodeRowView.swift in Sources */,
+				B829B2FAD4A10495AB2E6C9C /* UITestFixtures.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A770BE3DF1E6A8560783A961 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8146C3217048FFCA2F6C0DE7 /* VerificationCodeJourneyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1093,9 +1175,31 @@
 			target = 434D9EB92F670B9C00052BCB /* Prizm */;
 			targetProxy = 4309FD112F68121F0031C9F4 /* PBXContainerItemProxy */;
 		};
+		F5E3D5B0CD3ECDE2CC07629A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Prizm;
+			target = 434D9EB92F670B9C00052BCB /* Prizm */;
+			targetProxy = EF930C6166BDF777408CF942 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		28F03A5B293E8452B886A04D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.4.4;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.PrizmUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Prizm;
+			};
+			name = Debug;
+		};
 		4309FD132F68121F0031C9F4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1375,6 +1479,22 @@
 			};
 			name = Release;
 		};
+		6C670D685E3E400F44DF31EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.4.4;
+				PRODUCT_BUNDLE_IDENTIFIER = de.b0x42.de.PrizmUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Prizm;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1401,6 +1521,15 @@
 			buildConfigurations = (
 				434D9EC62F670B9E00052BCB /* Debug */,
 				434D9EC72F670B9E00052BCB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A49A9527F1DBF5B48DAA4B75 /* Build configuration list for PBXNativeTarget "PrizmUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6C670D685E3E400F44DF31EA /* Release */,
+				28F03A5B293E8452B886A04D /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

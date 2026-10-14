@@ -52,7 +52,6 @@ struct TOTPCodeRowView: View {
             Text(code.grouped)
                 .font(Typography.verificationCode)
                 .textSelection(.enabled)
-                .accessibilityIdentifier(AccessibilityID.VerificationCodes.code(itemId))
             countdown(code)
         }
         // One element, no per-rotation announcement. `.updatesFrequently` tells VoiceOver the
@@ -61,6 +60,7 @@ struct TOTPCodeRowView: View {
         .accessibilityLabel("Verification code for \(name)")
         .accessibilityValue("\(spokenDigits(code)), \(code.secondsRemaining) seconds remaining")
         .accessibilityAddTraits(.updatesFrequently)
+        .accessibilityIdentifier(AccessibilityID.VerificationCodes.code(itemId))
     }
 
     /// Ring plus seconds. In the last seconds (FR-001a) the ring thickens, the number turns
@@ -88,7 +88,6 @@ struct TOTPCodeRowView: View {
             .frame(width: 26, height: 26)
         }
         .accessibilityHidden(true) // spoken through the code element's value
-        .accessibilityIdentifier(AccessibilityID.VerificationCodes.countdown(itemId))
     }
 
     private func copyButton(for code: TOTPCode) -> some View {
