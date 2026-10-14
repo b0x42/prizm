@@ -61,7 +61,7 @@ nonisolated struct DraftLoginContent: Equatable {
     var username: String?
     var password: String?
     var uris: [DraftLoginURI]
-    /// TOTP seed is not editable in v1.
+    /// TOTP seed is carried through unchanged; it is not editable here, and it is never displayed or copied.
     let totp: String?
     var notes: String?
     /// Custom field values are editable; adding/removing/reordering is out of scope.

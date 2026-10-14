@@ -137,7 +137,9 @@ final class RootViewModelLockTests: XCTestCase {
 // MARK: - Mock Dependencies
 
 @MainActor
-private final class MockRootDependencies: RootViewModelDependencies {
+final class MockRootDependencies: RootViewModelDependencies {
+    /// Replaceable so copy-code tests can inject a deterministic generator.
+    var generateTOTPCode: any GenerateTOTPCodeUseCase = UnusedGenerateTOTPCode()
     let authRepo: any AuthRepository
     let vaultRepo: any VaultRepository
     let vaultKeyCache = VaultKeyCache()
@@ -225,4 +227,11 @@ private final class MockRootDependencies: RootViewModelDependencies {
 }
 @MainActor private struct StubDeleteCollection: DeleteCollectionUseCase {
     func execute(collectionId: String, organizationId: String) async throws {}
+}
+
+/// Default generator for tests that never generate a code.
+private struct UnusedGenerateTOTPCode: GenerateTOTPCodeUseCase {
+    func execute(seed: String, at date: Date) async throws -> TOTPCode {
+        throw TOTPError.invalidSecret
+    }
 }

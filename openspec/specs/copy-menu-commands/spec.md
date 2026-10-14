@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Copy field commands in Item menu
-The Item menu SHALL provide Copy Username (⇧⌘C), Copy Password (⌥⌘C), Copy Code (⌃⌘C), and Copy Website (⌥⇧⌘C) commands. Each command SHALL copy the corresponding field from the selected Login item to the clipboard with 30-second auto-clear. Commands SHALL be disabled when the selected item does not have the corresponding field or is not a Login item.
+The Item menu SHALL provide Copy Username (⇧⌘C), Copy Password (⌥⌘C), Copy Code (⌃⌘C), and Copy Website (⌥⇧⌘C) commands. Each command SHALL copy the corresponding field from the selected Login item to the clipboard with 30-second auto-clear. Copy Code SHALL copy the item's current generated verification code, not the stored TOTP seed. Commands SHALL be disabled when the selected item does not have the corresponding field or is not a Login item.
 
 #### Scenario: Copy Username copies username to clipboard
 - **GIVEN** a Login item with a username is selected
@@ -13,10 +13,15 @@ The Item menu SHALL provide Copy Username (⇧⌘C), Copy Password (⌥⌘C), Co
 - **WHEN** the user presses ⌥⌘C
 - **THEN** the password SHALL be copied to the clipboard with 30s auto-clear
 
-#### Scenario: Copy Code copies TOTP seed to clipboard
-- **GIVEN** a Login item with a TOTP seed is selected
+#### Scenario: Copy Code copies the current generated code to clipboard
+- **GIVEN** a Login item with a usable TOTP seed is selected
 - **WHEN** the user presses ⌃⌘C
-- **THEN** the TOTP seed SHALL be copied to the clipboard with 30s auto-clear
+- **THEN** the current verification code SHALL be copied to the clipboard with no spaces and with 30s auto-clear
+- **AND** the stored TOTP seed SHALL NOT be copied
+
+#### Scenario: Copy Code disabled when the seed cannot produce a code
+- **GIVEN** the selected Login has no TOTP seed, or its seed is not usable
+- **THEN** Copy Code SHALL be disabled (grayed out)
 
 #### Scenario: Copy Website copies first URI to clipboard
 - **GIVEN** a Login item with at least one URI is selected

@@ -70,7 +70,8 @@ nonisolated struct LoginContent: Equatable, Hashable {
     let username: String?
     let password: String?
     let uris: [LoginURI]
-    /// Stored TOTP seed. Present on some items but never displayed in v1 (FR-038).
+    /// Stored TOTP seed. Present on some items. The raw seed is never displayed or copied; only the
+    /// generated one-time code derived from it is shown (see `GenerateTOTPCodeUseCase`).
     let totp: String?
     let notes: String?
     let customFields: [CustomField]

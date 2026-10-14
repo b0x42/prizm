@@ -210,6 +210,8 @@ struct PrizmApp: App {
 protocol RootViewModelDependencies: AnyObject {
     var authRepo: any AuthRepository { get }
     var vaultRepo: any VaultRepository { get }
+    /// Generates the current TOTP code for the "Copy Code" command.
+    var generateTOTPCode: any GenerateTOTPCodeUseCase { get }
     /// The per-cipher attachment key cache. Cleared on vault lock alongside the vault store.
     var vaultKeyCache: VaultKeyCache { get }
     /// The per-organisation symmetric key cache. Cleared on vault lock alongside the vault store.
@@ -225,6 +227,7 @@ protocol RootViewModelDependencies: AnyObject {
 extension AppContainer: RootViewModelDependencies {
     var authRepo: any AuthRepository { authRepository }
     var vaultRepo: any VaultRepository { vaultStore }
+    var generateTOTPCode: any GenerateTOTPCodeUseCase { generateTOTPCodeUseCase }
 }
 
 /// Top-level state machine that decides which screen to show.
@@ -496,12 +499,34 @@ final class RootViewModel: ObservableObject {
     }
 
     func copySelectedField(_ field: CopyableField) {
+        // Copy Code copies the *generated* code, never the stored seed (FR-016, FR-017).
+        if field == .totp {
+            Task { await copySelectedCode() }
+            return
+        }
         guard let value = selectedFieldValue(field) else { return }
         vaultBrowserVM.copy(value)
     }
 
     func selectedFieldAvailable(_ field: CopyableField) -> Bool {
-        selectedFieldValue(field) != nil
+        if field == .totp {
+            guard let seed = selectedLogin?.totp else { return false }
+            return (try? TOTPSeedParser.parse(seed)) != nil
+        }
+        return selectedFieldValue(field) != nil
+    }
+
+    /// Generates the current code for the selected Login and puts it on the clipboard through the
+    /// shared path, so the 30-second auto-clear applies. Does nothing for an unusable seed.
+    func copySelectedCode() async {
+        guard let seed = selectedLogin?.totp, selectedFieldAvailable(.totp) else { return }
+        do {
+            let code = try await container.generateTOTPCode.execute(seed: seed, at: Date())
+            vaultBrowserVM.copy(code.copyValue)
+        } catch {
+            // Never log the seed or the error payload (Constitution §III, §V).
+            logger.error("Copy Code skipped: the stored seed is not usable")
+        }
     }
 
     private func selectedFieldValue(_ field: CopyableField) -> String? {
@@ -510,8 +535,8 @@ final class RootViewModel: ObservableObject {
         switch field {
         case .username: return login.username
         case .password: return login.password
-        case .totp:     return login.totp
         case .website:  return login.uris.first?.uri
+        case .totp:     return nil   // handled by copySelectedCode(); the seed is never copied
         }
     }
 }

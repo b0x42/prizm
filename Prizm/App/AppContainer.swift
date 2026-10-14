@@ -37,6 +37,7 @@ final class AppContainer: ObservableObject {
     let loginUseCase:                    LoginUseCaseImpl
     let unlockUseCase:                   UnlockUseCaseImpl
     let searchVaultUseCase:              SearchVaultUseCaseImpl
+    let generateTOTPCodeUseCase:         GenerateTOTPCodeUseCaseImpl
     let editVaultItemUseCase:            EditVaultItemUseCaseImpl
     let createVaultItemUseCase:          CreateVaultItemUseCaseImpl
     let deleteVaultItemUseCase:          DeleteVaultItemUseCaseImpl
@@ -116,6 +117,7 @@ final class AppContainer: ObservableObject {
         self.loginUseCase                    = LoginUseCaseImpl(auth: auth, sync: sync)
         self.unlockUseCase                   = UnlockUseCaseImpl(auth: auth, sync: sync)
         self.searchVaultUseCase              = SearchVaultUseCaseImpl(vault: vault)
+        self.generateTOTPCodeUseCase         = GenerateTOTPCodeUseCaseImpl(crypto: crypto)
         self.editVaultItemUseCase            = EditVaultItemUseCaseImpl(repository: vault)
         self.createVaultItemUseCase          = CreateVaultItemUseCaseImpl(repository: vault)
         self.deleteVaultItemUseCase          = DeleteVaultItemUseCaseImpl(repository: vault)
@@ -159,6 +161,11 @@ final class AppContainer: ObservableObject {
     /// Creates an `UnlockViewModel` for a returning user with a stored session.
     func makeUnlockViewModel(account: Account) -> UnlockViewModel {
         UnlockViewModel(auth: authRepository, sync: syncUseCase, account: account, embeddedBiometric: authRepository)
+    }
+
+    /// Creates the once-per-second tracker that keeps displayed TOTP codes current.
+    func makeTOTPCodesViewModel() -> TOTPCodesViewModel {
+        TOTPCodesViewModel(generate: generateTOTPCodeUseCase)
     }
 
     /// Creates a `VaultBrowserViewModel` backed by the live vault store.
