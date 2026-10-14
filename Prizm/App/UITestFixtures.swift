@@ -12,6 +12,9 @@ enum UITestFixtures {
 
     static var isEnabled: Bool { CommandLine.arguments.contains(launchArgument) }
 
+    /// With `--ui-test-open-codes`, start on the Codes list with its first item selected.
+    static var opensOnCodes: Bool { CommandLine.arguments.contains("--ui-test-open-codes") }
+
     /// RFC 6238 Appendix B secret "12345678901234567890" in base32.
     static let rfcSeed = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 

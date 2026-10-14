@@ -303,6 +303,14 @@ final class RootViewModel: ObservableObject {
                     collections: [], syncedAt: Date()
                 )
                 self.transitionToVault(caller: "UITestFixtures")
+
+                // Optional: open straight on the Codes list with an item selected (screenshots).
+                if UITestFixtures.opensOnCodes {
+                    try? await Task.sleep(for: .milliseconds(600))
+                    self.vaultBrowserVM.sidebarSelection = .verificationCodes
+                    try? await Task.sleep(for: .milliseconds(600))
+                    self.vaultBrowserVM.itemSelection = self.vaultBrowserVM.displayedItems.first
+                }
             }
         }
         #endif
