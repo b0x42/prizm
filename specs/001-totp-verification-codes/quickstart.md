@@ -49,7 +49,7 @@ Expected: all pass, including the RFC 6238 Appendix B vectors for SHA-1, SHA-256
 7. **Search (FR-004b)**
    Type part of an item name. The list filters. Clear the search: all rows return.
 8. **Click row (FR-007)**
-   Click a row. Its code is copied and the item does NOT open in the detail pane.
+   Click a row. The item opens in the detail pane with its countdown. Hover a row and click COPY: the code is copied and the selection does not change.
 9. **Empty state (Story 2 scenario 5)**
    In a vault with no seeds, the list shows the empty state.
 10. **Lock (Story 3, SC-005)**

@@ -10,6 +10,7 @@ import SwiftUI
 struct VerificationCodesListView: View {
 
     let items: [VaultItem]
+    @Binding var selection: VaultItem?
     let faviconLoader: FaviconLoader
     var searchQuery: String? = nil
     let onCopy: (String) -> Void
@@ -18,12 +19,14 @@ struct VerificationCodesListView: View {
 
     init(
         items: [VaultItem],
+        selection: Binding<VaultItem?>,
         faviconLoader: FaviconLoader,
         searchQuery: String? = nil,
         makeViewModel: @escaping () -> TOTPCodesViewModel,
         onCopy: @escaping (String) -> Void
     ) {
         self.items = items
+        self._selection = selection
         self.faviconLoader = faviconLoader
         self.searchQuery = searchQuery
         self.onCopy = onCopy
@@ -56,13 +59,13 @@ struct VerificationCodesListView: View {
                 )
                 .accessibilityIdentifier(AccessibilityID.VerificationCodes.emptyState)
             } else {
-                // No selection: this list is the whole job. Clicking a row copies its code
-                // instead of opening the item.
-                List {
+                // Clicking a row opens the item in the detail pane (countdown included); the hover
+                // COPY label on the row copies the code.
+                List(selection: $selection) {
                     ForEach(sections, id: \.letter) { section in
                         Section(header: Text(section.letter)) {
                             ForEach(section.items, id: \.id) { item in
-                                row(for: item)
+                                row(for: item).tag(item)
                             }
                         }
                     }
@@ -83,7 +86,7 @@ struct VerificationCodesListView: View {
             FaviconView(domain: primaryDomain(for: item), itemType: .login, loader: faviconLoader, size: 26)
             if let state = codes.states[item.id] {
                 TOTPCodeRowView(itemId: item.id, name: item.name, state: state, showsName: true,
-                                copiesOnTap: true, showsCountdown: false, onCopy: onCopy)
+                                showsCountdown: false, onCopy: onCopy)
             } else {
                 Text(item.name).font(Typography.listTitle).lineLimit(1)
                 Spacer()

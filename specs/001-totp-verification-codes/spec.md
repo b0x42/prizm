@@ -52,7 +52,7 @@ A user opens a dedicated "Verification Codes" entry in the sidebar and sees ever
 3. **Given** the list is open, **When** the user copies a code from a row, **Then** that item's current code is on the clipboard and is cleared automatically within 30 seconds.
 4. **Given** an item in the trash that has a seed, **When** the user opens the list, **Then** that item does not appear.
 5. **Given** the vault has no items with seeds, **When** the user opens the list, **Then** an empty state explains that no items have a verification code.
-6. **Given** the list is open, **When** the user clicks a row, **Then** that item's current code is copied (cleared after 30 seconds) and the item is NOT opened in the detail pane.
+6. **Given** the list is open, **When** the user clicks a row, **Then** the full item opens in the detail pane, where its code card shows the countdown. **And** when the user clicks the row's COPY label, **Then** that item's current code is copied (cleared after 30 seconds) without opening the item.
 
 ---
 
@@ -94,7 +94,7 @@ A user locks the vault, by hand or by the app's existing lock behavior, while co
 - **FR-004b**: The existing search MUST filter the Verification Codes list using its current matching rules (item name, username, website).
 - **FR-005**: Each list row MUST show the item name and the current code; the time remaining is shown in the item view, not in the list. Codes MUST be displayed grouped in the middle: six digits as "123 456", seven as "123 4567", eight as "1234 5678". The copied value MUST contain no space.
 - **FR-006**: The user MUST be able to copy an item's current code from the item view and from a list row. A copied code MUST be cleared from the clipboard automatically within 30 seconds.
-- **FR-007**: Clicking a row MUST copy that item's current code and MUST NOT open the item in the detail pane; the list itself shows everything the user needs.
+- **FR-007**: Clicking a row MUST open that item in the detail pane. The row's COPY label MUST copy the current code without opening the item.
 - **FR-008**: When an item's seed cannot be used, the system MUST show a clear "unavailable" message for it and MUST NOT show a code. Supported seeds are the standard six-digit, 30-second form given either as a plain secret or as a standard `otpauth` link, including links that set a different digit count (6 to 8), period (any positive number of seconds), or hash algorithm (SHA-1, SHA-256, or SHA-512). Anything else is unavailable.
 - **FR-009**: Items in the trash MUST NOT appear in the list.
 - **FR-010**: The system MUST remove all visible codes when the vault locks, and MUST NOT retain generated codes after lock.
