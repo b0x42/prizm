@@ -160,7 +160,12 @@ struct VaultBrowserView: View {
                         }
                     }
                 }
-                .navigationSplitViewColumnWidth(min: 220, ideal: 280)
+                // The Verification Codes list shows name, code, countdown, and COPY on one line,
+                // so it needs a wider column than the regular item list.
+                .navigationSplitViewColumnWidth(
+                    min:   viewModel.sidebarSelection == .verificationCodes ? 360 : 220,
+                    ideal: viewModel.sidebarSelection == .verificationCodes ? 420 : 280
+                )
             },
             detail: {
                 itemDetail
