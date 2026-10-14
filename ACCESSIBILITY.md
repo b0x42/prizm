@@ -69,7 +69,7 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 | 3.2.4 Consistent Identification | Supports | Same actions use same labels throughout (e.g. "Copy", "Reveal", "Delete"). |
 | 3.3.3 Error Suggestion | Supports | Error messages include corrective suggestions where an actionable fix is known (e.g. "Check your network connection", "Make sure to include https://"). |
 | 3.3.4 Error Prevention (Legal, Financial, Data) | Supports | Destructive actions (delete, permanent delete) require confirmation dialogs. |
-| 1.4.1 Use of Color (verification codes) | Supports | In the last 5 seconds a code's countdown changes ring thickness, number weight, and shows a warning symbol, not just color. |
+| 1.4.1 Use of Color (verification codes) | Supports | In the last 5 seconds a code's countdown ring thickens and its number turns bold as well as changing color, so the cue is not color alone. |
 | 4.1.3 Status Messages | Supports | Error banners and sync status changes are announced to VoiceOver via `AccessibilityNotification.Announcement`. |
 
 ---

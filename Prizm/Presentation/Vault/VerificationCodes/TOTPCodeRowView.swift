@@ -86,17 +86,12 @@ struct TOTPCodeRowView: View {
         .accessibilityIdentifier(AccessibilityID.VerificationCodes.code(itemId))
     }
 
-    /// Ring plus seconds. In the last seconds (FR-001a) the ring thickens, the number turns
-    /// bold, and a warning symbol appears, so the cue is not carried by color alone.
+    /// Ring plus seconds. In the last seconds (FR-001a) the ring turns orange and thickens and
+    /// the number turns bold, so the cue is not carried by color alone.
     private func countdown(_ code: TOTPCode) -> some View {
         let expiring = code.isExpiringSoon
         let progress = Double(code.secondsRemaining) / Double(max(code.period, 1))
         return HStack(spacing: 4) {
-            if expiring {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(.orange)
-                    .accessibilityHidden(true)
-            }
             ZStack {
                 Circle()
                     .stroke(.quaternary, lineWidth: expiring ? 4 : 2)

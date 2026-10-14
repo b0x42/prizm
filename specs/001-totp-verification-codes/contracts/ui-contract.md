@@ -17,7 +17,7 @@
 ## Countdown indicator
 
 - Shows seconds remaining and a progress ring.
-- Last 5 seconds: the ring and number change color and weight, and the symbol changes (for example a filled warning style), so the cue is not color alone.
+- Last 5 seconds: the ring turns orange and thickens and the number turns bold, so the cue is not color alone.
 
 ## Detail pane (Login with a usable or unusable seed)
 
