@@ -46,8 +46,8 @@ Expected: all pass, including the RFC 6238 Appendix B vectors for SHA-1, SHA-256
    In a vault with no seeds, the list shows the empty state.
 10. **Lock (Story 3, SC-005)**
     With codes visible, lock the vault. No code is visible on the unlock screen. Unlock: codes shown are current.
-11. **Inactive window (edge case)**
-    Switch to another app for over a period, then back. The codes shown are current. While away, no refresh work runs (check Activity Monitor CPU stays idle).
+11. **Hidden app and focus change (edge case, FR-011)**
+    Switch to another app while keeping the Prizm window visible: codes stay visible and keep updating. Then hide the app (⌘H) or minimize the window for longer than one period and restore it: the codes shown are current. While hidden, no refresh work runs (check that Activity Monitor CPU stays idle).
 12. **VoiceOver (FR-014, Constitution §VIII)**
     Focus a row: "Verification code for <name>", digits spoken individually, seconds remaining. Leave focus on it across a rotation: no repeated announcement.
 13. **Logs (FR-012)**
@@ -57,4 +57,4 @@ Expected: all pass, including the RFC 6238 Appendix B vectors for SHA-1, SHA-256
 
 ## Exit criteria
 
-All automated tests pass, scenarios 1 to 14 behave as described, and the security review (Constitution §III) signs off on the always-visible exposure deviation recorded in `plan.md`.
+All automated tests pass, scenarios 1 to 14 behave as described, and the security review (Constitution §III) signs off on the TOTP always-visible exception recorded in `plan.md`.

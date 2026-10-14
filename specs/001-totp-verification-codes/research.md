@@ -19,13 +19,13 @@ Resolves the open technical questions for [plan.md](plan.md). No `NEEDS CLARIFIC
 
 ## 3. How are codes refreshed?
 
-- **Decision**: One `@MainActor` view model, `TOTPCodesViewModel`, owns a refresh loop started from the view's `.task` and cancelled automatically when the view disappears. Each pass reads the clock once and computes a code for every tracked item, then sleeps until the next whole second. The clock is injected (`() -> Date`) so tests control time. The loop stops, and codes are cleared, when the scene is not active.
+- **Decision**: One `@MainActor` view model, `TOTPCodesViewModel`, owns a refresh loop started from the view's `.task` and cancelled automatically when the view disappears. Each pass reads the clock once and computes a code for every tracked item, then sleeps until the next whole second. The clock is injected (`() -> Date`) so tests control time. The loop stops, and codes are cleared, when the app is hidden or all windows are minimized (not on mere focus loss; how to detect this on macOS is checked in task T041).
 - **Rationale**: Satisfies FR-002, FR-010, FR-011, and SC-004. A per-view `.task` ties the lifetime to visibility without extra state. One tracker serves both the list and the detail card (Constitution §VI).
 - **Alternatives**: `Timer` per row (rejected: many timers, harder to cancel and test); `TimelineView` (rejected: the computation is async because it goes through the crypto actor); Combine publishers (rejected: project style requires async/await).
 
 ## 4. How does lock clear codes?
 
-- **Decision**: No new lock hook. `RootViewModel.lockVault()` already clears the vault store and switches screens, which removes the vault browser and cancels its `.task`. The tracker additionally clears its published codes in `onDisappear` and on scene deactivation.
+- **Decision**: No new lock hook. `RootViewModel.lockVault()` already clears the vault store and switches screens, which removes the vault browser and cancels its `.task`. The tracker additionally clears its published codes in `onDisappear` and when the app is hidden or minimized.
 - **Rationale**: Reuses the existing lock path (FR-010, SC-005). A test covers the sequence "codes visible, lock, no codes".
 - **Alternatives**: A lock notification observed by the tracker (rejected: redundant).
 
@@ -45,8 +45,10 @@ Resolves the open technical questions for [plan.md](plan.md). No `NEEDS CLARIFIC
 
 ## 7. Exposure policy under §III
 
-- **Decision**: Codes are always visible while the code view is on screen and the app is active (FR-015, requester's choice). Documented as a justified deviation in plan.md Complexity Tracking, with the fallback of a user-configurable auto-hide if the security review requires it.
-- **Rationale**: A code is valid for one period and is not reusable after rotation. The existing app reveals secrets on demand with a 30 s timeout (`EditFieldRow`), so there is precedent for a timeout fallback.
+- **Decision**: TOTP codes are always visible while the code view is on screen and the app is not hidden or minimized, like other TOTP apps (FR-015, requester's decision). They are exempt from the §III rule that sensitive UI data auto-clears after a configurable timeout. There is no reveal step, no auto-hide timeout, and no auto-hide preference.
+- **Rationale**: A code is valid for one period and rotates on its own. Hiding it would defeat the purpose of a glanceable code list. Exposure is bounded by: removal on lock, when the app is hidden or minimized, and when off-screen; the 30 s clipboard clear; and the seed never being displayed.
+- **Governance**: The Constitution supersedes other guidance, so the exemption is made by a narrow §III amendment limited to generated TOTP codes, with a MINOR version bump. Without the amendment the feature would violate §III.
+- **Alternatives**: Reveal on demand or timed hide (declined by the requester); a user preference for auto-hide (not wanted).
 
 ## 8. Accessibility and the expiry cue
 

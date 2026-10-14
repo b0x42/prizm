@@ -6,7 +6,7 @@
 
 ## Summary
 
-Show the current TOTP code for Login items, in the detail pane and in a new "Verification Codes" sidebar list. Codes are derived on demand from the seed already held in the decrypted vault, using RFC 6238 over HMAC from the Data-layer crypto service. Nothing new is stored. A single tracker refreshes codes once per second only while a code view is on screen, the app is active, and the vault is unlocked. "Copy Code" (⌃⌘C) is changed to copy the generated code, and the raw-seed copy is removed.
+Show the current TOTP code for Login items, in the detail pane and in a new "Verification Codes" sidebar list. Codes are derived on demand from the seed already held in the decrypted vault, using RFC 6238 over HMAC from the Data-layer crypto service. Nothing new is stored. A single tracker refreshes codes once per second only while a code view is on screen, the app is not hidden or minimized, and the vault is unlocked. "Copy Code" (⌃⌘C) is changed to copy the generated code, and the raw-seed copy is removed.
 
 Approach (see [research.md](research.md)):
 
@@ -30,7 +30,7 @@ Approach (see [research.md](research.md)):
 
 **Performance Goals**: New code visible within 1 s of the period ending (SC-004). Sidebar to copied code under 10 s (SC-002). One refresh pass for 100 seeds takes well under 50 ms on the main-actor budget [assumption, to be measured in tasks].
 
-**Constraints**: No hand-rolled HMAC. Crypto only in the Data layer behind `PrizmCryptoService`. No logging of seeds or codes. No refresh while locked, inactive, or off-screen. Design tokens only, no raw font or spacing literals.
+**Constraints**: No hand-rolled HMAC. Crypto only in the Data layer behind `PrizmCryptoService`. No logging of seeds or codes. No refresh while locked, hidden/minimized, or off-screen. Merely losing focus does not hide codes. Design tokens only, no raw font or spacing literals.
 
 **Scale/Scope**: Tens to low hundreds of items with seeds. One new sidebar entry, one list view, one detail card, one menu command changed.
 
@@ -42,14 +42,14 @@ Approach (see [research.md](research.md)):
 |---|---|---|
 | I. Native-First | Pass | SwiftUI only. No AppKit needed. |
 | II. Clean Architecture | Pass | Domain stays `import Foundation`. HMAC lives in Data. Presentation reaches code generation only through a Domain use case. |
-| III. Security-First | Pass with one justified deviation | Vetted CryptoKit HMAC behind `PrizmCryptoService`. Seeds never logged or stored. Clipboard clears in 30 s. Codes are removed on lock. **Deviation**: always-visible codes (FR-015) versus "sensitive data shown in the UI MUST auto-clear after a configurable timeout". See Complexity Tracking. |
+| III. Security-First | Pass with a requested exception | Vetted CryptoKit HMAC behind `PrizmCryptoService`. Seeds never logged or stored. Clipboard clears in 30 s. Codes are removed on lock. **Exception**: TOTP codes are always visible, like other TOTP apps, and are exempt from the "sensitive data shown in the UI MUST auto-clear after a configurable timeout" rule. The Constitution wins in a conflict, so the exception is made by a narrow amendment (task in tasks.md). See Complexity Tracking. |
 | IV. TDD | Pass | RFC 6238 Appendix B and RFC 4226 Appendix D known-answer tests written first. |
 | V. Observability | Pass | Failures surface as typed errors. Logging via `os.Logger` with no secret content. |
 | VI. Simplicity | Pass | One tracker reused by both views. No caching of parsed seeds. No new settings. |
 | VII. Radical Transparency | Pass | Inline comments cite RFC 6238 §4, RFC 4226 §5.3, and the SHA-1 rationale. `SECURITY.md` gets a TOTP section. |
 | VIII. Accessibility | Pass | Labels, `.isHeader`, non-color expiry cue, no per-tick announcements. `ACCESSIBILITY.md` updated. |
 
-**Gate result**: pass. The one deviation is justified below and needs a security review at PR time (Constitution: all vault-touching code).
+**Gate result**: pass, conditional on amending §III with the TOTP exception (Constitution Governance: amendment procedure, MINOR bump). The exception is justified below and needs a security review at PR time (Constitution: all vault-touching code).
 
 **Post-design re-check**: unchanged. The design adds no new dependency, no new storage, and no layer violation.
 
@@ -120,6 +120,6 @@ Docs touched: `openspec/specs/copy-menu-commands/spec.md` (Copy Code semantics),
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
-| Codes always visible (FR-015), versus §III "sensitive data in the UI auto-clears after a configurable timeout" | The requester chose always-visible codes (clarification Q1 = A). A hidden-until-revealed list defeats the purpose of seeing every code at a glance. Mitigations: each code is valid for at most one period (default 30 s) and is replaced on rotation; codes are removed on lock, when the window is inactive, and when no code view is on screen; the copied value clears from the clipboard in 30 s. | Reveal-on-demand (option B) and visible-then-hide (option C) were offered and declined. Raise at PR security review. If the reviewer requires the letter of §III, the fallback is a user preference for auto-hide, reusing the 30 s reveal pattern from `EditFieldRow`. |
+| TOTP codes exempt from the §III UI auto-clear timeout (FR-015) | The requester decided TOTP codes work like other TOTP apps: always visible, with no reveal step and no auto-hide timeout. Why this is acceptable: a code is valid for one period (default 30 s) and is replaced on rotation, so it expires on its own; it is removed on lock, when the app is hidden or minimized, and when no code view is on screen; the copied value still clears from the clipboard in 30 s; the raw seed is never displayed. The exemption covers generated TOTP codes only, never passwords, seeds, or other secrets. | Reveal-on-demand and visible-then-hide were offered and declined. There is no auto-hide preference fallback. Requires a narrow amendment to §III, proposed in tasks.md, and security review at PR time. |
 | New `hmac` operation on `PrizmCryptoService` (an actor protocol) | Constitution §III requires all crypto behind that protocol, including HMAC. | A separate Data-layer HMAC helper would be simpler but bypasses the protocol, and breaks the rule that Domain and Presentation never see crypto. The cost is one async hop per code per second, which is negligible. |
 | SHA-1 (`Insecure.SHA1`) in HMAC | RFC 6238 default and what nearly all services issue. Without it most real seeds would show "unavailable". | Rejecting SHA-1 would make the feature unusable. HMAC-SHA1 remains secure as a MAC; the known SHA-1 weakness is collision resistance, which HMAC does not rely on. Documented in code and `SECURITY.md`. |

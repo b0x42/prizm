@@ -77,7 +77,7 @@ A user locks the vault, by hand or by the app's existing lock behavior, while co
 - The device clock is wrong: codes will not match the service. The app shows codes based on the device clock and does not claim to correct it.
 - A code is about to expire while the user is copying it: the copied value is the code that was displayed at the moment of the copy action.
 - A very large number of items with seeds: the list stays usable and every row keeps updating on time.
-- The app window is hidden or the app is in the background: codes are not shown, and when the window returns, the codes shown are current.
+- The app is hidden or all its windows are minimized: codes are not shown and are not refreshed, and when a window returns the codes shown are current. Merely switching to another app (the window stays visible but unfocused) does NOT hide codes, so the user can read a code next to the app that needs it.
 - A seed that is empty or contains only whitespace is treated as no seed.
 - Screen readers: rapidly changing codes must not flood spoken output (see FR-014).
 
@@ -98,11 +98,11 @@ A user locks the vault, by hand or by the app's existing lock behavior, while co
 - **FR-008**: When an item's seed cannot be used, the system MUST show a clear "unavailable" message for it and MUST NOT show a code. Supported seeds are the standard six-digit, 30-second form given either as a plain secret or as a standard `otpauth` link, including links that set a different digit count, period, or hash algorithm.
 - **FR-009**: Items in the trash MUST NOT appear in the list.
 - **FR-010**: The system MUST remove all visible codes when the vault locks, and MUST NOT retain generated codes after lock.
-- **FR-011**: The system MUST NOT generate or refresh codes while the vault is locked or while no code view is on screen.
+- **FR-011**: The system MUST NOT generate or refresh codes while the vault is locked, while the app is hidden or all its windows are minimized, or while no code view is on screen.
 - **FR-012**: The system MUST NOT log seeds or codes.
 - **FR-013**: The list and the per-item display MUST follow the app's existing visual styles and spacing.
 - **FR-014**: Code text MUST be readable by screen readers, and rotation MUST NOT trigger a new spoken announcement every period unless the user is focused on that code.
-- **FR-015**: Codes MUST be visible by default in both the item view and the list while the vault is unlocked and the code view is on screen.
+- **FR-015**: Codes MUST be always visible, as in other authenticator apps, in both the item view and the list while the vault is unlocked, the app is not hidden or minimized, and the code view is on screen. There is no reveal step and no auto-hide timeout for codes.
 - **FR-016**: The existing "Copy Code" command MUST copy the current generated code. Copying the stored secret MUST no longer be offered anywhere, and no shortcut is assigned to it.
 - **FR-017**: Items for which the app previously never displayed the seed MUST continue not to display the raw seed anywhere new; only the generated code is shown.
 

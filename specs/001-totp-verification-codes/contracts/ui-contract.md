@@ -48,6 +48,7 @@
 | Code view appears | Tracking starts; first code shown within 1 s |
 | Period ends | New code shown within 1 s |
 | Code view disappears | Tracking stops; codes cleared |
-| App/window becomes inactive | Tracking stops; codes cleared |
-| App/window becomes active again | Tracking resumes with current codes |
+| App hidden or all windows minimized | Tracking stops; codes cleared |
+| App unhidden or a window restored | Tracking resumes with current codes |
+| App loses focus but its window stays visible | No change; codes keep updating |
 | Vault locks | No codes visible; none generated until unlock |
