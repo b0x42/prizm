@@ -70,7 +70,7 @@ extension SidebarSelection {
         case .type(let type):                return type.displayName
         case .folder:                        return "Folder"
         case .trash:                         return "Trash"
-        case .verificationCodes:             return "Verification Codes"
+        case .verificationCodes:             return "Codes"
         case .newFolder:                     return "New Folder"
         case .organization:                  return "Organization"
         case .collection:                    return "Collection"

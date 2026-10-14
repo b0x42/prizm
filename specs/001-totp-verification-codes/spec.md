@@ -39,7 +39,7 @@ A user opens a Login item that has a stored TOTP seed and sees the currently val
 
 ### User Story 2 - List every item that has a code (Priority: P2)
 
-A user opens a dedicated "Verification Codes" entry in the sidebar and sees every item that has a TOTP seed, one row per item, each with the item name and the current code, grouped under alphabetical letter headings like the regular item list. The list does not show a countdown; the time remaining is shown in the item's detail view. They copy a code straight from the row.
+A user opens a dedicated "Codes" entry in the sidebar and sees every item that has a TOTP seed, one row per item, each with the item name and the current code, grouped under alphabetical letter headings like the regular item list. The list does not show a countdown; the time remaining is shown in the item's detail view. They copy a code straight from the row.
 
 **Why this priority**: This is what the requester asked for. It depends on Story 1 for code display, and it carries the main exposure question (many live codes at once).
 
@@ -89,7 +89,7 @@ A user locks the vault, by hand or by the app's existing lock behavior, while co
 - **FR-001a**: The time indicator MUST change appearance during the last 5 seconds of a code's validity, in the item view (the list shows no countdown). The change MUST NOT rely on color alone.
 - **FR-002**: The system MUST replace a displayed code with the next one when its validity period ends, without user action.
 - **FR-003**: The system MUST produce codes that match those of any standards-conforming authenticator for the same seed at the same moment.
-- **FR-004**: The system MUST provide a "Verification Codes" entry in the sidebar that lists every non-trashed item with a TOTP seed, one row per item.
+- **FR-004**: The system MUST provide a "Codes" entry in the sidebar that lists every non-trashed item with a TOTP seed, one row per item.
 - **FR-004a**: Rows MUST be sorted alphabetically by item name.
 - **FR-004b**: The existing search MUST filter the Verification Codes list using its current matching rules (item name, username, website).
 - **FR-005**: Each list row MUST show the item name and the current code; the time remaining is shown in the item view, not in the list. Codes MUST be displayed grouped in the middle: six digits as "123 456", seven as "123 4567", eight as "1234 5678". The copied value MUST contain no space.

@@ -184,7 +184,7 @@ The server retains the empty metadata record. The client shows a "Retry" action 
 ## Verification Codes (TOTP)
 
 Prizm can show the current one-time code for any Login that has a TOTP seed, in the
-item's detail pane and in a "Verification Codes" list.
+item's detail pane and in a "Codes" list.
 
 - **Where codes come from** — The seed is already in your synced vault and is decrypted with
   the rest of the item. A code is derived from it on demand using RFC 6238 (TOTP) on top of

@@ -41,8 +41,8 @@ final class VerificationCodeJourneyTests: XCTestCase {
 
     private func openVerificationCodes() {
         // Sidebar rows carry no accessibility identifiers, so match the row by its label.
-        let row = app.outlines["Sidebar"].staticTexts["Verification Codes"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "Verification Codes sidebar row should exist")
+        let row = app.outlines["Sidebar"].staticTexts["Codes"]
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Codes sidebar row should exist")
         row.click()
     }
 

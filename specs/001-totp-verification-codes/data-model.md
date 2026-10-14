@@ -52,7 +52,7 @@ The UI maps every case to the same user-facing "unavailable" message, and never 
 
 New case `verificationCodes`.
 
-- `displayName`: "Verification Codes"
+- `displayName`: "Codes"
 - Equality: equal only to itself.
 - Hash: a new distinct discriminator.
 

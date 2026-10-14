@@ -6,7 +6,7 @@
 
 ## Summary
 
-Show the current TOTP code for Login items, in the detail pane and in a new "Verification Codes" sidebar list. Codes are derived on demand from the seed already held in the decrypted vault, using RFC 6238 over HMAC from the Data-layer crypto service. Nothing new is stored. A single tracker refreshes codes once per second only while a code view is on screen, the app is not hidden or minimized, and the vault is unlocked. "Copy Code" (⌃⌘C) is changed to copy the generated code, and the raw-seed copy is removed.
+Show the current TOTP code for Login items, in the detail pane and in a new "Codes" sidebar list. Codes are derived on demand from the seed already held in the decrypted vault, using RFC 6238 over HMAC from the Data-layer crypto service. Nothing new is stored. A single tracker refreshes codes once per second only while a code view is on screen, the app is not hidden or minimized, and the vault is unlocked. "Copy Code" (⌃⌘C) is changed to copy the generated code, and the raw-seed copy is removed.
 
 Approach (see [research.md](research.md)):
 

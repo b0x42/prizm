@@ -2,8 +2,8 @@
 
 ## Sidebar
 
-- New row "Verification Codes" in the main section, after Favorites. Symbol: a clock-style SF Symbol (choose during implementation, e.g. `clock`). Count badge equals the number of items in the index.
-- Accessibility: label "Verification Codes", value is the count; follows the existing `SidebarRowView` conventions. Identifier added to `AccessibilityIdentifiers.swift`.
+- New row "Codes" in the main section, after Favorites. Symbol: a clock-style SF Symbol (choose during implementation, e.g. `clock`). Count badge equals the number of items in the index.
+- Accessibility: label "Codes", value is the count; follows the existing `SidebarRowView` conventions. Identifier added to `AccessibilityIdentifiers.swift`.
 
 ## List pane (when `.verificationCodes` is selected)
 

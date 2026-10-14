@@ -22,6 +22,6 @@ final class SidebarSelectionTests: XCTestCase {
     }
 
     func test_verificationCodes_displayName() {
-        XCTAssertEqual(SidebarSelection.verificationCodes.displayName, "Verification Codes")
+        XCTAssertEqual(SidebarSelection.verificationCodes.displayName, "Codes")
     }
 }

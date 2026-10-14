@@ -45,7 +45,7 @@ Expected: all pass, including the RFC 6238 Appendix B vectors for SHA-1, SHA-256
 5. **Copy Code menu (FR-016)**
    Select a Login with a seed and press ⌃⌘C. The generated code is on the clipboard, not the seed. Select an item with no seed: the command is disabled. Confirm no menu item copies the raw seed.
 6. **List (Story 2, FR-004 to FR-009)**
-   Select "Verification Codes". Expect exactly the non-trashed items with seeds (including the invalid one), alphabetical, each with a code or "Code unavailable". The trashed item is absent. The sidebar count matches.
+   Select "Codes". Expect exactly the non-trashed items with seeds (including the invalid one), alphabetical, each with a code or "Code unavailable". The trashed item is absent. The sidebar count matches.
 7. **Search (FR-004b)**
    Type part of an item name. The list filters. Clear the search: all rows return.
 8. **Click row (FR-007)**

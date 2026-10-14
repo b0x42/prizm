@@ -130,7 +130,7 @@ struct SidebarView: View {
         case .menu:
             SidebarRowView(title: "All Items", systemImage: "square.grid.2x2", selection: .allItems, count: itemCounts[.allItems] ?? 0)
             SidebarRowView(title: "Favorites", systemImage: "star", selection: .favorites, count: itemCounts[.favorites] ?? 0)
-            SidebarRowView(title: "Verification Codes", systemImage: "clock", selection: .verificationCodes, count: itemCounts[.verificationCodes] ?? 0)
+            SidebarRowView(title: "Codes", systemImage: "clock", selection: .verificationCodes, count: itemCounts[.verificationCodes] ?? 0)
         case .folders:
             if isCreatingFolder {
                 TextField("Name or Parent/Name", text: $newFolderName, onCommit: {
