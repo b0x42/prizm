@@ -193,6 +193,20 @@ protocol PrizmCryptoService: Actor {
 
     /// Encrypts a plaintext file name as a type-2 EncString for upload metadata.
     nonisolated func encryptFileName(_ name: String, cipherKey: CryptoKeys) throws -> String
+
+    // MARK: - One-time-code HMAC (TOTP)
+
+    /// Computes HMAC(`key`, `message`) with the given hash and returns the full MAC
+    /// (20, 32 or 64 bytes).
+    ///
+    /// - Security goal: derive a time-based one-time code (RFC 6238) from a stored seed.
+    ///   Stateless — it uses neither the vault keys nor any actor state, so it is `nonisolated`
+    ///   and works without an unlocked vault; the caller already holds the decrypted seed.
+    /// - Standards: HMAC per RFC 2104; hash choice per RFC 6238 §1.2.
+    /// - SHA-1: it is the RFC 6238 default and what nearly every service issues. SHA-1's known
+    ///   weakness is collision resistance, which HMAC does not rely on, so HMAC-SHA-1 remains
+    ///   a sound MAC here. Rejecting it would make most real seeds unusable.
+    nonisolated func hmac(_ algorithm: TOTPHashAlgorithm, key: Data, message: Data) -> Data
 }
 
 // MARK: - PrizmCryptoServiceImpl

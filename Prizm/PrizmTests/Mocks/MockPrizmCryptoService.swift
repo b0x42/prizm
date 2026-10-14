@@ -95,4 +95,18 @@ actor MockPrizmCryptoService: PrizmCryptoService {
     nonisolated func decryptAttachmentKey(_ encString: String, cipherKey: CryptoKeys) throws -> Data { stubbedDecAttachmentKey }
     nonisolated func encryptFileName(_ name: String, cipherKey: CryptoKeys) throws -> String { stubbedEncFileName }
 
+    // MARK: - HMAC (TOTP) stub
+
+    nonisolated(unsafe) var stubbedHMAC: Data = Data(repeating: 0, count: 20)
+    nonisolated(unsafe) var lastHMACAlgorithm: TOTPHashAlgorithm?
+    nonisolated(unsafe) var lastHMACKey: Data?
+    nonisolated(unsafe) var lastHMACMessage: Data?
+
+    nonisolated func hmac(_ algorithm: TOTPHashAlgorithm, key: Data, message: Data) -> Data {
+        lastHMACAlgorithm = algorithm
+        lastHMACKey = key
+        lastHMACMessage = message
+        return stubbedHMAC
+    }
+
 }
