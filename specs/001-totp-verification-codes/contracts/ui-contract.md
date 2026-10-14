@@ -9,7 +9,7 @@
 
 - One row per item, alphabetical by name, filtered by the existing search box (same matching rules as other lists).
 - Row content: favicon/type icon (existing component), item name, grouped code (e.g. "123 456"), countdown indicator with seconds, and a copy button.
-- Rows are not selectable. Clicking a row copies its code (like the hover COPY label); it does not open the item. The detail pane shows a neutral "Click a code to copy it." message while this list is open.
+- Rows are not selectable. Clicking a row copies its code (like the hover COPY label); it does not open the item. There is no detail pane while this list is open: it uses a two-column layout (sidebar + list).
 - Copy button copies `TOTPCode.copyValue` (no space) through the existing clipboard path, which clears after 30 s.
 - Empty state: "No verification codes" with a short explanation that no items have one. Search with no matches uses the existing no-results presentation.
 - Unusable seed: the code area shows "Code unavailable" in place of digits, with no copy button.
