@@ -30,6 +30,20 @@ struct VerificationCodesListView: View {
         _codes = StateObject(wrappedValue: makeViewModel())
     }
 
+    /// Alphabetical letter sections, like the regular item list. `items` is already sorted by
+    /// name, so grouping keeps the order inside each section.
+    private var sections: [(letter: String, items: [VaultItem])] {
+        let grouped = Dictionary(grouping: items) { item in
+            let first = item.name.first.map { String($0).uppercased() } ?? "#"
+            return first.first?.isLetter == true ? first : "#"
+        }
+        return grouped.sorted { lhs, rhs in
+            if lhs.key == "#" { return false }
+            if rhs.key == "#" { return true }
+            return lhs.key < rhs.key
+        }.map { (letter: $0.key, items: $0.value) }
+    }
+
     var body: some View {
         Group {
             if items.isEmpty {
@@ -45,8 +59,12 @@ struct VerificationCodesListView: View {
                 // No selection: this list is the whole job. Clicking a row copies its code
                 // instead of opening the item.
                 List {
-                    ForEach(items, id: \.id) { item in
-                        row(for: item)
+                    ForEach(sections, id: \.letter) { section in
+                        Section(header: Text(section.letter)) {
+                            ForEach(section.items, id: \.id) { item in
+                                row(for: item)
+                            }
+                        }
                     }
                 }
                 .accessibilityIdentifier(AccessibilityID.VerificationCodes.list)
@@ -65,7 +83,7 @@ struct VerificationCodesListView: View {
             FaviconView(domain: primaryDomain(for: item), itemType: .login, loader: faviconLoader, size: 26)
             if let state = codes.states[item.id] {
                 TOTPCodeRowView(itemId: item.id, name: item.name, state: state, showsName: true,
-                                    copiesOnTap: true, onCopy: onCopy)
+                                copiesOnTap: true, showsCountdown: false, onCopy: onCopy)
             } else {
                 Text(item.name).font(Typography.listTitle).lineLimit(1)
                 Spacer()

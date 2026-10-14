@@ -7,14 +7,14 @@
 
 ## List pane (when `.verificationCodes` is selected)
 
-- One row per item, alphabetical by name, filtered by the existing search box (same matching rules as other lists).
-- Row content: favicon/type icon (existing component), item name, grouped code (e.g. "123 456"), countdown indicator with seconds, and a copy button.
+- One row per item, grouped into alphabetical letter sections (A, B, ..., # last) like the regular item list, sorted by name within each section, filtered by the existing search box (same matching rules as other lists).
+- Row content: favicon/type icon (existing component), item name, grouped code (e.g. "123 456"), and the hover COPY label. No countdown in the list; the countdown lives in the detail card.
 - Rows are not selectable. Clicking a row copies its code (like the hover COPY label); it does not open the item. The detail pane shows a neutral "Click a code to copy it." message while this list is open.
 - Copy button copies `TOTPCode.copyValue` (no space) through the existing clipboard path, which clears after 30 s.
 - Empty state: "No verification codes" with a short explanation that no items have one. Search with no matches uses the existing no-results presentation.
 - Unusable seed: the code area shows "Code unavailable" in place of digits, with no copy button.
 
-## Countdown indicator
+## Countdown indicator (detail card only)
 
 - Shows seconds remaining and a progress ring.
 - Last 5 seconds: the ring turns orange and thickens and the number turns bold, so the cue is not color alone.

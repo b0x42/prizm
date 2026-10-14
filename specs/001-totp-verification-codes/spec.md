@@ -39,7 +39,7 @@ A user opens a Login item that has a stored TOTP seed and sees the currently val
 
 ### User Story 2 - List every item that has a code (Priority: P2)
 
-A user opens a dedicated "Verification Codes" entry in the sidebar and sees every item that has a TOTP seed, one row per item, each with the item name, the current code, and the time remaining. They copy a code straight from the row.
+A user opens a dedicated "Verification Codes" entry in the sidebar and sees every item that has a TOTP seed, one row per item, each with the item name and the current code, grouped under alphabetical letter headings like the regular item list. The list does not show a countdown; the time remaining is shown in the item's detail view. They copy a code straight from the row.
 
 **Why this priority**: This is what the requester asked for. It depends on Story 1 for code display, and it carries the main exposure question (many live codes at once).
 
@@ -47,7 +47,7 @@ A user opens a dedicated "Verification Codes" entry in the sidebar and sees ever
 
 **Acceptance Scenarios**:
 
-1. **Given** a vault with N items that have seeds, **When** the user opens the list, **Then** exactly those N items appear, each with its current code and time remaining.
+1. **Given** a vault with N items that have seeds, **When** the user opens the list, **Then** exactly those N items appear, each with its current code, grouped under alphabetical letter headings.
 2. **Given** the list is open, **When** a code's period ends, **Then** that row updates to the new code without user action.
 3. **Given** the list is open, **When** the user copies a code from a row, **Then** that item's current code is on the clipboard and is cleared automatically within 30 seconds.
 4. **Given** an item in the trash that has a seed, **When** the user opens the list, **Then** that item does not appear.
@@ -86,13 +86,13 @@ A user locks the vault, by hand or by the app's existing lock behavior, while co
 ### Functional Requirements
 
 - **FR-001**: The system MUST show, for a Login item with a usable TOTP seed, the current code (grouped as in FR-005) and the time remaining until it changes.
-- **FR-001a**: The time indicator MUST change appearance during the last 5 seconds of a code's validity, in both the item view and the list. The change MUST NOT rely on color alone.
+- **FR-001a**: The time indicator MUST change appearance during the last 5 seconds of a code's validity, in the item view (the list shows no countdown). The change MUST NOT rely on color alone.
 - **FR-002**: The system MUST replace a displayed code with the next one when its validity period ends, without user action.
 - **FR-003**: The system MUST produce codes that match those of any standards-conforming authenticator for the same seed at the same moment.
 - **FR-004**: The system MUST provide a "Verification Codes" entry in the sidebar that lists every non-trashed item with a TOTP seed, one row per item.
 - **FR-004a**: Rows MUST be sorted alphabetically by item name.
 - **FR-004b**: The existing search MUST filter the Verification Codes list using its current matching rules (item name, username, website).
-- **FR-005**: Each row MUST show the item name, the current code, and the time remaining. Codes MUST be displayed grouped in the middle: six digits as "123 456", seven as "123 4567", eight as "1234 5678". The copied value MUST contain no space.
+- **FR-005**: Each list row MUST show the item name and the current code; the time remaining is shown in the item view, not in the list. Codes MUST be displayed grouped in the middle: six digits as "123 456", seven as "123 4567", eight as "1234 5678". The copied value MUST contain no space.
 - **FR-006**: The user MUST be able to copy an item's current code from the item view and from a list row. A copied code MUST be cleared from the clipboard automatically within 30 seconds.
 - **FR-007**: Clicking a row MUST copy that item's current code and MUST NOT open the item in the detail pane; the list itself shows everything the user needs.
 - **FR-008**: When an item's seed cannot be used, the system MUST show a clear "unavailable" message for it and MUST NOT show a code. Supported seeds are the standard six-digit, 30-second form given either as a plain secret or as a standard `otpauth` link, including links that set a different digit count (6 to 8), period (any positive number of seconds), or hash algorithm (SHA-1, SHA-256, or SHA-512). Anything else is unavailable.

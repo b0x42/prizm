@@ -23,6 +23,9 @@ struct TOTPCodeRowView: View {
     /// When true the whole row copies on tap, like `FieldRowView`. Off in the list, where a tap
     /// selects the row.
     var copiesOnTap: Bool = false
+    /// The countdown ring and seconds. Shown in the detail card, hidden in the list where only
+    /// the name and code matter.
+    var showsCountdown: Bool = true
     let onCopy: (String) -> Void
 
     @State private var isHovered = false
@@ -75,13 +78,15 @@ struct TOTPCodeRowView: View {
             Text(code.grouped)
                 .font(Typography.fieldValue.monospaced())
                 .textSelection(.enabled)
-            countdown(code)
+            if showsCountdown { countdown(code) }
         }
         // One element, no per-rotation announcement. `.updatesFrequently` tells VoiceOver the
         // value changes on its own so it does not treat each change as news.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Verification code for \(name)")
-        .accessibilityValue("\(spokenDigits(code)), \(code.secondsRemaining) seconds remaining")
+        .accessibilityValue(showsCountdown
+            ? "\(spokenDigits(code)), \(code.secondsRemaining) seconds remaining"
+            : spokenDigits(code))
         .accessibilityAddTraits(.updatesFrequently)
         .accessibilityIdentifier(AccessibilityID.VerificationCodes.code(itemId))
     }
