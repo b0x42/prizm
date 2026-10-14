@@ -181,6 +181,39 @@ The server retains the empty metadata record. The client shows a "Retry" action 
 
 ---
 
+## Verification Codes (TOTP)
+
+Prizm can show the current one-time code for any Login that has a TOTP seed, in the
+item's detail pane and in a "Verification Codes" list.
+
+- **Where codes come from** — The seed is already in your synced vault and is decrypted with
+  the rest of the item. A code is derived from it on demand using RFC 6238 (TOTP) on top of
+  RFC 4226 (HOTP), with HMAC-SHA-1, HMAC-SHA-256, or HMAC-SHA-512 as the seed specifies.
+  The HMAC comes from Apple CryptoKit, behind `PrizmCryptoService`; nothing is hand-rolled.
+  It is verified against the RFC 6238 Appendix B and RFC 4226 Appendix D test vectors.
+- **SHA-1** — SHA-1 is the RFC 6238 default and what almost every service issues. Its known
+  weakness is collision resistance, which HMAC does not depend on, so HMAC-SHA-1 is still a
+  sound way to compute a one-time code.
+- **Nothing is stored or logged** — Codes and parsed seeds are never written to disk, the
+  Keychain, or the logs. Only a count of items whose code is unavailable is logged.
+- **Seed never shown or copied** — Only the generated code is displayed. "Copy Code" copies
+  the current code (no spaces) and clears it from the clipboard after 30 seconds. There is no
+  command that copies the raw seed.
+- **Always visible, by design** — Codes stay visible without a hide timeout, like other
+  authenticator apps. This is a documented, narrow exception in the Constitution (§III,
+  proposal [#72](https://github.com/b0x42/prizm/issues/72)). It is bounded: a code is useless
+  after at most one validity period (30 s by default); codes are removed when the vault locks,
+  when the app is hidden or all its windows are minimized, and when no code view is on
+  screen; and nothing is generated or refreshed while the vault is locked.
+- **Memory** — The decoded secret is copied into a private buffer that is overwritten after
+  each code is computed. This is best effort: Swift `Data` is copy-on-write and CryptoKit
+  makes its own copy of the key, so some copies cannot be zeroed, and the seed `String`
+  already lives in the unlocked vault.
+- **Not supported** — Steam-style seeds and HOTP links show "Code unavailable" rather than a
+  wrong code.
+
+---
+
 ## Threat Model
 
 ### What this app defends against
@@ -202,6 +235,9 @@ The server retains the empty metadata record. The client shows a "Retry" action 
 - **Compromised macOS installation** — The app relies on macOS sandboxing, Keychain
   integrity, and process isolation. A rootkit or kernel exploit invalidates these
   guarantees.
+- **Shoulder-surfing or screen capture of verification codes** — Codes are shown on screen
+  while the vault is unlocked. Anyone who can see or record the screen can read them, and a
+  wrong device clock produces codes the service will reject.
 - **Debugger or memory inspector while unlocked** — While the vault is unlocked, key
   material exists in process memory. An attacker with `task_for_pid` or debugger
   access can read it.

@@ -12,6 +12,8 @@ struct LoginDetailView: View {
     let item:  VaultItem
     let login: LoginContent
     let onCopy: (String) -> Void
+    /// Creates the tracker for the Verification Code card; nil hides the card (e.g. previews).
+    var makeCodesViewModel: (() -> TOTPCodesViewModel)? = nil
 
     // A Credentials card is only meaningful when at least one credential field is present.
     private var hasCredentials: Bool {
@@ -44,6 +46,10 @@ struct LoginDetailView: View {
                             )
                         }
                     }
+                }
+
+                if item.hasTOTPSeed, let makeCodesViewModel {
+                    VerificationCodeCard(item: item, makeViewModel: makeCodesViewModel, onCopy: onCopy)
                 }
 
                 if !login.uris.isEmpty {

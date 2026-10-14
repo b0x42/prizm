@@ -197,7 +197,8 @@ struct PrizmApp: App {
                 },
                 makeAttachmentRowViewModel: { cipherId, attachment in
                     container.makeAttachmentRowViewModel(cipherId: cipherId, attachment: attachment)
-                }
+                },
+                makeCodesViewModel: { container.makeTOTPCodesViewModel() }
             )
         }
     }

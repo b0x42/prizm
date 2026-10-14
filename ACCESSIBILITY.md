@@ -30,8 +30,8 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 | 2.1.1 Keyboard | Partially Supports | All major actions have keyboard shortcuts. Drag-and-drop folder operations do not have a keyboard-only alternative. |
 | 2.1.2 No Keyboard Trap | Supports | No keyboard traps. Standard macOS focus behaviour applies. |
 | 2.1.4 Character Key Shortcuts | Not Applicable | No single-character key shortcuts. All shortcuts use modifier keys. |
-| 2.2.1 Timing Adjustable | Not Applicable | No time limits on user actions. Auto-lock is a security feature, not a content timeout. |
-| 2.2.2 Pause, Stop, Hide | Not Applicable | No auto-updating or moving content. |
+| 2.2.1 Timing Adjustable | Supports | No time limits on user actions. Auto-lock is a security feature, not a content timeout. Verification codes expire by design (see 2.2.2). |
+| 2.2.2 Pause, Stop, Hide | Partially Supports | Verification codes and their countdown update every second because one-time codes rotate; this is essential to their function and cannot be paused. Nothing else auto-updates. |
 | 2.3.1 Three Flashes or Below Threshold | Supports | No flashing content. All animations respect the macOS Reduce Motion preference. |
 | 2.4.1 Bypass Blocks | Supports | Three-pane NavigationSplitView allows direct navigation to sidebar, content, or detail. |
 | 2.4.2 Page Titled | Supports | Window title reflects the application name. |
@@ -69,12 +69,14 @@ Prizm is a native macOS SwiftUI application. It inherits platform accessibility 
 | 3.2.4 Consistent Identification | Supports | Same actions use same labels throughout (e.g. "Copy", "Reveal", "Delete"). |
 | 3.3.3 Error Suggestion | Supports | Error messages include corrective suggestions where an actionable fix is known (e.g. "Check your network connection", "Make sure to include https://"). |
 | 3.3.4 Error Prevention (Legal, Financial, Data) | Supports | Destructive actions (delete, permanent delete) require confirmation dialogs. |
+| 1.4.1 Use of Color (verification codes) | Supports | In the last 5 seconds a code's countdown changes ring thickness, number weight, and shows a warning symbol, not just color. |
 | 4.1.3 Status Messages | Supports | Error banners and sync status changes are announced to VoiceOver via `AccessibilityNotification.Announcement`. |
 
 ---
 
 ## Known Gaps
 
+- **Verification code semantics** — Each code is one VoiceOver element with the label "Verification code for <item>" and a value of the digits (read individually) plus seconds remaining. The value updates silently as the code rotates (no announcement, to avoid flooding VoiceOver), so users must re-focus the element to hear the new code. The countdown ring animation is not yet adjusted for Reduce Motion.
 1. **Drag-and-drop lacks keyboard alternative** (2.1.1) — Folder drag-and-drop operations cannot be performed via keyboard alone. Items can be moved to folders via the edit form as a workaround.
 
 ---

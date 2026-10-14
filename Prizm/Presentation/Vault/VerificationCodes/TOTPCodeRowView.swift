@@ -26,6 +26,10 @@ struct TOTPCodeRowView: View {
                 Text(name)
                     .font(Typography.listTitle)
                     .lineLimit(1)
+                    // The row identifier lives on the name, not on the container: SwiftUI
+                    // propagates a container's identifier to its children and would overwrite
+                    // the code and copy-button identifiers.
+                    .accessibilityIdentifier(AccessibilityID.VerificationCodes.row(itemId))
                 Spacer(minLength: 8)
             }
             switch state {
@@ -42,7 +46,6 @@ struct TOTPCodeRowView: View {
                     .accessibilityIdentifier(AccessibilityID.VerificationCodes.code(itemId))
             }
         }
-        .accessibilityIdentifier(AccessibilityID.VerificationCodes.row(itemId))
     }
 
     // MARK: - Pieces

@@ -27,6 +27,8 @@ struct ItemDetailView: View {
     var onSoftDelete: ((String) async -> Void)? = nil
     var onRestore: ((String) async -> Void)? = nil
     var onPermanentDelete: ((String) async -> Void)? = nil
+    /// Creates a tracker for the Verification Code card (injected from `AppContainer`).
+    var makeCodesViewModel: (() -> TOTPCodesViewModel)? = nil
     var editTrigger: Int = 0
     var saveTrigger: Int = 0
 
@@ -248,7 +250,7 @@ struct ItemDetailView: View {
     @ViewBuilder
     private func typeDetailView(for item: VaultItem) -> some View {
         switch item.content {
-        case .login(let l):      LoginDetailView(item: item, login: l, onCopy: onCopy)
+        case .login(let l):      LoginDetailView(item: item, login: l, onCopy: onCopy, makeCodesViewModel: makeCodesViewModel)
         case .card(let c):       CardDetailView(item: item, card: c, onCopy: onCopy)
         case .identity(let i):   IdentityDetailView(item: item, identity: i, onCopy: onCopy)
         case .secureNote(let n): SecureNoteDetailView(item: item, secureNote: n, onCopy: onCopy)

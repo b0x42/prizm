@@ -21,6 +21,8 @@ struct VaultBrowserView: View {
     var makeBatchAttachmentViewModel: ((String) -> AttachmentBatchViewModel)? = nil
     /// Factory for `AttachmentRowViewModel` — injected from AppContainer.
     var makeAttachmentRowViewModel: ((String, Attachment) -> AttachmentRowViewModel)? = nil
+    /// Factory for the TOTP code tracker — injected from AppContainer (Constitution §II).
+    var makeCodesViewModel: (() -> TOTPCodesViewModel)? = nil
 
     @State private var showPermanentDeleteAlert = false
     @State private var showDeleteFolderAlert = false
@@ -29,6 +31,63 @@ struct VaultBrowserView: View {
     @Environment(\.colorSchemeContrast) private var contrast
 
     private let logger = Logger(subsystem: "com.prizm", category: "UI.VaultBrowser")
+
+    /// The middle column: Trash, Verification Codes, or the regular item list.
+    /// Extracted from `body` to keep the type checker fast.
+    @ViewBuilder
+    private var itemListPane: some View {
+        if viewModel.sidebarSelection == .trash {
+            TrashView(
+                items:             viewModel.displayedItems,
+                selection:         $viewModel.itemSelection,
+                faviconLoader:     faviconLoader,
+                onRestore:         { id in await viewModel.performRestore(id: id) },
+                onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) }
+            )
+        } else if viewModel.sidebarSelection == .verificationCodes, let makeCodesViewModel {
+            VerificationCodesListView(
+                items:         viewModel.displayedItems,
+                selection:     $viewModel.itemSelection,
+                faviconLoader: faviconLoader,
+                searchQuery:   viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
+                makeViewModel: makeCodesViewModel,
+                onCopy:        { viewModel.copy($0) }
+            )
+        } else {
+            ItemListView(
+                items:          viewModel.displayedItems,
+                selection:      $viewModel.itemSelection,
+                faviconLoader:  faviconLoader,
+                searchQuery:    viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
+                organizations:  viewModel.organizations,
+                onDelete:       { id in await viewModel.performSoftDelete(id: id) },
+                onToggleFavorite: { viewModel.toggleFavorite(item: $0) }
+            )
+        }
+    }
+
+    /// The detail column. Extracted from `body` to keep the type checker fast.
+    private var itemDetail: some View {
+        ItemDetailView(
+            item:                           viewModel.itemSelection,
+            faviconLoader:                  faviconLoader,
+            folders:                        viewModel.folders,
+            organizations:                  viewModel.organizations,
+            onCopy:                         { viewModel.copy($0) },
+            makeEditViewModel:              makeEditViewModel,
+            makeAddAttachmentViewModel:     makeAddAttachmentViewModel,
+            makeBatchAttachmentViewModel:   makeBatchAttachmentViewModel,
+            makeAttachmentRowViewModel:     makeAttachmentRowViewModel,
+            onAttachmentsChanged:           { viewModel.refreshItemSelection() },
+            onEditSheetChanged:             { viewModel.handleEditSheetState($0) },
+            onSoftDelete:                   { id in await viewModel.performSoftDelete(id: id) },
+            onRestore:                      { id in await viewModel.performRestore(id: id) },
+            onPermanentDelete:              { id in await viewModel.performPermanentDelete(id: id) },
+            makeCodesViewModel:             makeCodesViewModel,
+            editTrigger:                    viewModel.editTrigger,
+            saveTrigger:                    viewModel.saveTrigger
+        )
+    }
 
     var body: some View {
         NavigationSplitView(
@@ -74,25 +133,7 @@ struct VaultBrowserView: View {
             content: {
                 VStack(spacing: 0) {
                     syncErrorBanner
-                    if viewModel.sidebarSelection == .trash {
-                        TrashView(
-                            items:             viewModel.displayedItems,
-                            selection:         $viewModel.itemSelection,
-                            faviconLoader:     faviconLoader,
-                            onRestore:         { id in await viewModel.performRestore(id: id) },
-                            onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) }
-                        )
-                    } else {
-                        ItemListView(
-                            items:          viewModel.displayedItems,
-                            selection:      $viewModel.itemSelection,
-                            faviconLoader:  faviconLoader,
-                            searchQuery:    viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
-                            organizations:  viewModel.organizations,
-                            onDelete:       { id in await viewModel.performSoftDelete(id: id) },
-                            onToggleFavorite: { viewModel.toggleFavorite(item: $0) }
-                        )
-                    }
+                    itemListPane
                 }
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
@@ -122,24 +163,7 @@ struct VaultBrowserView: View {
                 .navigationSplitViewColumnWidth(min: 220, ideal: 280)
             },
             detail: {
-                ItemDetailView(
-                    item:                           viewModel.itemSelection,
-                    faviconLoader:                  faviconLoader,
-                    folders:                        viewModel.folders,
-                    organizations:                  viewModel.organizations,
-                    onCopy:                         { viewModel.copy($0) },
-                    makeEditViewModel:              makeEditViewModel,
-                    makeAddAttachmentViewModel:     makeAddAttachmentViewModel,
-                    makeBatchAttachmentViewModel:   makeBatchAttachmentViewModel,
-                    makeAttachmentRowViewModel:     makeAttachmentRowViewModel,
-                    onAttachmentsChanged:           { viewModel.refreshItemSelection() },
-                    onEditSheetChanged:             { viewModel.handleEditSheetState($0) },
-                    onSoftDelete:                   { id in await viewModel.performSoftDelete(id: id) },
-                    onRestore:                      { id in await viewModel.performRestore(id: id) },
-                    onPermanentDelete:              { id in await viewModel.performPermanentDelete(id: id) },
-                    editTrigger:                    viewModel.editTrigger,
-                    saveTrigger:                    viewModel.saveTrigger
-                )
+                itemDetail
                 .toolbar {
                     if let item = viewModel.itemSelection {
                         if item.isDeleted {
