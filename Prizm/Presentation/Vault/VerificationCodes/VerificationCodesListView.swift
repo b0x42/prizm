@@ -10,7 +10,6 @@ import SwiftUI
 struct VerificationCodesListView: View {
 
     let items: [VaultItem]
-    @Binding var selection: VaultItem?
     let faviconLoader: FaviconLoader
     var searchQuery: String? = nil
     let onCopy: (String) -> Void
@@ -19,14 +18,12 @@ struct VerificationCodesListView: View {
 
     init(
         items: [VaultItem],
-        selection: Binding<VaultItem?>,
         faviconLoader: FaviconLoader,
         searchQuery: String? = nil,
         makeViewModel: @escaping () -> TOTPCodesViewModel,
         onCopy: @escaping (String) -> Void
     ) {
         self.items = items
-        self._selection = selection
         self.faviconLoader = faviconLoader
         self.searchQuery = searchQuery
         self.onCopy = onCopy
@@ -45,9 +42,11 @@ struct VerificationCodesListView: View {
                 )
                 .accessibilityIdentifier(AccessibilityID.VerificationCodes.emptyState)
             } else {
-                List(selection: $selection) {
+                // No selection: this list is the whole job. Clicking a row copies its code
+                // instead of opening the item.
+                List {
                     ForEach(items, id: \.id) { item in
-                        row(for: item).tag(item)
+                        row(for: item)
                     }
                 }
                 .accessibilityIdentifier(AccessibilityID.VerificationCodes.list)
@@ -65,7 +64,8 @@ struct VerificationCodesListView: View {
         HStack(spacing: 10) {
             FaviconView(domain: primaryDomain(for: item), itemType: .login, loader: faviconLoader, size: 26)
             if let state = codes.states[item.id] {
-                TOTPCodeRowView(itemId: item.id, name: item.name, state: state, showsName: true, onCopy: onCopy)
+                TOTPCodeRowView(itemId: item.id, name: item.name, state: state, showsName: true,
+                                    copiesOnTap: true, onCopy: onCopy)
             } else {
                 Text(item.name).font(Typography.listTitle).lineLimit(1)
                 Spacer()

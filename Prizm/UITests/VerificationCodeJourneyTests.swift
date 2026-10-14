@@ -110,12 +110,14 @@ final class VerificationCodeJourneyTests: XCTestCase {
         XCTAssertFalse(element("verificationCodes.row.alpha").waitForExistence(timeout: 2))
     }
 
-    func testList_selectingRow_opensItemInDetailPane() {
+    func testList_clickingRow_copiesCode_andDoesNotOpenDetail() {
         openVerificationCodes()
         let row = element("verificationCodes.row.alpha")
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         row.click()
-        XCTAssertTrue(app.staticTexts["Alpha Bank"].waitForExistence(timeout: 5))
+        let pasted = NSPasteboard.general.string(forType: .string) ?? ""
+        XCTAssertNotNil(pasted.range(of: #"^\d{6}$"#, options: .regularExpression), "Clipboard: \(pasted)")
+        XCTAssertFalse(element("detail.name").waitForExistence(timeout: 2), "Item must not open in the detail pane")
     }
 
     func testList_copyButton_putsCodeOnClipboard() {

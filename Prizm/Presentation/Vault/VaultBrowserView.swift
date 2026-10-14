@@ -47,7 +47,6 @@ struct VaultBrowserView: View {
         } else if viewModel.sidebarSelection == .verificationCodes, let makeCodesViewModel {
             VerificationCodesListView(
                 items:         viewModel.displayedItems,
-                selection:     $viewModel.itemSelection,
                 faviconLoader: faviconLoader,
                 searchQuery:   viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
                 makeViewModel: makeCodesViewModel,
@@ -67,7 +66,21 @@ struct VaultBrowserView: View {
     }
 
     /// The detail column. Extracted from `body` to keep the type checker fast.
+    @ViewBuilder
     private var itemDetail: some View {
+        if viewModel.sidebarSelection == .verificationCodes {
+            // The codes list has no selection; say what a click does instead of "No Item Selected".
+            ContentUnavailableView(
+                "Verification Codes",
+                systemImage: "clock",
+                description: Text("Click a code to copy it.")
+            )
+        } else {
+            itemDetailView
+        }
+    }
+
+    private var itemDetailView: some View {
         ItemDetailView(
             item:                           viewModel.itemSelection,
             faviconLoader:                  faviconLoader,

@@ -48,8 +48,8 @@ Expected: all pass, including the RFC 6238 Appendix B vectors for SHA-1, SHA-256
    Select "Verification Codes". Expect exactly the non-trashed items with seeds (including the invalid one), alphabetical, each with a code or "Code unavailable". The trashed item is absent. The sidebar count matches.
 7. **Search (FR-004b)**
    Type part of an item name. The list filters. Clear the search: all rows return.
-8. **Select row (FR-007)**
-   Click a row. The item opens in the detail pane.
+8. **Click row (FR-007)**
+   Click a row. Its code is copied and the item does NOT open in the detail pane.
 9. **Empty state (Story 2 scenario 5)**
    In a vault with no seeds, the list shows the empty state.
 10. **Lock (Story 3, SC-005)**
