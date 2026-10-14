@@ -28,7 +28,7 @@ Approach (see [research.md](research.md)):
 
 **Project Type**: macOS desktop app
 
-**Performance Goals**: New code visible within 1 s of the period ending (SC-004). Sidebar to copied code under 10 s (SC-002). One refresh pass for 100 seeds takes well under 50 ms on the main-actor budget [assumption, to be measured in tasks].
+**Performance Goals**: New code visible within 1 s of the period ending (SC-004). Sidebar to copied code under 10 s (SC-002). One refresh pass for 100 seeds takes under 50 ms on the developer's Mac (measured in T050).
 
 **Constraints**: No hand-rolled HMAC. Crypto only in the Data layer behind `PrizmCryptoService`. No logging of seeds or codes. No refresh while locked, hidden/minimized, or off-screen. Merely losing focus does not hide codes. Design tokens only, no raw font or spacing literals.
 
@@ -76,11 +76,12 @@ Prizm/
 ├── Domain/
 │   ├── Entities/
 │   │   ├── SidebarSelection.swift        # + .verificationCodes case, equality, hash, name
-│   │   └── TOTPCode.swift                # NEW: code value, grouping, time remaining
+│   │   ├── TOTPCode.swift                # NEW: code value, grouping, time remaining
+│   │   └── TOTPConfiguration.swift       # NEW: TOTPHashAlgorithm, TOTPError, TOTPConfiguration
 │   ├── Utilities/
 │   │   └── TOTPSeedParser.swift          # NEW: base32 + otpauth parsing (Foundation only)
 │   └── UseCases/
-│       └── GenerateTOTPCodeUseCase.swift # NEW: protocol + TOTPError
+│       └── GenerateTOTPCodeUseCase.swift # NEW: protocol
 ├── Data/
 │   ├── Crypto/
 │   │   └── PrizmCryptoService.swift      # + hmac(algorithm:key:message:)
@@ -97,6 +98,7 @@ Prizm/
 │   │   ├── Detail/LoginDetailView.swift       # + "Verification Code" card
 │   │   ├── Sidebar/SidebarView.swift          # + sidebar row
 │   │   └── VaultBrowserView.swift             # + list pane switch
+│   ├── AccessibilityIdentifiers.swift         # + VerificationCodes identifiers
 │   └── DesignSystem.swift                     # + code typography token if none fits
 ├── App/
 │   ├── AppContainer.swift                     # wire use case
@@ -104,10 +106,14 @@ Prizm/
 ├── PrizmTests/
 │   ├── Domain/TOTPSeedParserTests.swift       # NEW
 │   ├── Domain/TOTPCodeTests.swift             # NEW
+│   ├── Domain/SidebarSelectionTests.swift     # NEW
 │   ├── Data/TOTPKnownAnswerTests.swift        # NEW (RFC 6238 / 4226 vectors)
 │   ├── Data/GenerateTOTPCodeUseCaseTests.swift # NEW
 │   ├── Data/VaultRepositoryImplTests.swift    # + index/count/trash cases
 │   ├── Presentation/TOTPCodesViewModelTests.swift # NEW
+│   ├── Presentation/RootViewModelCopyCodeTests.swift # NEW
+│   ├── Presentation/VerificationCodesSelectionTests.swift # NEW
+│   ├── Presentation/RootViewModelLockTests.swift # + lock clears codes
 │   └── Mocks/MockPrizmCryptoService.swift     # + hmac
 └── UITests/                                   # + verification-codes journey
 ```

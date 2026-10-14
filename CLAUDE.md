@@ -1,11 +1,11 @@
 # Prizm Development Guidelines
 
-**Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.4.0) — READ THIS FIRST.**
-The Constitution defines seven non-negotiable principles that govern every decision in this
+**Constitution: [CONSTITUTION.md](CONSTITUTION.md) (v1.5.0) — READ THIS FIRST.**
+The Constitution defines eight non-negotiable principles that govern every decision in this
 codebase: Native-First (SwiftUI only), Clean Architecture (strict layer boundaries), Security-First
 (vetted crypto only, no hand-rolled algorithms), TDD (Red→Green→Refactor, no exceptions),
-Observability (no silent failures), Simplicity/YAGNI, and Radical Transparency (all crypto must be
-publicly auditable). Before implementing any feature, adding a dependency, or making an
+Observability (no silent failures), Simplicity/YAGNI, Radical Transparency (all crypto must be
+publicly auditable), and Accessibility (VoiceOver-usable controls). Before implementing any feature, adding a dependency, or making an
 architectural decision, consult the Constitution. Violations are blocking PR rejections.
 
 ## Active Technologies
