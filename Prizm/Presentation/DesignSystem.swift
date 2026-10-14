@@ -45,10 +45,6 @@ enum Typography {
     /// Slightly heavier than `fieldLabel` to visually separate it from body content.
     static let fieldLabelProminent: Font = .callout.weight(.medium)
 
-    /// A one-time verification code: larger than body text and monospaced so digits do not
-    /// shift as the code rotates.
-    static let verificationCode: Font = .system(.title3, design: .monospaced).monospacedDigit().weight(.medium)
-
     /// Top-level sidebar rows (All Items, Favorites, item types, Trash).
     static let sidebarRow: Font = .system(size: 14, weight: .regular)
 

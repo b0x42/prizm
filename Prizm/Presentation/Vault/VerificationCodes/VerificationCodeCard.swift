@@ -24,12 +24,13 @@ struct VerificationCodeCard: View {
         DetailSectionCard("Verification Code") {
             Group {
                 if let state = codes.states[item.id] {
-                    TOTPCodeRowView(itemId: item.id, name: item.name, state: state, onCopy: onCopy)
+                    TOTPCodeRowView(itemId: item.id, name: item.name, state: state,
+                                    label: "Code", copiesOnTap: true, onCopy: onCopy)
                 } else {
                     ProgressView().controlSize(.small)
                 }
             }
-            .padding(.vertical, Spacing.rowVertical)
+            .padding(.vertical, 16) // same as FieldRowView
             .padding(.horizontal, Spacing.rowHorizontal)
         }
         .task(id: item) { codes.start(items: [item]) }

@@ -18,10 +18,23 @@ struct TOTPCodeRowView: View {
     let name: String
     let state: TOTPCodeState
     var showsName: Bool = false
+    /// Field label shown at the leading edge in the detail card (like "Username"); nil in the list.
+    var label: String? = nil
+    /// When true the whole row copies on tap, like `FieldRowView`. Off in the list, where a tap
+    /// selects the row.
+    var copiesOnTap: Bool = false
     let onCopy: (String) -> Void
+
+    @State private var isHovered = false
+    @State private var showCopied = false
 
     var body: some View {
         HStack(spacing: 10) {
+            if let label {
+                Text(label)
+                    .font(Typography.fieldValue)
+                Spacer(minLength: 8)
+            }
             if showsName {
                 Text(name)
                     .font(Typography.listTitle)
@@ -34,17 +47,24 @@ struct TOTPCodeRowView: View {
             }
             switch state {
             case .code(let code):
-                codeView(code)
-                if !showsName { Spacer(minLength: 8) }
+                if label == nil && !showsName { Spacer(minLength: 8) }
                 copyButton(for: code)
+                codeView(code)
             case .unavailable:
-                if !showsName { Spacer(minLength: 0) }
+                if label == nil && !showsName { Spacer(minLength: 0) }
                 Text("Code unavailable")
                     .font(Typography.fieldValue)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Verification code for \(name): unavailable")
                     .accessibilityIdentifier(AccessibilityID.VerificationCodes.code(itemId))
             }
+        }
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            optionalAnimation(.easeInOut(duration: 0.15)) { isHovered = hovering }
+        }
+        .onTapGesture {
+            if copiesOnTap, case .code(let code) = state { copy(code) }
         }
     }
 
@@ -53,7 +73,7 @@ struct TOTPCodeRowView: View {
     private func codeView(_ code: TOTPCode) -> some View {
         HStack(spacing: 10) {
             Text(code.grouped)
-                .font(Typography.verificationCode)
+                .font(Typography.fieldValue.monospaced())
                 .textSelection(.enabled)
             countdown(code)
         }
@@ -93,16 +113,33 @@ struct TOTPCodeRowView: View {
         .accessibilityHidden(true) // spoken through the code element's value
     }
 
+    /// Matches the "COPY" / "COPIED" hover label used by every other field (`FieldRowView`).
+    /// It stays in the accessibility tree and stays clickable while invisible (clear text), so VoiceOver and
+    /// keyboard users can always reach it.
     private func copyButton(for code: TOTPCode) -> some View {
         Button {
-            onCopy(code.copyValue)
+            copy(code)
         } label: {
-            Image(systemName: "doc.on.doc")
+            Text(showCopied ? "copied" : "copy")
+                .font(.headline)
+                .textCase(.uppercase)
+                // Clear (not opacity 0) so the button stays in the accessibility tree.
+                .foregroundStyle(isHovered || showCopied ? Color.accentColor : Color.clear)
+                .padding(.trailing, 4)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.plain)
         .help("Copy verification code")
         .accessibilityLabel("Copy verification code for \(name)")
         .accessibilityIdentifier(AccessibilityID.VerificationCodes.copyButton(itemId))
+    }
+
+    private func copy(_ code: TOTPCode) {
+        onCopy(code.copyValue)
+        optionalAnimation(.easeInOut(duration: 0.1)) { showCopied = true }
+        Task {
+            try? await Task.sleep(for: .seconds(0.8))
+            optionalAnimation(.easeInOut(duration: 0.1)) { showCopied = false }
+        }
     }
 
     private func spokenDigits(_ code: TOTPCode) -> String {
