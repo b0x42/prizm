@@ -91,7 +91,7 @@ A user locks the vault, by hand or by the app's existing lock behavior, while co
 - **FR-003**: The system MUST produce codes that match those of any standards-conforming authenticator for the same seed at the same moment.
 - **FR-004**: The system MUST provide a "Verification Codes" entry in the sidebar that lists every non-trashed item with a TOTP seed, one row per item.
 - **FR-004a**: Rows MUST be sorted alphabetically by item name.
-- **FR-004b**: The existing search MUST filter the Verification Codes list by item name.
+- **FR-004b**: The existing search MUST filter the Verification Codes list using its current matching rules (item name, username, website).
 - **FR-005**: Each row MUST show the item name, the current code, and the time remaining. Six-digit codes MUST be displayed grouped in the middle (for example "123 456"); the copied value MUST contain no space.
 - **FR-006**: The user MUST be able to copy an item's current code from the item view and from a list row. A copied code MUST be cleared from the clipboard automatically within 30 seconds.
 - **FR-007**: Selecting a row MUST open that item in the detail pane.
