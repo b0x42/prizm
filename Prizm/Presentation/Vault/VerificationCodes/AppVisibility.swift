@@ -22,20 +22,25 @@ enum AppVisibility {
 private struct AppVisibilityModifier: ViewModifier {
     let onChange: (Bool) -> Void
 
+    @State private var isVisible = true
+
     func body(content: Content) -> some View {
-        content.task {
-            // Occlusion changes fire for every window of the app; only report real transitions.
-            var last = AppVisibility.isAnyWindowVisible
-            for await _ in NotificationCenter.default.notifications(
-                named: NSWindow.didChangeOcclusionStateNotification
-            ) {
-                let now = AppVisibility.isAnyWindowVisible
-                if now != last {
-                    last = now
-                    onChange(now)
+        content
+            .task {
+                // Occlusion changes fire for every window of the app; only publish real changes.
+                isVisible = AppVisibility.isAnyWindowVisible
+                for await _ in NotificationCenter.default.notifications(
+                    named: NSWindow.didChangeOcclusionStateNotification
+                ) {
+                    let now = AppVisibility.isAnyWindowVisible
+                    if now != isVisible { isVisible = now }
                 }
             }
-        }
+            // The action is invoked from `.onChange`, whose closure SwiftUI rebuilds on every
+            // render. Calling it from inside the long-lived `.task` above would use the closure
+            // captured when the view first appeared, so after the selection changed it would
+            // restart the tracker for the OLD item and leave the new item's card on its spinner.
+            .onChange(of: isVisible) { _, visible in onChange(visible) }
     }
 }
 
