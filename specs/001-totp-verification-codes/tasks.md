@@ -155,7 +155,7 @@ description: "Task list for TOTP Verification Codes"
 - [X] T048 (static audit done: the only log calls are a count of unavailable items and a fixed message; live `log stream` check left to the manual quickstart) Verify no secret appears in logs: run `log stream --predicate 'subsystem == "com.prizm"' --level debug` during quickstart scenarios 1 to 11 and confirm no seed or code (quickstart scenario 13).
 - [X] T049 Run the complete quickstart (`quickstart.md`, scenarios 1 to 14 including a real sign-in with a code from Prizm, SC-007) and the full suite `xcodebuild test -project "Prizm/Prizm.xcodeproj" -scheme "Prizm" -destination "platform=macOS"`; record results in the PR description. Also time scenario 4 with a stopwatch: sidebar row click to code on the clipboard must take under 10 seconds (SC-002).
 - [X] T050 Measure one refresh pass for 100 seeds (a unit test with `measure` or a timed loop in `TOTPCodesViewModelTests.swift`); the goal is under 50 ms per pass on the developer's Mac. If it exceeds it, report before optimizing (Constitution §VI: no premature optimization).
-- [ ] T051 Request the Constitution-mandated security review of the vault-touching changes (T010, T014, T017, T023, T024, T032), noting the §III TOTP exception (T003), and include the Constitution Check in the PR description.
+- [X] T051 Request the Constitution-mandated security review of the vault-touching changes (T010, T014, T017, T023, T024, T032), noting the §III TOTP exception (T003), and include the Constitution Check in the PR description.
 
 ---
 
