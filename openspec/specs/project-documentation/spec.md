@@ -162,19 +162,20 @@ merge, and at least one review is required. Configured in GitHub Settings → Br
 - **WHEN** anyone attempts to push directly to `main`
 - **THEN** GitHub rejects the push and instructs them to open a pull request
 
-### Requirement: README screenshot is a real app capture (macOS only)
-The screenshot in `README.md` SHALL be an actual capture of the running Prizm app, not
-a placeholder. Capture is automated via `screencapture` on macOS and committed to
-`assets/screenshot.png`. The app icon PNG for the README header is stored at `assets/icon.png`.
-This task MUST be run on a macOS host — it cannot be automated on Linux.
+### Requirement: README feature image is built from real app captures (macOS only)
+The feature image in `README.md` SHALL be composed from actual captures of the running
+Prizm app, not placeholders or mock-ups. Windows are captured with `screencapture` on macOS
+from a demo vault that contains example data only, and the composed image is committed to
+`assets/collage.png`. The app icon PNG for the README header is stored at `assets/icon.png`.
+Capturing MUST be run on a macOS host — it cannot be automated on Linux.
 
-#### Scenario: User sees a screenshot in the README
+#### Scenario: User sees the feature image in the README
 - **WHEN** a user visits the GitHub repository
-- **THEN** the screenshot shows the real Prizm UI (vault list + detail pane), not a placeholder image
+- **THEN** the image shows the real Prizm UI (vault list + detail pane, and the main features), not a placeholder image
 
-#### Scenario: Screenshot is captured automatically
-- **WHEN** this task is executed on macOS
-- **THEN** Prizm is launched, the main window ID is retrieved via AppleScript, `screencapture -l` captures it losslessly, and the result is saved to `assets/screenshot.png`
+#### Scenario: Windows are captured automatically
+- **WHEN** the capture is executed on macOS
+- **THEN** Prizm is brought to the front, the window ID is looked up, `screencapture -l` captures the window losslessly, and the captures are composed into `assets/collage.png`
 
 ### Requirement: LocalConfig.xcconfig.template exists
 The repository SHALL contain `Prizm/LocalConfig.xcconfig.template` so contributors
