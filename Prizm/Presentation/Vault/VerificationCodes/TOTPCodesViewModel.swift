@@ -123,7 +123,10 @@ final class TOTPCodesViewModel: ObservableObject {
         // one line per second.
         if unavailable != lastLoggedUnavailableCount {
             lastLoggedUnavailableCount = unavailable
-            logger.error("Verification codes unavailable for \(unavailable, privacy: .public) item(s)")
+            // Only an actual problem is an error; going back to zero is not worth a line.
+            if unavailable > 0 {
+                logger.error("Verification codes unavailable for \(unavailable, privacy: .public) item(s)")
+            }
         }
     }
 

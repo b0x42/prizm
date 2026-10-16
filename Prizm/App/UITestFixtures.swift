@@ -18,7 +18,16 @@ enum UITestFixtures {
     /// RFC 6238 Appendix B secret "12345678901234567890" in base32.
     static let rfcSeed = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
 
+    /// With `--ui-test-no-codes`, every sample item has no TOTP seed (to see the empty state).
+    static var withoutSeeds: Bool { CommandLine.arguments.contains("--ui-test-no-codes") }
+
     static var items: [VaultItem] {
+        let all = seededItems
+        guard withoutSeeds else { return all }
+        return all.map { login(id: $0.id, name: $0.name, totp: nil, isDeleted: $0.isDeleted) }
+    }
+
+    private static var seededItems: [VaultItem] {
         [
             login(id: "alpha", name: "Alpha Bank", totp: rfcSeed),
             login(id: "beta", name: "Beta Mail",
