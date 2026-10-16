@@ -2,7 +2,8 @@ import SwiftUI
 
 // MARK: - VerificationCodeCard
 
-/// The "Verification Code" card in a Login's detail pane (FR-001, FR-006).
+/// The "Codes" card in a Login's detail pane (FR-001, FR-006). Titled in the plural with a
+/// singular "Code" row, like "Websites" / "Website".
 ///
 /// Starts its own tracker while on screen and stops it when the view goes away or the app is
 /// hidden or minimized, so no code lingers or refreshes in the background (FR-010, FR-011).
@@ -21,7 +22,7 @@ struct VerificationCodeCard: View {
     }
 
     var body: some View {
-        DetailSectionCard("Verification Code") {
+        DetailSectionCard("Codes") {
             Group {
                 if let state = codes.states[item.id] {
                     TOTPCodeRowView(itemId: item.id, name: item.name, state: state,

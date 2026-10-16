@@ -51,11 +51,11 @@ struct VerificationCodesListView: View {
         Group {
             if items.isEmpty {
                 ContentUnavailableView(
-                    "No verification codes",
+                    "No codes",
                     systemImage: "clock",
                     description: Text(searchQuery == nil
-                        ? "None of your items has a verification code."
-                        : "No verification codes match your search.")
+                        ? "None of your items has a code."
+                        : "No codes match your search.")
                 )
                 .accessibilityIdentifier(AccessibilityID.VerificationCodes.emptyState)
             } else {

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The code, its countdown, and a copy button for one item.
 ///
-/// Used by the "Verification Code" card in the detail pane and by each row of the
+/// Used by the "Codes" card in the detail pane and by each row of the
 /// Verification Codes list (which adds the favicon in front).
 ///
 /// Accessibility (Constitution §VIII, FR-014): the code and countdown form ONE element that

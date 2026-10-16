@@ -212,11 +212,26 @@ final class VaultBrowserViewModel: ObservableObject {
         searchQuery = ""
     }
 
+    /// Pasteboard type from the nspasteboard.org convention (http://nspasteboard.org). Clipboard
+    /// managers that honor it, such as most password-aware ones, skip items carrying it.
+    nonisolated static let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+
+    /// Replaces the pasteboard contents with `value`, flagged as concealed.
+    ///
+    /// Security goal: copied passwords and one-time codes should not be recorded in a
+    /// clipboard manager's history. Intentionally NOT done: this does not stop a process that
+    /// reads the pasteboard directly; the 30-second auto-clear below limits that window.
+    static func writeConcealed(_ value: String, to pasteboard: NSPasteboard) {
+        pasteboard.clearContents()
+        pasteboard.setString(value, forType: .string)
+        // The marker's value is ignored by consumers; only its presence matters.
+        pasteboard.setString("", forType: concealedType)
+    }
+
     /// Copies `value` to the pasteboard and schedules a 30-second auto-clear (FR-011).
     func copy(_ value: String) {
         let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(value, forType: .string)
+        Self.writeConcealed(value, to: pasteboard)
 
         // Cancel any previous clear task before scheduling a new one.
         clipboardClearTask?.cancel()
