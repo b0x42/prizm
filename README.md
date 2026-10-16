@@ -155,8 +155,6 @@ Changes follow an **openspec** workflow: each feature lives in `openspec/changes
 
 Pull requests welcome. Please open an issue first for anything significant.
 
-The feature image at the top of this README is generated from `assets/collage-src/`. See [its README](assets/collage-src/README.md) to regenerate it after the UI changes.
-
 ---
 
 *Not affiliated with Bitwarden, Inc., 8bit Solutions LLC, or the Vaultwarden project.*
