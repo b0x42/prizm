@@ -18,6 +18,8 @@ struct TOTPCodeRowView: View {
     let name: String
     let state: TOTPCodeState
     var showsName: Bool = false
+    /// Secondary line under the name in the list (the username); nil in the detail card.
+    var subtitle: String? = nil
     /// Field label shown at the leading edge in the detail card (like "Username"); nil in the list.
     var label: String? = nil
     /// When true the whole row copies on tap, like `FieldRowView`. Off in the list, where a tap
@@ -39,14 +41,23 @@ struct TOTPCodeRowView: View {
                 Spacer(minLength: 8)
             }
             if showsName {
-                Text(name)
-                    // `.headline` (semibold) is what the regular item list uses for names.
-                    .font(.headline)
-                    .lineLimit(1)
-                    // The row identifier lives on the name, not on the container: SwiftUI
-                    // propagates a container's identifier to its children and would overwrite
-                    // the code and copy-button identifiers.
-                    .accessibilityIdentifier(AccessibilityID.VerificationCodes.row(itemId))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(name)
+                        // `.headline` (semibold) is what the regular item list uses for names.
+                        .font(.headline)
+                        .lineLimit(1)
+                        // The row identifier lives on the name, not on the container: SwiftUI
+                        // propagates a container's identifier to its children and would
+                        // overwrite the code and copy-button identifiers.
+                        .accessibilityIdentifier(AccessibilityID.VerificationCodes.row(itemId))
+                    // Username under the name, styled like the regular item list.
+                    if let subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
                 Spacer(minLength: 8)
             }
             switch state {

@@ -86,13 +86,23 @@ struct VerificationCodesListView: View {
             FaviconView(domain: primaryDomain(for: item), itemType: .login, loader: faviconLoader, size: 26)
             if let state = codes.states[item.id] {
                 TOTPCodeRowView(itemId: item.id, name: item.name, state: state, showsName: true,
-                                showsCountdown: false, onCopy: onCopy)
+                                subtitle: username(for: item), showsCountdown: false, onCopy: onCopy)
             } else {
-                Text(item.name).font(.headline).lineLimit(1)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(item.name).font(.headline).lineLimit(1)
+                    if let username = username(for: item), !username.isEmpty {
+                        Text(username).font(.callout).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
                 Spacer()
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8) // same as the regular item list rows
+    }
+
+    private func username(for item: VaultItem) -> String? {
+        guard case .login(let l) = item.content else { return nil }
+        return l.username
     }
 
     private func primaryDomain(for item: VaultItem) -> String? {
