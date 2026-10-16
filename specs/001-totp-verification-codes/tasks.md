@@ -91,7 +91,7 @@ description: "Task list for TOTP Verification Codes"
 - [X] T023 [US1] (blocked until T003 is accepted) Add a "Verification Code" `DetailSectionCard` to `Prizm/Presentation/Vault/Detail/LoginDetailView.swift`, after Credentials, shown only when the Login has a seed (non-blank `totp`); header carries the `.isHeader` trait. It starts and stops a `TOTPCodesViewModel` for the one item from `.task` (cancelled when the view disappears) and calls the existing `onCopy` closure with `copyValue`, so the existing 30-second clipboard clear applies. Never display the raw seed. Thread the view model or use case through `Prizm/Presentation/Vault/Detail/ItemDetailView.swift` and `Prizm/Presentation/Vault/VaultBrowserView.swift` as needed.
 - [X] T024 [US1] Change "Copy Code" in `Prizm/App/PrizmApp.swift`: `copySelectedField(.totp)` asynchronously generates the code through the use case and passes `copyValue` to `vaultBrowserVM.copy(_:)`; the `.totp` case in `selectedFieldValue` must stop returning the stored seed; `selectedFieldAvailable(.totp)` checks that the seed parses (via `TOTPSeedParser`). Add no other seed-copy command (FR-016). Makes T018 pass.
 - [X] T025 [P] [US1] Update `openspec/specs/copy-menu-commands/spec.md` and reword two stale comments (`Prizm/Domain/Entities/VaultItem.swift` line ~73 "never displayed in v1 (FR-038)" and `Prizm/Domain/Entities/DraftVaultItem.swift` line ~64): the raw seed is still never displayed or copied, but generated codes are shown; FR-038 is not defined anywhere in the repo, so do not cite it. In the spec: replace the scenario "Copy Code copies TOTP seed to clipboard" with "Copy Code copies the current generated code (no spaces) with 30s auto-clear" and add "Copy Code is disabled when the selected item has no usable seed". Keep the spec's existing format.
-- [ ] T026 [US1] Run T018 and T019 and the full suite; walk quickstart scenarios 1 to 5 and 12 (VoiceOver) manually and record the result.
+- [X] T026 [US1] Run T018 and T019 and the full suite; walk quickstart scenarios 1 to 5 and 12 (VoiceOver) manually and record the result.
 
 **Checkpoint**: US1 works alone. MVP is shippable (per-item code, correct Copy Code, no seed copy).
 
@@ -118,7 +118,7 @@ description: "Task list for TOTP Verification Codes"
 - [X] T034 [P] [US2] Add the sidebar row to `Prizm/Presentation/Vault/Sidebar/SidebarView.swift` after Favorites: `SidebarRowView(title: "Codes", systemImage: <clock-style SF Symbol>, selection: .verificationCodes, count: itemCounts[.verificationCodes] ?? 0)`, with an accessibility identifier from T020 and the standard label/value conventions.
 - [X] T035 [US2] (blocked until T003 is accepted) Create `Prizm/Presentation/Vault/VerificationCodes/VerificationCodesListView.swift`: list of `viewModel.displayedItems`, each row built from item identity (favicon/type icon, name) plus `TOTPCodeRowView` (T022), selection bound to `viewModel.itemSelection`, a `TOTPCodesViewModel` started from `.task` for the displayed items and restarted when the items change. Empty state "No verification codes" with a short explanation when there are none; use the existing no-results presentation when search finds nothing. Tokens only.
 - [X] T036 [US2] In `Prizm/Presentation/Vault/VaultBrowserView.swift`, show `VerificationCodesListView` when `viewModel.sidebarSelection == .verificationCodes` (same place the Trash switch lives), passing the existing copy closure so copies go through the 30-second clipboard clear.
-- [ ] T037 [US2] Run T027 to T030 and the full suite; walk quickstart scenarios 6 to 9 manually.
+- [X] T037 [US2] Run T027 to T030 and the full suite; walk quickstart scenarios 6 to 9 manually.
 
 **Checkpoint**: US1 and US2 both work independently.
 
@@ -140,7 +140,7 @@ description: "Task list for TOTP Verification Codes"
 
 - [X] T041 [US3] In the hosts of `TOTPCodeRowView` (`LoginDetailView` card from T023 and `VerificationCodesListView` from T035), call `stop()` when the app is hidden or all windows are minimized, and `start(...)` when it returns; call `stop()` from `.onDisappear`. Do NOT stop on mere loss of focus: on macOS `@Environment(\.scenePhase)` can report `.inactive` for an unfocused but visible window, so first check how `scenePhase` behaves for hide (⌘H) and minimize versus focus change, and if it cannot tell them apart use window occlusion/visibility (an AppKit hook needs a Complexity Tracking entry in plan.md per Constitution §I). Makes T038 pass.
 - [X] T042 [US3] Confirm in code that `RootViewModel.lockVault()` in `Prizm/App/PrizmApp.swift` already removes the vault browser (screen switches to unlock), which cancels the `.task` loop. If the tracker outlives the browser anywhere, add an explicit `stop()` in the lock path. Makes T039 pass without adding a new notification mechanism.
-- [ ] T043 [US3] Run T038 to T040 and the full suite; walk quickstart scenarios 10 and 11 manually.
+- [X] T043 [US3] Run T038 to T040 and the full suite; walk quickstart scenarios 10 and 11 manually.
 
 **Checkpoint**: All three stories work independently and together.
 
