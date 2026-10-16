@@ -88,7 +88,7 @@ struct VerificationCodesListView: View {
                 TOTPCodeRowView(itemId: item.id, name: item.name, state: state, showsName: true,
                                 showsCountdown: false, onCopy: onCopy)
             } else {
-                Text(item.name).font(Typography.listTitle).lineLimit(1)
+                Text(item.name).font(.headline).lineLimit(1)
                 Spacer()
             }
         }

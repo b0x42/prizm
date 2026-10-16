@@ -40,7 +40,8 @@ struct TOTPCodeRowView: View {
             }
             if showsName {
                 Text(name)
-                    .font(Typography.listTitle)
+                    // `.headline` (semibold) is what the regular item list uses for names.
+                    .font(.headline)
                     .lineLimit(1)
                     // The row identifier lives on the name, not on the container: SwiftUI
                     // propagates a container's identifier to its children and would overwrite
