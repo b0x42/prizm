@@ -77,6 +77,10 @@ struct TOTPCodeRowView: View {
         HStack(spacing: 10) {
             Text(code.grouped)
                 .font(Typography.fieldValue.monospaced())
+                // The list has no countdown ring, so the code itself warns in the last seconds:
+                // orange and semibold (not color alone), matching the detail view's ring.
+                .fontWeight(!showsCountdown && code.isExpiringSoon ? .semibold : nil)
+                .foregroundStyle(!showsCountdown && code.isExpiringSoon ? Color.orange : Color.primary)
                 .textSelection(.enabled)
             if showsCountdown { countdown(code) }
         }

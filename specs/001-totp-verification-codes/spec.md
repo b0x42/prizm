@@ -86,7 +86,7 @@ A user locks the vault, by hand or by the app's existing lock behavior, while co
 ### Functional Requirements
 
 - **FR-001**: The system MUST show, for a Login item with a usable TOTP seed, the current code (grouped as in FR-005) and the time remaining until it changes.
-- **FR-001a**: The time indicator MUST change appearance during the last 5 seconds of a code's validity, in the item view (the list shows no countdown). The change MUST NOT rely on color alone.
+- **FR-001a**: The time indicator MUST change appearance during the last 5 seconds of a code's validity, in the item view. In the list, which shows no countdown, the code itself MUST turn orange and semibold during the same last 5 seconds. Neither change may rely on color alone.
 - **FR-002**: The system MUST replace a displayed code with the next one when its validity period ends, without user action.
 - **FR-003**: The system MUST produce codes that match those of any standards-conforming authenticator for the same seed at the same moment.
 - **FR-004**: The system MUST provide a "Codes" entry in the sidebar that lists every non-trashed item with a TOTP seed, one row per item.
