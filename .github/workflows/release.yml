@@ -118,6 +118,8 @@ jobs:
       # draft. Other contributors keep their credit, and the "New Contributors" section is
       # untouched. The release stays a draft; the maintainer edits and publishes it.
       - name: Remove the maintainer handle from the draft notes
+        # Cosmetic only: if this fails, the Homebrew cask update below must still run.
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           OWNER: ${{ github.repository_owner }}
