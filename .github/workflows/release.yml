@@ -112,6 +112,22 @@ jobs:
           draft: true
           generate_release_notes: true
 
+      # GitHub's generated notes add " by @<author>" to every pull request line, and
+      # `.github/release.yml` cannot hide it (its `exclude.authors` drops the whole entry).
+      # The maintainer does not want their handle in release notes, so strip it from the
+      # draft. Other contributors keep their credit, and the "New Contributors" section is
+      # untouched. The release stays a draft; the maintainer edits and publishes it.
+      - name: Remove the maintainer handle from the draft notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          gh release view "$GITHUB_REF_NAME" --json body -q .body > release-notes.md
+          # BSD sed (macOS runner): -i needs an explicit empty backup suffix.
+          sed -i '' "s/ by @${OWNER} in / in /" release-notes.md
+          gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+
       - name: Update Homebrew cask
         env:
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
