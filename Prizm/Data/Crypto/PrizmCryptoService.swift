@@ -354,11 +354,19 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
                   let parallelism = kdf.parallelism else {
                 throw PrizmCryptoServiceError.kdfFailed
             }
+            // Bitwarden's Argon2id differs from the plain call in two ways (bitwarden/sdk-internal,
+            // crates/bitwarden-crypto/src/keys/kdf.rs, with a test vector): the salt is SHA-256(email)
+            // and the server reports the memory cost in MiB while Argon2 takes KiB. Without both the
+            // derived key is wrong and the login fails with "Username or password is incorrect".
+            //
+            // Security goal: derive exactly the master key every other Bitwarden client derives, so the server
+            // hash and the unwrapping of the user key are correct. Nothing is weakened: the salt stays a
+            // SHA-256 digest and the cost parameters are the account's own.
             return try argon2idDerive(
                 password:    password,
-                salt:        emailData,
+                salt:        Data(SHA256.hash(data: emailData)),
                 iterations:  kdf.iterations,
-                memory:      memory,
+                memory:      memory * 1024,
                 parallelism: parallelism
             )
         }
