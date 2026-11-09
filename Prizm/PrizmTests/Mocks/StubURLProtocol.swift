@@ -1,17 +1,29 @@
 import Foundation
+import os
 
 /// `URLProtocol` stub for tests that need to see the exact request `PrizmAPIClientImpl` sends and answer
 /// it without a network. Build the client with `StubURLProtocol.makeSession()` and set `requestHandler`
 /// before the call; reset it in `tearDown`.
 ///
 /// `URLProtocol` callbacks run on a `URLSession`-owned queue, not on the main actor, hence `nonisolated`.
-/// The static state is only touched by one test at a time (XCTest runs a class's tests serially).
+/// The static state is lock-guarded because `startLoading` writes it from a `URLSession` queue while the
+/// test reads it from the main actor, and parallel testing could run two stubbed tests at once.
 nonisolated final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 
+    private struct State {
+        var requestHandler: ((URLRequest, Data) -> (status: Int, body: Data))?
+        var lastRequest: URLRequest?
+        var lastBody: Data?
+    }
+    private static let state = OSAllocatedUnfairLock(uncheckedState: State())
+
     /// Returns the HTTP status and body for a request (and its body bytes).
-    nonisolated(unsafe) static var requestHandler: ((URLRequest, Data) -> (status: Int, body: Data))?
-    nonisolated(unsafe) static var lastRequest: URLRequest?
-    nonisolated(unsafe) static var lastBody: Data?
+    static var requestHandler: ((URLRequest, Data) -> (status: Int, body: Data))? {
+        get { state.withLockUnchecked { $0.requestHandler } }
+        set { state.withLockUnchecked { $0.requestHandler = newValue } }
+    }
+    static var lastRequest: URLRequest? { state.withLockUnchecked { $0.lastRequest } }
+    static var lastBody: Data? { state.withLockUnchecked { $0.lastBody } }
 
     static func makeSession() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
@@ -20,9 +32,7 @@ nonisolated final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     }
 
     static func reset() {
-        requestHandler = nil
-        lastRequest = nil
-        lastBody = nil
+        state.withLockUnchecked { $0 = State() }
     }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -30,12 +40,23 @@ nonisolated final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 
     override func startLoading() {
         let body = Self.readBody(of: request)
-        Self.lastRequest = request
-        Self.lastBody = body
+        let handler = Self.state.withLockUnchecked { state -> ((URLRequest, Data) -> (status: Int, body: Data))? in
+            state.lastRequest = request
+            state.lastBody = body
+            return state.requestHandler
+        }
 
-        let (status, data) = Self.requestHandler?(request, body) ?? (500, Data())
+        // Fail loudly: a test that forgot `requestHandler` should see an error naming the cause, not a mystery 500.
+        guard let handler, let url = request.url else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse, userInfo: [
+                NSLocalizedDescriptionKey: "StubURLProtocol: no requestHandler set, or request has no URL"
+            ]))
+            return
+        }
+
+        let (status, data) = handler(request, body)
         let response = HTTPURLResponse(
-            url: request.url!,
+            url: url,
             statusCode: status,
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "application/json"]
