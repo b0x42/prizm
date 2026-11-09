@@ -60,4 +60,39 @@ final class MasterKeyVectorTests: XCTestCase {
         let mixed = try await sut.makeMasterKey(password: password, email: "Test_KEY", kdf: kdf)
         XCTAssertEqual(lower, mixed)
     }
+
+    /// The SDK derives from `email.trim().to_lowercase()`, so stray whitespace must not change the key.
+    func testMasterKeyIgnoresSurroundingEmailWhitespace() async throws {
+        let kdf = KdfParams(type: .argon2id, iterations: 4, memory: 32, parallelism: 2)
+        let clean  = try await sut.makeMasterKey(password: password, email: "test_key", kdf: kdf)
+        let padded = try await sut.makeMasterKey(password: password, email: "  Test_KEY \n", kdf: kdf)
+        XCTAssertEqual(clean, padded)
+    }
+
+    // MARK: - Argon2id cost bounds
+
+    /// A server controls these values. Out-of-range ones must be refused with `kdfFailed` instead of
+    /// trapping in the `UInt32` conversion or attempting a multi-gigabyte allocation.
+    func testArgon2idRejectsOutOfRangeCosts() async {
+        let cases: [(String, KdfParams)] = [
+            ("memory above 1024 MiB",   KdfParams(type: .argon2id, iterations: 3, memory: 1025,      parallelism: 4)),
+            ("memory overflows UInt32", KdfParams(type: .argon2id, iterations: 3, memory: 4_194_304, parallelism: 4)),
+            ("negative memory",         KdfParams(type: .argon2id, iterations: 3, memory: -1,        parallelism: 4)),
+            ("memory below 16 MiB",     KdfParams(type: .argon2id, iterations: 3, memory: 15,        parallelism: 4)),
+            ("iterations above 10",     KdfParams(type: .argon2id, iterations: 11, memory: 32,       parallelism: 4)),
+            ("iterations below 2",      KdfParams(type: .argon2id, iterations: 1, memory: 32,        parallelism: 4)),
+            ("parallelism above 16",    KdfParams(type: .argon2id, iterations: 3, memory: 32,        parallelism: 17)),
+            ("parallelism below 1",     KdfParams(type: .argon2id, iterations: 3, memory: 32,        parallelism: 0)),
+        ]
+        for (name, kdf) in cases {
+            do {
+                _ = try await sut.makeMasterKey(password: password, email: email, kdf: kdf)
+                XCTFail("\(name): expected kdfFailed")
+            } catch PrizmCryptoServiceError.kdfFailed {
+                // expected
+            } catch {
+                XCTFail("\(name): unexpected error \(error)")
+            }
+        }
+    }
 }
