@@ -417,7 +417,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func preLogin(email: String) async throws -> PreLoginResponse {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/accounts/prelogin")
+        // Vaultwarden 1.37 serves prelogin only under /identity (b0x42/prizm#80);
+        // /api/accounts/prelogin answers 404 there.
+        let url = base.appendingPathComponent("identity/accounts/prelogin")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] preLogin → POST \(url.absoluteString, privacy: .public)")
@@ -611,6 +613,43 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         return response
     }
 
+    // MARK: - encryptedFor
+
+    /// Newer Bitwarden servers (Vaultwarden 1.37 among them, web-v2025.6.0 and later) reject cipher
+    /// writes without `encryptedFor`, the id of the authenticated user, with
+    /// `missing field encryptedFor`. The id is the `sub` claim of the access token (a JWT).
+    ///
+    /// Security goal: the server compares `encryptedFor` with the user behind the access token and refuses a
+    /// cipher that was not encrypted for that user. The token is only read locally here to learn the id; it is
+    /// never logged and goes nowhere beyond the `Authorization` header it already travels in.
+    private func currentUserId() -> String? {
+        guard let token = accessToken else { return nil }
+        let parts = token.split(separator: ".")
+        guard parts.count >= 2 else { return nil }
+        var b64 = String(parts[1]).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while b64.count % 4 != 0 { b64 += "=" }
+        guard let data = Data(base64Encoded: b64),
+              let claims = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let sub = claims["sub"] as? String else { return nil }
+        return sub
+    }
+
+    /// Encodes `body` as JSON and adds `encryptedFor`. For the org wrapper
+    /// (`{ cipher: ..., collectionIds: ... }`) pass `nestedIn: "cipher"`.
+    private func encodeCipherBody<T: Encodable>(_ body: T, nestedIn key: String? = nil) throws -> Data {
+        let data = try JSONEncoder().encode(body)
+        guard let userId = currentUserId(),
+              var object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return data }
+        if let key {
+            guard var nested = object[key] as? [String: Any] else { return data }
+            nested["encryptedFor"] = userId
+            object[key] = nested
+        } else {
+            object["encryptedFor"] = userId
+        }
+        return try JSONSerialization.data(withJSONObject: object)
+    }
+
     // MARK: - updateCipher
 
     func updateCipher(id: String, cipher: RawCipher) async throws -> RawCipher {
@@ -630,7 +669,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
         // Encode the re-encrypted RawCipher as the request body.
         // Field values are already EncStrings — no plaintext leaves the device.
-        request.httpBody = try JSONEncoder().encode(cipher)
+        request.httpBody = try encodeCipherBody(cipher)
 
         let updated: RawCipher = try await perform(request: request)
         if DebugConfig.isEnabled {
@@ -832,7 +871,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        request.httpBody = try JSONEncoder().encode(cipher)
+        request.httpBody = try encodeCipherBody(cipher)
 
         let created: RawCipher = try await perform(request: request)
         if DebugConfig.isEnabled {
@@ -864,7 +903,7 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         let body = OrgCipherCreateRequest(cipher: cipher, collectionIds: cipher.collectionIds)
-        request.httpBody = try JSONEncoder().encode(body)
+        request.httpBody = try encodeCipherBody(body, nestedIn: "cipher")
 
         let created: RawCipher = try await perform(request: request)
         if DebugConfig.isEnabled {
