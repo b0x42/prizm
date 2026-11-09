@@ -417,7 +417,9 @@ actor PrizmAPIClientImpl: PrizmAPIClientProtocol {
 
     func preLogin(email: String) async throws -> PreLoginResponse {
         guard let base = baseURL else { throw APIError.baseURLNotSet }
-        let url = base.appendingPathComponent("api/accounts/prelogin")
+        // Vaultwarden 1.37 serves prelogin only under /identity (b0x42/prizm#80);
+        // /api/accounts/prelogin answers 404 there.
+        let url = base.appendingPathComponent("identity/accounts/prelogin")
 
         if DebugConfig.isEnabled {
             logger.debug("[debug] preLogin → POST \(url.absoluteString, privacy: .public)")
