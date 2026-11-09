@@ -1,0 +1,9 @@
+- [x] 0. Read repository process; inventory networking, login, Keychain, signing and SDK import semantics; document decisions.
+- [x] 1. Write import/configuration tests; implement memory-only preview, validity/KU/EKU validation, app-owned persistence and exact-reference removal.
+- [x] 2. Write origin/delegate/lifecycle tests; implement immutable server and external sessions, redirects, cancellation and stale-result rejection.
+- [x] 3. Add prelogin import/preview/confirm/remove UI; integrate restart restoration, login, refresh and sync.
+- [x] Validate unsigned macOS build and complete XCTest suite, including real local TLS fixture.
+- [x] Validate signed sandbox Keychain insertion, re-resolution, duplicate rollback, removal, stored-key TLS and separate-process restart.
+- [x] Manual layout and application connection confirmed by the user.
+- [ ] Complete the manual account-level refresh/restart sequence with a disposable Vaultwarden account.
+- [x] Keep the prototype scope at packages 0–3; prepare the user-requested draft upstream PR after review. No packages 4–5, release or merge.

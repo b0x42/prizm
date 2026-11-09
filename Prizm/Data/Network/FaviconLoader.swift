@@ -31,10 +31,10 @@ actor FaviconLoader {
     /// - Parameters:
     ///   - iconsBase: Override for the icons service base URL.
     ///                Defaults to `https://icons.bitwarden.net`.
-    ///   - session:   `URLSession` to use; defaults to a shared cache-enabled session.
+    ///   - session:   `URLSession` to use; defaults to a session that refuses client identities.
     init(
         iconsBase: URL = URL(string: "https://icons.bitwarden.net")!,
-        session: URLSession = .shared
+        session: URLSession = ServerSessionFactory.makeExternalSession()
     ) {
         self.iconsBase = iconsBase
         self.session   = session

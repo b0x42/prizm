@@ -79,8 +79,10 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
     }
 
     func setServerEnvironment(_ environment: ServerEnvironment) async throws {
+        serverEnvironment = nil
+        cancelTwoFactor()
+        try await apiClient.setBaseURL(environment.base)
         serverEnvironment = environment
-        await apiClient.setBaseURL(environment.base)
     }
 
     // MARK: - Login
@@ -315,12 +317,10 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             encUserKey:    encUserKey,
             stretchedKeys: stretched
         )
-        await crypto.unlockWith(keys: vaultKeys)
-
-        // Restore API client state so the post-unlock sync can make authenticated requests.
-        // Both baseURL and accessToken are nil on a fresh app launch until restored here.
+        // Resolve the assigned identity before unlocking; a missing identity fails closed.
+        try await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        await crypto.unlockWith(keys: vaultKeys)
 
         if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
             await apiClient.setAccessToken(accessToken)
@@ -383,6 +383,10 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
 
     func signOut() async throws {
         logger.info("Signing out — clearing session data")
+        // Cancel TLS requests immediately, before any suspension in Keychain/biometric cleanup.
+        await apiClient.clearAccessToken()
+        serverEnvironment = nil
+        cancelTwoFactor()
         let userId: String
         do {
             userId = try readString(key: KeychainKey.activeUserId)
@@ -416,10 +420,6 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         // .vaultDidLock notification is posted — ItemEditViewModel observes it to
         // dismiss any open edit sheet and clear the plaintext DraftVaultItem (§III).
         await lockVault()
-
-        // Clear the bearer token from the API client's memory so it cannot be read
-        // from a heap dump after sign-out (Constitution §III).
-        await apiClient.clearAccessToken()
 
         serverEnvironment = nil
         pendingTwoFactor  = nil
@@ -557,11 +557,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             throw AuthError.biometricUnavailable
         }
 
-        await crypto.unlockWith(keys: vaultKeys)
-
-        // Restore API client state — same as unlockWithPassword().
+        try await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        await crypto.unlockWith(keys: vaultKeys)
 
         if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
             await apiClient.setAccessToken(accessToken)
@@ -628,9 +626,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
             throw AuthError.biometricUnavailable
         }
 
-        await crypto.unlockWith(keys: vaultKeys)
+        try await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
         serverEnvironment = restoredAccount.serverEnvironment
-        await apiClient.setBaseURL(restoredAccount.serverEnvironment.base)
+        await crypto.unlockWith(keys: vaultKeys)
 
         if let accessToken = try? readString(key: KeychainKey.user(userId, "accessToken")) {
             await apiClient.setAccessToken(accessToken)

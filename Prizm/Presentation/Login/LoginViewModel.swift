@@ -24,7 +24,17 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Published state
 
-    @Published var serverURL:    String = ""
+    @Published var serverURL: String = "" {
+        didSet {
+            errorMessage = nil
+            clientCertificates?.cancelPreview()
+            certificatePreview = nil
+            refreshCertificate()
+        }
+    }
+    @Published private(set) var configuredCertificate: ClientCertificateDetails?
+    @Published private(set) var certificatePreview: ClientCertificateDetails?
+    @Published private(set) var certificateBusy = false
     @Published var email:        String = ""
     @Published var password:     String = ""
     @Published var errorMessage: String?
@@ -32,13 +42,71 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
+    private let clientCertificates: (any ClientCertificateManaging)?
     private let loginUseCase: any LoginUseCase
     private let logger = Logger(subsystem: "com.prizm", category: "LoginViewModel")
 
     // MARK: - Init
 
-    init(loginUseCase: any LoginUseCase) {
+    init(loginUseCase: any LoginUseCase, clientCertificates: (any ClientCertificateManaging)? = nil) {
         self.loginUseCase = loginUseCase
+        self.clientCertificates = clientCertificates
+    }
+
+    var supportsClientCertificates: Bool { clientCertificates != nil }
+
+    var certificateOrigin: String? {
+        guard let url = URL(string: serverURL) else { return nil }
+        return try? ServerOrigin(url: url).displayName
+    }
+
+    func refreshCertificate() {
+        configuredCertificate = nil
+        // Metadata refresh runs on every keystroke. Validate incomplete input only
+        // when the user explicitly imports or signs in, not while typing a URL.
+        guard let url = URL(string: serverURL), (try? ServerOrigin(url: url)) != nil else { return }
+        do { configuredCertificate = try clientCertificates?.configuredCertificate(server: url) }
+        catch { errorMessage = error.localizedDescription }
+    }
+
+    func previewCertificate(file: URL, password: String) {
+        errorMessage = nil
+        certificatePreview = nil
+        do {
+            guard let url = URL(string: serverURL) else { throw ClientCertificateError.invalidOrigin }
+            _ = try ServerOrigin(url: url)
+            certificatePreview = try clientCertificates?.preview(file: file, password: password)
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    func cancelCertificatePreview() {
+        clientCertificates?.cancelPreview()
+        certificatePreview = nil
+    }
+
+    func confirmCertificate() async -> Bool {
+        guard let clientCertificates, let url = URL(string: serverURL) else { return false }
+        certificateBusy = true
+        defer { certificateBusy = false }
+        do {
+            configuredCertificate = try await clientCertificates.confirm(server: url)
+            certificatePreview = nil
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            refreshCertificate()
+            return false
+        }
+    }
+
+    func removeCertificate() async {
+        guard let clientCertificates, let url = URL(string: serverURL) else { return }
+        certificateBusy = true
+        defer { certificateBusy = false }
+        do {
+            try await clientCertificates.remove(server: url)
+            configuredCertificate = nil
+        } catch { errorMessage = error.localizedDescription }
     }
 
     // MARK: - Actions

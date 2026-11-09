@@ -51,6 +51,7 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 - **Verification codes (TOTP)** — see the current one-time code for any login with a TOTP seed, in the item and in a "Codes" list in the sidebar; codes rotate automatically with a countdown, and ⌃⌘C copies the current code (cleared after 30 s). The raw seed is never shown or copied
 - **Password & passphrase generator** — configurable length, character sets, and word separators
 - **Touch ID / Face ID unlock** — unlock your vault with biometrics; auto-prompts on lock; graceful re-enrollment when fingerprints change
+- **Optional mTLS (prototype)** — import a `.p12`/`.pfx` client identity before login, bind it to an exact HTTPS server origin, and retain it in the app-isolated macOS Keychain. Identity storage requires a signed build; attachments on mTLS servers are currently unavailable.
 - **Auto-lock** — locks on sleep and screensaver; sync status always visible in the sidebar
 - **Accessible** — VoiceOver labels and hints on all controls, keyboard navigable, respects Reduce Motion and Increase Contrast; targets WCAG 2.1 AA. See [ACCESSIBILITY.md](ACCESSIBILITY.md)
 
