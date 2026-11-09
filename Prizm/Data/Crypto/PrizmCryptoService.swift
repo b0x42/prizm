@@ -333,8 +333,18 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
 
     // MARK: - makeMasterKey
 
+    /// Accepted Argon2id cost ranges, the same bounds Bitwarden's clients enforce (web vault KDF settings;
+    /// minimums also match `ARGON2ID_MIN_*` in bitwarden/sdk-internal). A malicious or broken server could
+    /// otherwise send values that crash the `UInt32` conversion or exhaust memory.
+    private enum Argon2Limits {
+        static let memoryMiB  = 16...1024
+        static let iterations = 2...10
+        static let parallelism = 1...16
+    }
+
     func makeMasterKey(password: Data, email: String, kdf: KdfParams) async throws -> Data {
-        guard let emailData = email.lowercased().data(using: .utf8) else {
+        // Bitwarden normalises the KDF salt as `trim().lowercase()` (bitwarden/sdk-internal, kdf.rs `derive`).
+        guard let emailData = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().data(using: .utf8) else {
             throw PrizmCryptoServiceError.kdfFailed
         }
 
@@ -351,14 +361,27 @@ actor PrizmCryptoServiceImpl: PrizmCryptoService {
         case .argon2id:
             // Argon2id requires memory + parallelism params
             guard let memory      = kdf.memory,
-                  let parallelism = kdf.parallelism else {
+                  let parallelism = kdf.parallelism,
+                  Argon2Limits.memoryMiB.contains(memory),
+                  Argon2Limits.iterations.contains(kdf.iterations),
+                  Argon2Limits.parallelism.contains(parallelism) else {
+                // The server supplies these values. Refuse out-of-range ones rather than trap in
+                // Argon2Swift's `UInt32` conversion or try a multi-gigabyte allocation.
                 throw PrizmCryptoServiceError.kdfFailed
             }
+            // Bitwarden's Argon2id differs from the plain call in two ways (bitwarden/sdk-internal,
+            // crates/bitwarden-crypto/src/keys/kdf.rs, with a test vector): the salt is SHA-256(email)
+            // and the server reports the memory cost in MiB while Argon2 takes KiB. Without both the
+            // derived key is wrong and the login fails with "Username or password is incorrect".
+            //
+            // Security goal: derive exactly the master key every other Bitwarden client derives, so the server
+            // hash and the unwrapping of the user key are correct. Nothing is weakened: the salt stays a
+            // SHA-256 digest and the cost parameters are the account's own.
             return try argon2idDerive(
                 password:    password,
-                salt:        emailData,
+                salt:        Data(SHA256.hash(data: emailData)),
                 iterations:  kdf.iterations,
-                memory:      memory,
+                memory:      memory * 1024,
                 parallelism: parallelism
             )
         }

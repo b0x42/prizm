@@ -20,7 +20,8 @@ nonisolated struct KdfParams: Codable, Equatable {
     /// • Argon2id: time-cost parameter (Bitwarden default 3).
     let iterations: Int
 
-    /// Memory cost in KiB. Argon2id only; nil for PBKDF2 (Bitwarden default 64 MiB = 65536 KiB).
+    /// Memory cost in MiB, exactly as the server reports it in the prelogin response (Argon2id only, nil for
+    /// PBKDF2; the web vault defaults to 32). `PrizmCryptoServiceImpl.makeMasterKey` converts it to KiB.
     let memory: Int?
 
     /// Degree of parallelism. Argon2id only; nil for PBKDF2 (Bitwarden default 4).
