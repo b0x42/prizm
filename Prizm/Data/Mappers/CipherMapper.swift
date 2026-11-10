@@ -85,22 +85,13 @@ nonisolated final class CipherMapper: Sendable {
             activeKeys = vaultKeys
         }
 
-        let name   = try decryptRequired(raw.name, field: "name", keys: activeKeys)
-        let notes  = try raw.notes.map { try decryptRequired($0, field: "notes", keys: activeKeys) }
-        let fields = try mapFields(raw.fields ?? [], keys: activeKeys)
-
-        let content: ItemContent = try mapContent(
-            type:   raw.type,
-            raw:    raw,
-            notes:  notes,
-            fields: fields,
-            keys:   activeKeys
-        )
-
-        let fallbackDate = Date(timeIntervalSince1970: 0)
-        let creationDate  = raw.creationDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
-        let revisionDate  = raw.revisionDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
-
+        // With a per-item key (`raw.key`, which the web vault and the browser extension set on every
+        // new item) ALL fields are encrypted under that key, not under the vault key. Resolve it first
+        // and decrypt everything with it; the original code decrypted name, notes, fields and content
+        // with the vault key and silently dropped every such item (MAC verification failed).
+        //
+        // Security goal: keep the key hierarchy intact. A field is only decrypted with the key it was encrypted
+        // under, and the HMAC check still guards every field.
         // Effective cipher key: per-item key if present, otherwise the active (vault or org) key.
         // Reference: Bitwarden Security Whitepaper §4 — "Cipher Key Wrapping".
         // Must be resolved BEFORE attachment mapping so that attachment filenames are
@@ -123,9 +114,25 @@ nonisolated final class CipherMapper: Sendable {
 
         // Build CryptoKeys from the resolved 64-byte cipher key (first 32 bytes = enc, last 32 = mac).
         let effectiveKeys = CryptoKeys(
-            encryptionKey: cipherKey.prefix(32),
-            macKey:        cipherKey.suffix(32)
+            encryptionKey: Data(cipherKey.prefix(32)),
+            macKey:        Data(cipherKey.suffix(32))
         )
+
+        let name   = try decryptRequired(raw.name, field: "name", keys: effectiveKeys)
+        let notes  = try raw.notes.map { try decryptRequired($0, field: "notes", keys: effectiveKeys) }
+        let fields = try mapFields(raw.fields ?? [], keys: effectiveKeys)
+
+        let content: ItemContent = try mapContent(
+            type:   raw.type,
+            raw:    raw,
+            notes:  notes,
+            fields: fields,
+            keys:   effectiveKeys
+        )
+
+        let fallbackDate = Date(timeIntervalSince1970: 0)
+        let creationDate  = raw.creationDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
+        let revisionDate  = raw.revisionDate.flatMap  { Self.iso8601.date(from: $0) } ?? fallbackDate
 
         // Map attachments using the cipher's effective key, not the raw vault key.
         // Attachment filenames are encrypted under the same key as the cipher's fields.
