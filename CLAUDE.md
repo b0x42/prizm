@@ -13,7 +13,7 @@ architectural decision, consult the Constitution. Violations are blocking PR rej
 - **Language**: Swift 6.2 (Swift 6 language mode)
 - **UI Framework**: SwiftUI (`NavigationSplitView` for three-pane layout)
 - **Concurrency**: Swift async/await + Structured Concurrency
-- **Platform**: macOS 26+
+- **Platform**: macOS 15+
 - **Project type**: macOS desktop app (App Sandbox + Hardened Runtime)
 - **Crypto/Vault**: CommonCrypto + CryptoKit + Security.framework + `Argon2Swift` (Argon2id only) — Data layer only, behind `BitwardenCryptoService` protocol.
 - **Storage**: macOS Keychain (secrets), UserDefaults (UI prefs), in-memory (decrypted vault)

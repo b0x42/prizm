@@ -97,6 +97,9 @@ final class AttachmentAddViewModel: Identifiable {
         self.filePicker    = filePicker
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - File selection (task 6.2)
 
     /// Invokes `filePicker` and validates the chosen file.

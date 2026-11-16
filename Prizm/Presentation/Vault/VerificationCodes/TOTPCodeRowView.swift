@@ -78,9 +78,9 @@ struct TOTPCodeRowView: View {
         .onHover { hovering in
             optionalAnimation(.easeInOut(duration: 0.15)) { isHovered = hovering }
         }
-        .onTapGesture {
-            if copiesOnTap, case .code(let code) = state { copy(code) }
-        }
+        .gesture(copiesOnTap ? TapGesture().onEnded {
+            if case .code(let code) = state { copy(code) }
+        } : nil)
     }
 
     // MARK: - Pieces

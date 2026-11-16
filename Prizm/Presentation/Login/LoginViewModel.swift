@@ -41,6 +41,9 @@ final class LoginViewModel: ObservableObject {
         self.loginUseCase = loginUseCase
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Actions
 
     /// Validates credentials and initiates the login sequence.

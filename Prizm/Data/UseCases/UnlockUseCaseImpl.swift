@@ -25,6 +25,9 @@ final class UnlockUseCaseImpl: UnlockUseCase {
         self.sync = sync
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(masterPassword: Data) async throws -> Account {
         // Step 1: Derive master key locally and unlock the crypto service.
         logger.info("Attempting vault unlock")

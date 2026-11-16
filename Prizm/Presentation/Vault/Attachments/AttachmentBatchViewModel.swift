@@ -104,6 +104,9 @@ final class AttachmentBatchViewModel: Identifiable {
         self.uploadUseCase = uploadUseCase
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Load items from dropped URLs (task 6b.2)
 
     /// Reads file size (not bytes) for each URL and populates `items`.

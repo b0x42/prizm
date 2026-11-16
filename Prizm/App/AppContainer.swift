@@ -140,6 +140,9 @@ final class AppContainer: ObservableObject {
         self.tempFileManager           = AttachmentTempFileManager()
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Factories
 
     /// Returns a fresh `SyncTimestampRepository` and matching `GetLastSyncDateUseCase`

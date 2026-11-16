@@ -12,6 +12,9 @@ final class SyncUseCaseImpl: SyncUseCase {
         self.sync = sync
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(progress: @Sendable @escaping (String) -> Void) async throws -> SyncResult {
         try await sync.sync(progress: progress)
     }

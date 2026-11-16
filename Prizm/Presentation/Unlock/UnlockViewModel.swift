@@ -66,6 +66,9 @@ final class UnlockViewModel: ObservableObject {
         self.embeddedBiometric = embeddedBiometric
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Derived properties
 
     /// The stored email, shown read-only in the UI (FR-003).

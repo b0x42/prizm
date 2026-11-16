@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/b0x42/prizm/actions/workflows/ci.yml/badge.svg)](https://github.com/b0x42/prizm/actions/workflows/ci.yml)
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org/)
-[![macOS 26+](https://img.shields.io/badge/macOS-26%2B-blue.svg)](https://www.apple.com/macos/)
+[![macOS 15+](https://img.shields.io/badge/macOS-15%2B-blue.svg)](https://www.apple.com/macos/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Native macOS client for Vaultwarden and self-hosted Bitwarden, built in Swift.
@@ -58,10 +58,13 @@ Prizm exists to give macOS users a native, auditable, trustworthy interface to t
 
 ### Requirements
 
-- macOS 26 or later
+- macOS 15 (Sequoia) or later
 - A self-hosted [Vaultwarden](https://github.com/dani-garcia/vaultwarden) or [Bitwarden](https://bitwarden.com/) server
 
 Tested against Vaultwarden 1.35.4. Older versions may work but are not validated.
+
+The macOS 15 support described here applies to source builds and the next release.
+Existing v1.5.1 downloads and Homebrew packages still require macOS 26.
 
 ### Homebrew (recommended)
 
@@ -142,7 +145,6 @@ Want to shift something up the list? [Open an issue](https://github.com/b0x42/pr
 
 - **Not notarized** — The app is not signed with an Apple Developer ID. On first launch, right-click and choose Open to bypass Gatekeeper.
 - **No browser auto-fill** — There is no browser extension. Copy-paste is the current workflow.
-- **macOS 26 required** — The app uses SwiftUI features only available in macOS 26.
 - **Passkeys not supported** — SSH key items are viewable but passkey-based login is not implemented.
 - **No offline vault creation** — Creating or editing items requires an active server connection.
 - **Attachment size limit** — Files larger than 500 MB are rejected. Bitwarden-hosted servers require a premium subscription for attachments; Vaultwarden is unaffected.

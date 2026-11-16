@@ -14,7 +14,7 @@ open "Prizm/Prizm.xcodeproj"
 
 No package managers needed. Build with `⌘R`, run tests with `⌘U`.
 
-**Requirements:** macOS 26+, Xcode with Swift 6, a Bitwarden/Vaultwarden server for testing.
+**Requirements:** macOS 15.6+ for development, Xcode 26 with Swift 6.2, a Bitwarden/Vaultwarden server for testing.
 
 ## Found a Bug? Have an Idea?
 

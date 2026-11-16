@@ -63,6 +63,9 @@ final class AuthRepositoryImpl: AuthRepository, EmbeddedBiometricUnlock {
         self.biometricKeychain = biometricKeychain
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Server configuration
 
     func validateServerURL(_ urlString: String) throws {

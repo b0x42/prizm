@@ -54,6 +54,9 @@ final class AttachmentRepositoryImpl: AttachmentRepository {
         self.vaultRepository = vaultRepository
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Upload
 
     /// Encrypts and uploads a file to the Bitwarden v2 attachment endpoint.

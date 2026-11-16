@@ -29,6 +29,9 @@ final class BiometricKeychainServiceImpl: BiometricKeychainService {
         self.useDataProtectionKeychain = useDataProtectionKeychain
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Base query
 
     private func baseQuery(for key: String) -> [CFString: Any] {

@@ -15,6 +15,9 @@ final class DownloadAttachmentUseCaseImpl: DownloadAttachmentUseCase {
         self.vaultKeyService = vaultKeyService
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(cipherId: String, attachment: Attachment) async throws -> Data {
         let cipherKey = try await vaultKeyService.cipherKey(for: cipherId)
         return try await repository.download(cipherId: cipherId, attachment: attachment, cipherKey: cipherKey)

@@ -112,6 +112,9 @@ final class KeychainServiceImpl: KeychainService {
         }
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     /// Returns the base Keychain query dictionary for `key`.
     ///
     /// `kSecUseDataProtectionKeychain: true` routes all queries to the modern data

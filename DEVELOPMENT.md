@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- **Xcode 26** (beta or release) — the project requires the macOS 26 SDK
-- **macOS 26** or later on the development machine
+- **Xcode 26** — the project requires the macOS 26 SDK; on macOS 15, use Xcode 26.0–26.3 (see [Xcode system requirements](https://developer.apple.com/support/xcode/))
+- **macOS 15.6** or later on the development machine (required by Xcode 26); the built app supports **macOS 15.0** or later
 - An Apple ID (free) for local builds; a paid Apple Developer account for release signing
 
 No package managers required. Dependencies are vendored under `LocalPackages/`.

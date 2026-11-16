@@ -10,6 +10,9 @@ final class CreateVaultItemUseCaseImpl: CreateVaultItemUseCase {
         self.repository = repository
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(draft: DraftVaultItem) async throws -> VaultItem {
         try await repository.create(draft)
     }
