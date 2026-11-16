@@ -13,7 +13,7 @@ Known Limitations → Contributing → Mission & Principles.
 
 #### Scenario: User scans badges
 - **WHEN** a user glances at the badge row
-- **THEN** they can immediately confirm: CI build status, Swift 6.2, macOS 26+, and the license
+- **THEN** they can immediately confirm: CI build status, Swift 6.2, macOS 15+, and the license
 
 #### Scenario: User reads Why Prizm
 - **WHEN** a user reads the Why Prizm section
@@ -33,7 +33,7 @@ Known Limitations → Contributing → Mission & Principles.
 
 #### Scenario: User reads Requirements
 - **WHEN** a user reads the Requirements section
-- **THEN** they find: macOS 26+, a self-hosted Vaultwarden or Bitwarden server, and the tested server compatibility (tested against Vaultwarden 1.35.4)
+- **THEN** they find: macOS 15+, a self-hosted Vaultwarden or Bitwarden server, and the tested server compatibility (tested against Vaultwarden 1.35.4)
 
 #### Scenario: User wants to install the app
 - **WHEN** a user reads the Install section
@@ -61,7 +61,7 @@ contributor needs to build and run the project locally.
 
 #### Scenario: New contributor sets up the project
 - **WHEN** a contributor reads `DEVELOPMENT.md`
-- **THEN** they find: prerequisites (Xcode version, macOS 26+), how to copy `LocalConfig.xcconfig.template` and fill in their Team ID (build fails without it), build and test commands, architecture overview, and a link to the openspec workflow
+- **THEN** they find: prerequisites (Xcode 26, macOS 15.6+ for development; macOS 15+ to run the app), how to copy `LocalConfig.xcconfig.template` and fill in their Team ID (build fails without it), build and test commands, architecture overview, and a link to the openspec workflow
 
 #### Scenario: Maintainer sets up release signing
 - **WHEN** a maintainer reads `DEVELOPMENT.md`

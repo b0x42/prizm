@@ -22,10 +22,17 @@ The cask formula SHALL include `name`, `desc`, `homepage`, and `sha256` fields m
 - **THEN** the output shows the app name as "Prizm", description as "Native macOS client for Vaultwarden and self-hosted Bitwarden", and homepage as the GitHub repository URL
 
 ### Requirement: Cask enforces minimum macOS version
-The cask formula SHALL declare `depends_on macos: ">= :tahoe"` to prevent installation on unsupported macOS versions.
+For releases built with macOS 15 support, the cask formula SHALL declare
+`depends_on macos: ">= :sequoia"`. The release workflow SHALL update this requirement
+together with the version and hash in the Homebrew tap. Casks pointing to older,
+macOS 26-only downloads SHALL retain their Tahoe requirement.
 
-#### Scenario: Install attempted on macOS 15
-- **WHEN** a user runs `brew install --cask prizm` on macOS 15 (Sequoia)
+#### Scenario: Compatible release installed on macOS 15
+- **WHEN** a user runs `brew install --cask prizm` on macOS 15 (Sequoia) after the first compatible release
+- **THEN** Homebrew permits installation
+
+#### Scenario: Install attempted on macOS 14
+- **WHEN** a user runs `brew install --cask prizm` on macOS 14 (Sonoma)
 - **THEN** Homebrew refuses to install with a message indicating the macOS version requirement is not met
 
 ### Requirement: Cask declares the app artifact

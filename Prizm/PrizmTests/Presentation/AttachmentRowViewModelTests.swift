@@ -114,7 +114,7 @@ final class AttachmentRowViewModelTests: XCTestCase {
     /// Downloaded buffers can be Data slices (nonzero startIndex). Zeroing them with a
     /// zero-based range writes out of bounds (run with AddressSanitizer).
     private var slicedPlainData: Data {
-        Data([UInt8](repeating: 0xEE, count: 16) + plainData + [UInt8](repeating: 0xEE, count: 16))[16..<(16 + plainData.count)]
+        Data([UInt8](repeating: 0xEE, count: 16) + [UInt8](plainData) + [UInt8](repeating: 0xEE, count: 16))[16..<(16 + plainData.count)]
     }
 
     func test_open_slicedDownload_doesNotCrash() async throws {

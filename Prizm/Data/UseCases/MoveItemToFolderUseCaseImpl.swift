@@ -8,6 +8,9 @@ final class MoveItemToFolderUseCaseImpl: MoveItemToFolderUseCase {
         try await repository.moveItemToFolder(itemId: itemId, folderId: folderId)
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(itemIds: [String], folderId: String?) async throws {
         try await repository.moveItemsToFolder(itemIds: itemIds, folderId: folderId)
     }

@@ -75,6 +75,9 @@ final class AttachmentRowViewModel {
         self.fileOpener      = fileOpener
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     // MARK: - Open (task 7.2b)
 
     func open() {

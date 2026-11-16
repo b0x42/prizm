@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Support macOS 15 (Sequoia) and later; CI now builds and tests on macOS 15 and 26.
+- Fix Swift runtime crashes when releasing app objects and restore code-list row selection on macOS 15.
+
 - Add verification codes: a login with a TOTP seed now shows its current one-time code and a
   countdown in the item, and a new "Codes" sidebar entry lists every item that has
   one. Supports base32 secrets and `otpauth://totp` links (SHA-1, SHA-256, SHA-512; 6 to 8 digits).

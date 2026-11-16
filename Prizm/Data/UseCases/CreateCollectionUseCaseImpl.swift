@@ -7,4 +7,7 @@ final class CreateCollectionUseCaseImpl: CreateCollectionUseCase {
     func execute(name: String, organizationId: String) async throws -> OrgCollection {
         try await repository.createCollection(name: name, organizationId: organizationId)
     }
+
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
 }

@@ -10,6 +10,9 @@ final class SearchVaultUseCaseImpl: SearchVaultUseCase {
         self.vault = vault
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(query: String, in selection: SidebarSelection) async throws -> [VaultItem] {
         if query.isEmpty {
             return try await vault.items(for: selection)

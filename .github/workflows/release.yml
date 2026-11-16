@@ -149,6 +149,7 @@ jobs:
 
           sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/prizm.rb
           sed -i '' "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/prizm.rb
+          sed -i '' 's/depends_on macos: ".*"/depends_on macos: ">= :sequoia"/' Casks/prizm.rb
 
           git config user.name "github-actions"
           git config user.email "actions@github.com"

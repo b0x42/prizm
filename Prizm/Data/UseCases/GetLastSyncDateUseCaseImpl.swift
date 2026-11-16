@@ -21,6 +21,9 @@ final class GetLastSyncDateUseCaseImpl: GetLastSyncDateUseCase, @unchecked Senda
         self.repository = repository
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute() -> Date? {
         repository.lastSyncDate
     }

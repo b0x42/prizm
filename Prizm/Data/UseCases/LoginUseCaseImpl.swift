@@ -23,6 +23,9 @@ final class LoginUseCaseImpl: LoginUseCase {
         self.sync = sync
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(serverURL: String, email: String, masterPassword: Data) async throws -> LoginResult {
         // Step 1: Validate URL (throws AuthError.invalidURL on failure).
         try auth.validateServerURL(serverURL)

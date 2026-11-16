@@ -12,6 +12,9 @@ final class DeleteAttachmentUseCaseImpl: DeleteAttachmentUseCase {
         self.repository = repository
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     func execute(cipherId: String, attachmentId: String) async throws {
         try await repository.delete(cipherId: cipherId, attachmentId: attachmentId)
     }

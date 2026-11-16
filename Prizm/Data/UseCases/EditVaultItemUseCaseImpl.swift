@@ -15,6 +15,9 @@ final class EditVaultItemUseCaseImpl: EditVaultItemUseCase {
         self.repository = repository
     }
 
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
+
     /// Re-encrypts the draft, persists it via the API, and returns the server-confirmed item.
     func execute(draft: DraftVaultItem) async throws -> VaultItem {
         try await repository.update(draft)

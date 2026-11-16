@@ -7,4 +7,7 @@ final class RenameCollectionUseCaseImpl: RenameCollectionUseCase {
     func execute(collectionId: String, name: String, organizationId: String) async throws -> OrgCollection {
         try await repository.renameCollection(id: collectionId, organizationId: organizationId, name: name)
     }
+
+    // macOS 15: avoid the isolated-deinit crash (swiftlang/swift#88036).
+    nonisolated deinit {}
 }

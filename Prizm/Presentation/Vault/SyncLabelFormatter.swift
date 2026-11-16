@@ -90,7 +90,6 @@ extension Date {
 
     private nonisolated func formatted(style: Date.FormatStyle, calendar: Calendar) -> String {
         // Date.FormatStyle is zero-allocation — no DateFormatter constructed per call.
-        // Available macOS 12+; the project targets macOS 26.
         // Property assignment is required: FormatStyle exposes `calendar` as a stored var,
         // so chaining `.calendar(x)` is parsed as calling the Calendar value as a function.
         var s = style
